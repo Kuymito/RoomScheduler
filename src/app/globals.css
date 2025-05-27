@@ -1,0 +1,27 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  @apply font-sans bg-num-bg;
+}
+
+.setting-icon-svg {
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15"><path d="M7.5 9.5a2 2 0 1 0 0-4 2 2 0 0 0 0 4zm1.41-2.5h2.09v1h-2.09A2.98 2.98 0 0 1 7 9.91V12H6V9.91A2.98 2.98 0 0 1 4.09 8H2V7h2.09A2.98 2.98 0 0 1 6 5.09V3h1v2.09A2.98 2.98 0 0 1 8.91 7z" stroke="%23396DFB" fill="none"/></svg>');
+  @apply bg-no-repeat bg-center;
+}
+
+.logout-icon-svg {
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15"><path d="M7 12V9H2V6h5V3l5 4-5 4zm1-9h4v9H8" stroke="%23DA3A3C" fill="none"/></svg>');
+  @apply bg-no-repeat bg-center;
+}
+
+.alert-icon-inner-svg {
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32"><path d="M22 10L10 22M10 10l12 12" stroke="%23FFFFFF" stroke-width="2" fill="none"/></svg>');
+  @apply bg-no-repeat bg-center;
+}
+
+.close-icon-svg {
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"><path d="M5 5l10 10M15 5L5 15" stroke="%23737373" fill="none"/></svg>');
+  @apply bg-no-repeat bg-center;
+}
