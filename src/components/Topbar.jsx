@@ -16,7 +16,7 @@ const Topbar = ({ onToggleSidebar, isSidebarCollapsed, onUserIconClick, pageSubt
         </div>
         <div className="page-title font-medium text-xl text-black">
           National University of Management
-          <p className="dashboard text-sm font-normal text-gray-600 mt-1">{pageSubtitle}</p>
+          <p className="dashboard text-sm font-normal text-blue-600 mt-1">{pageSubtitle}</p>
         </div>
       </div>
       <div className="topbar-icons flex items-center gap-4">
