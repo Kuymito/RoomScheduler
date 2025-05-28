@@ -12,8 +12,8 @@ export default function AdminProfilePage() {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [showAdminPopup, setShowAdminPopup] = useState(false);
   const [showLogoutAlert, setShowLogoutAlert] = useState(false);
-  const [activeNavItem, setActiveNavItem] = useState('dashboard');
-  const [pageSubtitle, setPageSubtitle] = useState('Dashboard');
+  const [activeNavItem, setActiveNavItem] = useState(false);
+  const [pageSubtitle, setPageSubtitle] = useState('Profile');
 
   const adminPopupRef = useRef(null);
   const userIconRef = useRef(null);
@@ -85,7 +85,7 @@ export default function AdminProfilePage() {
         />
 
         {/* MODIFICATION 1: Reduce padding and margin on content-area, remove overflow-y-auto for now */}
-        <div className="content-area flex-grow p-6 bg-white rounded-lg m-6"> {/* Was p-5 m-5 */}
+        <div className="content-area flex-grow p-8 bg-white rounded-lg m-6"> {/* Was p-5 m-5 */}
           <div className="section-title font-semibold text-base text-num-dark-text mb-4"> {/* Was mb-5 */}
             Profile
           </div>
