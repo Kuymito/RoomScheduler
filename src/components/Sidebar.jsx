@@ -61,7 +61,7 @@ const Sidebar = ({ isCollapsed, activeItem, onNavItemClick }) => {
       <hr className="border-t border-num-gray-light" />
       <div className="profile-info flex flex-col items-center my-7 overflow-hidden">
         <div
-          className={`profile-avatar rounded-full bg-num-content-bg mb-2.5 flex justify-center items-center transition-all duration-300 ease-in-out
+          className={`profile-avatar rounded-ful mb-2.5 flex justify-center items-center transition-all duration-300 ease-in-out
             ${isCollapsed ? 'w-10 h-10' : 'w-20 h-20'}`}
         >
           <Image
@@ -69,7 +69,7 @@ const Sidebar = ({ isCollapsed, activeItem, onNavItemClick }) => {
             alt="Admin Avatar"
             width={isCollapsed ? 32 : 60}
             height={isCollapsed ? 32 : 60}
-            className={`profile-avatar-img rounded-full object-cover ${isCollapsed ? 'h-8 w-8' : 'h-[60px] w-[60px]'}`}
+            className={`profile-avatar-img rounded-full object-cover ${isCollapsed ? 'h-10 w-10' : 'h-[70px] w-[70px]'}`}
           />
         </div>
         <div
