@@ -85,12 +85,12 @@ export default function AdminProfilePage() {
         />
 
         {/* MODIFICATION 1: Reduce padding and margin on content-area, remove overflow-y-auto for now */}
-        <div className="content-area flex-grow p-3 bg-white rounded-lg m-6"> {/* Was p-5 m-5 */}
+        <div className="content-area flex-grow p-6 bg-white rounded-lg m-6"> {/* Was p-5 m-5 */}
           <div className="section-title font-semibold text-base text-num-dark-text mb-4"> {/* Was mb-5 */}
             Profile
           </div>
           {/* MODIFICATION 2: Reduce gap and bottom margin on profile-section */}
-          <div className="profile-section flex gap-4 mb-4 flex-wrap"> {/* Was gap-[30px] mb-[30px] or gap-5 mb-6 */}
+          <div className="profile-section flex gap-6 mb-4 flex-wrap"> {/* Was gap-[30px] mb-[30px] or gap-5 mb-6 */}
             {/* Avatar Card */}
             {/* Consider if h-[140px] is too tall or can be made flexible */}
             <div className="avatar-card w-[311px] h-[130px] p-3 bg-white border border-num-gray-light shadow-custom-light rounded-lg flex-shrink-0"> {/* Reduced h and p slightly */}
@@ -113,7 +113,7 @@ export default function AdminProfilePage() {
             </div>
 
             {/* MODIFICATION 3: Reduce gap in info-details-wrapper */}
-            <div className="info-details-wrapper flex-grow flex flex-col gap-4 min-w-[300px]"> {/* Was gap-[30px] or gap-5 */}
+            <div className="info-details-wrapper flex-grow flex flex-col gap-6 min-w-[300px]"> {/* Was gap-[30px] or gap-5 */}
               {/* General Information Card */}
               <div className="info-card p-3 sm:p-4 bg-white border border-num-gray-light shadow-custom-light rounded-lg"> {/* Reduced p */}
                 <div className  ="section-title font-semibold text-base text-num-dark-text mb-3">General information</div> {/* Was mb-5 */}

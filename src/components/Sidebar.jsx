@@ -7,11 +7,11 @@ const NavItem = ({ href, iconSrc, altText, label, isActive, isCollapsed, onClick
   <Link href={href} passHref legacyBehavior>
     <a
       onClick={onClick}
-      className={`nav-item flex items-center py-2.5 mb-1.5 rounded-[5px] cursor-pointer transition-all duration-300 ease-in-out overflow-hidden
+      className={`nav-item flex items-center py-2.5 mb-1.5 rounded-[5px] cursor-pointer transition-all duration-300 ease-in-out overflow-hidden hover:bg-gray-100
         ${isActive ? '' : ''}
         ${isCollapsed ? 'px-0 justify-center' : 'px-[60px]'}`}
     >
-      <div className={`nav-icon w-[15px] h-[15px] transition-all duration-300 ease-in-out flex-shrink-0 ${isCollapsed ? 'mr-0' : 'mr-[15px]'}`}>
+      <div className={`nav-icon  w-[15px] h-[15px] transition-all duration-300 ease-in-out flex-shrink-0 ${isCollapsed ? 'mr-0' : 'mr-[15px]'}`}>
         <Image src={iconSrc} alt={altText} width={15} height={15} className="h-full w-full" />
       </div>
       <div
@@ -85,7 +85,7 @@ const Sidebar = ({ isCollapsed, activeItem, onNavItemClick }) => {
         </div>
       </div>
 
-      <nav className="nav-menu flex-grow mt-5">
+      <nav className="nav-menu flex-grow mt-5 px-2">
         {navItemsData.map((item) => (
           <NavItem
             key={item.id}
