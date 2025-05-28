@@ -116,7 +116,7 @@ export default function AdminProfilePage() {
             <div className="info-details-wrapper flex-grow flex flex-col gap-4 min-w-[300px]"> {/* Was gap-[30px] or gap-5 */}
               {/* General Information Card */}
               <div className="info-card p-3 sm:p-4 bg-white border border-num-gray-light shadow-custom-light rounded-lg"> {/* Reduced p */}
-                <div className="section-title font-semibold text-base text-num-dark-text mb-3">General information</div> {/* Was mb-5 */}
+                <div className  ="section-title font-semibold text-base text-num-dark-text mb-3">General information</div> {/* Was mb-5 */}
                 {/* Form rows will have mb-2 or mb-1.5 if needed */}
                 <div className="form-row flex gap-3 mb-2 flex-wrap"> {/* Was mb-3 */}
                   <div className="form-group flex-1 min-w-[200px]">

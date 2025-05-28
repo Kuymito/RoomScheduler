@@ -27,11 +27,11 @@ const NavItem = ({ href, iconSrc, altText, label, isActive, isCollapsed, onClick
 
 const Sidebar = ({ isCollapsed, activeItem, onNavItemClick }) => {
   const navItemsData = [
-    { id: 'dashboard', href: '#', iconSrc: '/images/dashboardicon.png', altText: 'Dashboard', label: 'Dashboard' },
-    { id: 'class', href: '#', iconSrc: '/images/classicon.png', altText: 'Class', label: 'Class' },
-    { id: 'instructor', href: '#', iconSrc: '/images/instructoricon.png', altText: 'Instructor', label: 'Instructor' },
+    { id: 'dashboard', href: 'dashboard', iconSrc: '/images/dashboardicon.png', altText: 'Dashboard', label: 'Dashboard' },
+    { id: 'class', href: 'class', iconSrc: '/images/classicon.png', altText: 'Class', label: 'Class' },
+    { id: 'instructor', href: 'instructor', iconSrc: '/images/instructoricon.png', altText: 'Instructor', label: 'Instructor' },
     { id: 'room', href: 'room', iconSrc: '/images/roomicon.png', altText: 'Room', label: 'Room' },
-    { id: 'schedule', href: '#', iconSrc: '/images/scheduleicon.png', altText: 'Schedule', label: 'Schedule' },
+    { id: 'schedule', href: 'schedule', iconSrc: '/images/scheduleicon.png', altText: 'Schedule', label: 'Schedule' },
   ];
 
   return (
