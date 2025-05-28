@@ -13,10 +13,8 @@ const LoginForm = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-
-    // Define your "correct" credentials for demonstration purposes
     const correctEmail = "admin@gmail.com";
-    const correctPassword = "password123"; // A more secure password would be ideal
+    const correctPassword = "password123";
 
     if (!email) {
       alert("Please enter your email address.");
@@ -25,20 +23,18 @@ const LoginForm = () => {
       alert("Please enter your password.");
       return;
     } else if (email !== correctEmail || password !== correctPassword) {
-      // If either email or password doesn't match the predefined correct values
       alert("Invalid email or password. Please try again.");
       return;
     } else {
-      // If credentials are correct
       alert('Login successful!');
-      // Continue your actual login logic here (e.g., API request, redirect)
+
       console.log("Logging in with:", { email, password });
     }
   };
 
   return (
     <div className="min-h-screen w-screen flex flex-col lg:flex-row">
-      {/* Left Column */}
+
       <div className="lg:w-2.5/4 w-full bg-blue-800 text-white flex items-center justify-center p-6 sm:p-8 md:p-12 lg:p-16 relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-blue-900 to-blue-700 opacity-75"></div>
         <div className="relative z-10 max-w-sm sm:max-w-md lg:max-w-lg">
