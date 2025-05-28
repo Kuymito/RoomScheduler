@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import AdminLayout from '@/components/AdminLayout';
 
-const DashboardViewContent = () => {
+const DashboardViewContent = () => {    
     return (
         <div className="p-6">
         <h1 className="text-2xl font-bold mb-4">Dashboard</h1>
@@ -11,12 +11,12 @@ const DashboardViewContent = () => {
         {/* Add more dashboard content here */}
         </div>
     );
-    };
+};
 
-    export default function AdminDashboardPage() {
-      return (
-          <AdminLayout activeItem="room" pageTitle="Room Management">
-              <DashboardViewContent/>
-          </AdminLayout>
-      );
-    }
+export default function AdminDashboardPage() {
+    return (
+        <AdminLayout activeItem="dashboard" pageTitle="Dashboard">
+            <DashboardViewContent/>
+        </AdminLayout>
+    );
+}
