@@ -11,11 +11,11 @@ const NavItem = ({ href, iconSrc, altText, label, isActive, isCollapsed, onClick
         ${isActive ? 'hover:bg-sky-100 dark:hover:bg-blue-800' : ''}
         ${isCollapsed ? 'px-0 justify-center' : 'px-[60px]'}`}
     >
-      <div className={`nav-icon  w-[15px] h-[15px] transition-all duration-300 ease-in-out flex-shrink-0 ${isCollapsed ? 'mr-0' : 'mr-[15px]'}`}>
+      <div className={`nav-icon w-[15px] h-[15px] transition-all duration-300 ease-in-out flex-shrink-0 ${isCollapsed ? 'mr-0' : 'mr-[15px]'}`}>
         <Image src={iconSrc} alt={altText} width={15} height={15} className="h-full w-full text-[#737373]" />
       </div>
       <div
-        className={`nav-text text-xs whitespace-nowrap transition-opacity duration-200 ease-in-out hover:text-g
+        className={`nav-text text-xs whitespace-nowrap transition-opacity duration-200 ease-in-out
           ${isActive ? 'text-num-blue' : 'text-[#737373] dark:text-gray-300'}
           ${isCollapsed ? 'opacity-0 max-w-0 hidden' : 'opacity-100 max-w-[150px]'}`}
       >
@@ -29,35 +29,35 @@ const Sidebar = ({ isCollapsed, activeItem, onNavItemClick }) => {
   const navItemsData = [
     { 
       id: 'dashboard', 
-      href: 'dashboard', 
+      href: '/admin/dashboard', // Changed to absolute paths for clarity
       iconSrc: '/images/dashboard.svg', 
       altText: 'Dashboard', 
       label: 'Dashboard' 
     },
     { 
       id: 'class', 
-      href: 'class', 
+      href: '/admin/class', 
       iconSrc: '/images/class.svg', 
       altText: 'Class', 
       label: 'Class' 
     },
     { 
       id: 'instructor', 
-      href: 'instructor', 
+      href: '/admin/instructor', 
       iconSrc: '/images/instructor.svg', 
       altText: 'Instructor', 
       label: 'Instructor' 
     },
     { 
       id: 'room', 
-      href: 'room', 
-      iconSrc: '/images/building.svg', 
+      href: '/admin/room', 
+      iconSrc: '/images/room.svg', 
       altText: 'Room', 
       label: 'Room'
     },
     { 
       id: 'schedule', 
-      href: 'schedule', 
+      href: '/admin/schedule', 
       iconSrc: '/images/schedule.svg', 
       altText: 'Schedule', 
       label: 'Schedule' 
@@ -67,8 +67,8 @@ const Sidebar = ({ isCollapsed, activeItem, onNavItemClick }) => {
   return (
     <div
       id="sidebar"
-      className={`sidebar bg-white  dark:bg-gray-900 shadow-custom-medium py-5 flex flex-col transition-all duration-300 ease-in-out z-40
-        ${isCollapsed ? 'w-[80px]' : 'w-[265px]'}`}
+      className={`sidebar fixed h-full bg-white dark:bg-gray-900 shadow-custom-medium py-5 flex flex-col transition-all duration-300 ease-in-out z-40`}
+      style={{ width: isCollapsed ? '80px' : '265px' }} // Dynamic width via style prop
     >
       <div className={`logo h-[50px] mb-5 flex items-center justify-center ${isCollapsed ? 'px-0' : 'px-5'}`}>
         <Image
@@ -80,18 +80,18 @@ const Sidebar = ({ isCollapsed, activeItem, onNavItemClick }) => {
           style={{ width: isCollapsed ? 0 : 'auto' }}
         />
         <span className={`logo-text-collapsed font-bold text-lg text-black ${isCollapsed ? 'block' : 'hidden'}`}>
-        <Image
-          src="/images/LOGO-NUM-1.png"
-          alt="NUM Logo"
+          <Image
+            src="/images/LOGO-NUM-1.png"
+            alt="NUM Logo"
             width={32}
             height={32}
-        />
+          />
         </span>
       </div>
       <hr className="border-t border-num-gray-light dark:border-gray-700" />
       <div className="profile-info flex flex-col items-center my-7 overflow-hidden">
         <div
-          className={`profile-avatar rounded-ful mb-2.5 flex justify-center items-center transition-all duration-300 ease-in-out
+          className={`profile-avatar rounded-full mb-2.5 flex justify-center items-center transition-all duration-300 ease-in-out
             ${isCollapsed ? 'w-10 h-10' : 'w-20 h-20'}`}
         >
           <Image

@@ -1,11 +1,13 @@
 'use client';
-import Image from 'next/image';
-import React from 'react'; // Keep React import for ref
-import ThemeToggle from './ThemeToggle';
+
+import React from 'react';
+import ThemeToggle from './ThemeToggle'; // Assuming ThemeToggle is in the same directory or adjust path
 
 const Topbar = ({ onToggleSidebar, isSidebarCollapsed, onUserIconClick, pageSubtitle, userIconRef }) => {
   return (
-    <div className="topbar bg-white dark:bg-gray-900 shadow-custom-medium p-5 flex justify-between items-center">
+    // This div assumes its parent in AdminLayout will handle fixed positioning, width, height, background, and shadow.
+    // It is just responsible for its internal layout.
+    <div className="flex justify-between items-center w-full h-full transition-all duration-300 ease-in-out"> 
       <div className="topbar-content-left flex items-center">
         <div
           id="sidebar-toggle"
@@ -21,7 +23,7 @@ const Topbar = ({ onToggleSidebar, isSidebarCollapsed, onUserIconClick, pageSubt
         </div>
       </div>
       <div className="topbar-icons flex items-center gap-4">
-        <ThemeToggle></ThemeToggle>
+        <ThemeToggle />
         <div className="icon-wrapper relative w-10 h-10 flex items-center justify-center border border-num-icon-border dark:bg-gray-800 dark:border-gray-700 p-[10px] rounded-md">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-6 text-black dark:text-white">
             <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0" />

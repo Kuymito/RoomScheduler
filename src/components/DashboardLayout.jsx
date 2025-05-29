@@ -1,4 +1,3 @@
-// components/AdminLayout.js (or a suitable path)
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -54,7 +53,7 @@ export default function DashboardLayout({ children, activeItem, pageTitle }) {
     }, [showAdminPopup]);
 
     return (
-        <div className="flex w-full min-h-screen bg-[#E2E1EF] dark:bg-gray-800">
+        <div className="flex w-full min-h-screen bg-[#E2E1EF] dark:bg-gray-800 ">
             <Sidebar
                 isCollapsed={isSidebarCollapsed}
                 activeItem={activeItem} // Use prop to highlight active item
