@@ -6,7 +6,7 @@ const ThemeToggle = () => {
   return (
     <button
       onClick={toggleTheme}
-      className="icon-wrapper relative w-10 h-10 flex items-center justify-center border border-num-icon-border p-[10px] rounded-md"
+      className="icon-wrapper relative w-10 h-10 flex items-center justify-center border border-num-icon-border dark:bg-gray-800 dark:border-gray-700 p-[10px] rounded-md"
     >
       {theme === 'light' ? 
         // Dark Mode

@@ -37,7 +37,7 @@ const Sidebar = ({ isCollapsed, activeItem, onNavItemClick }) => {
   return (
     <div
       id="sidebar"
-      className={`sidebar bg-white dark:bg-gray-900 shadow-custom-medium py-5 flex flex-col transition-all duration-300 ease-in-out z-40
+      className={`sidebar bg-white  dark:bg-gray-900 shadow-custom-medium py-5 flex flex-col transition-all duration-300 ease-in-out z-40
         ${isCollapsed ? 'w-[80px]' : 'w-[265px]'}`}
     >
       <div className={`logo h-[50px] mb-5 flex items-center justify-center ${isCollapsed ? 'px-0' : 'px-5'}`}>

@@ -10,7 +10,12 @@ import Footer from '@/components/Footer';
 import ThemeProvider from '@/components/ThemeProvider'; // Ensure this is the correct path to your ThemeProvider
 
 export default function AdminLayout({ children, activeItem, pageTitle }) {
-    const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+    const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
+        if (typeof window !== 'undefined') {
+            return localStorage.getItem('sidebarCollapsed') === 'true';
+        }
+        return false; // Default to not collapsed on server/initial render
+    });
     const [showAdminPopup, setShowAdminPopup] = useState(false);
     const [showLogoutAlert, setShowLogoutAlert] = useState(false);
     
@@ -22,6 +27,13 @@ export default function AdminLayout({ children, activeItem, pageTitle }) {
 
     const adminPopupRef = useRef(null);
     const userIconRef = useRef(null);
+
+    // Effect to save collapse state to localStorage whenever it changes
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            localStorage.setItem('sidebarCollapsed', isSidebarCollapsed);
+        }
+    }, [isSidebarCollapsed]);
 
     const toggleSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
     const handleUserIconClick = (event) => { event.stopPropagation(); setShowAdminPopup(!showAdminPopup); };
