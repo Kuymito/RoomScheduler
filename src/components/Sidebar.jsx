@@ -12,7 +12,7 @@ const NavItem = ({ href, iconSrc, altText, label, isActive, isCollapsed, onClick
         ${isCollapsed ? 'px-0 justify-center' : 'px-[60px]'}`}
     >
       <div className={`nav-icon  w-[15px] h-[15px] transition-all duration-300 ease-in-out flex-shrink-0 ${isCollapsed ? 'mr-0' : 'mr-[15px]'}`}>
-        <Image src={iconSrc} alt={altText} width={15} height={15} className="h-full w-full" />
+        <Image src={iconSrc} alt={altText} width={15} height={15} className="h-full w-full text-[#737373]" />
       </div>
       <div
         className={`nav-text text-xs whitespace-nowrap transition-opacity duration-200 ease-in-out hover:text-g
@@ -27,11 +27,41 @@ const NavItem = ({ href, iconSrc, altText, label, isActive, isCollapsed, onClick
 
 const Sidebar = ({ isCollapsed, activeItem, onNavItemClick }) => {
   const navItemsData = [
-    { id: 'dashboard', href: 'dashboard', iconSrc: '/images/dashboardicon.png', altText: 'Dashboard', label: 'Dashboard' },
-    { id: 'class', href: 'class', iconSrc: '/images/classicon.png', altText: 'Class', label: 'Class' },
-    { id: 'instructor', href: 'instructor', iconSrc: '/images/instructoricon.png', altText: 'Instructor', label: 'Instructor' },
-    { id: 'room', href: 'room', iconSrc: '/images/roomicon.png', altText: 'Room', label: 'Room' },
-    { id: 'schedule', href: 'schedule', iconSrc: '/images/scheduleicon.png', altText: 'Schedule', label: 'Schedule' },
+    { 
+      id: 'dashboard', 
+      href: 'dashboard', 
+      iconSrc: '/images/dashboard.svg', 
+      altText: 'Dashboard', 
+      label: 'Dashboard' 
+    },
+    { 
+      id: 'class', 
+      href: 'class', 
+      iconSrc: '/images/class.svg', 
+      altText: 'Class', 
+      label: 'Class' 
+    },
+    { 
+      id: 'instructor', 
+      href: 'instructor', 
+      iconSrc: '/images/instructor.svg', 
+      altText: 'Instructor', 
+      label: 'Instructor' 
+    },
+    { 
+      id: 'room', 
+      href: 'room', 
+      iconSrc: '/images/building.svg', 
+      altText: 'Room', 
+      label: 'Room'
+    },
+    { 
+      id: 'schedule', 
+      href: 'schedule', 
+      iconSrc: '/images/schedule.svg', 
+      altText: 'Schedule', 
+      label: 'Schedule' 
+    },
   ];
 
   return (
@@ -65,7 +95,7 @@ const Sidebar = ({ isCollapsed, activeItem, onNavItemClick }) => {
             ${isCollapsed ? 'w-10 h-10' : 'w-20 h-20'}`}
         >
           <Image
-            src="/images/kok.png"
+            src="/images/admin.jpg"
             alt="Admin Avatar"
             width={isCollapsed ? 32 : 60}
             height={isCollapsed ? 32 : 60}

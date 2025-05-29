@@ -124,24 +124,23 @@ const RoomViewContent = () => {
     const floors = buildings[selectedBuilding] || [];
 
     // Style definitions based on spec for readability
-    const textLabelRoom = "font-medium text-base leading-7 text-[#323539] tracking-[-0.01em]";
-    const textValueRoomDisplay = "font-medium text-base leading-7 text-[#323539] tracking-[-0.01em]";
+    const textLabelRoom = "font-medium text-base leading-7 text-[#323539] dark:text-gray-400 tracking-[-0.01em]";
+    const textValueRoomDisplay = "font-medium text-base leading-7 text-[#323539] dark:text-gray-400 tracking-[-0.01em]";
     
-    const textLabelDefault = "font-medium text-sm leading-6 text-[#323539] tracking-[-0.01em]";
-    const textValueDefaultDisplay = "font-medium text-sm leading-6 text-[#323539] tracking-[-0.01em]";
+    const textLabelDefault = "font-medium text-sm leading-6 text-[#323539] dark:text-gray-400 tracking-[-0.01em]";
+    const textValueDefaultDisplay = "font-medium text-sm leading-6 text-[#323539] dark:text-gray-400 tracking-[-0.01em]";
     
     const inputContainerSizeDefault = "w-[132px] h-[40px]";
-    const inputStyle = "py-[9px] px-3 w-full h-full bg-[#F8F9FB] border border-[#E5E5E7] rounded-[6px] font-normal text-sm leading-[22px] text-gray-800 placeholder:text-[#858C95] focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600";
+    const inputStyle = "py-[9px] px-3 w-full h-full bg-[#F8F9FB] dark:bg-gray-700 border border-[#E5E5E7] dark:border-gray-500 rounded-[6px] font-normal text-sm leading-[22px] text-gray-800 dark:text-gray-300 placeholder:text-[#858C95] focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600";
     
     const equipmentInputContainerSize = "w-[132px] h-[72px]";
-    const textareaStyle = "py-[14px] px-4 w-full h-full bg-[#F8F9FB] border border-[#E5E5E7] rounded-[6px] font-normal text-sm leading-[22px] text-gray-800 placeholder:text-[#858C95] resize-none focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600";
-
+    const textareaStyle = "py-[14px] px-4 w-full h-full bg-[#F8F9FB] dark:bg-gray-700 border border-[#E5E5E7] dark:border-gray-500 rounded-[6px] font-normal text-sm leading-[22px] text-gray-800 dark:text-gray-300 placeholder:text-[#858C95] resize-none focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 scrollbar-thin scrollbar-gray-500 dark:scrollbar-gray-600";
 
     return (
       <>
         <div className='p-6 dark:text-white'>
           <div className="mb-4">
-            <h2 className="text-lg font-medium text-black">Room</h2>
+            <h2 className="text-lg font-medium text-black dark:text-white">Room</h2>
             <hr className="border-t border-gray-200 mt-3" />
           </div>
           <div className="flex flex-col lg:flex-row gap-6">
@@ -151,7 +150,7 @@ const RoomViewContent = () => {
                 <select
                   value={selectedBuilding}
                   onChange={handleBuildingChange}
-                  className="text-xs font-semibold text-black bg-white border border-gray-300 rounded-md px-2 py-1"
+                  className="text-xs font-semibold text-black bg-white border border-gray-300 dark:text-white dark:bg-gray-800 dark:border-gray-700 rounded-md px-2 py-1"
                 >
                   {Object.keys(buildings).map((building) => (
                     <option key={building} value={building}>
@@ -166,7 +165,7 @@ const RoomViewContent = () => {
                   <div key={floor} className="space-y-4">
                     <div className="floor-section">
                       <div className="flex items-center gap-1.5 mb-2.5">
-                        <h4 className="text-[8px] font-normal text-black whitespace-nowrap">
+                        <h4 className="text-[11px] font-normal text-black dark:text-white whitespace-nowrap">
                           Floor {floor}
                         </h4>
                         <hr className="flex-1 border-t border-gray-300" />
@@ -178,17 +177,17 @@ const RoomViewContent = () => {
                             className={`h-[100px] border ${
                               selectedRoom === roomId && !isEditing
                                 ? "border-blue-600"
-                                : "border-[rgba(0,0,0,0.3)]"
+                                : "border-[rgba(0,0,0,0.3)] dark:border-gray-700"
                             } rounded-[4px] flex flex-col cursor-pointer`}
                             onClick={() => handleRoomClick(roomId)}
                           >
-                            <div className="h-[30px] bg-white rounded-t-[3px] flex items-center justify-center px-2 relative">
+                            <div className="h-[30px] bg-white dark:bg-gray-800 rounded-t-[3px] flex items-center justify-center px-2 relative">
                               <div className="absolute left-1.5 top-1.5 w-1.5 h-1.5 bg-[#48AA2B] rounded-full"></div>
                               <span className="text-[13px] font-medium text-[#696969]">
                                 {allRoomsData[roomId]?.name || roomId}
                               </span>
                             </div>
-                            <div className="flex-1 bg-[#E5E5E7] rounded-b-[3px] border-b border-[#B3B3B3]"></div>
+                            <div className="flex-1 bg-[#E5E5E7] dark:bg-gray-600 rounded-b-[3px]"></div>
                           </div>
                         ))}
                       </div>
@@ -200,24 +199,24 @@ const RoomViewContent = () => {
             {/* Details Panel - Styled according to Frame 1321314803 spec */}
             <div className="w-full lg:w-[304px] shrink-0"> {/* Main container for details section */}
               <div className="flex items-center gap-1.5 mb-4"> {/* Title "Details" + hr - This is from original code, kept above the new spec frame */}
-                <h3 className="text-xs font-semibold text-black">Details</h3>
+                <h3 className="text-xs font-semibold text-black dark:text-white">Details</h3>
                 <hr className="flex-1 border-t border-gray-300" />
               </div>
               {/* Frame 1321314803 equivalent: container for table and button */}
               <div className="flex flex-col items-start gap-[32px] w-[304px] h-[406px]">
                   {loading && !isEditing ? (
-                      <div className="text-center text-gray-500 w-full h-[320px] flex items-center justify-center">Loading room details...</div>
+                      <div className="text-center text-gray-500 dark:text-gray-300 w-full h-[320px] flex items-center justify-center">Loading room details...</div>
                   ) : roomDetails ? (
                       // Tabel container (from spec)
                       <div className="flex flex-col items-start self-stretch w-[304px] h-[320px]">
                           {/* Tabel (from spec) */}
-                          <div className="box-border flex flex-col items-start self-stretch w-full h-full bg-white border border-[#E5E5E7] shadow-[0px_1px_2px_rgba(16,24,40,0.04)] rounded-[5px] overflow-y-auto">
+                          <div className="box-border flex flex-col items-start self-stretch w-full h-full bg-white border border-[#E5E5E7] dark:bg-gray-800 dark:border-gray-700 shadow-[0px_1px_2px_rgba(16,24,40,0.04)] rounded-[5px] overflow-y-auto">
                               {/* --- Room Row --- */}
                               <div className="flex flex-row items-center self-stretch w-full h-[60px]">
-                                  <div className="box-border flex flex-col justify-center items-start p-4 w-[152px] h-full border-b border-[#E5E5E7] flex-1">
+                                  <div className="box-border flex flex-col justify-center items-start p-4 w-[152px] h-full border-b border-[#E5E5E7] dark:border-gray-700 flex-1">
                                       <span className={textLabelRoom}>Room</span>
                                   </div>
-                                  <div className="box-border flex flex-col justify-center items-start px-[10px] w-[152px] h-full border-b border-[#E5E5E7] flex-1">
+                                  <div className="box-border flex flex-col justify-center items-start px-[10px] w-[152px] h-full border-b border-[#E5E5E7] dark:border-gray-700 flex-1">
                                       {isEditing && editableRoomDetails ? (
                                           <div className={`flex flex-col items-start self-stretch ${inputContainerSizeDefault}`}>
                                               <input type="text" name="name" value={editableRoomDetails.name} onChange={handleInputChange} className={inputStyle} />
@@ -227,10 +226,10 @@ const RoomViewContent = () => {
                               </div>
                               {/* --- Building Row --- */}
                               <div className="flex flex-row items-center self-stretch w-full h-[56px]">
-                                  <div className="box-border flex flex-col justify-center items-start p-4 w-[152px] h-full border-b border-[#E5E5E7] flex-1">
+                                  <div className="box-border flex flex-col justify-center items-start p-4 w-[152px] h-full border-b border-[#E5E5E7] dark:border-gray-700 flex-1">
                                       <span className={textLabelDefault}>Building</span>
                                   </div>
-                                  <div className="box-border flex flex-col justify-center items-start px-[10px] w-[152px] h-full border-b border-[#E5E5E7] flex-1">
+                                  <div className="box-border flex flex-col justify-center items-start px-[10px] w-[152px] h-full border-b border-[#E5E5E7] dark:border-gray-700 flex-1">
                                       {isEditing && editableRoomDetails ? (
                                           <div className={`flex flex-col items-start self-stretch ${inputContainerSizeDefault}`}>
                                               <input type="text" name="building" value={editableRoomDetails.building} onChange={handleInputChange} className={inputStyle} />
@@ -240,10 +239,10 @@ const RoomViewContent = () => {
                               </div>
                               {/* --- Floor Row --- */}
                               <div className="flex flex-row items-center self-stretch w-full h-[56px]">
-                                  <div className="box-border flex flex-col justify-center items-start p-4 w-[152px] h-full border-b border-[#E5E5E7] flex-1">
+                                  <div className="box-border flex flex-col justify-center items-start p-4 w-[152px] h-full border-b border-[#E5E5E7] dark:border-gray-700 flex-1">
                                       <span className={textLabelDefault}>Floor</span>
                                   </div>
-                                  <div className="box-border flex flex-col justify-center items-start px-[10px] w-[152px] h-full border-b border-[#E5E5E7] flex-1">
+                                  <div className="box-border flex flex-col justify-center items-start px-[10px] w-[152px] h-full border-b border-[#E5E5E7] dark:border-gray-700 flex-1">
                                       {isEditing && editableRoomDetails ? (
                                           <div className={`flex flex-col items-start self-stretch ${inputContainerSizeDefault}`}>
                                               <input type="number" name="floor" value={editableRoomDetails.floor} onChange={handleInputChange} className={inputStyle} />
@@ -254,10 +253,10 @@ const RoomViewContent = () => {
           
                               {/* --- Capacity Row --- */}
                               <div className="flex flex-row items-center self-stretch w-full h-[56px]">
-                                  <div className="box-border flex flex-col justify-center items-start p-4 w-[152px] h-full border-b border-[#E5E5E7] flex-1">
+                                  <div className="box-border flex flex-col justify-center items-start p-4 w-[152px] h-full border-b border-[#E5E5E7] dark:border-gray-700 flex-1">
                                       <span className={textLabelDefault}>Capacity</span>
                                   </div>
-                                  <div className="box-border flex flex-col justify-center items-start px-[10px] w-[152px] h-full border-b border-[#E5E5E7] flex-1">
+                                  <div className="box-border flex flex-col justify-center items-start px-[10px] w-[152px] h-full border-b border-[#E5E5E7] dark:border-gray-700 flex-1">
                                       {isEditing && editableRoomDetails ? (
                                           <div className={`flex flex-col items-start self-stretch ${inputContainerSizeDefault}`}>
                                               <input type="number" name="capacity" value={editableRoomDetails.capacity} onChange={handleInputChange} className={inputStyle} />
@@ -267,10 +266,10 @@ const RoomViewContent = () => {
                               </div>
                               {/* --- Equipment Row --- */}
                               <div className="flex flex-row items-center self-stretch w-full h-[92px]"> {/* Taller row */}
-                                  <div className="box-border flex flex-col justify-center items-start p-4 w-[152px] h-full border-b border-[#E5E5E7] flex-1"> {/* Spec implies border-bottom on all .Web Tabel Base */}
+                                  <div className="box-border flex flex-col justify-center items-start p-4 w-[152px] h-full border-b border-[#E5E5E7] dark:border-gray-700 flex-1"> {/* Spec implies border-bottom on all .Web Tabel Base */}
                                       <span className={textLabelDefault}>Equipment</span>
                                   </div>
-                                  <div className="box-border flex flex-col justify-center items-start px-[10px] w-[152px] h-full border-b border-[#E5E5E7] flex-1">
+                                  <div className="box-border flex flex-col justify-center items-start px-[10px] w-[152px] h-full border-b border-[#E5E5E7] dark:border-gray-700 flex-1">
                                       {isEditing && editableRoomDetails ? (
                                           <div className={`flex flex-col items-start self-stretch ${equipmentInputContainerSize}`}>
                                               <textarea name="equipment" value={editableRoomDetails.equipment} onChange={handleInputChange} className={textareaStyle} placeholder="Item1, Item2, ..."></textarea>
