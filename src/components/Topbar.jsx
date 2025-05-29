@@ -1,35 +1,40 @@
 'use client';
 import Image from 'next/image';
 import React from 'react'; // Keep React import for ref
+import ThemeToggle from './ThemeToggle';
 
 const Topbar = ({ onToggleSidebar, isSidebarCollapsed, onUserIconClick, pageSubtitle, userIconRef }) => {
   return (
-    <div className="topbar bg-white shadow-custom-medium p-5 flex justify-between items-center">
+    <div className="topbar bg-white dark:bg-gray-900 shadow-custom-medium p-5 flex justify-between items-center">
       <div className="topbar-content-left flex items-center">
         <div
           id="sidebar-toggle"
-          className="sidebar-toggle-btn text-xl cursor-pointer mr-4 p-2 rounded hover:bg-gray-100 select-none leading-none"
+          className="sidebar-toggle-btn text-xl cursor-pointer mr-4 p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 select-none leading-none"
           title={isSidebarCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
           onClick={onToggleSidebar}
         >
           {isSidebarCollapsed ? <span dangerouslySetInnerHTML={{ __html: '&#x2715;' }} /> : <span dangerouslySetInnerHTML={{ __html: '&#9776;' }} />}
         </div>
-        <div className="page-title font-medium text-xl text-black">
+        <div className="page-title font-medium text-xl text-black dark:text-white">
           National University of Management
           <p className="dashboard text-sm font-normal text-blue-600 mt-1">{pageSubtitle}</p>
         </div>
       </div>
       <div className="topbar-icons flex items-center gap-4">
+        <ThemeToggle></ThemeToggle>
         <div className="icon-wrapper relative w-10 h-10 flex items-center justify-center border border-num-icon-border p-[10px] rounded-md">
-          <Image src="/images/bell.png" alt="Notifications" width={20} height={20} className="h-5 w-5" />
-          <div className="notification-badge absolute w-2 h-2 bg-num-red rounded-full top-[5px] right-[5px]"></div>
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-6 text-black dark:text-white">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0" />
+          </svg>
         </div>
         <div
           ref={userIconRef}
           className="user-icon relative w-10 h-10 flex items-center justify-center border border-num-icon-border p-[10px] rounded-md cursor-pointer"
           onClick={onUserIconClick}
         >
-          <Image src="/images/icon.png" alt="User Menu" width={20} height={20} className="h-5 w-5" />
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-6 text-black dark:text-white">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
+          </svg>
         </div>
       </div>
     </div>

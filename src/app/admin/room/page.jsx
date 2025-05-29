@@ -139,7 +139,7 @@ const RoomViewContent = () => {
 
     return (
       <>
-        <div className='p-6'>
+        <div className='p-6 dark:text-white'>
           <div className="mb-4">
             <h2 className="text-lg font-medium text-black">Room</h2>
             <hr className="border-t border-gray-200 mt-3" />

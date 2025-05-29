@@ -7,6 +7,7 @@ import Topbar from '@/components/Topbar';
 import AdminPopup from 'src/app/admin/profile/components/AdminPopup'; // Adjust path if AdminPopup is more general
 import LogoutAlert from '@/components/LogoutAlert';
 import Footer from '@/components/Footer';
+import ThemeProvider from '@/components/ThemeProvider'; // Ensure this is the correct path to your ThemeProvider
 
 export default function AdminLayout({ children, activeItem, pageTitle }) {
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -54,30 +55,32 @@ export default function AdminLayout({ children, activeItem, pageTitle }) {
     }, [showAdminPopup]);
 
     return (
-        <div className="flex w-full min-h-screen bg-[#E2E1EF]">
-            <Sidebar
-                isCollapsed={isSidebarCollapsed}
-                activeItem={activeItem} // Use prop to highlight active item
-                onNavItemClick={handleNavItemClick} // Sidebar would ideally use Next.js <Link>
-            />
-            <div className={`main-content flex-grow flex flex-col transition-all duration-300 ease-in-out`}>
-                <Topbar
-                    onToggleSidebar={toggleSidebar}
-                    isSidebarCollapsed={isSidebarCollapsed}
-                    onUserIconClick={handleUserIconClick}
-                    pageSubtitle={pageTitle} // Use prop for the page title
-                    userIconRef={userIconRef}
+        <>
+            <div className="flex w-full min-h-screen bg-[#E2E1EF] dark:bg-gray-800">
+                <Sidebar
+                    isCollapsed={isSidebarCollapsed}
+                    activeItem={activeItem} // Use prop to highlight active item
+                    onNavItemClick={handleNavItemClick} // Sidebar would ideally use Next.js <Link>
                 />
-                <main className="content-area flex-grow p-3 m-6 bg-white rounded-lg shadow-md">
-                    {children} {/* This is where the specific page content will go */}
-                </main>
-                <Footer />
-            </div>
+                <div className={`main-content flex-grow flex flex-col transition-all duration-300 ease-in-out`}>
+                    <Topbar
+                        onToggleSidebar={toggleSidebar}
+                        isSidebarCollapsed={isSidebarCollapsed}
+                        onUserIconClick={handleUserIconClick}
+                        pageSubtitle={pageTitle} // Use prop for the page title
+                        userIconRef={userIconRef}
+                    />
+                    <main className="content-area flex-grow p-3 m-6 bg-white dark:bg-gray-900 rounded-lg shadow-md">
+                        {children} {/* This is where the specific page content will go */}
+                    </main>
+                    <Footer />
+                </div>
 
-            <div ref={adminPopupRef}>
-                <AdminPopup show={showAdminPopup} onLogoutClick={handleLogoutClick} />
+                <div ref={adminPopupRef}>
+                    <AdminPopup show={showAdminPopup} onLogoutClick={handleLogoutClick} />
+                </div>
+                <LogoutAlert show={showLogoutAlert} onClose={handleCloseLogoutAlert} onConfirmLogout={handleConfirmLogout} />
             </div>
-            <LogoutAlert show={showLogoutAlert} onClose={handleCloseLogoutAlert} onConfirmLogout={handleConfirmLogout} />
-        </div>
+        </>
     );
 }

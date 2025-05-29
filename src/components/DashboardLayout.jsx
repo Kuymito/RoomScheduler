@@ -54,7 +54,7 @@ export default function DashboardLayout({ children, activeItem, pageTitle }) {
     }, [showAdminPopup]);
 
     return (
-        <div className="flex w-full min-h-screen bg-[#E2E1EF]">
+        <div className="flex w-full min-h-screen bg-[#E2E1EF] dark:bg-gray-800">
             <Sidebar
                 isCollapsed={isSidebarCollapsed}
                 activeItem={activeItem} // Use prop to highlight active item

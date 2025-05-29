@@ -183,7 +183,7 @@ const ProfileContent = () => {
 
   return (
     <>
-      <div className='p-6'>
+      <div className='p-6 dark:text-white'>
         <div className="section-title font-semibold text-lg text-num-dark-text mb-4">
           Profile
         </div>
