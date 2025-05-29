@@ -141,7 +141,7 @@ const RoomViewContent = () => {
       <>
         <div className='p-6'>
           <div className="mb-4">
-            <h2 className="text-base font-medium text-black">Room</h2>
+            <h2 className="text-lg font-medium text-black">Room</h2>
             <hr className="border-t border-gray-200 mt-3" />
           </div>
           <div className="flex flex-col lg:flex-row gap-6">
