@@ -6,6 +6,7 @@ const ClassViewContent = () => {
         <h1 className="text-lg font-bold mb-4">Class</h1>
         <hr className="border-t border-gray-200 mt-4 mb-4" />
         <p>Welcome to the admin class. view class, and more.</p>
+        <h1>Hello</h1>
         {/* Add more dashboard content here */}
         </div>
     );

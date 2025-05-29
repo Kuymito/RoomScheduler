@@ -37,7 +37,7 @@ const Sidebar = ({ isCollapsed, activeItem, onNavItemClick }) => {
   return (
     <div
       id="sidebar"
-      className={`sidebar bg-white shadow-custom-medium py-5 flex flex-col transition-all duration-300 ease-in-out z-40
+      className={`sidebar bg-white dark:bg-slate-700 shadow-custom-medium py-5 flex flex-col transition-all duration-300 ease-in-out z-40
         ${isCollapsed ? 'w-[80px]' : 'w-[265px]'}`}
     >
       <div className={`logo h-[50px] mb-5 flex items-center justify-center ${isCollapsed ? 'px-0' : 'px-5'}`}>
@@ -76,10 +76,10 @@ const Sidebar = ({ isCollapsed, activeItem, onNavItemClick }) => {
           className={`profile-texts-wrapper transition-opacity duration-200 ease-in-out
             ${isCollapsed ? 'opacity-0 max-w-0 h-0 overflow-hidden' : 'opacity-100 max-w-full'}`}
         >
-          <div className="profile-name text-center font-semibold text-base text-black mb-1 whitespace-nowrap">
+          <div className="profile-name text-center font-semibold text-base text-black dark: text-white mb-1 whitespace-nowrap">
             Admin
           </div>
-          <div className="profile-email text-center text-[10px] text-num-gray whitespace-nowrap">
+          <div className="profile-email text-center text-[10px] text-num-gray dark: text-white whitespace-nowrap">
             admin@gmail.com
           </div>
         </div>
