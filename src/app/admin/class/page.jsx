@@ -326,24 +326,6 @@ const ClassViewContent = () => {
             {/* Pagination Controls */}
             {filteredClassData.length > 0 && (
                 <nav className="flex flex-col md:flex-row items-center justify-between pt-4 gap-4" aria-label="Table navigation">
-                    <div className="flex items-center gap-2">
-                        <label htmlFor="items-per-page" className="text-sm font-normal text-gray-500 dark:text-gray-400">
-                            Items per page:
-                        </label>
-                        <select
-                            id="items-per-page"
-                            value={itemsPerPage}
-                            onChange={handleItemsPerPageChange}
-                            className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                        >
-                            {itemsPerPageOptions.map((option) => (
-                                <option key={option} value={option}>
-                                    {option}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-
                     <span className="text-sm font-normal text-gray-500 dark:text-gray-400">
                         Showing{' '}
                         <span className="font-semibold text-gray-900 dark:text-white">
@@ -358,6 +340,25 @@ const ClassViewContent = () => {
                             {filteredClassData.length}
                         </span>
                     </span>
+
+                    <div className="flex items-center gap-2">
+                        <label htmlFor="items-per-page" className="text-sm font-normal text-gray-500 dark:text-gray-400">
+                            Items per page:
+                        </label>
+                        <select
+                            id="items-per-page"
+                            value={itemsPerPage}
+                            onChange={handleItemsPerPageChange}
+                            className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-full focus:ring-blue-500 focus:border-blue-500 px-2 py-1 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                        >
+                            {itemsPerPageOptions.map((option) => (
+                                <option key={option} value={option}>
+                                    {option}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                    
                     <ul className="inline-flex -space-x-px text-sm h-8">
                         <li>
                             <button
