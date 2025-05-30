@@ -7,7 +7,7 @@ const Topbar = ({ onToggleSidebar, isSidebarCollapsed, onUserIconClick, pageSubt
   return (
     // This div assumes its parent in AdminLayout will handle fixed positioning, width, height, background, and shadow.
     // It is just responsible for its internal layout.
-    <div className="flex justify-between items-center w-full h-full transition-all duration-300 ease-in-out"> 
+    <div className="flex justify-between items-center w-full h-full"> 
       <div className="topbar-content-left flex items-center">
         <div
           id="sidebar-toggle"

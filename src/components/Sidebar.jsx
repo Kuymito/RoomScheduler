@@ -7,7 +7,7 @@ const NavItem = ({ href, iconSrc, altText, label, isActive, isCollapsed, onClick
   <Link href={href} passHref legacyBehavior>
     <a
       onClick={onClick}
-      className={`nav-item flex items-center py-2.5 mb-1.5 rounded-[5px] cursor-pointer transition-all duration-300 ease-in-out overflow-hidden hover:bg-gray-100 dark:hover:bg-gray-800
+      className={`nav-item flex items-center py-2.5 mb-1.5 rounded-[5px] cursor-pointer overflow-hidden transition-all duration-150 ease-in-out hover:bg-gray-100 dark:hover:bg-gray-800
         ${isActive ? 'hover:bg-sky-100 dark:hover:bg-blue-800' : ''}
         ${isCollapsed ? 'px-0 justify-center' : 'px-[60px]'}`}
     >
@@ -15,7 +15,7 @@ const NavItem = ({ href, iconSrc, altText, label, isActive, isCollapsed, onClick
         <Image src={iconSrc} alt={altText} width={15} height={15} className="h-full w-full text-[#737373]" />
       </div>
       <div
-        className={`nav-text text-xs whitespace-nowrap transition-opacity duration-200 ease-in-out
+        className={`nav-text text-xs whitespace-nowrap transition-all duration-150 ease-in-out
           ${isActive ? 'text-num-blue' : 'text-[#737373] dark:text-gray-300'}
           ${isCollapsed ? 'opacity-0 max-w-0 hidden' : 'opacity-100 max-w-[150px]'}`}
       >
@@ -91,7 +91,7 @@ const Sidebar = ({ isCollapsed, activeItem, onNavItemClick }) => {
       <hr className="border-t border-num-gray-light dark:border-gray-700" />
       <div className="profile-info flex flex-col items-center my-7 overflow-hidden">
         <div
-          className={`profile-avatar rounded-full mb-2.5 flex justify-center items-center transition-all duration-300 ease-in-out
+          className={`profile-avatar rounded-full mb-2.5 flex justify-center items-center
             ${isCollapsed ? 'w-10 h-10' : 'w-20 h-20'}`}
         >
           <Image
