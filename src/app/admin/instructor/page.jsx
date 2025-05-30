@@ -1,35 +1,66 @@
 'use client';
 
-import { useState, useMemo } from 'react'; // Removed useEffect
-import Image from 'next/image';
+import { useState, useMemo } from 'react';
 import AdminLayout from '@/components/AdminLayout';
+import InstructorCreatePopup from './components/InstructorCreatePopup';
+
+// Default Avatar Icon component for when no image is available
+const DefaultAvatarIcon = ({ className = "w-8 h-8" }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-8 border border-gray-300 rounded-full p-1 dark:border-gray-600">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
+    </svg>
+
+);
+
 
 const InstructorViewContent = () => {
-    // --- Initial Data (only used if no data in local storage) ---
-    const defaultInstructorData = [
-        { id: 1, name: 'John Doe', phone: '012345678', degrees: 'Ph.D. Computer Science', major: 'IT', status: 'active', imageSrc: '/images/admin.jpg' },
-        { id: 2, name: 'Korng Sovanreach', phone: '098765432', degrees: 'M.Sc. Data Science', major: 'CS', status: 'active', imageSrc: '/images/reach.jpg' },
-        { id: 3, name: 'Uy Chakriya', phone: '077123456', degrees: 'B.Eng. Software Engineering', major: 'SE', status: 'archived', imageSrc: '/images/chakriya.png' },
-        { id: 4, name: 'Touch Vengkorng', phone: '010987654', degrees: 'Ph.D. Artificial Intelligence', major: 'AI', status: 'active', imageSrc: '/images/vengkorng.png' },
-        { id: 5, name: 'Bun Menghong', phone: '088112233', degrees: 'M.B.A. Information Systems', major: 'IS', status: 'active', imageSrc: '/images/menghong.png' },
-        { id: 6, name: 'seang Hai', phone: '066223344', degrees: 'Ph.D. Cybersecurity', major: 'Cybersecurity', status: 'active', imageSrc: '/images/hai.png' },
-        { id: 7, name: 'P A N H A', phone: '055334455', degrees: 'M.Sc. Cloud Computing', major: 'Cloud', status: 'archived', imageSrc: '/images/panha.png' },
+    // --- Data ---
+    const initialInstructorData = [
+        { id: 1, name: 'Sok Mean', firstName: 'Sok', lastName: 'Mean', email: 'sok.mean@example.com', phone: '012345678', majorStudied: 'Computer Science', qualifications: 'PhD', status: 'active', profileImage: 'https://i.pravatar.cc/150?img=68' },
+        { id: 2, name: 'Sok Chan', firstName: 'Sok', lastName: 'Chan', email: 'sok.chan@example.com', phone: '012345679', majorStudied: 'Information Technology', qualifications: 'Master', status: 'active', profileImage: 'https://i.pravatar.cc/150?img=52' },
+        { id: 3, name: 'Dara Kim', firstName: 'Dara', lastName: 'Kim', email: 'dara.kim@example.com', phone: '012345680', majorStudied: 'Information Systems', qualifications: 'Professor', status: 'active', profileImage: null }, // No image
+        { id: 4, name: 'Lina Heng', firstName: 'Lina', lastName: 'Heng', email: 'lina.heng@example.com', phone: '012345681', majorStudied: 'Artificial Intelligence', qualifications: 'PhD', status: 'archived', profileImage: 'https://i.pravatar.cc/150?img=25' },
+        { id: 5, name: 'Virak Chea', firstName: 'Virak', lastName: 'Chea', email: 'virak.chea@example.com', phone: '012345682', majorStudied: 'Data Science', qualifications: 'Master', status: 'active', profileImage: 'https://i.pravatar.cc/150?img=33' },
+        { id: 6, name: 'Sophea Nov', firstName: 'Sophea', lastName: 'Nov', email: 'sophea.nov@example.com', phone: '012345683', majorStudied: 'Machine Learning', qualifications: 'Lecturer', status: 'active', profileImage: null }, // No image
+        { id: 7, name: 'Chanthy Pen', firstName: 'Chanthy', lastName: 'Pen', email: 'chanthy.pen@example.com', phone: '012345684', majorStudied: 'Data Analytics', qualifications: 'Associate Professor', status: 'active', profileImage: 'https://i.pravatar.cc/150?img=17' },
+        { id: 8, name: 'Vicheka Sreng', firstName: 'Vicheka', lastName: 'Sreng', email: 'vicheka.sreng@example.com', phone: '012345685', majorStudied: 'Software Engineering', qualifications: 'PhD', status: 'archived', profileImage: 'https://i.pravatar.cc/150?img=41' },
     ];
 
-    // Initialize state directly with default data, no longer checking Local Storage
-    const [instructorData, setInstructorData] = useState(defaultInstructorData);
+    const [instructorData, setInstructorData] = useState(initialInstructorData);
 
-    // Removed useEffect that saved instructorData to Local Storage
+    // --- Popup Form State for Instructor ---
+    const [showCreateInstructorPopup, setShowCreateInstructorPopup] = useState(false);
+
+    const handleCreateInstructorClick = () => {
+        setShowCreateInstructorPopup(true);
+    };
+
+    const handleCloseInstructorPopup = () => {
+        setShowCreateInstructorPopup(false);
+    };
+
+    // This function will be passed to the InstructorCreatePopup to handle saving new instructor data
+    const handleSaveNewInstructor = (newInstructorData) => {
+        const newId = instructorData.length > 0 ? Math.max(...instructorData.map(item => item.id)) + 1 : 1;
+        const newInstructorWithStatus = {
+            id: newId,
+            ...newInstructorData,
+            status: 'active', // New instructors default to active
+        };
+
+        setInstructorData(prevData => [...prevData, newInstructorWithStatus]);
+        setCurrentPage(1); // Reset page after adding a new instructor
+    };
 
     // --- Status Filter State ---
-    const [statusFilter, setStatusFilter] = useState('active');
+    const [statusFilter, setStatusFilter] = useState('active'); // 'active', 'archived', or 'all'
 
     // --- Sorting State and Logic ---
     const [sortColumn, setSortColumn] = useState(null);
-    const [sortDirection, setSortDirection] = useState('asc');
+    const [sortDirection, setSortDirection] = useState('asc'); // 'asc' or 'desc'
 
     const handleSort = (column) => {
-        setCurrentPage(1);
+        setCurrentPage(1); // Reset to first page when sorting changes
         if (sortColumn === column) {
             setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
         } else {
@@ -77,10 +108,10 @@ const InstructorViewContent = () => {
     // --- Search State and Logic ---
     const [searchTexts, setSearchTexts] = useState({
         name: '',
+        email: '',
         phone: '',
-        degrees: '',
-        major: '',
-        status: '',
+        majorStudied: '', // Changed from 'department'
+        qualifications: '',
     });
 
     const handleSearchChange = (column, value) => {
@@ -88,7 +119,7 @@ const InstructorViewContent = () => {
             ...prev,
             [column]: value,
         }));
-        setCurrentPage(1);
+        setCurrentPage(1); // Reset to first page on search
     };
 
     const filteredInstructorData = useMemo(() => {
@@ -137,7 +168,7 @@ const InstructorViewContent = () => {
     const handleItemsPerPageChange = (event) => {
         const newItemsPerPage = parseInt(event.target.value, 10);
         setItemsPerPage(newItemsPerPage);
-        setCurrentPage(1);
+        setCurrentPage(1); // Reset to first page when items per page changes
     };
 
     const getPageNumbers = () => {
@@ -165,10 +196,9 @@ const InstructorViewContent = () => {
                     : item
             )
         );
-        setCurrentPage(1);
+        setCurrentPage(1); // Reset page after status change
     };
 
-    // SVG icon for archive/activate - using the same one for consistency
     const EditIcon = ({ className = "w-[17px] h-[17px]" }) => (
         <svg className={className} width="17" height="17" viewBox="0 0 17 17" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M8.06671 2.125H4.95837C3.00254 2.125 2.12504 3.0025 2.12504 4.95833V12.0417C2.12504 13.9975 3.00254 14.875 4.95837 14.875H12.0417C13.9975 14.875 14.875 13.9975 14.875 12.0417V8.93333" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -183,28 +213,6 @@ const InstructorViewContent = () => {
             <path d="M14.875 2.125H2.125L2.12504 5.66667H14.875V2.125Z" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
             <path d="M7.79163 8.5H9.20829" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
         </svg>
-    );
-
-    const DefaultUserIcon = (props) => (
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" {...props}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
-        </svg>
-    );
-
-    const InstructorAvatar = ({ imageSrc, name }) => (
-        <div className="size-7 border border-gray-500 rounded-full overflow-hidden flex items-center justify-center mr-2 flex-shrink-0">
-            {imageSrc ? (
-                <Image
-                    src={imageSrc}
-                    alt={`${name}'s avatar`}
-                    width={28}
-                    height={28}
-                    className="w-full h-full object-cover"
-                />
-            ) : (
-                <DefaultUserIcon className="size-6 text-gray-500 dark:text-gray-400" />
-            )}
-        </div>
     );
 
     return (
@@ -261,7 +269,11 @@ const InstructorViewContent = () => {
                     </div>
                 </div>
 
-                <button type="button" className="text-white bg-green-700 hover:bg-green-800 focus:ring-2 focus:ring-green-600 font-medium rounded-md text-sm px-3 py-2 text-center inline-flex items-center dark:bg-green-600 me-2 mb-2 dark:hover:bg-green-700 dark:focus:ring-green-800 gap-1">
+                <button
+                    type="button"
+                    onClick={handleCreateInstructorClick}
+                    className="text-white bg-green-700 hover:bg-green-800 focus:ring-2 focus:ring-green-600 font-medium rounded-md text-sm px-3 py-2 text-center inline-flex items-center dark:bg-green-600 me-2 mb-2 dark:hover:bg-green-700 dark:focus:ring-green-800 gap-1"
+                >
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-4">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
                     </svg>
@@ -272,25 +284,30 @@ const InstructorViewContent = () => {
                 <table className="w-full rounded-lg text-sm text-left rtl:text-right text-gray-500">
                     <thead className="text-xs text-gray-700 border-b border-gray-200 bg-gray-50 dark:text-gray-400 dark:border-gray-600 dark:bg-gray-700">
                         <tr>
-                            <th scope="col" className="px-6 py-2.5 md:table-cell hidden"> Action </th>
+                            <th scope="col" className="px-6 py-2.5"> Action </th>
                             <th scope="col" className="px-6 py-2.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600">
                                 <div className="flex items-center" onClick={() => handleSort('name')}>
                                     Name {getSortIndicator('name')}
                                 </div>
                             </th>
-                            <th scope="col" className="px-6 py-2.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600">
+                            <th scope="col" className="px-6 py-2.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 sm:table-cell hidden">
+                                <div className="flex items-center" onClick={() => handleSort('email')}>
+                                    Email {getSortIndicator('email')}
+                                </div>
+                            </th>
+                            <th scope="col" className="px-6 py-2.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 lg:table-cell hidden">
                                 <div className="flex items-center" onClick={() => handleSort('phone')}>
-                                    Phone Number {getSortIndicator('phone')}
+                                    Phone {getSortIndicator('phone')}
                                 </div>
                             </th>
                             <th scope="col" className="px-6 py-2.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600">
-                                <div className="flex items-center" onClick={() => handleSort('degrees')}>
-                                    Degrees {getSortIndicator('degrees')}
+                                <div className="flex items-center" onClick={() => handleSort('majorStudied')}> {/* Changed to majorStudied */}
+                                    Major {getSortIndicator('majorStudied')}
                                 </div>
                             </th>
-                            <th scope="col" className="px-6 py-2.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600">
-                                <div className="flex items-center" onClick={() => handleSort('major')}>
-                                    Major {getSortIndicator('major')}
+                            <th scope="col" className="px-6 py-2.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 sm:table-cell hidden">
+                                <div className="flex items-center" onClick={() => handleSort('qualifications')}>
+                                    Degree {getSortIndicator('qualifications')}
                                 </div>
                             </th>
                             <th scope="col" className="px-6 py-2.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600">
@@ -304,11 +321,12 @@ const InstructorViewContent = () => {
                         {currentTableData.length > 0 ? (
                             currentTableData.map((data) => (
                                 <tr key={data.id} className="bg-white border-b border-gray-200 dark:bg-gray-800 dark:border-gray-700">
-                                    <th scope="row" className="px-6 py-2 font-medium text-gray-900 whitespace-nowrap dark:text-white md:table-cell hidden">
+                                    <th scope="row" className="px-6 py-2.5 font-medium text-gray-900 whitespace-nowrap dark:text-white">
                                         <div className="flex gap-2">
                                             <button className={`p-1 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300`} >
                                                 <EditIcon className="size-5" />
                                             </button>
+
                                             <button
                                                 onClick={() => toggleInstructorStatus(data.id)}
                                                 className={`p-1 ${data.status === 'active' ? 'text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300' : 'text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300'}`}
@@ -318,16 +336,25 @@ const InstructorViewContent = () => {
                                             </button>
                                         </div>
                                     </th>
-                                    <td className="px-6 py-2.5">
-                                        <div className="flex items-center">
-                                            <InstructorAvatar imageSrc={data.imageSrc} name={data.name} />
+                                    <td className="px-6 py-2">
+                                        <div className="flex items-center gap-2">
+                                            {data.profileImage ? (
+                                                <img
+                                                    src={data.profileImage}
+                                                    alt={data.name}
+                                                    className="w-8 h-8 rounded-full object-cover border border-gray-200 dark:border-gray-600"
+                                                />
+                                            ) : (
+                                                <DefaultAvatarIcon className="w-8 h-8 rounded-full text-gray-400 bg-gray-100 dark:bg-gray-700 dark:text-gray-500 p-1" />
+                                            )}
                                             {data.name}
                                         </div>
                                     </td>
-                                    <td className="px-6 py-2.5"> {data.phone} </td>
-                                    <td className="px-6 py-2.5"> {data.degrees} </td>
-                                    <td className="px-6 py-2.5"> {data.major} </td>
-                                    <td className="px-6 py-2.5 capitalize">
+                                    <td className="px-6 py-2 sm:table-cell hidden"> {data.email} </td>
+                                    <td className="px-6 py-2 lg:table-cell hidden"> {data.phone} </td>
+                                    <td className="px-6 py-2"> {data.majorStudied} </td> {/* Changed to majorStudied */}
+                                    <td className="px-6 py-2 sm:table-cell hidden"> {data.qualifications} </td>
+                                    <td className="px-6 py-2 capitalize">
                                         <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
                                             data.status === 'active'
                                                 ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
@@ -340,7 +367,7 @@ const InstructorViewContent = () => {
                             ))
                         ) : (
                             <tr className="bg-white dark:bg-gray-800">
-                                <td colSpan="6" className="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
+                                <td colSpan="7" className="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
                                     No matching results found.
                                 </td>
                             </tr>
@@ -348,7 +375,7 @@ const InstructorViewContent = () => {
                     </tbody>
                     <tfoot className="text-xs text-gray-700 border-t border-gray-200 bg-gray-50 dark:text-gray-400 dark:border-gray-600 dark:bg-gray-700">
                         <tr>
-                            <td className="px-6 py-2.5 md:table-cell hidden"></td>
+                            <td className="px-6 py-2.5"></td>
                             <td className="px-6 py-2.5">
                                 <input
                                     type="text"
@@ -358,7 +385,16 @@ const InstructorViewContent = () => {
                                     className="block w-full p-1.5 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
                                 />
                             </td>
-                            <td className="px-6 py-2.5">
+                            <td className="px-6 py-2.5 sm:table-cell hidden">
+                                <input
+                                    type="text"
+                                    placeholder="Search email..."
+                                    value={searchTexts.email}
+                                    onChange={(e) => handleSearchChange('email', e.target.value)}
+                                    className="block w-full p-1.5 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                                />
+                            </td>
+                            <td className="px-6 py-2.5 lg:table-cell hidden">
                                 <input
                                     type="text"
                                     placeholder="Search phone..."
@@ -370,106 +406,97 @@ const InstructorViewContent = () => {
                             <td className="px-6 py-2.5">
                                 <input
                                     type="text"
-                                    placeholder="Search degrees..."
-                                    value={searchTexts.degrees}
-                                    onChange={(e) => handleSearchChange('degrees', e.target.value)}
-                                    className="block w-full p-1.5 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                                />
-                            </td>
-                            <td className="px-6 py-2.5">
-                                <input
-                                    type="text"
                                     placeholder="Search major..."
-                                    value={searchTexts.major}
-                                    onChange={(e) => handleSearchChange('major', e.target.value)}
+                                    value={searchTexts.majorStudied} // Changed to majorStudied
+                                    onChange={(e) => handleSearchChange('majorStudied', e.target.value)}
                                     className="block w-full p-1.5 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
                                 />
                             </td>
-                            <td className="px-6 py-2.5">
+                            <td className="px-6 py-2.5 sm:table-cell hidden">
                                 <input
                                     type="text"
-                                    placeholder="Search status..."
-                                    value={searchTexts.status}
-                                    onChange={(e) => handleSearchChange('status', e.target.value)}
+                                    placeholder="Search qual..."
+                                    value={searchTexts.qualifications}
+                                    onChange={(e) => handleSearchChange('qualifications', e.target.value)}
                                     className="block w-full p-1.5 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
                                 />
                             </td>
+                            <td className="px-6 py-2.5"></td>
                         </tr>
                     </tfoot>
                 </table>
             </div>
-
-            {filteredInstructorData.length > 0 && (
-                <nav className="flex flex-col md:flex-row items-center justify-between pt-4 gap-4" aria-label="Table navigation">
-                    <span className="text-sm font-normal text-gray-500 dark:text-gray-400">
-                        Showing{' '}
-                        <span className="font-semibold text-gray-900 dark:text-white">
-                            {Math.min((currentPage - 1) * itemsPerPage + 1, filteredInstructorData.length)}
-                        </span>{' '}
-                        to{' '}
-                        <span className="font-semibold text-gray-900 dark:text-white">
-                            {Math.min(currentPage * itemsPerPage, filteredInstructorData.length)}
-                        </span>{' '}
-                        of{' '}
-                        <span className="font-semibold text-gray-900 dark:text-white">
-                            {filteredInstructorData.length}
-                        </span>
+            <nav className="flex items-center flex-column flex-wrap md:flex-row justify-between pt-4" aria-label="Table navigation">
+                <span className="text-sm font-normal text-gray-500 dark:text-gray-400 mb-4 md:mb-0 block w-full md:w-auto">
+                    Showing{' '}
+                    <span className="font-semibold text-gray-900 dark:text-white">
+                        {(currentPage - 1) * itemsPerPage + 1}-
+                        {Math.min(currentPage * itemsPerPage, filteredInstructorData.length)}
+                    </span>{' '}
+                    of{' '}
+                    <span className="font-semibold text-gray-900 dark:text-white">
+                        {filteredInstructorData.length}
                     </span>
-
-                    <div className="flex items-center gap-2">
-                        <label htmlFor="items-per-page" className="text-sm font-normal text-gray-500 dark:text-gray-400">
-                            Items per page:
-                        </label>
-                        <select
-                            id="items-per-page"
-                            value={itemsPerPage}
-                            onChange={handleItemsPerPageChange}
-                            className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-full focus:ring-blue-500 focus:border-blue-500 px-2 py-1 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                        >
-                            {itemsPerPageOptions.map((option) => (
-                                <option key={option} value={option}>
-                                    {option}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-
-                    <ul className="inline-flex -space-x-px text-sm h-8">
-                        <li>
-                            <button
-                                onClick={goToPreviousPage}
-                                disabled={currentPage === 1}
-                                className="flex items-center justify-center px-3 h-8 ms-0 leading-tight text-gray-500 bg-white border border-gray-300 rounded-s-lg hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                                Previous
-                            </button>
-                        </li>
-                        {totalPages > 1 && getPageNumbers().map((pageNumber) => (
-                            <li key={pageNumber}>
-                                <button
-                                    onClick={() => goToPage(pageNumber)}
-                                    className={`flex items-center justify-center px-3 h-8 leading-tight ${
-                                        currentPage === pageNumber
-                                            ? 'text-blue-600 border border-blue-300 bg-blue-50 hover:bg-blue-100 hover:text-blue-700 dark:border-gray-700 dark:bg-gray-700 dark:text-white'
-                                            : 'text-gray-500 bg-white border border-gray-300 hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white'
-                                    }`}
-                                >
-                                    {pageNumber}
-                                </button>
-                            </li>
+                </span>
+                <div className="flex items-center gap-2">
+                    <label htmlFor="items-per-page" className="text-sm font-normal text-gray-500 dark:text-gray-400">
+                        Items per page:
+                    </label>
+                    <select
+                        id="items-per-page"
+                        className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-full focus:ring-blue-500 focus:border-blue-500 px-2 py-1 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                        value={itemsPerPage}
+                        onChange={handleItemsPerPageChange}
+                    >
+                        {itemsPerPageOptions.map(option => (
+                            <option key={option} value={option}>
+                                {option}
+                            </option>
                         ))}
-                        <li>
+                    </select>
+                </div>
+                <ul className="inline-flex -space-x-px rtl:space-x-reverse text-sm h-8">
+                    <li>
+                        <button
+                            onClick={goToPreviousPage}
+                            disabled={currentPage === 1}
+                            className="flex items-center justify-center px-3 h-8 ms-0 leading-tight text-gray-500 bg-white border border-gray-300 rounded-s-lg hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            Previous
+                        </button>
+                    </li>
+                    {getPageNumbers().map((pageNumber) => (
+                        <li key={pageNumber}>
                             <button
-                                onClick={goToNextPage}
-                                disabled={currentPage === totalPages}
-                                className="flex items-center justify-center px-3 h-8 leading-tight text-gray-500 bg-white border border-gray-300 rounded-e-lg hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                                onClick={() => goToPage(pageNumber)}
+                                className={`flex items-center justify-center px-3 h-8 leading-tight border border-gray-300 ${
+                                    currentPage === pageNumber
+                                        ? 'text-blue-600 bg-blue-50 hover:bg-blue-100 hover:text-blue-700 dark:bg-gray-700 dark:text-white'
+                                        : 'text-gray-500 bg-white hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white'
+                                }`}
                             >
-                                Next
+                                {pageNumber}
                             </button>
                         </li>
-                    </ul>
-                </nav>
-            )}
+                    ))}
+                    <li>
+                        <button
+                            onClick={goToNextPage}
+                            disabled={currentPage === totalPages}
+                            className="flex items-center justify-center px-3 h-8 leading-tight text-gray-500 bg-white border border-gray-300 rounded-e-lg hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            Next
+                        </button>
+                    </li>
+                </ul>
+            </nav>
+
+            {/* Render the InstructorCreatePopup component */}
+            <InstructorCreatePopup
+                isOpen={showCreateInstructorPopup}
+                onClose={handleCloseInstructorPopup}
+                onSave={handleSaveNewInstructor}
+            />
         </div>
     );
 };

@@ -4,22 +4,30 @@
 import React, { useState, useRef, useEffect } from 'react';
 
 const ClassCreatePopup = ({ isOpen, onClose, onSave }) => {
+    // Define options for select fields
+    const generationOptions = ['30', '31', '32', '33', '34', '35'];
+    const majorOptions = ['IT', 'CS', 'IS', 'SE', 'AI', 'DS', 'ML', 'DA'];
+    const degreesOptions = ['Associate', 'Bachelor', 'Master', 'PhD'];
+    const facultyOptions = ['Faculty of IT', 'Faculty of CS', 'Faculty of IS', 'Faculty of AI', 'Faculty of DS', 'Faculty of ML', 'Faculty of DA', 'Faculty of SE']; // Example faculties
+    const semesterOptions = ['Semester 1', 'Semester 2', 'Semester 3', 'Semester 4', 'Semester 5', 'Semester 6']; // Example semesters
+    const shiftOptions = ['7:00 - 10:00', '8:00 - 11:00', '9:00 - 12:00', '13:00 - 16:00', '15:00 - 18:00', '17:00 - 20:00', '18:00 - 21:00', '19:00 - 22:00']; // Example shifts
+
     // State to manage the form fields for the new class
     const [newClass, setNewClass] = useState({
         name: '',
-        generation: '',
+        generation: generationOptions[0], // Default to first option
         group: '',
-        major: '',
-        degrees: '',
-        faculty: '',
-        semester: '', // <--- Added semester here
-        shift: '',
+        major: majorOptions[0],           // Default to first option
+        degrees: degreesOptions[0],       // Default to first option
+        faculty: facultyOptions[0],       // Default to first option
+        semester: semesterOptions[0],     // Default to first option
+        shift: shiftOptions[0],           // Default to first option
     });
 
     // Create a ref to store the DOM element of the popup content
     const popupRef = useRef(null);
 
-    // Handle changes to form input fields
+    // Handle changes to form input/select fields
     const handleInputChange = (e) => {
         const { name, value } = e.target;
         setNewClass(prev => ({
@@ -32,25 +40,41 @@ const ClassCreatePopup = ({ isOpen, onClose, onSave }) => {
     const handleSubmit = (e) => {
         e.preventDefault(); // Prevent default form submission behavior
 
-        // Basic validation: check if all fields are filled, including semester
-        if (!newClass.name || !newClass.generation || !newClass.group || !newClass.major || !newClass.degrees || !newClass.faculty || !newClass.semester || !newClass.shift) {
-            alert('Please fill in all fields.'); // Using alert as per previous instruction
+        let classDataToSave = { ...newClass };
+
+        // --- Name Auto-Generation Logic ---
+        if (!classDataToSave.name.trim()) { // If name is empty or just whitespace
+            // Ensure generation and group are available for auto-generation
+            if (!classDataToSave.generation || !classDataToSave.group.trim()) {
+                alert('Please provide a Class Name, or both Generation and Group to auto-generate the name (e.g., NUM30-01).');
+                return;
+            }
+            classDataToSave.name = `NUM${classDataToSave.generation}-${classDataToSave.group}`;
+        }
+
+        // --- Basic Validation for 'Group' (which is still a text input) ---
+        if (!classDataToSave.group.trim()) {
+            alert('Please provide a Group.');
             return;
         }
 
-        // Call the onSave prop with the new class data
-        onSave(newClass);
+        // For select fields, a default value is always selected,
+        // so no explicit empty string check is needed here if default options are set.
+        // The 'required' attribute on the select elements helps with browser-level validation.
 
-        // Reset the form fields after saving
+        // Call the onSave prop with the processed class data
+        onSave(classDataToSave);
+
+        // Reset the form fields after saving to their initial default values
         setNewClass({
             name: '',
-            generation: '',
+            generation: generationOptions[0],
             group: '',
-            major: '',
-            degrees: '',
-            faculty: '',
-            semester: '', // <--- Reset semester here
-            shift: '',
+            major: majorOptions[0],
+            degrees: degreesOptions[0],
+            faculty: facultyOptions[0],
+            semester: semesterOptions[0],
+            shift: shiftOptions[0],
         });
 
         // Close the modal
@@ -60,9 +84,9 @@ const ClassCreatePopup = ({ isOpen, onClose, onSave }) => {
     // Effect to handle clicks outside the popup
     useEffect(() => {
         const handleClickOutside = (event) => {
-            // If the popup is open and the click is outside the popup content
+            // If the modal is open and the click is outside the popup content
             if (isOpen && popupRef.current && !popupRef.current.contains(event.target)) {
-                onClose(); // Close the popup
+                onClose(); // Close the modal
             }
         };
 
@@ -86,33 +110,37 @@ const ClassCreatePopup = ({ isOpen, onClose, onSave }) => {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
             {/* Attach the ref to the inner div which represents the actual popup content */}
             <div ref={popupRef} className="relative p-6 bg-white rounded-lg shadow-lg max-w-xl w-full dark:bg-gray-800 dark:text-white">
-                <h2 className="text-xl font-bold mb-4">Create New Class</h2>
-
+                <h2 className="text-xl font-bold mb-3">Create New Class</h2>
+                <hr className="border-t-2 border-gray-200 mb-5" />
                 <form onSubmit={handleSubmit} className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4 mb-20">
+                    {/* Removed mb-20 from here to prevent excessive bottom margin */}
+                    <div className="grid grid-cols-2 gap-4 mb-24">
                         <div className="col-span-2">
-                            <label htmlFor="name" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Name</label>
+                            <label htmlFor="name" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Name (Optional, will auto-generate if empty)</label>
                             <input
                                 type="text"
                                 id="name"
                                 name="name"
                                 value={newClass.name}
                                 onChange={handleInputChange}
-                                className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="NUM30-01"
-                                required
+                                className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="e.g., NUM30-01 or your custom name"
                             />
                         </div>
+
                         <div>
                             <label htmlFor="generation" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Generation</label>
-                            <input
-                                type="text"
+                            <select
                                 id="generation"
                                 name="generation"
                                 value={newClass.generation}
                                 onChange={handleInputChange}
-                                className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white" placeholder="30"
-                                required
-                            />
+                                className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                                required // Select fields are required to ensure a value is chosen
+                            >
+                                {generationOptions.map(option => (
+                                    <option key={option} value={option}>{option}</option>
+                                ))}
+                            </select>
                         </div>
                         <div>
                             <label htmlFor="group" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Group</label>
@@ -128,63 +156,78 @@ const ClassCreatePopup = ({ isOpen, onClose, onSave }) => {
                         </div>
                         <div>
                             <label htmlFor="degrees" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Degrees</label>
-                            <input
-                                type="text"
+                            <select
                                 id="degrees"
                                 name="degrees"
                                 value={newClass.degrees}
                                 onChange={handleInputChange}
-                                className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white" placeholder="Bachelor"
+                                className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                                 required
-                            />
+                            >
+                                {degreesOptions.map(option => (
+                                    <option key={option} value={option}>{option}</option>
+                                ))}
+                            </select>
                         </div>
                         <div>
                             <label htmlFor="major" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Major</label>
-                            <input
-                                type="text"
+                            <select
                                 id="major"
                                 name="major"
                                 value={newClass.major}
                                 onChange={handleInputChange}
-                                className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white" placeholder="IT"
+                                className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                                 required
-                            />
+                            >
+                                {majorOptions.map(option => (
+                                    <option key={option} value={option}>{option}</option>
+                                ))}
+                            </select>
                         </div>
                         <div className="col-span-2">
-                            <label htmlFor="semester" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Semester</label> {/* <--- Corrected htmlFor */}
-                            <input
-                                type="text"
-                                id="semester" // <--- Corrected id
-                                name="semester" // <--- Corrected name
-                                value={newClass.semester} // <--- Corrected value
+                            <label htmlFor="semester" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Semester</label>
+                            <select
+                                id="semester"
+                                name="semester"
+                                value={newClass.semester}
                                 onChange={handleInputChange}
-                                className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white" placeholder="2024-2025 Semester 1"
+                                className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                                 required
-                            />
+                            >
+                                {semesterOptions.map(option => (
+                                    <option key={option} value={option}>{option}</option>
+                                ))}
+                            </select>
                         </div>
                         <div className="col-span-2">
                             <label htmlFor="faculty" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Faculty</label>
-                            <input
-                                type="text"
-                                id="faculty" // <--- Now unique and correct for faculty
-                                name="faculty" // <--- Now unique and correct for faculty
-                                value={newClass.faculty} // <--- Still newClass.faculty
+                            <select
+                                id="faculty"
+                                name="faculty"
+                                value={newClass.faculty}
                                 onChange={handleInputChange}
-                                className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white" placeholder="Faculty of IT"
+                                className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                                 required
-                            />
+                            >
+                                {facultyOptions.map(option => (
+                                    <option key={option} value={option}>{option}</option>
+                                ))}
+                            </select>
                         </div>
                         <div className="col-span-2">
                             <label htmlFor="shift" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Shift</label>
-                            <input
-                                type="text"
+                            <select
                                 id="shift"
                                 name="shift"
                                 value={newClass.shift}
                                 onChange={handleInputChange}
-                                className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white" placeholder="7:00 - 10:00"
+                                className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                                 required
-                            />
+                            >
+                                {shiftOptions.map(option => (
+                                    <option key={option} value={option}>{option}</option>
+                                ))}
+                            </select>
                         </div>
                     </div>
                     <div className="flex justify-end gap-2">
