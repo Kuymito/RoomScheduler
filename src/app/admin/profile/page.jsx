@@ -183,10 +183,11 @@ const ProfileContent = () => {
 
   return (
     <>
-      <div className='p-6'>
-        <div className="section-title font-semibold text-base text-num-dark-text mb-4">
-          Profile
-        </div>
+      <div className=''>
+      <div className="mb-4 w-full">
+          <h2 className="text-base font-medium text-black">Profile</h2>
+          <hr className="border-t border-gray-200 mt-3" />
+      </div>
         <div className="profile-section flex gap-8 mb-4 flex-wrap">
           {/* Avatar Card */}
           <div className="avatar-card w-[311px] h-[130px] p-3 bg-white border border-num-gray-light shadow-custom-light rounded-lg flex-shrink-0">

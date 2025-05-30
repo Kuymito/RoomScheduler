@@ -1,8 +1,18 @@
+// Topbar.js
 'use client';
 import Image from 'next/image';
 import React from 'react'; // Keep React import for ref
 
-const Topbar = ({ onToggleSidebar, isSidebarCollapsed, onUserIconClick, pageSubtitle, userIconRef }) => {
+const Topbar = ({
+  onToggleSidebar,
+  isSidebarCollapsed,
+  onUserIconClick,
+  pageSubtitle,
+  userIconRef,
+  onNotificationIconClick, // New prop
+  notificationIconRef,     // New prop
+  hasUnreadNotifications   // New prop to show/hide badge dynamically
+}) => {
   return (
     <div className="topbar bg-white shadow-custom-medium p-5 flex justify-between items-center">
       <div className="topbar-content-left flex items-center">
@@ -20,14 +30,22 @@ const Topbar = ({ onToggleSidebar, isSidebarCollapsed, onUserIconClick, pageSubt
         </div>
       </div>
       <div className="topbar-icons flex items-center gap-4">
-        <div className="icon-wrapper relative w-10 h-10 flex items-center justify-center border border-num-icon-border p-[10px] rounded-md">
+        <div
+          ref={notificationIconRef} // Assign ref to the bell icon wrapper
+          className="icon-wrapper relative w-10 h-10 flex items-center justify-center border border-num-icon-border p-[10px] rounded-md cursor-pointer hover:bg-gray-100"
+          onClick={onNotificationIconClick} // Added onClick
+          title="Notifications"
+        >
           <Image src="/images/bell.png" alt="Notifications" width={20} height={20} className="h-5 w-5" />
-          <div className="notification-badge absolute w-2 h-2 bg-num-red rounded-full top-[5px] right-[5px]"></div>
+          {hasUnreadNotifications && (
+            <div className="notification-badge absolute w-2 h-2 bg-num-red rounded-full top-[5px] right-[5px]"></div>
+          )}
         </div>
         <div
           ref={userIconRef}
-          className="user-icon relative w-10 h-10 flex items-center justify-center border border-num-icon-border p-[10px] rounded-md cursor-pointer"
+          className="user-icon relative w-10 h-10 flex items-center justify-center border border-num-icon-border p-[10px] rounded-md cursor-pointer hover:bg-gray-100"
           onClick={onUserIconClick}
+          title="User Menu"
         >
           <Image src="/images/icon.png" alt="User Menu" width={20} height={20} className="h-5 w-5" />
         </div>
