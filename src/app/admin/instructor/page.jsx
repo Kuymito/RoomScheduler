@@ -4,7 +4,7 @@
 import React, { useState, useMemo } from 'react';
 import AdminLayout from '@/components/AdminLayout'; // Using the path to your AdminLayout
 
-// --- SVG Icon Components ---
+// --- SVG Icon Components (Updated for Dark Mode) ---
 const AddIcon = ({ className = "w-4 h-4", stroke = "currentColor" }) => (
   <svg className={className} viewBox="0 0 17 17" fill="none" xmlns="http://www.w3.org/2000/svg">
     <path d="M4.25 8.5H12.75" stroke={stroke} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
@@ -19,20 +19,22 @@ const SearchIcon = ({ className = "w-3 h-3", stroke = "currentColor" }) => (
   </svg>
 );
 
-const ArrowDownIcon = ({ className = "w-2 h-full", stroke = "rgba(23,23,23,0.2)" }) => (
+// Updated to use currentColor for better dark mode adaptability via parent text color
+const ArrowDownIcon = ({ className = "w-2 h-full", stroke = "currentColor" }) => (
   <svg className={className} viewBox="0 0 8 10" fill="none" xmlns="http://www.w3.org/2000/svg">
     <path d="M4 1V9M4 9L1 6M4 9L7 6" stroke={stroke} strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"/>
   </svg>
 );
 
-const ArrowUpIcon = ({ className = "w-2 h-full", stroke = "rgba(23,23,23,0.2)" }) => (
+const ArrowUpIcon = ({ className = "w-2 h-full", stroke = "currentColor" }) => (
   <svg className={className} viewBox="0 0 8 10" fill="none" xmlns="http://www.w3.org/2000/svg">
       <path d="M4 9V1M4 1L1 4M4 1L7 4" stroke={stroke} strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"/>
   </svg>
 );
 
 const SortIcon = ({ className = "w-2 h-[15px]"}) => (
-    <div className={`flex flex-col ${className} cursor-pointer`}>
+    // Apply text color that adapts to dark mode for the arrows
+    <div className={`flex flex-col ${className} cursor-pointer text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-400`}>
         <ArrowUpIcon className="w-full h-1/2" />
         <ArrowDownIcon className="w-full h-1/2" />
     </div>
@@ -54,9 +56,10 @@ const ArchiveIcon = ({ className = "w-[17px] h-[17px]" }) => (
     </svg>
 );
 
+// Updated to use currentColor
 const KeyboardArrowDown = ({className = "w-3.5 h-3.5"}) => (
     <svg className={className} viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M3.5 5.26562L7 8.76562L10.5 5.26562" stroke="black" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"/>
+        <path d="M3.5 5.26562L7 8.76562L10.5 5.26562" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"/>
     </svg>
 );
 
@@ -89,11 +92,11 @@ const InstructorsDisplayContent = () => {
       
       const lowerGlobalSearchTerm = globalSearchTerm.toLowerCase();
       const matchesGlobalSearch = !globalSearchTerm ||
-                            (instructor.name && instructor.name.toLowerCase().includes(lowerGlobalSearchTerm)) ||
-                            (instructor.phone && instructor.phone.toLowerCase().includes(lowerGlobalSearchTerm)) ||
-                            (instructor.email && instructor.email.toLowerCase().includes(lowerGlobalSearchTerm)) ||
-                            (instructor.degree && instructor.degree.toLowerCase().includes(lowerGlobalSearchTerm)) ||
-                            (instructor.major && instructor.major.toLowerCase().includes(lowerGlobalSearchTerm));
+                                (instructor.name && instructor.name.toLowerCase().includes(lowerGlobalSearchTerm)) ||
+                                (instructor.phone && instructor.phone.toLowerCase().includes(lowerGlobalSearchTerm)) ||
+                                (instructor.email && instructor.email.toLowerCase().includes(lowerGlobalSearchTerm)) ||
+                                (instructor.degree && instructor.degree.toLowerCase().includes(lowerGlobalSearchTerm)) ||
+                                (instructor.major && instructor.major.toLowerCase().includes(lowerGlobalSearchTerm));
 
       const matchesNameCol = !nameColSearch || (instructor.name && instructor.name.toLowerCase().includes(nameColSearch.toLowerCase()));
       const matchesPhoneCol = !phoneColSearch || (instructor.phone && instructor.phone.toLowerCase().includes(phoneColSearch.toLowerCase()));
@@ -114,51 +117,57 @@ const InstructorsDisplayContent = () => {
   const handleNextPage = () => setCurrentPage(prev => Math.min(prev + 1, totalPages));
   const handlePrevPage = () => setCurrentPage(prev => Math.max(prev - 1, 1));
   
-  const columnSearchInputStyle = "w-full h-[27px] border border-[#C9C9C9] rounded-[5px] px-2 text-xs placeholder:text-[#B4B4B4] focus:outline-none focus:border-num-blue bg-white";
-  const tableHeaderCellBaseStyle = "flex items-center px-3 h-full border-l border-[#EFEFEF] font-sans font-semibold text-xs text-black gap-1";
-  const tableDataCellBaseStyle = "flex items-center px-3 h-full border-l border-[#EFEFEF] font-sans text-black truncate";
+  const columnSearchInputStyle = "w-full h-[27px] border border-slate-300 dark:border-slate-600 rounded-[5px] px-2 text-xs placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-num-blue dark:focus:border-num-blue bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-50";
+  const tableHeaderCellBaseStyle = "flex items-center px-3 h-full border-l border-slate-200 dark:border-slate-700 font-sans font-semibold text-xs text-slate-800 dark:text-slate-200 gap-1";
+  const tableDataCellBaseStyle = "flex items-center px-3 h-full border-l border-slate-200 dark:border-slate-700 font-sans text-slate-700 dark:text-slate-300 truncate";
 
 
   return (
-    <div className="w-full h-full flex flex-col gap-4 md:gap-6 font-sans"> {/* Root of InstructorsDisplayContent, no card styles */}
+    <div className="w-full h-full flex flex-col gap-4 md:gap-6 font-sans p-4 sm:p-6 bg-slate-50 dark:bg-num-dark-bg">
       
       <div className="mb-4 w-full">
-          <h2 className="text-base font-medium text-black">Instructor</h2>
-          <hr className="border-t border-gray-200 mt-3" />
+          <h2 className="text-xl font-semibold text-slate-800 dark:text-white">Instructor Management</h2>
+          <hr className="border-t border-slate-200 dark:border-slate-700 mt-3" />
       </div>
 
       <div className="w-full flex flex-col sm:flex-row items-center justify-between gap-4">
         <div className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto">
           <div className="relative w-full sm:w-[337px] h-[40px]">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <SearchIcon className="w-4 h-4 text-num-gray" />
+                <SearchIcon className="w-4 h-4 text-num-gray dark:text-slate-400" />
             </div>
             <input 
               type="text"
               placeholder="Global Search..."
               value={globalSearchTerm}
               onChange={(e) => { setGlobalSearchTerm(e.target.value); setCurrentPage(1);}}
-              className="box-border w-full h-full pl-10 pr-3 bg-num-content-bg border border-num-gray-light rounded-[10px] font-sans text-sm text-num-dark-text placeholder:text-num-gray focus:outline-none focus:border-num-blue focus:ring-1 focus:ring-num-blue"
+              className="box-border w-full h-full pl-10 pr-3 bg-num-content-bg dark:bg-slate-700 border border-num-gray-light dark:border-slate-600 rounded-[10px] font-sans text-sm text-num-dark-text dark:text-slate-50 placeholder:text-num-gray dark:placeholder:text-slate-400 focus:outline-none focus:border-num-blue dark:focus:border-num-blue focus:ring-1 focus:ring-num-blue dark:focus:ring-num-blue"
             />
           </div>
-          <div className="flex flex-row items-center w-full sm:w-auto h-[40px] shadow-sm">
+          <div className="flex flex-row items-center w-full sm:w-auto h-[40px] shadow-sm rounded-[10px] overflow-hidden">
             <button
               onClick={() => { setActiveFilter('Active'); setCurrentPage(1); }}
-              className={`box-border flex flex-row justify-center items-center px-4 py-2 gap-2.5 flex-1 sm:flex-none sm:w-[90px] h-full rounded-l-[10px] font-sans text-sm leading-[15px] font-medium transition-colors
-                          ${activeFilter === 'Active' ? 'bg-num-blue text-white' : 'bg-white text-black border border-r-0 border-num-gray-light hover:bg-gray-50'}`}
+              className={`box-border flex flex-row justify-center items-center px-4 py-2 gap-2.5 flex-1 sm:flex-none sm:w-[90px] h-full font-sans text-sm leading-[15px] font-medium transition-colors
+                            ${activeFilter === 'Active' 
+                                ? 'bg-num-blue text-white' 
+                                : 'bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-300 border border-r-0 border-num-gray-light dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-600'}`
+                            }
             >
               Active
             </button>
             <button
               onClick={() => { setActiveFilter('Archive'); setCurrentPage(1); }}
-              className={`box-border flex flex-row justify-center items-center px-4 py-2 gap-2.5 flex-1 sm:flex-none sm:w-[90px] h-full rounded-r-[10px] font-sans text-sm leading-[15px] font-medium transition-colors
-                          ${activeFilter === 'Archive' ? 'bg-num-blue text-white' : 'bg-white text-black border border-num-gray-light hover:bg-gray-50'}`}
+              className={`box-border flex flex-row justify-center items-center px-4 py-2 gap-2.5 flex-1 sm:flex-none sm:w-[90px] h-full font-sans text-sm leading-[15px] font-medium transition-colors
+                            ${activeFilter === 'Archive' 
+                                ? 'bg-num-blue text-white' // Potentially a different color for archive active, e.g., bg-slate-600
+                                : 'bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-300 border border-num-gray-light dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-600'}`
+                            }
             >
               Archive
             </button>
           </div>
         </div>
-        <button className="w-full sm:w-auto h-[40px] bg-[#75B846] hover:bg-green-600 transition-colors rounded-[5px] flex items-center justify-center px-4 gap-2 text-white">
+        <button className="w-full sm:w-auto h-[40px] bg-green-500 hover:bg-green-600 dark:bg-green-600 dark:hover:bg-green-700 transition-colors rounded-[5px] flex items-center justify-center px-4 gap-2 text-white">
             <AddIcon className="w-[17px] h-[17px]" stroke="white"/>
             <span className="font-sans font-semibold text-xs leading-[15px]">
                 CREATE
@@ -166,11 +175,11 @@ const InstructorsDisplayContent = () => {
         </button>
       </div>
 
-      {/* Table Container - this has the border, rounding, and white background */}
-      <div className="w-full flex flex-col flex-grow overflow-hidden border border-[#EFEFEF] rounded-[10px] bg-white">
+      {/* Table Container */}
+      <div className="w-full flex flex-col flex-grow overflow-hidden border border-slate-200 dark:border-slate-700 rounded-[10px] bg-white dark:bg-slate-800 shadow-md">
         {/* Table Header Row */}
-        <div className="flex flex-row w-full h-[45px] bg-white border-b border-[#EFEFEF] flex-none rounded-t-[10px]">
-          <div className="flex items-center justify-center flex-none w-[100px] md:w-[120px] px-3 h-full font-sans font-semibold text-xs text-black">Action</div>
+        <div className="flex flex-row w-full h-[45px] bg-slate-50 dark:bg-slate-700/50 border-b border-slate-200 dark:border-slate-700 flex-none rounded-t-[10px]">
+          <div className="flex items-center justify-center flex-none w-[100px] md:w-[120px] px-3 h-full font-sans font-semibold text-xs text-slate-600 dark:text-slate-300">Action</div>
           <div className={`${tableHeaderCellBaseStyle} flex-1`}>Name <SortIcon /></div>
           <div className={`${tableHeaderCellBaseStyle} flex-1`}>Phone Number <SortIcon /></div>
           <div className={`${tableHeaderCellBaseStyle} flex-1`}>Email <SortIcon /></div>
@@ -181,10 +190,10 @@ const InstructorsDisplayContent = () => {
         {/* Table Body - Scrollable */}
         <div className="flex-grow overflow-y-auto">
             {currentRecords.map((instructor) => (
-            <div key={instructor.id} className="flex flex-row w-full h-[50px] bg-white border-b border-[#EFEFEF] items-center hover:bg-gray-50 transition-colors text-xs">
-                <div className="flex items-center justify-center gap-2 flex-none w-[100px] md:w-[120px] px-3 h-full text-num-blue">
-                    <button title="Edit" className="p-1 hover:bg-num-blue-light rounded"><EditIcon className="text-num-blue"/></button>
-                    <button title="Archive" className="p-1 text-num-red hover:bg-red-100 rounded"><ArchiveIcon className="text-num-red"/></button>
+            <div key={instructor.id} className="flex flex-row w-full h-[50px] bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 items-center hover:bg-slate-50 dark:hover:bg-slate-700/60 transition-colors text-xs">
+                <div className="flex items-center justify-center gap-2 flex-none w-[100px] md:w-[120px] px-3 h-full">
+                    <button title="Edit" className="p-1 text-num-blue dark:text-blue-400 hover:bg-num-blue-light dark:hover:bg-slate-700 rounded"><EditIcon /></button>
+                    <button title="Archive" className="p-1 text-num-red dark:text-red-400 hover:bg-red-100 dark:hover:bg-slate-700 rounded"><ArchiveIcon /></button>
                 </div>
                 <div className={`${tableDataCellBaseStyle} flex-1 gap-2`}>
                     <img src={instructor.profilePic} alt={instructor.name} className="w-6 h-6 rounded-full object-cover flex-shrink-0" />
@@ -205,55 +214,58 @@ const InstructorsDisplayContent = () => {
             </div>
             ))}
             {currentRecords.length === 0 && (
-                <div className="flex justify-center items-center h-[100px] text-num-gray">No instructors found.</div>
+                <div className="flex justify-center items-center h-[100px] text-num-gray dark:text-slate-400">No instructors found.</div>
             )}
         </div>
 
         {/* Per-Column Search Inputs Row */}
-        <div className="flex flex-row w-full h-[50px] bg-white border-t border-b border-[#EFEFEF] items-center flex-none">
+        <div className="flex flex-row w-full h-[50px] bg-slate-50 dark:bg-slate-700/50 border-t border-b border-slate-200 dark:border-slate-700 items-center flex-none">
             <div className="flex-none w-[100px] md:w-[120px] px-3 h-full"> {/* Spacer for Action column */} </div>
-            <div className={`${tableDataCellBaseStyle.replace('truncate','')} flex-1`}><input type="text" placeholder="Search Name..." className={columnSearchInputStyle} value={nameColSearch} onChange={(e) => {setNameColSearch(e.target.value); setCurrentPage(1);}} /></div>
-            <div className={`${tableDataCellBaseStyle.replace('truncate','')} flex-1`}><input type="text" placeholder="Search Phone..." className={columnSearchInputStyle} value={phoneColSearch} onChange={(e) => {setPhoneColSearch(e.target.value); setCurrentPage(1);}} /></div>
-            <div className={`${tableDataCellBaseStyle.replace('truncate','')} flex-1`}><input type="text" placeholder="Search Email..." className={columnSearchInputStyle} value={emailColSearch} onChange={(e) => {setEmailColSearch(e.target.value); setCurrentPage(1);}} /></div>
-            <div className={`${tableDataCellBaseStyle.replace('truncate','')} flex-1`}><input type="text" placeholder="Search Degree..." className={columnSearchInputStyle} value={degreeColSearch} onChange={(e) => {setDegreeColSearch(e.target.value); setCurrentPage(1);}} /></div>
-            <div className={`${tableDataCellBaseStyle.replace('truncate','')} flex-1`}><input type="text" placeholder="Search Major..." className={columnSearchInputStyle} value={majorColSearch} onChange={(e) => {setMajorColSearch(e.target.value); setCurrentPage(1);}} /></div>
+            <div className={`${tableDataCellBaseStyle.replace('truncate','')} flex-1 px-1 py-1`}><input type="text" placeholder="Search Name..." className={columnSearchInputStyle} value={nameColSearch} onChange={(e) => {setNameColSearch(e.target.value); setCurrentPage(1);}} /></div>
+            <div className={`${tableDataCellBaseStyle.replace('truncate','')} flex-1 px-1 py-1`}><input type="text" placeholder="Search Phone..." className={columnSearchInputStyle} value={phoneColSearch} onChange={(e) => {setPhoneColSearch(e.target.value); setCurrentPage(1);}} /></div>
+            <div className={`${tableDataCellBaseStyle.replace('truncate','')} flex-1 px-1 py-1`}><input type="text" placeholder="Search Email..." className={columnSearchInputStyle} value={emailColSearch} onChange={(e) => {setEmailColSearch(e.target.value); setCurrentPage(1);}} /></div>
+            <div className={`${tableDataCellBaseStyle.replace('truncate','')} flex-1 px-1 py-1`}><input type="text" placeholder="Search Degree..." className={columnSearchInputStyle} value={degreeColSearch} onChange={(e) => {setDegreeColSearch(e.target.value); setCurrentPage(1);}} /></div>
+            <div className={`${tableDataCellBaseStyle.replace('truncate','')} flex-1 px-1 py-1`}><input type="text" placeholder="Search Major..." className={columnSearchInputStyle} value={majorColSearch} onChange={(e) => {setMajorColSearch(e.target.value); setCurrentPage(1);}} /></div>
         </div>
 
         {/* Table Footer / Pagination */}
-        <div className="flex flex-col sm:flex-row w-full h-auto sm:h-[45px] bg-white border-t border-[#EFEFEF] items-center justify-between px-4 py-2 sm:py-0 flex-none rounded-b-[10px]">
+        <div className="flex flex-col sm:flex-row w-full h-auto sm:h-[45px] bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 items-center justify-between px-4 py-2 sm:py-0 flex-none rounded-b-[10px]">
            <div className="flex items-center mb-2 sm:mb-0">
-                 <span className="font-sans text-xs text-black">
+                 <span className="font-sans text-xs text-slate-700 dark:text-slate-300">
                     {filteredInstructors.length > 0 ? `${indexOfFirstRecord + 1} - ${Math.min(indexOfLastRecord, filteredInstructors.length)}` : '0'} of {filteredInstructors.length} results
                 </span>
             </div>
             <div className="flex items-center gap-2 mb-2 sm:mb-0">
-                <span className="font-sans text-xs text-black hidden md:inline">Rows per page:</span>
+                <span className="font-sans text-xs text-slate-700 dark:text-slate-300 hidden md:inline">Rows per page:</span>
                 <div className="relative">
                     <select 
                         value={recordsPerPage} 
                         onChange={(e) => {setRecordsPerPage(Number(e.target.value)); setCurrentPage(1);}}
-                        className="appearance-none box-border flex flex-row justify-center items-center px-2 py-1 w-auto h-[24px] border border-[#BFBFBF] rounded-[16px] font-sans text-[10px] text-black bg-white pr-6 focus:outline-none focus:border-num-blue"
+                        className="appearance-none box-border flex flex-row justify-center items-center px-2 py-1 w-auto h-[24px] border border-slate-400 dark:border-slate-600 rounded-[16px] font-sans text-[10px] text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-700 pr-6 focus:outline-none focus:border-num-blue dark:focus:border-num-blue"
                     >
                         <option value={5}>5</option>
                         <option value={10}>10</option>
                         <option value={20}>20</option>
                     </select>
-                    <div className="absolute inset-y-0 right-0 flex items-center px-1.5 pointer-events-none">
-                        <KeyboardArrowDown className="w-3 h-3 text-black" />
+                    <div className="absolute inset-y-0 right-0 flex items-center px-1.5 pointer-events-none text-slate-700 dark:text-slate-300">
+                        <KeyboardArrowDown className="w-3 h-3" />
                     </div>
                 </div>
             </div>
             {totalPages > 0 && (
-              <div className="box-border flex flex-row items-stretch border border-[#DBDBDB] rounded-[16px] h-[28px] overflow-hidden bg-white">
-                  <button onClick={handlePrevPage} disabled={currentPage === 1} className="px-3 py-1 font-sans text-[10px] text-[#737373] hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed">Previous</button>
-                  {[...Array(totalPages).keys()].map(num => num + 1).map(page => (
+              <div className="box-border flex flex-row items-stretch border border-slate-300 dark:border-slate-600 rounded-[16px] h-[28px] overflow-hidden bg-white dark:bg-slate-700">
+                  <button onClick={handlePrevPage} disabled={currentPage === 1} className="px-3 py-1 font-sans text-[10px] text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed">Previous</button>
+                  {/* Dynamic page numbers can be complex; simplified for now or implement a more robust pagination component */}
+                  {[...Array(totalPages).keys()].slice(Math.max(0, currentPage - 2), Math.min(totalPages, currentPage + 1)).map(num => num + 1).map(page => (
                       <button key={page} onClick={() => paginate(page)}
-                              className={`px-3 py-1 font-sans text-[10px] border-l border-[#DBDBDB] 
-                                          ${currentPage === page ? 'bg-[#E9E9E9] text-white border-l-[#969595] hover:bg-gray-600' : 'text-[#737373] hover:bg-gray-100'}`}>
+                              className={`px-3 py-1 font-sans text-[10px] border-l border-slate-300 dark:border-slate-600 
+                                        ${currentPage === page 
+                                            ? 'bg-num-blue text-white hover:bg-num-blue/90' 
+                                            : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-600'}`}>
                           {page}
                       </button>
                   ))}
-                  <button onClick={handleNextPage} disabled={currentPage === totalPages || totalPages === 0} className="px-3 py-1 font-sans text-[10px] text-[#737373] border-l border-[#DBDBDB] hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed">Next</button>
+                  <button onClick={handleNextPage} disabled={currentPage === totalPages || totalPages === 0} className="px-3 py-1 font-sans text-[10px] text-slate-600 dark:text-slate-300 border-l border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed">Next</button>
               </div>
             )}
         </div>
@@ -265,7 +277,7 @@ const InstructorsDisplayContent = () => {
 // --- Default Export for the Page that USES AdminLayout ---
 export default function InstructorsPage() {
   return (
-    <AdminLayout pageTitle="Instructor List">
+    <AdminLayout pageTitle="Instructor List" activeItem="instructors"> {/* Assuming "instructors" is the activeItem key */}
       <InstructorsDisplayContent />
     </AdminLayout>
   );
