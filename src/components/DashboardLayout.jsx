@@ -8,7 +8,12 @@ import LogoutAlert from '@/components/LogoutAlert';
 import Footer from '@/components/Footer';
 
 export default function DashboardLayout({ children, activeItem, pageTitle }) {
-    const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+    const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
+        if (typeof window !== 'undefined') {
+            return localStorage.getItem('sidebarCollapsed') === 'true';
+        }
+        return false;
+    });
     const [showAdminPopup, setShowAdminPopup] = useState(false);
     const [showLogoutAlert, setShowLogoutAlert] = useState(false);
     
@@ -20,6 +25,12 @@ export default function DashboardLayout({ children, activeItem, pageTitle }) {
 
     const adminPopupRef = useRef(null);
     const userIconRef = useRef(null);
+
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            localStorage.setItem('sidebarCollapsed', isSidebarCollapsed);
+        }
+    }, [isSidebarCollapsed]);
 
     const toggleSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
     const handleUserIconClick = (event) => { event.stopPropagation(); setShowAdminPopup(!showAdminPopup); };

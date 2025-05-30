@@ -1,39 +1,55 @@
 'use client';
 
-import { useState, useMemo } from 'react'; // Removed useEffect
+import { useState, useMemo } from 'react';
 import AdminLayout from '@/components/AdminLayout';
+import ClassCreatePopup from './components/ClassCreatePopup';
 
 const ClassViewContent = () => {
     // --- Data ---
-    // Added a 'status' property to each class item, defaulting to 'active'
     const initialClassData = [
-        { id: 1, name: 'NUM30-01', generation: '30', group: '01', major: 'IT', degrees: 'Bachelor', faculty: 'Faculty of IT', shift: '7:00 - 10:00', status: 'active' },
-        { id: 2, name: 'NUM30-01', generation: '30', group: '01', major: 'IT', degrees: 'Bachelor', faculty: 'Faculty of IT', shift: '7:00 - 10:00', status: 'active' },
-        { id: 3, name: 'NUM30-02', generation: '30', group: '02', major: 'CS', degrees: 'Bachelor', faculty: 'Faculty of CS', shift: '8:00 - 11:00', status: 'active' },
-        { id: 4, name: 'NUM32-03', generation: '32', group: '03', major: 'IS', degrees: 'Bachelor', faculty: 'Faculty of IS', shift: '9:00 - 12:00', status: 'active' },
-        { id: 5, name: 'NUM32-04', generation: '32', group: '04', major: 'SE', degrees: 'Bachelor', faculty: 'Faculty of SE', shift: '13:00 - 16:00', status: 'active' },
-        { id: 6, name: 'NUM32-05', generation: '32', group: '05', major: 'AI', degrees: 'Bachelor', faculty: 'Faculty of AI & R', shift: '15:00 PM - 18:00', status: 'active' },
-        { id: 7, name: 'NUM33-06', generation: '33', group: '06', major: 'DS', degrees: 'Bachelor', faculty: 'Faculty of DS', shift: '17:00 - 20:00', status: 'active' },
-        { id: 8, name: 'NUM33-07', generation: '33', group: '07', major: 'ML', degrees: 'Bachelor', faculty: 'Faculty of ML', shift: '18:00 - 21:00', status: 'active' },
-        { id: 9, name: 'NUM33-08', generation: '33', group: '08', major: 'DA', degrees: 'Bachelor', faculty: 'Faculty of DA', shift: '19:00 - 22:00', status: 'archived' }, // Example archived
-        { id: 10, name: 'NUM33-09', generation: '33', group: '09', major: 'SE', degrees: 'Bachelor', faculty: 'Faculty of SE & R', shift: '8:00 - 11:00', status: 'active' },
-        { id: 11, name: 'NUM34-10', generation: '34', group: '10', major: 'AI', degrees: 'Bachelor', faculty: 'Faculty of AI', shift: '9:00 - 12:00', status: 'active' },
-        { id: 12, name: 'NUM34-11', generation: '34', group: '11', major: 'DS', degrees: 'Bachelor', faculty: 'Faculty of DS & R', shift: '10:00 - 13:00', status: 'archived' }, // Example archived
-        { id: 13, name: 'NUM34-12', generation: '34', group: '12', major: 'ML', degrees: 'Bachelor', faculty: 'Faculty of ML & R', shift: '11:00 - 14:00', status: 'active' },
-        { id: 14, name: 'NUM35-13', generation: '35', group: '13', major: 'DA', degrees: 'Bachelor', faculty: 'Faculty of DA & R', shift: '12:00 - 15:00', status: 'active' },
-        { id: 15, name: 'NUM35-14', generation: '35', group: '14', major: 'SE', degrees: 'Bachelor', faculty: 'Faculty of SE & R', shift: '13:00 - 16:00', status: 'active' },
+        // Added semester to existing data
+        { id: 1, name: 'NUM30-01', generation: '30', group: '01', major: 'IT', degrees: 'Bachelor', faculty: 'Faculty of IT', semester: '2024-2025 S1', shift: '7:00 - 10:00', status: 'active' },
+        { id: 2, name: 'NUM30-01', generation: '30', group: '01', major: 'IT', degrees: 'Bachelor', faculty: 'Faculty of IT', semester: '2024-2025 S1', shift: '7:00 - 10:00', status: 'active' },
+        { id: 3, name: 'NUM30-02', generation: '30', group: '02', major: 'CS', degrees: 'Bachelor', faculty: 'Faculty of CS', semester: '2024-2025 S1', shift: '8:00 - 11:00', status: 'active' },
+        { id: 4, name: 'NUM32-03', generation: '32', group: '03', major: 'IS', degrees: 'Bachelor', faculty: 'Faculty of IS', semester: '2024-2025 S2', shift: '9:00 - 12:00', status: 'active' },
+        { id: 5, name: 'NUM32-04', generation: '32', group: '04', major: 'SE', degrees: 'Bachelor', faculty: 'Faculty of SE', semester: '2024-2025 S2', shift: '13:00 - 16:00', status: 'active' },
+        { id: 6, name: 'NUM32-05', generation: '32', group: '05', major: 'AI', degrees: 'Bachelor', faculty: 'Faculty of AI & R', semester: '2024-2025 S2', shift: '15:00 PM - 18:00', status: 'active' },
+        { id: 7, name: 'NUM33-06', generation: '33', group: '06', major: 'DS', degrees: 'Bachelor', faculty: 'Faculty of DS', semester: '2024-2025 S3', shift: '17:00 - 20:00', status: 'active' },
+        { id: 8, name: 'NUM33-07', generation: '33', group: '07', major: 'ML', degrees: 'Bachelor', faculty: 'Faculty of ML', semester: '2024-2025 S3', shift: '18:00 - 21:00', status: 'active' },
+        { id: 9, name: 'NUM33-08', generation: '33', group: '08', major: 'DA', degrees: 'Bachelor', faculty: 'Faculty of DA', semester: '2024-2025 S3', shift: '19:00 - 22:00', status: 'archived' }, // Example archived
+        { id: 10, name: 'NUM33-09', generation: '33', group: '09', major: 'SE', degrees: 'Bachelor', faculty: 'Faculty of SE & R', semester: '2024-2025 S3', shift: '8:00 - 11:00', status: 'active' },
+        { id: 11, name: 'NUM34-10', generation: '34', group: '10', major: 'AI', degrees: 'Bachelor', faculty: 'Faculty of AI', semester: '2025-2026 S1', shift: '9:00 - 12:00', status: 'active' },
+        { id: 12, name: 'NUM34-11', generation: '34', group: '11', major: 'DS', degrees: 'Bachelor', faculty: 'Faculty of DS & R', semester: '2025-2026 S1', shift: '10:00 - 13:00', status: 'archived' }, // Example archived
+        { id: 13, name: 'NUM34-12', generation: '34', group: '12', major: 'ML', degrees: 'Bachelor', faculty: 'Faculty of ML & R', semester: '2025-2026 S1', shift: '11:00 - 14:00', status: 'active' },
+        { id: 14, name: 'NUM35-13', generation: '35', group: '13', major: 'DA', degrees: 'Bachelor', faculty: 'Faculty of DA & R', semester: '2025-2026 S2', shift: '12:00 - 15:00', status: 'active' },
+        { id: 15, name: 'NUM35-14', generation: '35', group: '14', major: 'SE', degrees: 'Bachelor', faculty: 'Faculty of SE & R', semester: '2025-2026 S2', shift: '13:00 - 16:00', status: 'active' },
     ];
 
-    // Initialize classData state directly with initialClassData
     const [classData, setClassData] = useState(initialClassData);
 
-    // Removed useEffect for saving to local storage
-    // useEffect(() => {
-    //     if (typeof window !== 'undefined') {
-    //         localStorage.setItem('classData', JSON.stringify(classData));
-    //     }
-    // }, [classData]);
+    // --- Popup Form State (now just for visibility) ---
+    const [showCreatePopup, setShowCreatePopup] = useState(false);
 
+    const handleCreateClick = () => {
+        setShowCreatePopup(true);
+    };
+
+    const handleClosePopup = () => {
+        setShowCreatePopup(false);
+    };
+
+    // This function will be passed to the modal to handle saving new class data
+    const handleSaveNewClass = (newClassData) => {
+        const newId = classData.length > 0 ? Math.max(...classData.map(item => item.id)) + 1 : 1;
+        const newClassWithStatus = {
+            id: newId,
+            ...newClassData, // newClassData now includes semester thanks to the fix in ClassCreatePopup
+            status: 'active', // New classes default to active
+        };
+
+        setClassData(prevData => [...prevData, newClassWithStatus]);
+        setCurrentPage(1); // Reset page after adding a new class
+    };
 
     // --- Status Filter State ---
     const [statusFilter, setStatusFilter] = useState('active'); // 'active', 'archived', or 'all'
@@ -52,13 +68,12 @@ const ClassViewContent = () => {
         }
     };
 
-    // Sorted data is now derived from `classData` (which can be modified)
     const sortedClassData = useMemo(() => {
         if (!sortColumn) {
-            return classData; // Use classData directly here
+            return classData;
         }
 
-        const sortableData = [...classData]; // Use classData here
+        const sortableData = [...classData];
 
         sortableData.sort((a, b) => {
             if (sortColumn === 'generation' || sortColumn === 'group') {
@@ -70,7 +85,7 @@ const ClassViewContent = () => {
                 return 0;
             } else {
                 const aValue = String(a[sortColumn]).toLowerCase();
-                const bValue = String(b[sortColumn]).toLowerCase(); // Corrected 'column' to 'sortColumn'
+                const bValue = String(b[sortColumn]).toLowerCase();
 
                 if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
                 if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
@@ -78,7 +93,7 @@ const ClassViewContent = () => {
             }
         });
         return sortableData;
-    }, [classData, sortColumn, sortDirection]); // Dependency changed to classData
+    }, [classData, sortColumn, sortDirection]);
 
     const getSortIndicator = (column) => {
         if (sortColumn === column) {
@@ -106,6 +121,7 @@ const ClassViewContent = () => {
         major: '',
         degrees: '',
         faculty: '',
+        semester: '', // <--- Added semester to searchTexts
         shift: '',
     });
 
@@ -117,16 +133,13 @@ const ClassViewContent = () => {
         setCurrentPage(1); // Reset to first page on search
     };
 
-    // Combined filtering logic for search and status
     const filteredClassData = useMemo(() => {
         let currentFilteredData = [...sortedClassData];
 
-        // 1. Apply status filter
         if (statusFilter !== 'all') {
             currentFilteredData = currentFilteredData.filter(item => item.status === statusFilter);
         }
 
-        // 2. Apply column search filters
         Object.keys(searchTexts).forEach(column => {
             const searchTerm = String(searchTexts[column]).toLowerCase().trim();
             if (searchTerm) {
@@ -136,7 +149,7 @@ const ClassViewContent = () => {
             }
         });
         return currentFilteredData;
-    }, [sortedClassData, searchTexts, statusFilter]); // Added statusFilter to dependencies
+    }, [sortedClassData, searchTexts, statusFilter]);
 
 
     // --- Pagination State and Logic ---
@@ -225,10 +238,9 @@ const ClassViewContent = () => {
             <hr className="border-t border-gray-200 mt-4 mb-4" />
             <div className="flex items-center justify-between mt-2 mb-4 gap-2">
                 <div className="flex items-center gap-2">
-                    {/* Your existing search input (moved it here to match layout) */}
                     <input
                         type="text"
-                        placeholder="Search by name..." // Changed placeholder to be more specific
+                        placeholder="Search by name..."
                         value={searchTexts.name}
                         onChange={(e) => handleSearchChange('name', e.target.value)}
                         className="block w-72 p-2 text-sm font-medium text-gray-900 bg-white border border-gray-200 rounded-lg hover:bg-gray-100 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:hover:text-white dark:hover:bg-gray-700"
@@ -270,7 +282,11 @@ const ClassViewContent = () => {
                     </div>
                 </div>
 
-                <button type="button" className="text-white bg-green-700 hover:bg-green-800 focus:ring-2 focus:ring-green-600 font-medium rounded-md text-sm px-3 py-2 text-center inline-flex items-center dark:bg-green-600 me-2 mb-2 dark:hover:bg-green-700 dark:focus:ring-green-800 gap-1">
+                <button
+                    type="button"
+                    onClick={handleCreateClick}
+                    className="text-white bg-green-700 hover:bg-green-800 focus:ring-2 focus:ring-green-600 font-medium rounded-md text-sm px-3 py-2 text-center inline-flex items-center dark:bg-green-600 me-2 mb-2 dark:hover:bg-green-700 dark:focus:ring-green-800 gap-1"
+                >
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-4">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
                     </svg>
@@ -307,9 +323,14 @@ const ClassViewContent = () => {
                                     Degrees {getSortIndicator('degrees')}
                                 </div>
                             </th>
-                            <th scope="col" className="px-6 py-2.5 lg:table-cell hidden cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600">
+                            <th scope="col" className="px-6 py-2.5 2xl:table-cell hidden cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600">
                                 <div className="flex items-center" onClick={() => handleSort('faculty')}>
                                     Faculty {getSortIndicator('faculty')}
+                                </div>
+                            </th>
+                            <th scope="col" className="px-6 py-2.5 2xl:table-cell hidden cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600"> {/* New Semester Column */}
+                                <div className="flex items-center" onClick={() => handleSort('semester')}>
+                                    Semester {getSortIndicator('semester')}
                                 </div>
                             </th>
                             <th scope="col" className="px-6 py-2 sm:table-cell hidden cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600">
@@ -317,7 +338,6 @@ const ClassViewContent = () => {
                                     Shift {getSortIndicator('shift')}
                                 </div>
                             </th>
-                            {/* New column for Status */}
                             <th scope="col" className="px-6 py-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600">
                                 <div className="flex items-center" onClick={() => handleSort('status')}>
                                     Status {getSortIndicator('status')}
@@ -331,9 +351,8 @@ const ClassViewContent = () => {
                                 <tr key={data.id} className="bg-white border-b border-gray-200 dark:bg-gray-800 dark:border-gray-700">
                                     <th scope="row" className="px-6 py-2.5 font-medium text-gray-900 whitespace-nowrap dark:text-white md:table-cell hidden">
                                         <div className="flex gap-2">
-                                            {/* Toggle button for status */}
                                             <button className={`p-1 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300`} >
-                                                <EditIcon className="size-5" /> {/* Use the EditIcon component */}
+                                                <EditIcon className="size-5" />
                                             </button>
 
                                             <button
@@ -341,7 +360,7 @@ const ClassViewContent = () => {
                                                 className={`p-1 ${data.status === 'active' ? 'text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300' : 'text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300'}`}
                                                 title={data.status === 'active' ? 'Archive Classroom' : 'Activate Classroom'}
                                             >
-                                                <ArchiveIcon className="size-5" /> {/* Use the ArchiveIcon component */}
+                                                <ArchiveIcon className="size-5" />
                                             </button>
                                         </div>
                                     </th>
@@ -350,7 +369,8 @@ const ClassViewContent = () => {
                                     <td className="px-6 py-2 lg:table-cell hidden"> {data.group} </td>
                                     <td className="px-6 py-2"> {data.major} </td>
                                     <td className="px-6 py-2"> {data.degrees} </td>
-                                    <td className="px-6 py-2 lg:table-cell hidden"> {data.faculty} </td>
+                                    <td className="px-6 py-2 2xl:table-cell hidden"> {data.faculty} </td>
+                                    <td className="px-6 py-2 2xl:table-cell hidden"> {data.semester} </td> {/* Display semester here */}
                                     <td className="px-6 py-2 sm:table-cell hidden"> {data.shift} </td>
                                     <td className="px-6 py-2 capitalize">
                                         <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
@@ -365,17 +385,15 @@ const ClassViewContent = () => {
                             ))
                         ) : (
                             <tr className="bg-white dark:bg-gray-800">
-                                {/* Increased colspan to 10 for the new status column */}
-                                <td colSpan="10" className="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
+                                <td colSpan="11" className="px-6 py-4 text-center text-gray-500 dark:text-gray-400"> {/* Updated colspan */}
                                     No matching results found.
                                 </td>
                             </tr>
                         )}
                     </tbody>
-                    {/* --- Search Inputs in Footer --- */}
                     <tfoot className="text-xs text-gray-700 border-t border-gray-200 bg-gray-50 dark:text-gray-400 dark:border-gray-600 dark:bg-gray-700">
                         <tr>
-                            <td className="px-6 py-2.5 md:table-cell hidden"></td> {/* Empty cell for Action column */}
+                            <td className="px-6 py-2.5 md:table-cell hidden"></td>
                             <td className="px-6 py-2.5">
                                 <input
                                     type="text"
@@ -421,12 +439,21 @@ const ClassViewContent = () => {
                                     className="block w-full p-1.5 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
                                 />
                             </td>
-                            <td className="px-6 py-2.5 lg:table-cell hidden">
+                            <td className="px-6 py-2.5 2xl:table-cell hidden">
                                 <input
                                     type="text"
                                     placeholder="Search faculty..."
                                     value={searchTexts.faculty}
                                     onChange={(e) => handleSearchChange('faculty', e.target.value)}
+                                    className="block w-full p-1.5 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                                />
+                            </td>
+                            <td className="px-6 py-2.5 2xl:table-cell hidden"> {/* New Semester Search */}
+                                <input
+                                    type="text"
+                                    placeholder="Search sem..."
+                                    value={searchTexts.semester}
+                                    onChange={(e) => handleSearchChange('semester', e.target.value)}
                                     className="block w-full p-1.5 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
                                 />
                             </td>
@@ -439,13 +466,11 @@ const ClassViewContent = () => {
                                     className="block w-full p-1.5 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
                                 />
                             </td>
-                            {/* Empty cell for Status search, as it's handled by buttons */}
                             <td className="px-6 py-2.5"></td>
                         </tr>
                     </tfoot>
                 </table>
             </div>
-            {/* Pagination Controls */}
             <nav className="flex items-center flex-column flex-wrap md:flex-row justify-between pt-4" aria-label="Table navigation">
                 <span className="text-sm font-normal text-gray-500 dark:text-gray-400 mb-4 md:mb-0 block w-full md:w-auto">
                     Showing{' '}
@@ -489,10 +514,10 @@ const ClassViewContent = () => {
                         <li key={pageNumber}>
                             <button
                                 onClick={() => goToPage(pageNumber)}
-                                className={`flex items-center justify-center px-3 h-8 leading-tight ${
+                                className={`flex items-center justify-center px-3 h-8 leading-tight border border-gray-300 ${
                                     currentPage === pageNumber
-                                        ? 'text-blue-600 bg-blue-50 border border-blue-300 hover:bg-blue-100 hover:text-blue-700 dark:border-gray-700 dark:bg-gray-700 dark:text-white'
-                                        : 'text-gray-500 bg-white border border-gray-300 hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white'
+                                        ? 'text-blue-600 bg-blue-50 hover:bg-blue-100 hover:text-blue-700 dark:bg-gray-700 dark:text-white'
+                                        : 'text-gray-500 bg-white hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white'
                                 }`}
                             >
                                 {pageNumber}
@@ -510,6 +535,13 @@ const ClassViewContent = () => {
                     </li>
                 </ul>
             </nav>
+
+            {/* Render the ClassCreatePopup component */}
+            <ClassCreatePopup
+                isOpen={showCreatePopup}
+                onClose={handleClosePopup}
+                onSave={handleSaveNewClass}
+            />
         </div>
     );
 };
