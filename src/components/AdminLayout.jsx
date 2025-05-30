@@ -1,38 +1,51 @@
+// AdminLayout.js
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import Sidebar from './Sidebar';
-import Topbar from './Topbar'; // Assume Topbar.js exists
-import Footer from './Footer'; // Assume Footer.js exists
-import AdminPopup from '@/app/admin/profile/components/AdminPopup'; // Path from your code
-import LogoutAlert from './LogoutAlert'; // Path from your code
-import NotificationPopup from '../app/admin/notification/AdminNotificationPopup'; // Assuming this is created as discussed
-// You'll also need NotificationItem.js for NotificationPopup to work
+import Sidebar from '@/components/Sidebar'; // Standardized path
+import Topbar from '@/components/Topbar';   // Standardized path
+import Footer from '@/components/Footer';     // Standardized path
+import AdminPopup from '@/app/admin/profile/components/AdminPopup'; // Kept specific path from HEAD, adjust if more general
+import LogoutAlert from '@/components/LogoutAlert'; // Standardized path
+import NotificationPopup from '../app/admin/notification/AdminNotificationPopup'; // From HEAD
+// You'll also need NotificationItem.js for NotificationPopup to work (Comment from HEAD)
+import ThemeProvider from '@/components/ThemeProvider'; // From 39f846b - Ensure this path is correct
 
-
-export default function AdminLayout({ children, pageTitle }) {
-    const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+export default function AdminLayout({ children, pageTitle, activeItem }) { // Added activeItem from 39f846b
+    const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => { // From 39f846b (localStorage logic)
+        if (typeof window !== 'undefined') {
+            return localStorage.getItem('sidebarCollapsed') === 'true';
+        }
+        return false; // Default
+    });
     
     // Admin/User Popup State
-    const [showAdminPopup, setShowAdminPopup] = useState(false);
-    const adminPopupRef = useRef(null);
-    const userIconRef = useRef(null);
+    const [showAdminPopup, setShowAdminPopup] = useState(false); // Common, defined once
+    const adminPopupRef = useRef(null); // From HEAD
+    const userIconRef = useRef(null);   // From HEAD
 
-    // Notification Popup State
+    // Notification Popup State (From HEAD)
     const [showNotificationPopup, setShowNotificationPopup] = useState(false);
     const [notifications, setNotifications] = useState([]);
-    const notificationPopupRef = useRef(null); // Ref for the notification popup itself
-    const notificationIconRef = useRef(null); // Ref for the bell icon in Topbar
+    const notificationPopupRef = useRef(null);
+    const notificationIconRef = useRef(null);
 
     // Logout Alert State
-    const [showLogoutAlert, setShowLogoutAlert] = useState(false);
+    const [showLogoutAlert, setShowLogoutAlert] = useState(false); // Common, defined once
+
+    // Effect to save collapse state to localStorage (From 39f846b)
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            localStorage.setItem('sidebarCollapsed', isSidebarCollapsed);
+        }
+    }, [isSidebarCollapsed]);
 
     const toggleSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
 
     const handleUserIconClick = (event) => {
         event.stopPropagation();
         setShowAdminPopup(prev => !prev);
-        if (showNotificationPopup) setShowNotificationPopup(false); // Close other popup
+        if (showNotificationPopup) setShowNotificationPopup(false); // Close other popup (from HEAD)
     };
 
     const handleLogoutClick = () => {
@@ -41,25 +54,25 @@ export default function AdminLayout({ children, pageTitle }) {
     };
     const handleCloseLogoutAlert = () => setShowLogoutAlert(false);
     const handleConfirmLogout = () => {
-        alert('Logged out'); // Placeholder for actual logout
+        alert('Logged out'); // Placeholder
         setShowLogoutAlert(false);
-        // Add actual logout logic, e.g., call API, router.push('/login');
+        // Add actual logout logic
     };
 
-    // --- Notification Handlers ---
+    // --- Notification Handlers (From HEAD) ---
     const handleToggleNotificationPopup = (event) => {
         event.stopPropagation();
         setShowNotificationPopup(prev => !prev);
         if (showAdminPopup) setShowAdminPopup(false); // Close other popup
     };
 
-    const mockAPICall = async (action, data) => {
+    const mockAPICall = async (action, data) => { // From HEAD
         console.log(`MOCK API CALL: ${action}`, data || '');
-        await new Promise(resolve => setTimeout(resolve, 300)); // Simulate API delay
+        await new Promise(resolve => setTimeout(resolve, 300));
         return { success: true, message: `${action} successful.` };
     };
 
-    const handleMarkAllRead = async () => {
+    const handleMarkAllRead = async () => { // From HEAD
         try {
             await mockAPICall("Mark all notifications as read");
             setNotifications(prevNotifications =>
@@ -70,7 +83,7 @@ export default function AdminLayout({ children, pageTitle }) {
         }
     };
 
-    const handleApproveNotification = async (notificationId) => {
+    const handleApproveNotification = async (notificationId) => { // From HEAD
         try {
             await mockAPICall("Approve notification", { notificationId });
             setNotifications(prevNotifications =>
@@ -85,7 +98,7 @@ export default function AdminLayout({ children, pageTitle }) {
         }
     };
 
-    const handleDenyNotification = async (notificationId) => {
+    const handleDenyNotification = async (notificationId) => { // From HEAD
         try {
             await mockAPICall("Deny notification", { notificationId });
             setNotifications(prevNotifications =>
@@ -101,7 +114,7 @@ export default function AdminLayout({ children, pageTitle }) {
     };
 
     // --- Effects ---
-    // Fetch/mock initial notifications
+    // Fetch/mock initial notifications (From HEAD)
     useEffect(() => {
         const mockNotificationsData = [
             { id: 1, avatarUrl: 'https://randomuser.me/api/portraits/women/60.jpg', message: 'Dr. Linda Keo is requesting room A1 at 7:00 - 10:00am for class 31/31 IT-morning', timestamp: '10m', isUnread: true, type: 'roomRequest', details: { requestorName: 'Dr. Linda Keo' } },
@@ -112,7 +125,7 @@ export default function AdminLayout({ children, pageTitle }) {
         setNotifications(mockNotificationsData);
     }, []);
 
-    // Handle clicks outside popups
+    // Handle clicks outside popups (From HEAD, ensures both popups are handled)
     useEffect(() => {
         const handleClickOutside = (event) => {
             // Admin Popup
@@ -130,63 +143,72 @@ export default function AdminLayout({ children, pageTitle }) {
         };
         document.addEventListener('click', handleClickOutside);
         return () => document.removeEventListener('click', handleClickOutside);
-    }, [showAdminPopup, showNotificationPopup]); // Rerun effect if visibility of either popup changes
+    }, [showAdminPopup, showNotificationPopup]);
 
-    const hasUnreadNotifications = notifications.some(n => n.isUnread);
+    const hasUnreadNotifications = notifications.some(n => n.isUnread); // From HEAD
+
+    // Placeholder for onNavItemClick if it's used by Sidebar from 39f846b version
+    const handleNavItemClick = (item) => {
+        console.log("Navigating to:", item);
+        // Implement actual navigation logic here, e.g., router.push or setting activeItem
+    };
 
     return (
-        <div className="flex w-full min-h-screen bg-[#E2E1EF]">
-            <Sidebar
-                isCollapsed={isSidebarCollapsed}
-            />
-            <div className={`main-content flex-grow flex flex-col transition-all duration-300 ease-in-out`}>
-                <Topbar
-                    onToggleSidebar={toggleSidebar}
-                    isSidebarCollapsed={isSidebarCollapsed}
-                    onUserIconClick={handleUserIconClick}
-                    pageSubtitle={pageTitle}
-                    userIconRef={userIconRef}
-                    // Notification props for Topbar
-                    onNotificationIconClick={handleToggleNotificationPopup}
-                    notificationIconRef={notificationIconRef}
-                    hasUnreadNotifications={hasUnreadNotifications}
-                />
-                <main className="content-area flex-grow p-3 sm:p-6 m-3 sm:m-6 bg-white rounded-lg shadow-md">
-                    {children}
-                </main>
-                <Footer />
-            </div>
+        <ThemeProvider> {/* Assuming ThemeProvider wraps the layout, from 39f846b */}
+            <> {/* Using React Fragment from 39f846b */}
+                <div className="flex w-full min-h-screen bg-[#E2E1EF] dark:bg-gray-800"> {/* dark:bg-gray-800 from 39f846b */}
+                    <Sidebar
+                        isCollapsed={isSidebarCollapsed}
+                        activeItem={activeItem} // From 39f846b
+                        onNavItemClick={handleNavItemClick} // From 39f846b (ensure handleNavItemClick is implemented or passed)
+                    />
+                    <div className={`main-content flex-grow flex flex-col transition-all duration-300 ease-in-out`}>
+                        <Topbar
+                            onToggleSidebar={toggleSidebar}
+                            isSidebarCollapsed={isSidebarCollapsed}
+                            onUserIconClick={handleUserIconClick}
+                            pageSubtitle={pageTitle} // pageTitle was in both, used here
+                            userIconRef={userIconRef} // From HEAD
+                            // Notification props for Topbar (From HEAD)
+                            onNotificationIconClick={handleToggleNotificationPopup}
+                            notificationIconRef={notificationIconRef}
+                            hasUnreadNotifications={hasUnreadNotifications}
+                        />
+                        {/* Using p-3 sm:p-6 m-3 sm:m-6 from HEAD as it's more specific, with dark mode from 39f846b */}
+                        <main className="content-area flex-grow p-3 sm:p-6 m-3 sm:m-6 bg-white dark:bg-gray-900 rounded-lg shadow-md">
+                            {children}
+                        </main>
+                        <Footer />
+                    </div>
 
-            {/* Popups */}
-            {/* Admin/User Popup */}
-            <div ref={adminPopupRef}> {/* Wrapper for ref */}
-                <AdminPopup 
-                    show={showAdminPopup} 
-                    onLogoutClick={handleLogoutClick} 
-                    // Pass userName and userEmail if AdminPopup is generic UserPopup
-                    // userName="Current User"
-                    // userEmail="user@example.com"
-                />
-            </div>
+                    {/* Popups */}
+                    {/* Admin/User Popup (structure from HEAD with ref) */}
+                    <div ref={adminPopupRef}>
+                        <AdminPopup 
+                            show={showAdminPopup} 
+                            onLogoutClick={handleLogoutClick} 
+                        />
+                    </div>
 
-            {/* Notification Popup */}
-            <div ref={notificationPopupRef}> {/* Wrapper for ref */}
-                <NotificationPopup
-                    show={showNotificationPopup}
-                    notifications={notifications}
-                    onMarkAllRead={handleMarkAllRead}
-                    onApprove={handleApproveNotification}
-                    onDeny={handleDenyNotification}
-                    anchorRef={notificationIconRef} // For potential positioning logic
-                    // onClose={() => setShowNotificationPopup(false)} // If popup has own close button
-                />
-            </div>
-            
-            <LogoutAlert 
-                show={showLogoutAlert} 
-                onClose={handleCloseLogoutAlert} 
-                onConfirmLogout={handleConfirmLogout} 
-            />
-        </div>
+                    {/* Notification Popup (From HEAD) */}
+                    <div ref={notificationPopupRef}>
+                        <NotificationPopup
+                            show={showNotificationPopup}
+                            notifications={notifications}
+                            onMarkAllRead={handleMarkAllRead}
+                            onApprove={handleApproveNotification}
+                            onDeny={handleDenyNotification}
+                            anchorRef={notificationIconRef} 
+                        />
+                    </div>
+                    
+                    <LogoutAlert 
+                        show={showLogoutAlert} 
+                        onClose={handleCloseLogoutAlert} 
+                        onConfirmLogout={handleConfirmLogout} 
+                    />
+                </div>
+            </>
+        </ThemeProvider>
     );
 }
