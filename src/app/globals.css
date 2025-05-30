@@ -6,6 +6,15 @@ body {
   @apply font-sans bg-num-bg;
 }
 
+@layer components {
+  tr:hover {
+    @apply bg-gray-100 dark:bg-gray-700 cursor-pointer;
+  }
+   tr {
+    @apply dark:bg-gray-800 dark:border-gray-600;
+   }
+}
+
 .setting-icon-svg {
   background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15"><path d="M7.5 9.5a2 2 0 1 0 0-4 2 2 0 0 0 0 4zm1.41-2.5h2.09v1h-2.09A2.98 2.98 0 0 1 7 9.91V12H6V9.91A2.98 2.98 0 0 1 4.09 8H2V7h2.09A2.98 2.98 0 0 1 6 5.09V3h1v2.09A2.98 2.98 0 0 1 8.91 7z" stroke="%23396DFB" fill="none"/></svg>');
   @apply bg-no-repeat bg-center;
