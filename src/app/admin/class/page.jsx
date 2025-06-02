@@ -3,6 +3,7 @@
 import { useState, useMemo } from 'react';
 import AdminLayout from '@/components/AdminLayout';
 import ClassCreatePopup from './components/ClassCreatePopup';
+import { useRouter } from 'next/navigation';
 
 const ClassViewContent = () => {
     // --- Data ---
@@ -17,18 +18,14 @@ const ClassViewContent = () => {
         { id: 7, name: 'NUM33-06', generation: '33', group: '06', major: 'DS', degrees: 'Bachelor', faculty: 'Faculty of DS', semester: '2024-2025 S3', shift: '17:00 - 20:00', status: 'active' },
         { id: 8, name: 'NUM33-07', generation: '33', group: '07', major: 'ML', degrees: 'Bachelor', faculty: 'Faculty of ML', semester: '2024-2025 S3', shift: '18:00 - 21:00', status: 'active' },
         { id: 9, name: 'NUM33-08', generation: '33', group: '08', major: 'DA', degrees: 'Bachelor', faculty: 'Faculty of DA', semester: '2024-2025 S3', shift: '19:00 - 22:00', status: 'archived' }, // Example archived
-        { id: 10, name: 'NUM33-09', generation: '33', group: '09', major: 'SE', degrees: 'Bachelor', faculty: 'Faculty of SE & R', semester: '2024-2025 S3', shift: '8:00 - 11:00', status: 'active' },
-        { id: 11, name: 'NUM34-10', generation: '34', group: '10', major: 'AI', degrees: 'Bachelor', faculty: 'Faculty of AI', semester: '2025-2026 S1', shift: '9:00 - 12:00', status: 'active' },
-        { id: 12, name: 'NUM34-11', generation: '34', group: '11', major: 'DS', degrees: 'Bachelor', faculty: 'Faculty of DS & R', semester: '2025-2026 S1', shift: '10:00 - 13:00', status: 'archived' }, // Example archived
-        { id: 13, name: 'NUM34-12', generation: '34', group: '12', major: 'ML', degrees: 'Bachelor', faculty: 'Faculty of ML & R', semester: '2025-2026 S1', shift: '11:00 - 14:00', status: 'active' },
-        { id: 14, name: 'NUM35-13', generation: '35', group: '13', major: 'DA', degrees: 'Bachelor', faculty: 'Faculty of DA & R', semester: '2025-2026 S2', shift: '12:00 - 15:00', status: 'active' },
-        { id: 15, name: 'NUM35-14', generation: '35', group: '14', major: 'SE', degrees: 'Bachelor', faculty: 'Faculty of SE & R', semester: '2025-2026 S2', shift: '13:00 - 16:00', status: 'active' },
+        { id: 10, name: 'NUM33-09', generation: '33', group: '09', major: 'SE', degrees: 'Bachelor', faculty: 'Faculty of SE & R', semester: '2024-2025 S3', shift: '8:00 - 11:00', status: 'active' }
     ];
 
     const [classData, setClassData] = useState(initialClassData);
-
-    // --- Popup Form State (now just for visibility) ---
     const [showCreatePopup, setShowCreatePopup] = useState(false);
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPageOptions = [5, 10, 20, 50];
+    const [itemsPerPage, setItemsPerPage] = useState(itemsPerPageOptions[0]);
 
     const handleCreateClick = () => {
         setShowCreatePopup(true);
@@ -50,11 +47,7 @@ const ClassViewContent = () => {
         setClassData(prevData => [...prevData, newClassWithStatus]);
         setCurrentPage(1); // Reset page after adding a new class
     };
-
-    // --- Status Filter State ---
     const [statusFilter, setStatusFilter] = useState('active'); // 'active', 'archived', or 'all'
-
-    // --- Sorting State and Logic ---
     const [sortColumn, setSortColumn] = useState(null);
     const [sortDirection, setSortDirection] = useState('asc'); // 'asc' or 'desc'
 
@@ -113,7 +106,6 @@ const ClassViewContent = () => {
         );
     };
 
-    // --- Search State and Logic ---
     const [searchTexts, setSearchTexts] = useState({
         name: '',
         generation: '',
@@ -121,7 +113,7 @@ const ClassViewContent = () => {
         major: '',
         degrees: '',
         faculty: '',
-        semester: '', // <--- Added semester to searchTexts
+        semester: '',
         shift: '',
     });
 
@@ -130,7 +122,7 @@ const ClassViewContent = () => {
             ...prev,
             [column]: value,
         }));
-        setCurrentPage(1); // Reset to first page on search
+        setCurrentPage(1); 
     };
 
     const filteredClassData = useMemo(() => {
@@ -150,12 +142,6 @@ const ClassViewContent = () => {
         });
         return currentFilteredData;
     }, [sortedClassData, searchTexts, statusFilter]);
-
-
-    // --- Pagination State and Logic ---
-    const [currentPage, setCurrentPage] = useState(1);
-    const itemsPerPageOptions = [5, 10, 20, 50];
-    const [itemsPerPage, setItemsPerPage] = useState(itemsPerPageOptions[0]);
 
     const totalPages = Math.ceil(filteredClassData.length / itemsPerPage);
 
@@ -192,14 +178,12 @@ const ClassViewContent = () => {
         if (endPage - startPage + 1 < maxPagesToShow) {
             startPage = Math.max(1, endPage - maxPagesToShow + 1);
         }
-
         for (let i = startPage; i <= endPage; i++) {
             pageNumbers.push(i);
         }
         return pageNumbers;
     };
 
-    // --- Active/Archive Logic ---
     const toggleClassStatus = (id) => {
         setClassData(prevData =>
             prevData.map(item =>
@@ -208,7 +192,13 @@ const ClassViewContent = () => {
                     : item
             )
         );
-        setCurrentPage(1); // Reset page after status change
+        setCurrentPage(1);
+    };
+
+    const router = useRouter();
+    
+    const handleRowClick = (classId) => {
+        router.push(`/admin/class/${classId}`);
     };
 
     const EditIcon = ({ className = "w-[17px] h-[17px]" }) => (
@@ -226,7 +216,6 @@ const ClassViewContent = () => {
             <path d="M7.79163 8.5H9.20829" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
         </svg>
     );
-
 
     return (
         <div className="p-6 dark:text-white">
@@ -348,15 +337,27 @@ const ClassViewContent = () => {
                     <tbody className="text-xs font-normal text-gray-700 dark:text-gray-400">
                         {currentTableData.length > 0 ? (
                             currentTableData.map((data) => (
-                                <tr key={data.id} className="bg-white border-b border-gray-200 dark:bg-gray-800 dark:border-gray-700">
+                                <tr key={data.id} className="bg-white border-b border-gray-200 dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 cursor-pointer"
+                                onClick={() => handleRowClick(data.id)}
+                                >
                                     <th scope="row" className="px-6 py-2.5 font-medium text-gray-900 whitespace-nowrap dark:text-white md:table-cell hidden">
                                         <div className="flex gap-2">
-                                            <button className={`p-1 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300`} >
+                                            {/* I've made the Edit button functional as an example, it also needs stopPropagation */}
+                                            <button 
+                                                onClick={(e) => {
+                                                    e.stopPropagation(); // Stop the event from bubbling to the <tr>
+                                                    handleRowClick(data.id); // Or a dedicated handleEditClick function
+                                                }}
+                                                className={`p-1 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300`} 
+                                            >
                                                 <EditIcon className="size-5" />
                                             </button>
 
                                             <button
-                                                onClick={() => toggleClassStatus(data.id)}
+                                                onClick={(e) => {
+                                                    e.stopPropagation(); // Stop the event from bubbling to the <tr>
+                                                    toggleClassStatus(data.id);
+                                                }}
                                                 className={`p-1 ${data.status === 'active' ? 'text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300' : 'text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300'}`}
                                                 title={data.status === 'active' ? 'Archive Classroom' : 'Activate Classroom'}
                                             >

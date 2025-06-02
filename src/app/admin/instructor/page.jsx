@@ -3,6 +3,7 @@
 import { useState, useMemo } from 'react';
 import AdminLayout from '@/components/AdminLayout';
 import InstructorCreatePopup from './components/InstructorCreatePopup';
+import { useRouter } from 'next/navigation';
 
 // Default Avatar Icon component for when no image is available
 const DefaultAvatarIcon = ({ className = "w-8 h-8" }) => (
@@ -25,6 +26,12 @@ const InstructorViewContent = () => {
         { id: 7, name: 'Chanthy Pen', firstName: 'Chanthy', lastName: 'Pen', email: 'chanthy.pen@example.com', phone: '012345684', majorStudied: 'Data Analytics', qualifications: 'Associate Professor', status: 'active', profileImage: 'https://i.pravatar.cc/150?img=17' },
         { id: 8, name: 'Vicheka Sreng', firstName: 'Vicheka', lastName: 'Sreng', email: 'vicheka.sreng@example.com', phone: '012345685', majorStudied: 'Software Engineering', qualifications: 'PhD', status: 'archived', profileImage: 'https://i.pravatar.cc/150?img=41' },
     ];
+
+    const router = useRouter();
+
+    const handleRowClick = (instructorId) => {
+        router.push(`/admin/instructor/${instructorId}`);
+    };
 
     const [instructorData, setInstructorData] = useState(initialInstructorData);
 
@@ -320,13 +327,19 @@ const InstructorViewContent = () => {
                     <tbody className="text-xs font-normal text-gray-700 dark:text-gray-400">
                         {currentTableData.length > 0 ? (
                             currentTableData.map((data) => (
-                                <tr key={data.id} className="bg-white border-b border-gray-200 dark:bg-gray-800 dark:border-gray-700">
+                                <tr key={data.id} className="bg-white border-b border-gray-200 dark:bg-gray-800 dark:border-gray-700"
+                                onClick={() => handleRowClick(data.id)}
+                                >
                                     <th scope="row" className="px-6 py-2.5 font-medium text-gray-900 whitespace-nowrap dark:text-white">
                                         <div className="flex gap-2">
-                                            <button className={`p-1 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300`} >
+                                            <button 
+                                                onClick={(e) => {
+                                                    e.stopPropagation(); // Stop event from bubbling to the row
+                                                    handleRowClick(data.id); // Navigate on button click
+                                                }}
+                                                className={`p-1 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300`} >
                                                 <EditIcon className="size-5" />
                                             </button>
-
                                             <button
                                                 onClick={() => toggleInstructorStatus(data.id)}
                                                 className={`p-1 ${data.status === 'active' ? 'text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300' : 'text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300'}`}
