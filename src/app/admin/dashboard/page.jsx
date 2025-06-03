@@ -37,7 +37,7 @@ const fetchActivityData = async () => {
 };
 
 
-export default function DashboardPage() {
+const DashboardPage = () => {
   const [dashboardStats, setDashboardStats] = useState(null);
   const [chartData, setChartData] = useState(null);
   const [activityData, setActivityData] = useState(null);
@@ -82,7 +82,6 @@ export default function DashboardPage() {
 
 // ===>> Return here
   return (
-    <DashboardLayout>
     <div>
       <DashboardHeader
         title="Welcome to Schedule Management"
@@ -109,7 +108,13 @@ export default function DashboardPage() {
         </div>
       </div>
     </div>
-    </DashboardLayout>
   );
 }
 
+export default function AdminDashboardPage() {
+    return (
+        <DashboardLayout activeItem="dashboard" pageTitle="Dashboard">
+            <DashboardPage/>
+        </DashboardLayout>
+    );
+}
