@@ -171,15 +171,23 @@ const ClassDetailsContent = () => {
     const renderTextField = (label, name, value) => (
          <div className="form-group flex-1 min-w-[200px]">
             <label className="form-label block font-medium text-sm text-num-dark-text dark:text-white mb-1">{label}</label>
-            <input
-                type="text"
-                name={name}
-                value={value}
-                onChange={handleInputChange}
-                readOnly={!isEditing}
-                disabled={loading}
-                className="form-input w-full py-2 px-3 bg-num-content-bg border border-num-gray-light dark:bg-gray-700 dark:border-gray-600 rounded-md font-medium text-[14px] text-num-dark-text dark:text-white"
-            />
+            {isEditing ? (
+                <input
+                    type="text"
+                    name={name}
+                    value={value}
+                    onChange={handleInputChange}
+                    disabled={loading}
+                    className="form-input w-full py-2 px-3 bg-num-content-bg border border-num-gray-light dark:bg-gray-700 dark:border-gray-600 rounded-md font-medium text-[14px] text-num-dark-text dark:text-white"
+                />
+            ) : (
+                <input
+                    type="text"
+                    value={value}
+                    readOnly
+                    className="form-input w-full py-2 px-3 bg-gray-100 border border-num-gray-light dark:bg-gray-800 dark:border-gray-700 rounded-md font-medium text-[14px] text-gray-500 dark:text-gray-400"
+                />
+            )}
         </div>
     );
 
