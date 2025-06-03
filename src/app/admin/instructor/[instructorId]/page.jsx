@@ -9,18 +9,19 @@ import Image from 'next/image';
 // --- Data Simulation & Options ---
 // In a real app, this data would come from your database via an API.
 const initialInstructorData = [
-    { id: 1, name: 'Sok Mean', firstName: 'Sok', lastName: 'Mean', email: 'sok.mean@example.com', phone: '012345678', majorStudied: 'Computer Science', qualifications: 'PhD', status: 'active', profileImage: 'https://i.pravatar.cc/150?img=68' },
-    { id: 2, name: 'Sok Chan', firstName: 'Sok', lastName: 'Chan', email: 'sok.chan@example.com', phone: '012345679', majorStudied: 'Information Technology', qualifications: 'Master', status: 'active', profileImage: 'https://i.pravatar.cc/150?img=52' },
-    { id: 3, name: 'Dara Kim', firstName: 'Dara', lastName: 'Kim', email: 'dara.kim@example.com', phone: '012345680', majorStudied: 'Information Systems', qualifications: 'Professor', status: 'active', profileImage: null }, // No image
-    { id: 4, name: 'Lina Heng', firstName: 'Lina', lastName: 'Heng', email: 'lina.heng@example.com', phone: '012345681', majorStudied: 'Artificial Intelligence', qualifications: 'PhD', status: 'archived', profileImage: 'https://i.pravatar.cc/150?img=25' },
-    { id: 5, name: 'Virak Chea', firstName: 'Virak', lastName: 'Chea', email: 'virak.chea@example.com', phone: '012345682', majorStudied: 'Data Science', qualifications: 'Master', status: 'active', profileImage: 'https://i.pravatar.cc/150?img=33' },
-    { id: 6, name: 'Sophea Nov', firstName: 'Sophea', lastName: 'Nov', email: 'sophea.nov@example.com', phone: '012345683', majorStudied: 'Machine Learning', qualifications: 'Lecturer', status: 'active', profileImage: null }, // No image
-    { id: 7, name: 'Chanthy Pen', firstName: 'Chanthy', lastName: 'Pen', email: 'chanthy.pen@example.com', phone: '012345684', majorStudied: 'Data Analytics', qualifications: 'Associate Professor', status: 'active', profileImage: 'https://i.pravatar.cc/150?img=17' },
-    { id: 8, name: 'Vicheka Sreng', firstName: 'Vicheka', lastName: 'Sreng', email: 'vicheka.sreng@example.com', phone: '012345685', majorStudied: 'Software Engineering', qualifications: 'PhD', status: 'archived', profileImage: 'https://i.pravatar.cc/150?img=41' },
+    { id: 1, name: 'Sok Mean', firstName: 'Sok', lastName: 'Mean', email: 'sok.mean@example.com', phone: '012345678', major: 'Computer Science', degree: 'PhD', department:'Faculty of CS', status: 'active', profileImage: 'https://i.pravatar.cc/150?img=68', address : '123 Main St, Phnom Penh, Cambodia', password: 'password123' },
+    { id: 2, name: 'Sok Chan', firstName: 'Sok', lastName: 'Chan', email: 'sok.chan@example.com', phone: '012345679', major: 'Information Technology', degree: 'Master', department:'Faculty of IT', status: 'active', profileImage: 'https://i.pravatar.cc/150?img=52', address : '123 Main St, Phnom Penh, Cambodia', password: 'password123' },
+    { id: 3, name: 'Dara Kim', firstName: 'Dara', lastName: 'Kim', email: 'dara.kim@example.com', phone: '012345680', major: 'Information Systems', degree: 'Professor', department:'Faculty of IS', status: 'active', profileImage: null, address : '123 Main St, Phnom Penh, Cambodia', password: 'password123' }, // No image
+    { id: 4, name: 'Lina Heng', firstName: 'Lina', lastName: 'Heng', email: 'lina.heng@example.com', phone: '012345681', major: 'Artificial Intelligence', degree: 'PhD', department:'Faculty of AI', status: 'archived', profileImage: 'https://i.pravatar.cc/150?img=25', address : '123 Main St, Phnom Penh, Cambodia', password: 'password123' },
+    { id: 5, name: 'Virak Chea', firstName: 'Virak', lastName: 'Chea', email: 'virak.chea@example.com', phone: '012345682', major: 'Data Science', degree: 'Master', department:'Faculty of DS', status: 'active', profileImage: 'https://i.pravatar.cc/150?img=33', address : '123 Main St, Phnom Penh, Cambodia', password: 'password123' },
+    { id: 6, name: 'Sophea Nov', firstName: 'Sophea', lastName: 'Nov', email: 'sophea.nov@example.com', phone: '012345683', major: 'Machine Learning', degree: 'Lecturer', department:'Faculty of ML', status: 'active', profileImage: null, address : '123 Main St, Phnom Penh, Cambodia', password: 'password123' }, // No image
+    { id: 7, name: 'Chanthy Pen', firstName: 'Chanthy', lastName: 'Pen', email: 'chanthy.pen@example.com', phone: '012345684', major: 'Data Analytics', degree: 'Associate Professor', department:'Faculty of DA', status: 'active', profileImage: 'https://i.pravatar.cc/150?img=17', address : '123 Main St, Phnom Penh, Cambodia', password: 'password123' },
+    { id: 8, name: 'Vicheka Sreng', firstName: 'Vicheka', lastName: 'Sreng', email: 'vicheka.sreng@example.com', phone: '012345685', major: 'Software Engineering', degree: 'PhD', department:'Faculty of SE', status: 'archived', profileImage: 'https://i.pravatar.cc/150?img=41', address : '123 Main St, Phnom Penh, Cambodia', password: 'password123' },
 ];
 
-const majorStudiedOptions = ['Computer Science', 'Information Technology', 'Information Systems', 'Software Engineering', 'Artificial Intelligence', 'Data Science', 'Machine Learning', 'Data Analytics', 'Robotics'];
-const qualificationsOptions = ['Bachelor', 'Master', 'PhD', 'Professor', 'Associate Professor', 'Lecturer'];
+const majorOptions = ['Computer Science', 'Information Technology', 'Information Systems', 'Software Engineering', 'Artificial Intelligence', 'Data Science', 'Machine Learning', 'Data Analytics', 'Robotics'];
+const degreeOptions = ['Bachelor', 'Master', 'PhD', 'Professor', 'Associate Professor', 'Lecturer'];
+const departmentOptions = ['Faculty of CS', 'Faculty of IT', 'Faculty of IS', 'Faculty of SE', 'Faculty of AI', 'Faculty of DS', 'Faculty of ML', 'Faculty of DA', 'Faculty of Robotics'];
 
 // A default icon for when an instructor has no profile image
 const DefaultAvatarIcon = ({ className = "w-24 h-24" }) => (
@@ -39,14 +40,12 @@ const InstructorDetailsContent = () => {
     const [isEditing, setIsEditing] = useState(false);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [successMessage, setSuccessMessage] = useState(null);
     const [imagePreviewUrl, setImagePreviewUrl] = useState(null);
 
     // --- API Simulation Functions ---
     const fetchInstructorDetails = async (id) => {
         setLoading(true);
         setError(null);
-        setSuccessMessage(null);
         try {
             await new Promise(resolve => setTimeout(resolve, 500));
             const data = initialInstructorData.find(inst => inst.id === id);
@@ -65,12 +64,10 @@ const InstructorDetailsContent = () => {
     const saveInstructorDetails = async () => {
         setLoading(true);
         setError(null);
-        setSuccessMessage(null);
         try {
             await new Promise(resolve => setTimeout(resolve, 700));
             setInstructorDetails(editableInstructorDetails);
             setIsEditing(false);
-            setSuccessMessage("Instructor details updated successfully!");
         } catch (err) {
             setError("Failed to save instructor details.");
         } finally {
@@ -106,7 +103,6 @@ const InstructorDetailsContent = () => {
             const currentDetails = { ...instructorDetails };
             setEditableInstructorDetails(currentDetails);
             setImagePreviewUrl(currentDetails.profileImage || null);
-            setSuccessMessage(null);
             setError(null);
         }
     };
@@ -151,10 +147,10 @@ const InstructorDetailsContent = () => {
 
     const currentData = isEditing ? editableInstructorDetails : instructorDetails;
 
-    const renderTextField = (label, name, value, type = "text") => (
+    const renderTextField = (label, name, value, placeholder, type = "text") => (
         <div className="form-group flex-1 min-w-[200px]">
            <label className="form-label block font-medium text-sm text-num-dark-text dark:text-white mb-1">{label}</label>
-           <input type={type} name={name} value={value} onChange={handleInputChange} readOnly={!isEditing} disabled={loading} className="form-input w-full py-2 px-3 bg-num-content-bg border border-num-gray-light dark:bg-gray-700 dark:border-gray-600 rounded-md font-medium text-[14px] text-num-dark-text dark:text-white" />
+           <input type={type} name={name} value={value} placeholder={placeholder} onChange={handleInputChange} readOnly={!isEditing} disabled={loading} className="form-input w-full py-2 px-3 bg-num-content-bg border border-num-gray-light dark:bg-gray-700 dark:border-gray-600 rounded-md font-medium text-[14px] text-num-dark-text dark:text-white" />
        </div>
    );
 
@@ -267,8 +263,31 @@ const InstructorDetailsContent = () => {
                             {renderTextField("Phone Number", "phone", currentData.phone, "tel")}
                         </div>
                         <div className="form-row flex gap-3 mb-2 flex-wrap">
-                             {renderSelectField("Major Studied", "majorStudied", currentData.majorStudied, majorStudiedOptions)}
-                             {renderSelectField("Qualifications", "qualifications", currentData.qualifications, qualificationsOptions)}
+                             {renderSelectField("Major", "major", currentData.major, majorOptions)}
+                             {renderSelectField("Degree", "degree", currentData.degree, degreeOptions)}
+                        </div>
+                        <div className="form-row flex gap-3 mb-2 flex-wrap">
+                            {renderSelectField("Department", "department", currentData.department, departmentOptions)}
+                            {renderTextField("Address", "address", currentData.address)}
+                        </div>
+                        
+                        <div className="form-actions flex justify-end items-center gap-3 mt-4">
+                            <button onClick={() => router.back()} className="back-button bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 shadow-custom-light rounded-md text-gray-800 dark:text-white border-none py-2 px-3 font-semibold text-sm cursor-pointer" disabled={loading}>
+                               Back
+                           </button>
+                           <button onClick={handleEditToggle} className="save-button bg-blue-600 hover:bg-blue-700 shadow-custom-light rounded-md text-white border-none py-2 px-3 font-semibold text-sm cursor-pointer" disabled={loading}>
+                               {loading && isEditing ? "Saving..." : isEditing ? "Save Changes" : "Edit Instructor"}
+                           </button>
+                        </div>
+                    </div>
+                    <div className="info-card p-3 sm:p-4 bg-white border border-num-gray-light dark:bg-gray-800 dark:border-gray-700 shadow-custom-light rounded-lg">
+                        <div className="section-title font-semibold text-base text-num-dark-text dark:text-white mb-3">Password Information</div>
+                        <div className="form-row flex gap-3 mb-2 flex-wrap">
+                            {renderTextField("Current Password", "password", currentData.password)}
+                            {renderTextField("New Password", "newPassword", "", "New Password")}
+                        </div>
+                        <div className="form-row flex gap-3 mb-2 flex-wrap">
+                            {renderTextField("Confirm Password", "confirmPassword", "", "Confirm Password")}
                         </div>
                         
                         <div className="form-actions flex justify-end items-center gap-3 mt-4">
