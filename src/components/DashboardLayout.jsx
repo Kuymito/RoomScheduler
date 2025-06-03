@@ -112,7 +112,7 @@ export default function DashboardLayout({ children, activeItem, pageTitle }) {
                 {/* Content and Footer Container (scrolls with overflow) */}
                 {/* This flex-grow div pushes the footer down and holds the main content */}
                 <div className="flex flex-col flex-grow" style={{ paddingTop: TOPBAR_HEIGHT }}>
-                    <main className="content-area flex-grow p-3 m-6">
+                    <main className="content-area flex-grow m-6">
                         {children} {/* Dynamic page content */}
                     </main>
                     <Footer />
