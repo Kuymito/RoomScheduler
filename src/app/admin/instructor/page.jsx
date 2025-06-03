@@ -327,14 +327,14 @@ const InstructorViewContent = () => {
                     <tbody className="text-xs font-normal text-gray-700 dark:text-gray-400">
                         {currentTableData.length > 0 ? (
                             currentTableData.map((data) => (
-                                <tr key={data.id} className="bg-white border-b border-gray-200 dark:bg-gray-800 dark:border-gray-700"onClick={() => handleRowClick(data.id)}
-                                >
+                                <tr key={data.id} className="bg-white border-b border-gray-200 dark:bg-gray-800 dark:border-gray-700"
+                                onClick={() => handleRowClick(data.id)}>
                                     <th scope="row" className="px-6 py-2.5 font-medium text-gray-900 whitespace-nowrap dark:text-white">
                                         <div className="flex gap-2">
                                             <button 
                                                 onClick={(e) => {
-                                                    e.stopPropagation(); // Stop event from bubbling to the row
-                                                    handleRowClick(data.id); // Navigate on button click
+                                                    e.stopPropagation();
+                                                    handleRowClick(data.id);
                                                 }}
                                                 className={`p-1 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300`} >
                                                 <EditIcon className="size-5" />
