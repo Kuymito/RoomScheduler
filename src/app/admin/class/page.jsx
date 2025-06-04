@@ -13,7 +13,7 @@ const fetchClassData = async () => {
         { id: 3, name: 'NUM30-02', generation: '30', group: '02', major: 'CS', degrees: 'Bachelor', faculty: 'Faculty of CS', semester: 'Semester 1', shift: '8:00 - 11:00', status: 'active' },
         { id: 4, name: 'NUM32-03', generation: '32', group: '03', major: 'IS', degrees: 'Bachelor', faculty: 'Faculty of IS', semester: 'Semester 2', shift: '9:00 - 12:00', status: 'active' },
         { id: 5, name: 'NUM32-04', generation: '32', group: '04', major: 'SE', degrees: 'Bachelor', faculty: 'Faculty of SE', semester: 'Semester 2', shift: '13:00 - 16:00', status: 'active' },
-        { id: 6, name: 'NUM32-05', generation: '32', group: '05', major: 'AI', degrees: 'Bachelor', faculty: 'Faculty of AI & R', semester: 'Semester 2', shift: '15:00 PM - 18:00', status: 'active' },
+        { id: 6, name: 'NUM32-05', generation: '32', group: '05', major: 'AI', degrees: 'Bachelor', faculty: 'Faculty of AI', semester: 'Semester 2', shift: '15:00 PM - 18:00', status: 'active' },
         { id: 7, name: 'NUM33-06', generation: '33', group: '06', major: 'DS', degrees: 'Bachelor', faculty: 'Faculty of DS', semester: 'Semester 3', shift: '17:00 - 20:00', status: 'active' },
         { id: 8, name: 'NUM33-07', generation: '33', group: '07', major: 'ML', degrees: 'Bachelor', faculty: 'Faculty of ML', semester: '2Semester 3', shift: '18:00 - 21:00', status: 'active' },
         { id: 9, name: 'NUM33-08', generation: '33', group: '08', major: 'DA', degrees: 'Bachelor', faculty: 'Faculty of DA', semester: 'Semester 3', shift: '19:00 - 22:00', status: 'archived' },
@@ -122,7 +122,8 @@ const ClassPageSkeleton = () => {
 };
 
 const ClassViewContent = () => {
-    // --- State Variables ---
+    // State Variables
+    const [classData, setClassData] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [showCreatePopup, setShowCreatePopup] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
@@ -133,18 +134,8 @@ const ClassViewContent = () => {
     const [sortColumn, setSortColumn] = useState(null);
     const [sortDirection, setSortDirection] = useState('asc');
     const router = useRouter();
-    const [searchTexts, setSearchTexts] = useState({
-        name: '',
-        generation: '',
-        group: '',
-        major: '',
-        degrees: '',
-        faculty: '',
-        semester: '',
-        shift: '',
-    });
-    
-    // --- Handlers ---
+
+    // Handle Function
     const handleCreateClick = () => {
         setShowCreatePopup(true);
     };
@@ -220,6 +211,17 @@ const ClassViewContent = () => {
         );
     };
 
+    const [searchTexts, setSearchTexts] = useState({
+        name: '',
+        generation: '',
+        group: '',
+        major: '',
+        degrees: '',
+        faculty: '',
+        semester: '',
+        shift: '',
+    });
+
     const handleSearchChange = (column, value) => {
         setSearchTexts(prev => ({
             ...prev,
@@ -246,28 +248,13 @@ const ClassViewContent = () => {
         return currentFilteredData;
     }, [sortedClassData, searchTexts, statusFilter]);
 
+    const totalPages = Math.ceil(filteredClassData.length / itemsPerPage);
+
     const currentTableData = useMemo(() => {
         const startIndex = (currentPage - 1) * itemsPerPage;
         const endIndex = startIndex + itemsPerPage;
         return filteredClassData.slice(startIndex, endIndex);
     }, [filteredClassData, currentPage, itemsPerPage]);
-
-    const handleItemsPerPageChange = (event) => {
-        const newItemsPerPage = parseInt(event.target.value, 10);
-        setItemsPerPage(newItemsPerPage);
-        setCurrentPage(1); // Reset to first page when items per page changes
-    };
-
-    const handleRowClick = (classId) => {
-        // Prevent another navigation if one is already in progress
-        if (navigatingRowId) return;
-
-        // Set the ID of the row we are navigating from
-        setNavigatingRowId(classId);
-
-        // Proceed with the navigation
-        router.push(`/admin/class/${classId}`);
-    };
 
     const goToNextPage = () => {
         setCurrentPage((prevPage) => Math.min(prevPage + 1, totalPages));
@@ -279,6 +266,12 @@ const ClassViewContent = () => {
 
     const goToPage = (pageNumber) => {
         setCurrentPage(pageNumber);
+    };
+
+    const handleItemsPerPageChange = (event) => {
+        const newItemsPerPage = parseInt(event.target.value, 10);
+        setItemsPerPage(newItemsPerPage);
+        setCurrentPage(1); // Reset to first page when items per page changes
     };
 
     const getPageNumbers = () => {
@@ -306,10 +299,35 @@ const ClassViewContent = () => {
         );
         setCurrentPage(1);
     };
-
-    const totalPages = Math.ceil(filteredClassData.length / itemsPerPage);
     
-    // --- Hooks ---
+    const handleRowClick = (classId) => {
+        // Prevent another navigation if one is already in progress
+        if (navigatingRowId) return;
+
+        // Set the ID of the row we are navigating from
+        setNavigatingRowId(classId);
+
+        // Proceed with the navigation
+        router.push(`/admin/class/${classId}`);
+    };
+
+    // --- Icons Components ---
+    const EditIcon = ({ className = "w-[14px] h-[14px]" }) => (
+        <svg className={className} width="14" height="14" viewBox="0 0 17 17" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M8.06671 2.125H4.95837C3.00254 2.125 2.12504 3.0025 2.12504 4.95833V12.0417C2.12504 13.9975 3.00254 14.875 4.95837 14.875H12.0417C13.9975 14.875 14.875 13.9975 14.875 12.0417V8.93333" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M10.6579 3.2658L6.28042 7.64327C6.10542 7.81827 5.93042 8.15055 5.89125 8.3928L5.64958 10.112C5.56625 10.7037 6.01958 11.157 6.61125 11.0737L8.33042 10.832C8.57292 10.7928 8.90542 10.6178 9.08042 10.4428L13.4579 6.0653C14.2662 5.25705 14.5796 4.26827 13.4579 3.14662C12.3362 2.03205 11.3479 2.45705 10.6579 3.2658Z" stroke="currentColor" strokeWidth="1.2" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M9.8999 4.02502C10.2716 5.66752 11.0583 6.45419 12.7008 6.82585" stroke="currentColor" strokeWidth="1.2" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+    );
+
+    const ArchiveIcon = ({ className = "w-[14px] h-[14px]" }) => (
+        <svg className={className} width="14" height="14" viewBox="0 0 17 17" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M14.1667 5.66667V12.0417C14.1667 13.9975 13.2892 14.875 11.3334 14.875H5.66671C3.71087 14.875 2.83337 13.9975 2.83337 12.0417V5.66667" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M14.875 2.125H2.125L2.12504 5.66667H14.875V2.125Z" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M7.79163 8.5H9.20829" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+    );
+    
     useEffect(() => {
         const loadInitialData = async () => {
             try {
@@ -326,27 +344,9 @@ const ClassViewContent = () => {
         loadInitialData();
     }, []);
 
-    // --- Render Logic ---
     if (isLoading) {
         return <ClassPageSkeleton />;
     }
-
-    // Icons for Edit and Archive
-    const EditIcon = ({ className = "w-[14px] h-[14px]" }) => (
-        <svg className={className} width="14" height="14" viewBox="0 0 17 17" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M8.06671 2.125H4.95837C3.00254 2.125 2.12504 3.0025 2.12504 4.95833V12.0417C2.12504 13.9975 3.00254 14.875 4.95837 14.875H12.0417C13.9975 14.875 14.875 13.9975 14.875 12.0417V8.93333" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
-            <path d="M10.6579 3.2658L6.28042 7.64327C6.10542 7.81827 5.93042 8.15055 5.89125 8.3928L5.64958 10.112C5.56625 10.7037 6.01958 11.157 6.61125 11.0737L8.33042 10.832C8.57292 10.7928 8.90542 10.6178 9.08042 10.4428L13.4579 6.0653C14.2662 5.25705 14.5796 4.26827 13.4579 3.14662C12.3362 2.03205 11.3479 2.45705 10.6579 3.2658Z" stroke="currentColor" strokeWidth="1.2" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round"/>
-            <path d="M9.8999 4.02502C10.2716 5.66752 11.0583 6.45419 12.7008 6.82585" stroke="currentColor" strokeWidth="1.2" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round"/>
-        </svg>
-    );
-
-    const ArchiveIcon = ({ className = "w-[14px] h-[14px]" }) => (
-        <svg className={className} width="14" height="14" viewBox="0 0 17 17" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M14.1667 5.66667V12.0417C14.1667 13.9975 13.2892 14.875 11.3334 14.875H5.66671C3.71087 14.875 2.83337 13.9975 2.83337 12.0417V5.66667" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
-            <path d="M14.875 2.125H2.125L2.12504 5.66667H14.875V2.125Z" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
-            <path d="M7.79163 8.5H9.20829" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
-        </svg>
-    );
 
     return (
         <div className="p-6 dark:text-white">
