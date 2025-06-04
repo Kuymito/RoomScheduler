@@ -1,7 +1,7 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 
-// Optimized Checkmark Icon
+// --- Icon Components ---
 const CheckmarkIcon = (props) => (
   <svg
     {...props}
@@ -20,7 +20,6 @@ const CheckmarkIcon = (props) => (
   </svg>
 );
 
-// Optimized Close Icon
 const CloseIconSvg = (props) => (
   <svg
     {...props}
@@ -35,27 +34,10 @@ const CloseIconSvg = (props) => (
   </svg>
 );
 
-const SuccessAlert = ({
-  onConfirm,
-  onClose,
-  title = "Update Successfully",
-  messageLine1 = "Your item has been updated successfully.",
-  messageLine2 = "You can view or edit it anytime.",
-  confirmButtonText = "OK"
-}) => {
+const SuccessAlert = ({ onConfirm, onClose, title = "Update Successfully", messageLine1 = "Your item has been updated successfully.", messageLine2 = "You can view or edit it anytime.", confirmButtonText = "OK" }) => {
   const [isShowing, setIsShowing] = useState(false);
 
-  // On component mount, trigger the entry animation.
-  useEffect(() => {
-    // A tiny delay to allow the component to be in the DOM with initial (hidden) styles
-    // before transitioning to the visible state.
-    const timer = setTimeout(() => {
-      setIsShowing(true);
-    }, 10); // A small delay is sometimes needed for the transition to trigger correctly on mount.
-    return () => clearTimeout(timer);
-  }, []);
-
-  // Handler to trigger the exit animation before calling the parent's close function.
+  // --- Handlers ---
   const handleClose = () => {
     setIsShowing(false); // Trigger the exit animation
     setTimeout(() => {
@@ -71,6 +53,16 @@ const SuccessAlert = ({
       onConfirm();
     }, 200); // This duration should match the transition-out duration.
   };
+
+  // --- Hooks ---
+  useEffect(() => {
+    // A tiny delay to allow the component to be in the DOM with initial (hidden) styles
+    // before transitioning to the visible state.
+    const timer = setTimeout(() => {
+      setIsShowing(true);
+    }, 10); // A small delay is sometimes needed for the transition to trigger correctly on mount.
+    return () => clearTimeout(timer);
+  }, []);
 
   return (
     <div

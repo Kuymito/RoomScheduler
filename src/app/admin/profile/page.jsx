@@ -21,7 +21,6 @@ const EyeClosedIcon = ({ className = "h-5 w-5" }) => (
 
 
 const ProfileContent = () => {
-    // State for user profile data
     const [profileData, setProfileData] = useState({
         firstName: "Admin",
         lastName: "",
@@ -29,21 +28,21 @@ const ProfileContent = () => {
         phoneNumber: "+855 12 345 678",
         address: "Phnom Penh, Cambodia",
         avatarUrl: "/images/kok.png",
-        password: "password123", // Dummy password for display simulation
+        password: "password123",
     });
 
     const [editableProfileData, setEditableProfileData] = useState(null);
     const [imagePreviewUrl, setImagePreviewUrl] = useState(null);
     const [isUploading, setIsUploading] = useState(false);
     const fileInputRef = useRef(null);
-
     const [isEditingGeneral, setIsEditingGeneral] = useState(false);
     const [isEditingPassword, setIsEditingPassword] = useState(false);
-
-    // State for password fields
     const [newPassword, setNewPassword] = useState('');
     const [confirmNewPassword, setConfirmNewPassword] = useState('');
     const [passwordMismatchError, setPasswordMismatchError] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
+    const [successMessage, setSuccessMessage] = useState(null);
     const [emptyPasswordError, setEmptyPasswordError] = useState({
         new: false,
         confirm: false,
@@ -54,11 +53,7 @@ const ProfileContent = () => {
         confirm: false,
     });
 
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState(null);
-    const [successMessage, setSuccessMessage] = useState(null);
-
-    // --- API Simulation Functions ---
+    // --- Handlers ---
     const fetchProfileData = async () => {
         setLoading(true);
         try {
@@ -130,11 +125,6 @@ const ProfileContent = () => {
         }
     };
 
-    useEffect(() => {
-        fetchProfileData();
-    }, []);
-
-    // --- Handlers for UI Interactions ---
     const handleEditClick = (section) => {
         setError(null);
         setSuccessMessage(null);
@@ -250,6 +240,11 @@ const ProfileContent = () => {
         </div>
     );
 
+    // --- Hooks ---
+    useEffect(() => {
+        fetchProfileData();
+    }, []);
+
     return (
         <div className='p-6 dark:text-white'>
             <div className="section-title font-semibold text-lg text-num-dark-text dark:text-white mb-4">
@@ -324,7 +319,7 @@ const ProfileContent = () => {
                             {isEditingGeneral ? (
                                 <>
                                     <button onClick={() => handleCancelClick('general')} className="back-button bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 shadow-custom-light rounded-md text-gray-800 dark:text-white border-none py-2 px-3 font-semibold text-xs cursor-pointer" disabled={loading}>Cancel</button>
-                                    <button onClick={() => handleSaveClick('general')} className="save-button bg-blue-600 hover:bg-blue-700 shadow-custom-light rounded-md text-white border-none py-2 px-3 font-semibold text-sm cursor-pointer" disabled={loading}>{loading ? "Saving..." : "Save Changes"}</button>
+                                    <button onClick={() => handleSaveClick('general')} className="save-button bg-blue-600 hover:bg-blue-700 shadow-custom-light rounded-md text-white text-xs border-none py-2 px-3 font-semibold text-sm cursor-pointer" disabled={loading}>{loading ? "Saving..." : "Save Changes"}</button>
                                 </>
                             ) : (
                                 <button onClick={() => handleEditClick('general')} className="save-button bg-blue-600 hover:bg-blue-700 shadow-custom-light rounded-md text-white border-none py-2 px-3 font-semibold text-xs cursor-pointer" disabled={loading}>Edit Profile</button>

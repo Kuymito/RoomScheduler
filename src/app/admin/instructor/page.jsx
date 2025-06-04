@@ -5,14 +5,6 @@ import AdminLayout from '@/components/AdminLayout';
 import InstructorCreatePopup from './components/InstructorCreatePopup';
 import { useRouter } from 'next/navigation';
 
-// Default Avatar Icon component for when no image is available
-const DefaultAvatarIcon = ({ className = "w-8 h-8" }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-8 border border-gray-300 rounded-full p-1 dark:border-gray-600">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
-    </svg>
-
-);
-
 const fetchInstructorData = async () => {
     const initialInstructorData = [
         { id: 1, name: 'Sok Mean', firstName: 'Sok', lastName: 'Mean', email: 'sok.mean@example.com', phone: '012345678', majorStudied: 'Computer Science', qualifications: 'PhD', status: 'active', profileImage: 'https://i.pravatar.cc/150?img=68' },
@@ -27,14 +19,6 @@ const fetchInstructorData = async () => {
 
     return new Promise(resolve => setTimeout(() => resolve(initialInstructorData), 1000));
 };
-
-// --- A small, reusable spinner component for the row ---
-const LoadingSpinnerIcon = () => (
-    <svg className="animate-spin h-5 w-5 text-blue-600 dark:text-blue-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-    </svg>
-);
 
 // --- Skeleton Loader for Instructor Page ---
 const InstructorPageSkeleton = () => {
@@ -125,9 +109,27 @@ const InstructorPageSkeleton = () => {
 };
 
 const InstructorViewContent = () => {
-
+    // --- State Variables ---
     const router = useRouter();
+    const [instructorData, setInstructorData] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [navigatingRowId, setNavigatingRowId] = useState(null);
+    const [showCreateInstructorPopup, setShowCreateInstructorPopup] = useState(false);
+    const [statusFilter, setStatusFilter] = useState('active');
+    const [sortColumn, setSortColumn] = useState(null);
+    const [sortDirection, setSortDirection] = useState('asc');
+    const [searchTexts, setSearchTexts] = useState({
+        name: '',
+        email: '',
+        phone: '',
+        majorStudied: '', // Changed from 'department'
+        qualifications: '',
+    });
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPageOptions = [5, 10, 20, 50];
+    const [itemsPerPage, setItemsPerPage] = useState(itemsPerPageOptions[0]);
 
+    //  --- Handlers ---
     const handleRowClick = (instructorId) => {
         // Prevent another navigation if one is already in progress
         if (navigatingRowId) return;
@@ -139,15 +141,6 @@ const InstructorViewContent = () => {
         router.push(`/admin/instructor/${instructorId}`);
     };
 
-    const [instructorData, setInstructorData] = useState([]);
-    const [isLoading, setIsLoading] = useState(true);
-
-    // This will store the ID of the row that the user clicked to navigate.
-    const [navigatingRowId, setNavigatingRowId] = useState(null);
-
-    // --- Popup Form State for Instructor ---
-    const [showCreateInstructorPopup, setShowCreateInstructorPopup] = useState(false);
-
     const handleCreateInstructorClick = () => {
         setShowCreateInstructorPopup(true);
     };
@@ -156,7 +149,6 @@ const InstructorViewContent = () => {
         setShowCreateInstructorPopup(false);
     };
 
-    // This function will be passed to the InstructorCreatePopup to handle saving new instructor data
     const handleSaveNewInstructor = (newInstructorData) => {
         const newId = instructorData.length > 0 ? Math.max(...instructorData.map(item => item.id)) + 1 : 1;
         const newInstructorWithStatus = {
@@ -168,13 +160,6 @@ const InstructorViewContent = () => {
         setInstructorData(prevData => [...prevData, newInstructorWithStatus]);
         setCurrentPage(1); // Reset page after adding a new instructor
     };
-
-    // --- Status Filter State ---
-    const [statusFilter, setStatusFilter] = useState('active'); // 'active', 'archived', or 'all'
-
-    // --- Sorting State and Logic ---
-    const [sortColumn, setSortColumn] = useState(null);
-    const [sortDirection, setSortDirection] = useState('asc'); // 'asc' or 'desc'
 
     const handleSort = (column) => {
         setCurrentPage(1); // Reset to first page when sorting changes
@@ -222,15 +207,6 @@ const InstructorViewContent = () => {
         );
     };
 
-    // --- Search State and Logic ---
-    const [searchTexts, setSearchTexts] = useState({
-        name: '',
-        email: '',
-        phone: '',
-        majorStudied: '', // Changed from 'department'
-        qualifications: '',
-    });
-
     const handleSearchChange = (column, value) => {
         setSearchTexts(prev => ({
             ...prev,
@@ -257,10 +233,6 @@ const InstructorViewContent = () => {
         return currentFilteredData;
     }, [sortedInstructorData, searchTexts, statusFilter]);
 
-    // --- Pagination State and Logic ---
-    const [currentPage, setCurrentPage] = useState(1);
-    const itemsPerPageOptions = [5, 10, 20, 50];
-    const [itemsPerPage, setItemsPerPage] = useState(itemsPerPageOptions[0]);
 
     const totalPages = Math.ceil(filteredInstructorData.length / itemsPerPage);
 
@@ -304,7 +276,6 @@ const InstructorViewContent = () => {
         return pageNumbers;
     };
 
-    // --- Active/Archive Logic ---
     const toggleInstructorStatus = (id) => {
         setInstructorData(prevData =>
             prevData.map(item =>
@@ -316,6 +287,7 @@ const InstructorViewContent = () => {
         setCurrentPage(1); // Reset page after status change
     };
 
+    // --- Icons Components ---
     const EditIcon = ({ className = "w-[14px] h-[14px]" }) => (
         <svg className={className} width="14" height="14" viewBox="0 0 17 17" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M8.06671 2.125H4.95837C3.00254 2.125 2.12504 3.0025 2.12504 4.95833V12.0417C2.12504 13.9975 3.00254 14.875 4.95837 14.875H12.0417C13.9975 14.875 14.875 13.9975 14.875 12.0417V8.93333" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -332,6 +304,13 @@ const InstructorViewContent = () => {
         </svg>
     );
 
+    const DefaultAvatarIcon = ({ className = "w-8 h-8" }) => (
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-8 border border-gray-300 rounded-full p-1 dark:border-gray-600">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
+        </svg>
+    );
+
+    // --- Hook ---
     useEffect(() => {
         const loadInitialData = async () => {
             try {
@@ -348,7 +327,6 @@ const InstructorViewContent = () => {
         loadInitialData();
     }, []);
     
-    // Add conditional rendering for the loading state ---
     if (isLoading) {
         return <InstructorPageSkeleton />;
     }

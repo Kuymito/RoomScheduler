@@ -1,18 +1,16 @@
-// components/ClassCreatePopup.jsx
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
 
 const ClassCreatePopup = ({ isOpen, onClose, onSave }) => {
-    // Define options for select fields
+    /// --- State Variables ---
     const generationOptions = ['30', '31', '32', '33', '34', '35'];
     const majorOptions = ['IT', 'CS', 'IS', 'SE', 'AI', 'DS', 'ML', 'DA'];
     const degreesOptions = ['Associate', 'Bachelor', 'Master', 'PhD'];
     const facultyOptions = ['Faculty of IT', 'Faculty of CS', 'Faculty of IS', 'Faculty of AI', 'Faculty of DS', 'Faculty of ML', 'Faculty of DA', 'Faculty of SE']; // Example faculties
     const semesterOptions = ['Semester 1', 'Semester 2', 'Semester 3', 'Semester 4', 'Semester 5', 'Semester 6']; // Example semesters
     const shiftOptions = ['7:00 - 10:00', '8:00 - 11:00', '9:00 - 12:00', '13:00 - 16:00', '15:00 - 18:00', '17:00 - 20:00', '18:00 - 21:00', '19:00 - 22:00']; // Example shifts
-
-    // State to manage the form fields for the new class
+    const popupRef = useRef(null);
     const [newClass, setNewClass] = useState({
         name: '',
         generation: generationOptions[0], // Default to first option
@@ -23,11 +21,8 @@ const ClassCreatePopup = ({ isOpen, onClose, onSave }) => {
         semester: semesterOptions[0],     // Default to first option
         shift: shiftOptions[0],           // Default to first option
     });
-
-    // Create a ref to store the DOM element of the popup content
-    const popupRef = useRef(null);
-
-    // Handle changes to form input/select fields
+    
+    // --- Handlers ---
     const handleInputChange = (e) => {
         const { name, value } = e.target;
         setNewClass(prev => ({
@@ -36,7 +31,6 @@ const ClassCreatePopup = ({ isOpen, onClose, onSave }) => {
         }));
     };
 
-    // Handle form submission
     const handleSubmit = (e) => {
         e.preventDefault(); // Prevent default form submission behavior
 
@@ -81,7 +75,7 @@ const ClassCreatePopup = ({ isOpen, onClose, onSave }) => {
         onClose();
     };
 
-    // Effect to handle clicks outside the popup
+    // --- Hooks ---
     useEffect(() => {
         const handleClickOutside = (event) => {
             // If the modal is open and the click is outside the popup content
@@ -99,9 +93,9 @@ const ClassCreatePopup = ({ isOpen, onClose, onSave }) => {
         return () => {
             document.removeEventListener('mousedown', handleClickOutside);
         };
-    }, [isOpen, onClose]); // Re-run effect if isOpen or onClose changes
+    }, [isOpen, onClose]);
 
-    // If the modal is not open, return null to render nothing
+    // --- Render Logic ---
     if (!isOpen) {
         return null;
     }

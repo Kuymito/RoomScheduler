@@ -1,13 +1,12 @@
 // dashboard/page.jsx
 "use client";
 
-import { useEffect, useState, useRef } from 'react'; // Import useRef
+import { useEffect, useState, useRef } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import DashboardHeader from './components/DashboardHeader'; 
 import StatCard from './components/StatCard';
 import RoomAvailabilityChart from './components/RoomAvailabilityChart';
 
-// --- Data Fetching Functions (Unchanged) ---
 const fetchDashboardData = async () => {
   return new Promise(resolve => setTimeout(() => resolve({
     classAssign: 65,
@@ -96,23 +95,16 @@ const DashboardSkeleton = () => {
   );
 };
 
-// --- Main Page Component ---
 const DashboardPage = () => {
+  // --- State Variables ---
   const [dashboardStats, setDashboardStats] = useState(null);
   const [chartData, setChartData] = useState(null);
   const [selectedTimeSlot, setSelectedTimeSlot] = useState('07:00 - 10:00');
-
-  // --- KEY CHANGE 1: Separate Loading States ---
-  // `isPageLoading` for the initial, full-dashboard load.
   const [isPageLoading, setIsPageLoading] = useState(true); 
-  // `isChartLoading` for when only the chart data is being refetched.
   const [isChartLoading, setIsChartLoading] = useState(false);
-
-  // --- KEY CHANGE 2: Ref to skip initial effect run ---
-  // This helps prevent the chart-specific useEffect from running on the first render.
   const isInitialMount = useRef(true);
-
-  // --- Effect for Initial Page Load ---
+  
+  // --- Hooks ---
   useEffect(() => {
     const loadInitialData = async () => {
       try {
@@ -134,7 +126,6 @@ const DashboardPage = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Runs only once on component mount
 
-  // --- Effect for Chart Updates on Filter Change ---
   useEffect(() => {
     // Prevent this from running on the initial render, as the first useEffect already loaded the chart.
     if (isInitialMount.current) {
@@ -155,15 +146,13 @@ const DashboardPage = () => {
     };
     
     loadChart();
-  }, [selectedTimeSlot]); // Only runs when the time slot changes
+  }, [selectedTimeSlot]);
 
-  // --- KEY CHANGE 3: Update the main loading condition ---
-  // This now only shows the full-screen loader on the initial page load.
+  // --- Render Logic ---
   if (isPageLoading) { 
     return <DashboardSkeleton />;
   }
-
-  // Fallback in case stats didn't load, but page loading is finished
+  
   if (!dashboardStats) {
       return <div>Error loading dashboard data. Please try again.</div>;
   }

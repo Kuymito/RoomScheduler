@@ -22,13 +22,14 @@ const majorOptions = ['Computer Science', 'Information Technology', 'Information
 const degreeOptions = ['Bachelor', 'Master', 'PhD', 'Professor', 'Associate Professor', 'Lecturer'];
 const departmentOptions = ['Faculty of CS', 'Faculty of IT', 'Faculty of IS', 'Faculty of SE', 'Faculty of AI', 'Faculty of DS', 'Faculty of ML', 'Faculty of DA', 'Faculty of Robotics'];
 
+
+// --- Icon Components ---
 const DefaultAvatarIcon = ({ className = "w-24 h-24" }) => (
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={`${className} text-gray-400 bg-gray-100 dark:bg-gray-700 dark:text-gray-500 p-1`}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
     </svg>
 );
 
-// --- Icon Components ---
 const EyeOpenIcon = ({ className = "h-5 w-5" }) => (
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-5">
         <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
@@ -109,9 +110,9 @@ const InstructorDetailSkeleton = () => {
 };
 
 const InstructorDetailsContent = () => {
+    // --- State Variables ---
     const router = useRouter();
     const params = useParams();
-
     const [instructorDetails, setInstructorDetails] = useState(null);
     const [editableInstructorDetails, setEditableInstructorDetails] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -120,11 +121,8 @@ const InstructorDetailsContent = () => {
     const [successMessage, setSuccessMessage] = useState(null);
     const [imagePreviewUrl, setImagePreviewUrl] = useState(null);
     const fileInputRef = useRef(null);
-
     const [isEditingGeneral, setIsEditingGeneral] = useState(false);
     const [isEditingPassword, setIsEditingPassword] = useState(false);
-
-    // --- State for password fields ---
     const [newPassword, setNewPassword] = useState('');
     const [confirmNewPassword, setConfirmNewPassword] = useState('');
     const [passwordMismatchError, setPasswordMismatchError] = useState(false);
@@ -138,7 +136,6 @@ const InstructorDetailsContent = () => {
         confirm: false,
     });
 
-    // --- API Simulation Functions ---
     const fetchInstructorDetails = async (id) => {
         setLoading(true);
         setError(null);
@@ -237,7 +234,7 @@ const InstructorDetailsContent = () => {
         }));
     }, [editableInstructorDetails?.firstName, editableInstructorDetails?.lastName, isEditingGeneral]);
 
-    // --- UI Handlers ---
+    // --- Handlers ---
     const handleEditClick = (section) => {
         setError(null);
         setSuccessMessage(null);
@@ -325,12 +322,12 @@ const InstructorDetailsContent = () => {
     if (loading && !instructorDetails) {
         return <InstructorDetailSkeleton />;
     }
-    // --- REMOVED PROBLEMATIC LINE --- 
+
     if (!instructorDetails) return <div className="p-6 text-red-500">Instructor not found.</div>;;
 
     const currentData = isEditingGeneral ? editableInstructorDetails : instructorDetails;
 
-    // --- Reusable Field Rendering Functions ---
+    // --- Render Functions ---
     const renderTextField = (label, name, value, isEditing, opts = {}) => (
         <div className="form-group flex-1 min-w-[200px]">
             <label className="form-label block font-semibold text-xs text-num-dark-text dark:text-white mb-1">{label}</label>

@@ -5,8 +5,6 @@ import ThemeToggle from './ThemeToggle'; // Assuming ThemeToggle is in the same 
 
 const Topbar = ({ onToggleSidebar, isSidebarCollapsed, onUserIconClick, pageSubtitle, userIconRef, onNotificationIconClick, notificationIconRef, hasUnreadNotifications, }) => {
   return (
-    // This div assumes its parent in AdminLayout will handle fixed positioning, width, height, background, and shadow.
-    // It is just responsible for its internal layout.
     <div className="flex justify-between items-center w-full h-full"> 
       <div className="topbar-content-left flex items-center">
         <div

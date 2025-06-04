@@ -1,9 +1,7 @@
 'use client';
 
 import React from 'react';
-import Link from 'next/link'; // <--- STEP 1: IMPORT LINK
 
-// A small, reusable spinner icon component for the loading state
 const SpinnerIcon = () => (
     <svg className="animate-spin h-4 w-4 text-gray-500 dark:text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
@@ -22,8 +20,6 @@ const AdminPopup = ({ show, onLogoutClick, adminName = "Admin", adminEmail = "ad
       </div>
       <div className="admin-popup-options p-2.5 flex flex-col">
         <div 
-          // The onClick must be an arrow function that calls onNavigate with the URL string.
-          // This ensures we pass the STRING, not the click event object.
           onClick={() => onNavigate('/admin/profile')}
           className={`popup-option w-full h-10 gap-4 bg-white dark:bg-gray-700 rounded-[5px] flex items-center px-4 mb-1.5 
             ${isNavigating 

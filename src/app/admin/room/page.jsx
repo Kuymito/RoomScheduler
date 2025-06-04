@@ -106,6 +106,17 @@ const RoomPageSkeleton = () => {
 };
 
 const RoomViewContent = () => {
+    // --- Styles ---
+    const textLabelRoom = "font-medium text-base leading-7 text-slate-700 dark:text-slate-300 tracking-[-0.01em]";
+    const textValueRoomDisplay = "font-medium text-base leading-7 text-slate-900 dark:text-slate-100 tracking-[-0.01em]";
+    const textLabelDefault = "font-medium text-sm leading-6 text-slate-700 dark:text-slate-300 tracking-[-0.01em]";
+    const textValueDefaultDisplay = "font-medium text-sm leading-6 text-slate-900 dark:text-slate-100 tracking-[-0.01em]";
+    const inputContainerSizeDefault = "w-full sm:w-[132px] h-[40px]";
+    const inputStyle = "py-[9px] px-3 w-full h-full bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-[6px] font-normal text-sm leading-[22px] text-slate-900 dark:text-slate-50 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500";
+    const equipmentInputContainerSize = "w-full sm:w-[132px] h-[72px]";
+    const textareaStyle = "py-[10px] px-3 w-full h-full bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-[6px] font-normal text-sm leading-[22px] text-slate-900 dark:text-slate-50 placeholder:text-slate-400 dark:placeholder:text-slate-500 resize-none focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 scrollbar-thin scrollbar-thumb-slate-400 dark:scrollbar-thumb-slate-500 scrollbar-track-slate-100 dark:scrollbar-track-slate-800";
+    
+    // --- State Variables ---
     const [selectedBuilding, setSelectedBuilding] = useState("Building A");
     const [selectedRoom, setSelectedRoom] = useState(null);
     const [roomDetails, setRoomDetails] = useState(null);
@@ -114,9 +125,7 @@ const RoomViewContent = () => {
     const [editableRoomDetails, setEditableRoomDetails] = useState(null);
     const [showSuccessAlert, setShowSuccessAlert] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
-    
     const [allRoomsData, setAllRoomsData] = useState([]);
-
     const buildings = {
         "Building A": [
             { floor: 5, rooms: ["A1", "A2", "A3", "A4", "A5"] },
@@ -132,22 +141,7 @@ const RoomViewContent = () => {
         ],
     };
 
-    useEffect(() => {
-        const loadInitialData = async () => {
-            try {
-                const data = await fetchRoomData();
-                setAllRoomsData(data);
-            } catch (error) {
-                console.error("Failed to fetch class data:", error);
-                // You could set an error state here to show an error message
-            } finally {
-                setIsLoading(false); // Set loading to false after data is fetched or if an error occurs
-            }
-        };
-
-        loadInitialData();
-    }, []);
-
+    // --- Handler ---
     const handleRoomClick = async (roomId) => {
         setSelectedRoom(roomId);
         setIsEditing(false);
@@ -221,16 +215,25 @@ const RoomViewContent = () => {
     };
 
     const floors = buildings[selectedBuilding] || [];
+    
+    // --- Hooks ---
+    useEffect(() => {
+        const loadInitialData = async () => {
+            try {
+                const data = await fetchRoomData();
+                setAllRoomsData(data);
+            } catch (error) {
+                console.error("Failed to fetch class data:", error);
+                // You could set an error state here to show an error message
+            } finally {
+                setIsLoading(false); // Set loading to false after data is fetched or if an error occurs
+            }
+        };
 
-    const textLabelRoom = "font-medium text-base leading-7 text-slate-700 dark:text-slate-300 tracking-[-0.01em]";
-    const textValueRoomDisplay = "font-medium text-base leading-7 text-slate-900 dark:text-slate-100 tracking-[-0.01em]";
-    const textLabelDefault = "font-medium text-sm leading-6 text-slate-700 dark:text-slate-300 tracking-[-0.01em]";
-    const textValueDefaultDisplay = "font-medium text-sm leading-6 text-slate-900 dark:text-slate-100 tracking-[-0.01em]";
-    const inputContainerSizeDefault = "w-full sm:w-[132px] h-[40px]";
-    const inputStyle = "py-[9px] px-3 w-full h-full bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-[6px] font-normal text-sm leading-[22px] text-slate-900 dark:text-slate-50 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500";
-    const equipmentInputContainerSize = "w-full sm:w-[132px] h-[72px]";
-    const textareaStyle = "py-[10px] px-3 w-full h-full bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-[6px] font-normal text-sm leading-[22px] text-slate-900 dark:text-slate-50 placeholder:text-slate-400 dark:placeholder:text-slate-500 resize-none focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 scrollbar-thin scrollbar-thumb-slate-400 dark:scrollbar-thumb-slate-500 scrollbar-track-slate-100 dark:scrollbar-track-slate-800";
+        loadInitialData();
+    }, []);
 
+    // --- Render Logic ---
     if (isLoading) {
         return <RoomPageSkeleton />;
     }

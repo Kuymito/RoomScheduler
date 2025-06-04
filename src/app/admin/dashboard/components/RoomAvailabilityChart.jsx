@@ -1,8 +1,6 @@
 // dashboard/components/RoomAvailabilityChart.jsx
 import { Bar } from 'react-chartjs-2';
-import {
-  Chart as ChartJS,CategoryScale, LinearScale,BarElement, Title,Tooltip,Legend,
-} from 'chart.js';
+import { Chart as ChartJS,CategoryScale, LinearScale,BarElement, Title,Tooltip,Legend, } from 'chart.js';
 import { useEffect, useState } from 'react';
 
 ChartJS.register(
@@ -20,18 +18,8 @@ const defaultChartValues = [15, 30, 25, 45, 20, 35, 50];
 export default function RoomAvailabilityChart({ chartData, selectedTimeSlot, setSelectedTimeSlot }) {
   const timeSlots = ['07:00 - 10:00', '10:00 - 13:00', '13:00 - 16:00', '16:00 - 19:00'];
   const [isDarkMode, setIsDarkMode] = useState(false);
-
-  useEffect(() => {
-    const darkModeMatcher = window.matchMedia('(prefers-color-scheme: dark)');
-    setIsDarkMode(darkModeMatcher.matches);
-    const handleChange = (e) => setIsDarkMode(e.matches);
-    darkModeMatcher.addEventListener('change', handleChange);
-    return () => darkModeMatcher.removeEventListener('change', handleChange);
-  }, []);
-
   const currentLabels = chartData?.labels || defaultChartLabels;
   const currentDataValues = chartData?.data || defaultChartValues;
-
   const data = {
     labels: currentLabels,
     datasets: [
@@ -89,6 +77,14 @@ export default function RoomAvailabilityChart({ chartData, selectedTimeSlot, set
       },
     },
   };
+
+  useEffect(() => {
+    const darkModeMatcher = window.matchMedia('(prefers-color-scheme: dark)');
+    setIsDarkMode(darkModeMatcher.matches);
+    const handleChange = (e) => setIsDarkMode(e.matches);
+    darkModeMatcher.addEventListener('change', handleChange);
+    return () => darkModeMatcher.removeEventListener('change', handleChange);
+  }, []);
 
   return (
     <div> 

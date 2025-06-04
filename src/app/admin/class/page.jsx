@@ -23,14 +23,6 @@ const fetchClassData = async () => {
     return new Promise(resolve => setTimeout(() => resolve(initialClassData), 1000));
 };
 
-// --- A small, reusable spinner component for the row ---
-const LoadingSpinnerIcon = () => (
-    <svg className="animate-spin h-5 w-5 text-blue-600 dark:text-blue-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-    </svg>
-);
-
 const ClassPageSkeleton = () => {
   // A reusable component for a single, pulsing table row
     const SkeletonTableRow = () => (
@@ -130,16 +122,29 @@ const ClassPageSkeleton = () => {
 };
 
 const ClassViewContent = () => {
-    const [classData, setClassData] = useState([]);
+    // --- State Variables ---
     const [isLoading, setIsLoading] = useState(true);
     const [showCreatePopup, setShowCreatePopup] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPageOptions = [5, 10, 20, 50];
     const [itemsPerPage, setItemsPerPage] = useState(itemsPerPageOptions[0]);
-
-    // This will store the ID of the row that the user clicked to navigate.
     const [navigatingRowId, setNavigatingRowId] = useState(null);
-
+    const [statusFilter, setStatusFilter] = useState('active');
+    const [sortColumn, setSortColumn] = useState(null);
+    const [sortDirection, setSortDirection] = useState('asc');
+    const router = useRouter();
+    const [searchTexts, setSearchTexts] = useState({
+        name: '',
+        generation: '',
+        group: '',
+        major: '',
+        degrees: '',
+        faculty: '',
+        semester: '',
+        shift: '',
+    });
+    
+    // --- Handlers ---
     const handleCreateClick = () => {
         setShowCreatePopup(true);
     };
@@ -148,7 +153,6 @@ const ClassViewContent = () => {
         setShowCreatePopup(false);
     };
 
-    // This function will be passed to the modal to handle saving new class data
     const handleSaveNewClass = (newClassData) => {
         const newId = classData.length > 0 ? Math.max(...classData.map(item => item.id)) + 1 : 1;
         const newClassWithStatus = {
@@ -160,9 +164,6 @@ const ClassViewContent = () => {
         setClassData(prevData => [...prevData, newClassWithStatus]);
         setCurrentPage(1); // Reset page after adding a new class
     };
-    const [statusFilter, setStatusFilter] = useState('active'); // 'active', 'archived', or 'all'
-    const [sortColumn, setSortColumn] = useState(null);
-    const [sortDirection, setSortDirection] = useState('asc'); // 'asc' or 'desc'
 
     const handleSort = (column) => {
         setCurrentPage(1); // Reset to first page when sorting changes
@@ -219,17 +220,6 @@ const ClassViewContent = () => {
         );
     };
 
-    const [searchTexts, setSearchTexts] = useState({
-        name: '',
-        generation: '',
-        group: '',
-        major: '',
-        degrees: '',
-        faculty: '',
-        semester: '',
-        shift: '',
-    });
-
     const handleSearchChange = (column, value) => {
         setSearchTexts(prev => ({
             ...prev,
@@ -256,13 +246,28 @@ const ClassViewContent = () => {
         return currentFilteredData;
     }, [sortedClassData, searchTexts, statusFilter]);
 
-    const totalPages = Math.ceil(filteredClassData.length / itemsPerPage);
-
     const currentTableData = useMemo(() => {
         const startIndex = (currentPage - 1) * itemsPerPage;
         const endIndex = startIndex + itemsPerPage;
         return filteredClassData.slice(startIndex, endIndex);
     }, [filteredClassData, currentPage, itemsPerPage]);
+
+    const handleItemsPerPageChange = (event) => {
+        const newItemsPerPage = parseInt(event.target.value, 10);
+        setItemsPerPage(newItemsPerPage);
+        setCurrentPage(1); // Reset to first page when items per page changes
+    };
+
+    const handleRowClick = (classId) => {
+        // Prevent another navigation if one is already in progress
+        if (navigatingRowId) return;
+
+        // Set the ID of the row we are navigating from
+        setNavigatingRowId(classId);
+
+        // Proceed with the navigation
+        router.push(`/admin/class/${classId}`);
+    };
 
     const goToNextPage = () => {
         setCurrentPage((prevPage) => Math.min(prevPage + 1, totalPages));
@@ -274,12 +279,6 @@ const ClassViewContent = () => {
 
     const goToPage = (pageNumber) => {
         setCurrentPage(pageNumber);
-    };
-
-    const handleItemsPerPageChange = (event) => {
-        const newItemsPerPage = parseInt(event.target.value, 10);
-        setItemsPerPage(newItemsPerPage);
-        setCurrentPage(1); // Reset to first page when items per page changes
     };
 
     const getPageNumbers = () => {
@@ -308,19 +307,9 @@ const ClassViewContent = () => {
         setCurrentPage(1);
     };
 
-    const router = useRouter();
+    const totalPages = Math.ceil(filteredClassData.length / itemsPerPage);
     
-    const handleRowClick = (classId) => {
-        // Prevent another navigation if one is already in progress
-        if (navigatingRowId) return;
-
-        // Set the ID of the row we are navigating from
-        setNavigatingRowId(classId);
-
-        // Proceed with the navigation
-        router.push(`/admin/class/${classId}`);
-    };
-
+    // --- Hooks ---
     useEffect(() => {
         const loadInitialData = async () => {
             try {
@@ -337,11 +326,12 @@ const ClassViewContent = () => {
         loadInitialData();
     }, []);
 
-    // Add conditional rendering for the loading state ---
+    // --- Render Logic ---
     if (isLoading) {
         return <ClassPageSkeleton />;
     }
 
+    // Icons for Edit and Archive
     const EditIcon = ({ className = "w-[14px] h-[14px]" }) => (
         <svg className={className} width="14" height="14" viewBox="0 0 17 17" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M8.06671 2.125H4.95837C3.00254 2.125 2.12504 3.0025 2.12504 4.95833V12.0417C2.12504 13.9975 3.00254 14.875 4.95837 14.875H12.0417C13.9975 14.875 14.875 13.9975 14.875 12.0417V8.93333" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>

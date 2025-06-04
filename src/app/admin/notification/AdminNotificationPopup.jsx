@@ -3,19 +3,10 @@
 import React from 'react';
 import NotificationItem from './AdminNotification';
 
-const NotificationPopup = ({
-  show,
-  // onClose, // Optional: if you want an explicit close button inside the popup
-  notifications = [],
-  onMarkAllRead,
-  onApprove,
-  onDeny,
-  anchorRef // Optional ref of the bell icon for positioning
+const NotificationPopup = ({ show, notifications = [], onMarkAllRead, onApprove, onDeny, anchorRef // Optional ref of the bell icon for positioning
 }) => {
   if (!show) return null;
-
-  // Calculate position if anchorRef is provided
-  // This is a basic example; robust positioning might need a library or more complex logic
+  
   let popupStyle = {
     right: '20px', // Default like UserPopup
     top: '80px',   // Default like UserPopup

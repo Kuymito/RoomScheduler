@@ -4,10 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import React from 'react'; // Import React
 
-// --- SVG Icon Components ---
-// Note: stroke is now "currentColor" to inherit color from CSS.
-// They also accept a className prop.
-
+// --- Icon Components ---
 const DashboardIcon = ({ className }) => (
   <svg className={className} width="15" height="16" viewBox="0 0 15 16" fill="none" xmlns="http://www.w3.org/2000/svg">
     <path d="M13.75 5.52422V2.68672C13.75 1.80547 13.35 1.44922 12.3563 1.44922H9.83125C8.8375 1.44922 8.4375 1.80547 8.4375 2.68672V5.51797C8.4375 6.40547 8.8375 6.75547 9.83125 6.75547H12.3563C13.35 6.76172 13.75 6.40547 13.75 5.52422Z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round"/>
@@ -67,9 +64,6 @@ const ScheduleIcon = ({ className }) => (
   </svg>
 );
 
-
-// --- NavItem Component ---
-// Now accepts `icon` as a component and applies color classes dynamically.
 const NavItem = ({ href, icon: Icon, label, isActive, isCollapsed, onClick }) => (
   <Link href={href} passHref legacyBehavior>
     <a
@@ -92,9 +86,7 @@ const NavItem = ({ href, icon: Icon, label, isActive, isCollapsed, onClick }) =>
   </Link>
 );
 
-// --- Sidebar Component ---
 const Sidebar = ({ isCollapsed, activeItem, onNavItemClick }) => {
-  // Updated data structure to use component references for icons.
   const navItemsData = [
     {
       id: 'dashboard',

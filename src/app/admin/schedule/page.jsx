@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'; // Added useEffect
 import AdminLayout from '@/components/AdminLayout';
 
+// --- Icon components ---
 const CalendarIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
     <path fillRule="evenodd" d="M5.75 2a.75.75 0 01.75.75V4h7V2.75a.75.75 0 011.5 0V4h.25A2.75 2.75 0 0118 6.75v8.5A2.75 2.75 0 0115.25 18H4.75A2.75 2.75 0 012 15.25v-8.5A2.75 2.75 0 014.75 4H5V2.75A.75.75 0 015.75 2zm-1 5.5c0-.414.336-.75.75-.75h10.5a.75.75 0 010 1.5H5.5a.75.75 0 01-.75-.75z" clipRule="evenodd" />
@@ -15,13 +16,11 @@ const CloseIcon = () => (
   </svg>
 );
 
-
 const PdfFileIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-6 h-6 text-red-600 dark:text-red-500">
     <path fillRule="evenodd" d="M4 2a2 2 0 00-2 2v12a2 2 0 002 2h12a2 2 0 002-2V8.343a2 2 0 00-.586-1.414l-4.414-4.414A2 2 0 0011.657 2H4zm5 0v3.5A1.5 1.5 0 0010.5 7H14V4H9zM8 11a1 1 0 100 2h4a1 1 0 100-2H8z" clipRule="evenodd" />
   </svg>
 );
-
 
 // --- Mock Data ---
 const MOCK_CLASSES = [
@@ -57,7 +56,6 @@ const DAYS = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
 const TIME_SLOTS = ['07:00 - 10:00', '10:00 - 13:00', '13:00 - 16:00', '16:00 - 19:00'];
 const PROGRAMS = ['All', 'IT', 'BIT', 'FB', 'Law', 'MG', 'BS', 'CS']; 
 const GENERATIONS = ['All', '33', '32'];
-
 
 const getScheduleKey = (day, time, room) => `${day}-${time}-${room}`;
 
@@ -191,58 +189,17 @@ const SchedulePageContent = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedProgramFilter, setSelectedProgramFilter] = useState(PROGRAMS[0]); // 'All'
   const [selectedGenerationFilter, setSelectedGenerationFilter] = useState('33');
-
   const [selectedDay, setSelectedDay] = useState(DAYS[0]);
   const [selectedTimeSlot, setSelectedTimeSlot] = useState(TIME_SLOTS[0]);
   const [selectedBuildingName, setSelectedBuildingName] = useState(Object.keys(MOCK_ROOMS_LAYOUT)[0]);
-  
   const [schedule, setSchedule] = useState({}); // Removed type annotation
   const [draggedClass, setDraggedClass] = useState(null); // Removed type annotation
-
   const [isPdfModalOpen, setIsPdfModalOpen] = useState(false);
   const [pdfInfo, setPdfInfo] = useState({ filename: '', status: 'Ready', sizeEst: '~20 KB' });
   const [publicDate, setPublicDate] = useState('');
-
   const [isLoading, setIsLoading] = useState(true);
 
-  // Add useEffect to simulate loading data
-  useEffect(() => {
-    // Simulate a network request
-    const timer = setTimeout(() => {
-      // In a real app, you would fetch data here and then:
-      // setData(fetchedData);
-      setIsLoading(false); // Set loading to false after data is "fetched"
-    }, 1500); // 1.5-second delay
-
-    // Cleanup function to clear the timer if the component unmounts
-    return () => clearTimeout(timer);
-  }, []);
-
-  useEffect(() => {
-    const updateDate = () => {
-        const now = new Date();
-        // Use toLocaleString for consistent formatting, including seconds for ticking effect
-        const formattedDate = now.toLocaleString('en-CA', { 
-            year: 'numeric', 
-            month: '2-digit', 
-            day: '2-digit', 
-            hour: '2-digit', 
-            minute: '2-digit', 
-            second: '2-digit', // Added seconds
-            hour12: false 
-        }).replace(',', ''); // en-CA might add a comma, remove it
-        setPublicDate(formattedDate);
-    };
-    updateDate(); // Initial set
-    const intervalId = setInterval(updateDate, 1000); // Update every second
-    return () => clearInterval(intervalId); // Cleanup
-  }, []);
-
-  if (isLoading) {
-    return <SchedulePageSkeleton />;
-  }
-
-  // Removed duplicate definition of filteredClasses. This is the single definition.
+  // --- Filter logic ---
   const filteredClasses = MOCK_CLASSES.filter(cls => 
     (cls.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
      cls.program.toLowerCase().includes(searchTerm.toLowerCase())) &&
@@ -252,6 +209,7 @@ const SchedulePageContent = () => {
 
   const currentBuildingLayout = MOCK_ROOMS_LAYOUT[selectedBuildingName] || [];
 
+  // --- Handler ---
   const handleDragStart = (e, classItem) => { // Removed type annotation for e and classItem
     setDraggedClass(classItem);
     e.dataTransfer.effectAllowed = 'move';
@@ -393,6 +351,43 @@ const SchedulePageContent = () => {
     }
   };
 
+  // --- Hooks ---
+  useEffect(() => {
+    // Simulate a network request
+    const timer = setTimeout(() => {
+      // In a real app, you would fetch data here and then:
+      // setData(fetchedData);
+      setIsLoading(false); // Set loading to false after data is "fetched"
+    }, 1500); // 1.5-second delay
+
+    // Cleanup function to clear the timer if the component unmounts
+    return () => clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    const updateDate = () => {
+        const now = new Date();
+        // Use toLocaleString for consistent formatting, including seconds for ticking effect
+        const formattedDate = now.toLocaleString('en-CA', { 
+            year: 'numeric', 
+            month: '2-digit', 
+            day: '2-digit', 
+            hour: '2-digit', 
+            minute: '2-digit', 
+            second: '2-digit', // Added seconds
+            hour12: false 
+        }).replace(',', ''); // en-CA might add a comma, remove it
+        setPublicDate(formattedDate);
+    };
+    updateDate(); // Initial set
+    const intervalId = setInterval(updateDate, 1000); // Update every second
+    return () => clearInterval(intervalId); // Cleanup
+  }, []);
+
+  // --- Render logic ---
+  if (isLoading) {
+    return <SchedulePageSkeleton />;
+  }
 
   return (
     <div className="flex flex-col lg:flex-row gap-6 p-6">
@@ -441,7 +436,6 @@ const SchedulePageContent = () => {
            {filteredClasses.length === 0 && <p className="text-sm text-gray-500 dark:text-gray-400 p-4 text-center">No classes match filters.</p>}
         </div>
       </div>
-
       {/* Right Panel: Room Schedule */}
       <div className="flex-1 bg-white border border-num-gray-light dark:bg-gray-800 dark:border-gray-700 p-4 rounded-xl shadow-custom-light">
         <div className="flex flex-wrap items-center justify-between mb-4 gap-3">
@@ -557,7 +551,6 @@ const SchedulePageContent = () => {
             Public Date : {publicDate} 
         </p>
       </div>
-
       {/* PDF Download Modal */}
       <DownloadPdfModal
         isOpen={isPdfModalOpen}
@@ -577,27 +570,3 @@ export default function AdminSchedulePage() {
     </AdminLayout>
   );
 }
-
-// Add this to your global CSS or a relevant CSS file for custom scrollbars if desired:
-/*
-.custom-scrollbar::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: transparent;
-}
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #ccc;
-  border-radius: 3px;
-}
-.custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #aaa;
-}
-.dark .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #555;
-}
-.dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #777;
-}
-*/

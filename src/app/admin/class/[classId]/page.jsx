@@ -5,7 +5,6 @@ import { useEffect, useState } from 'react';
 import AdminLayout from '@/components/AdminLayout';
 
 // --- Data Simulation ---
-// This data is just for demonstration.
 const initialClassData = [
     // Added semester to existing data
         { id: 1, name: 'NUM30-01', generation: '30', group: '01', major: 'IT', degrees: 'Bachelor', faculty: 'Faculty of IT', semester: '2024-2025 S1', shift: '7:00 - 10:00', status: 'active' },
@@ -21,7 +20,6 @@ const initialClassData = [
 ];
 
 // --- Options for Dropdown Menus ---
-// We define these here to use in our new select inputs.
 const generationOptions = ['30', '31', '32', '33', '34', '35'];
 const majorOptions = ['IT', 'CS', 'IS', 'SE', 'AI', 'DS', 'ML', 'DA'];
 const degreesOptions = ['Associate', 'Bachelor', 'Master', 'PhD'];
@@ -82,33 +80,18 @@ const ClassDetailSkeleton = () => {
 };
 
 const ClassDetailsContent = () => {
+    // --- State Variables ---
     const router = useRouter();
     const params = useParams();
-
-    // State management is largely the same
     const [classDetails, setClassDetails] = useState(null);
     const [editableClassDetails, setEditableClassDetails] = useState(null);
     const [isEditing, setIsEditing] = useState(false);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-
     const [isNameManuallySet, setIsNameManuallySet] = useState(false);
+    const currentData = isEditing ? editableClassDetails : classDetails;
 
-    useEffect(() => {
-        // Only run this logic if we are in edit mode and the name hasn't been manually set
-        if (!isEditing || !editableClassDetails || isNameManuallySet) {
-            return;
-        }
-
-        // Auto-update the name based on generation and group
-        setEditableClassDetails(prev => ({
-            ...prev,
-            name: `NUM${prev.generation}-${prev.group}`
-        }));
-
-    }, [editableClassDetails?.generation, editableClassDetails?.group, isEditing, isNameManuallySet]);
-
-    // API simulation functions are the same
+    // --- Handlers ---
     const fetchClassDetails = async (id) => {
         setLoading(true);
         setError(null);
@@ -142,14 +125,6 @@ const ClassDetailsContent = () => {
         }
     };
 
-    useEffect(() => {
-        const classIdFromUrl = params.classId;
-        if (classIdFromUrl) {
-            fetchClassDetails(parseInt(classIdFromUrl, 10));
-        }
-    }, [params.classId]);
-
-    // UI handlers are the same
     const handleEditToggle = () => {
         if (isEditing) {
             saveClassDetails();
@@ -195,16 +170,6 @@ const ClassDetailsContent = () => {
         
         setEditableClassDetails(prev => ({ ...prev, [name]: value }));
     };
-
-    if (loading && !classDetails) {
-        return <ClassDetailSkeleton />;
-    }
-
-    if (!classDetails) {
-        return <div className="p-6 text-red-500 dark:text-red-400">Error: {error}</div>;
-    }
-    
-    const currentData = isEditing ? editableClassDetails : classDetails;
 
     const renderSelectField = (label, name, value, options) => (
         <div className="form-group flex-1 min-w-[200px]">
@@ -254,6 +219,37 @@ const ClassDetailsContent = () => {
             )}
         </div>
     );
+
+    // --- Hooks ---
+    useEffect(() => {
+        // Only run this logic if we are in edit mode and the name hasn't been manually set
+        if (!isEditing || !editableClassDetails || isNameManuallySet) {
+            return;
+        }
+
+        // Auto-update the name based on generation and group
+        setEditableClassDetails(prev => ({
+            ...prev,
+            name: `NUM${prev.generation}-${prev.group}`
+        }));
+
+    }, [editableClassDetails?.generation, editableClassDetails?.group, isEditing, isNameManuallySet]);
+
+    useEffect(() => {
+        const classIdFromUrl = params.classId;
+        if (classIdFromUrl) {
+            fetchClassDetails(parseInt(classIdFromUrl, 10));
+        }
+    }, [params.classId]);
+
+    // --- Render Logic ---
+    if (loading && !classDetails) {
+        return <ClassDetailSkeleton />;
+    }
+
+    if (!classDetails) {
+        return <div className="p-6 text-red-500 dark:text-red-400">Error: {error}</div>;
+    }
 
     return (
         <div className='p-6 dark:text-white'>
