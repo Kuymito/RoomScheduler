@@ -1,9 +1,5 @@
-// dashboard/components/RoomAvailabilityChart.jsx
 import { Bar } from 'react-chartjs-2';
-import {
-  Chart as ChartJS,CategoryScale, LinearScale,BarElement, Title,Tooltip,Legend,
-} from 'chart.js';
-import { useEffect, useState } from 'react';
+import { Chart as ChartJS,CategoryScale, LinearScale,BarElement, Title,Tooltip,Legend,} from 'chart.js';
 
 ChartJS.register(
   CategoryScale,
@@ -14,30 +10,14 @@ ChartJS.register(
   Legend
 );
 
-const defaultChartLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-const defaultChartValues = [15, 30, 25, 45, 20, 35, 50]; 
-
 export default function RoomAvailabilityChart({ chartData, selectedTimeSlot, setSelectedTimeSlot }) {
   const timeSlots = ['07:00 - 10:00', '10:00 - 13:00', '13:00 - 16:00', '16:00 - 19:00'];
-  const [isDarkMode, setIsDarkMode] = useState(false);
-
-  useEffect(() => {
-    const darkModeMatcher = window.matchMedia('(prefers-color-scheme: dark)');
-    setIsDarkMode(darkModeMatcher.matches);
-    const handleChange = (e) => setIsDarkMode(e.matches);
-    darkModeMatcher.addEventListener('change', handleChange);
-    return () => darkModeMatcher.removeEventListener('change', handleChange);
-  }, []);
-
-  const currentLabels = chartData?.labels || defaultChartLabels;
-  const currentDataValues = chartData?.data || defaultChartValues;
-
   const data = {
-    labels: currentLabels,
+    labels: chartData?.labels || ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
     datasets: [
       {
         label: 'Rooms Available',
-        data: currentDataValues,
+        data: chartData?.data || [0,0,0,0,0,0,0],
         backgroundColor: 'rgba(59, 130, 246, 0.8)',
         borderColor: 'rgba(59, 130, 246, 1)',
         borderWidth: 1,
@@ -58,13 +38,6 @@ export default function RoomAvailabilityChart({ chartData, selectedTimeSlot, set
       title: {
         display: false,
       },
-      tooltip: {
-        backgroundColor: isDarkMode ? 'rgba(31, 41, 55, 0.9)' : 'rgba(255, 255, 255, 0.9)',
-        titleColor: isDarkMode ? '#f3f4f6' : '#1f2937',
-        bodyColor: isDarkMode ? '#d1d5db' : '#374151',
-        borderColor: isDarkMode ? '#374151' : '#e5e7eb',
-        borderWidth: 1,
-      }
     },
     scales: {
       y: {
@@ -72,27 +45,26 @@ export default function RoomAvailabilityChart({ chartData, selectedTimeSlot, set
         max: 60,
         grid: {
           drawBorder: false,
-          color: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)',
         },
         ticks: {
           stepSize: 10,
-          color: isDarkMode ? '#9ca3af' : '#6b7280',
         }
       },
       x: {
         grid: {
           display: false,
         },
-        ticks: {
-            color: isDarkMode ? '#9ca3af' : '#6b7280',
-        }
       },
     },
   };
 
+  if (!chartData) {
+    return <div className="h-96 flex items-center justify-center text-gray-500 dark:text-gray-200">Loading chart data...</div>;
+  }
+
   return (
-    <div> 
-      <div className="flex justify-between pb-10 items-center"> 
+    <div>
+      <div className="flex justify-between pb-10 items-center  ">
         <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-400">Room Available</h3>
         <select
           value={selectedTimeSlot}
