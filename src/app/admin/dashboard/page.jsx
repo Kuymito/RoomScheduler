@@ -1,14 +1,9 @@
-// dashboard/page.jsx
 "use client";
-
 import { useEffect, useState } from 'react';
-import DashboardLayout from '@/components/DashboardLayout'; // Assuming this path is correct
+import DashboardLayout from '@/components/DashboardLayout'; 
 import DashboardHeader from './components/DashboardHeader'; 
 import StatCard from './components/StatCard';
 import RoomAvailabilityChart from './components/RoomAvailabilityChart';
-// Removed: import RecentActivity from './components/RecentActivity'; 
-
-// --- Updated Data Fetching Functions ---
 const fetchDashboardData = async () => {
   return new Promise(resolve => setTimeout(() => resolve({
     classAssign: 65,
@@ -45,34 +40,28 @@ const fetchChartData = async (timeSlot) => {
   }), 500));
 };
 
-// Removed: fetchActivityData function
-
-// --- Main Page Component ---
 const DashboardPage = () => {
   const [dashboardStats, setDashboardStats] = useState(null);
   const [chartData, setChartData] = useState(null);
-  // Removed: const [activityData, setActivityData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [selectedTimeSlot, setSelectedTimeSlot] = useState('07:00 - 10:00');
 
   useEffect(() => {
     const loadInitialData = async () => {
-      setLoading(true); // Set loading true at the start
+      setLoading(true); 
       try {
         const stats = await fetchDashboardData();
         setDashboardStats(stats);
-        // Removed: fetching activities
       } catch (error) {
         console.error("Failed to fetch dashboard stats:", error);
-      }
-      // setLoading(false) will be handled by the chart data useEffect or after chart loads
+      }s
     };
     loadInitialData();
   }, []);
 
   useEffect(() => {
     if (!selectedTimeSlot || !dashboardStats) {
-        if (dashboardStats && chartData) { // If stats and chart are loaded
+        if (dashboardStats && chartData) { 
              setLoading(false);
         }
         return;
@@ -86,7 +75,7 @@ const DashboardPage = () => {
       } catch (error) {
         console.error("Failed to fetch chart data:", error);
       } finally {
-        if (dashboardStats) { // Chart data would have been set
+        if (dashboardStats) { 
           setLoading(false);
         }
       }
@@ -94,9 +83,7 @@ const DashboardPage = () => {
     
     loadChart();
 
-  }, [selectedTimeSlot, dashboardStats]); // Removed activityData from dependencies
-
-  // Updated loading condition
+  }, [selectedTimeSlot, dashboardStats]); 
   if (loading || !dashboardStats || !chartData) { 
     return (
         <div className="flex justify-center items-center h-screen dark:text-gray-200">
@@ -127,9 +114,8 @@ const DashboardPage = () => {
         <StatCard title="Online Class" value={onlineClass} />
       </div>
 
-      {/* Layout for Chart - now takes full width */}
-      <div className="mt-6 grid grid-cols-1 gap-6"> {/* Removed lg:grid-cols-3 */}
-        <div className="lg:col-span-1 bg-white dark:bg-gray-900 p-4 sm:p-6 rounded-lg shadow"> {/* Changed to lg:col-span-1 (effectively full width in a single column grid) */}
+      <div className="mt-6 grid grid-cols-1 gap-6"> 
+        <div className="lg:col-span-1 bg-white dark:bg-gray-900 p-4 sm:p-6 rounded-lg shadow">
           <RoomAvailabilityChart
             chartData={chartData} 
             selectedTimeSlot={selectedTimeSlot}
