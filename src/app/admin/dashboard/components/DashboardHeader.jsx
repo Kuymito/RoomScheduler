@@ -22,7 +22,7 @@ export default function DashboardHeader({
           <h1
             className="
               space-y-10
-              text-xl sm:text-2xl 
+              text-lg sm:text-xl 
               font-bold 
               text-gray-800 dark:text-gray-100 
             "
@@ -31,7 +31,7 @@ export default function DashboardHeader({
           </h1>
           <p
             className="
-              text-sm sm:text-base 
+              text-sm sm:text-xs sm:text-semibold 
               text-gray-700 dark:text-gray-300 
               mt-4
             "
@@ -49,8 +49,8 @@ export default function DashboardHeader({
             mt-10
           "
         >
-          <p>{`Date: ${currentDate}`}</p>
-          <p className="mt-1">{`Academic Year: ${academicYear}`}</p>{" "}
+          <p className="text-xs">{`Date: ${currentDate}`}</p>
+          <p className="text-xs mt-1">{`Academic Year: ${academicYear}`}</p>{" "}
         </div>
 
       </div>

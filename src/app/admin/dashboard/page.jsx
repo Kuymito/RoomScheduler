@@ -75,7 +75,7 @@ const DashboardPage = () => {
 
   // ==>> loading page
   if (loading || !dashboardStats) {
-    return <div className="flex justify-center items-center h-screen">Loading dashboard...</div>;
+    return <div className="flex justify-center items-center h-screen dark:text-gray-200">Loading dashboard...</div>;
   }
 
   const { classAssign, expired, unassignedClass, onlineClass, currentDate, academicYear } = dashboardStats;

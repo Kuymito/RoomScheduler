@@ -1,7 +1,5 @@
 import { Bar } from 'react-chartjs-2';
-import {
-  Chart as ChartJS,CategoryScale, LinearScale,BarElement, Title,Tooltip,Legend,
-} from 'chart.js';
+import { Chart as ChartJS,CategoryScale, LinearScale,BarElement, Title,Tooltip,Legend,} from 'chart.js';
 
 ChartJS.register(
   CategoryScale,
@@ -61,17 +59,17 @@ export default function RoomAvailabilityChart({ chartData, selectedTimeSlot, set
   };
 
   if (!chartData) {
-    return <div className="h-96 flex items-center justify-center text-gray-500">Loading chart data...</div>;
+    return <div className="h-96 flex items-center justify-center text-gray-500 dark:text-gray-200">Loading chart data...</div>;
   }
 
   return (
     <div>
-      <div className="flex justify-between h-60 items-center  ">
-        <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-400">Room Available</h3>
+      <div className="flex justify-between pb-10 items-center  ">
+        <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-400">Room Available</h3>
         <select
           value={selectedTimeSlot}
           onChange={(e) => setSelectedTimeSlot(e.target.value)}
-          className="p-2 border border-gray-300 rounded-md text-sm"
+          className="p-2 border border-gray-300 rounded-md text-sm dark:bg-gray-800 dark:text-gray-200 dark:border-gray-600"
         >
           {timeSlots.map(slot => (
             <option key={slot} value={slot}>{slot}</option>
