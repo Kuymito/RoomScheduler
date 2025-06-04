@@ -1,0 +1,102 @@
+{
+  "appName": "NUM-FIT Digital Center",
+  "copyright": "Copyright @2025 <0>NUM-FIT</0> Digital Center. All rights reserved.",
+  "pageTitles": {
+    "dashboard": "Dashboard",
+    "classManagement": "Class Management",
+    "instructorManagement": "Instructor Management",
+    "profile": "Profile",
+    "roomManagement": "Room Management",
+    "scheduleManagement": "Schedule Management"
+  },
+  "sidebar": {
+    "dashboard": "Dashboard",
+    "class": "Class",
+    "instructor": "Instructor",
+    "room": "Room",
+    "schedule": "Schedule",
+    "admin": "Admin",
+    "adminEmail": "admin@gmail.com"
+  },
+  "topbar": {
+    "mainTitle": "National University of Management",
+    "notifications": "Notifications",
+    "userMenu": "User Menu",
+    "expandSidebar": "Expand Sidebar",
+    "collapseSidebar": "Collapse Sidebar"
+  },
+  "adminPopup": {
+    "editProfile": "Edit Profile",
+    "logout": "Logout"
+  },
+  "logoutAlert": {
+    "confirmLogout": "Confirm Logout",
+    "message": "Logging out will end your current session. You’ll need to sign in again to continue.",
+    "cancel": "Cancel",
+    "logoutButton": "Logout"
+  },
+  "dashboardPage": {
+    "title": "Dashboard",
+    "welcome": "Welcome to the admin dashboard. Here you can manage rooms, view schedules, and more."
+  },
+  "classPage": {
+    "title": "Class",
+    "welcome": "Welcome to the admin class. view class, and more.",
+    "hello": "Hello"
+  },
+  "instructorPage": {
+    "title": "Instructor",
+    "welcome": "Welcome to the admin instructor. view instructor, and more."
+  },
+  "profilePage": {
+    "title": "Profile",
+    "generalInfo": "General information",
+    "firstName": "First Name",
+    "lastName": "Last Name",
+    "email": "Email",
+    "phoneNumber": "Phone Number",
+    "address": "Address",
+    "uploadProfile": "Upload Profile",
+    "editProfileButton": "Edit Profile",
+    "saveChangesButton": "Save Changes",
+    "savingButton": "Saving...",
+    "passwordInfo": "Password information",
+    "currentPassword": "Current Password",
+    "newPassword": "New Password",
+    "confirmNewPassword": "Confirm New Password",
+    "enterCurrentPassword": "Enter current password",
+    "enterNewPassword": "Enter new password",
+    "confirmNewPasswordPlaceholder": "Confirm new password",
+    "changePasswordButton": "Change Password",
+    "savePasswordButton": "Save Password",
+    "adminRole": "Admin",
+    "generalInfoSuccess": "General information updated successfully!",
+    "passwordSuccess": "Password updated successfully!",
+    "errorSavingGeneral": "Error saving general info: {message}",
+    "errorChangingPassword": "Error changing password: {message}",
+    "errorPasswordMismatch": "New password and confirm new password do not match.",
+    "errorPasswordEmpty": "New password and confirm new password cannot be empty."
+  },
+  "roomPage": {
+    "title": "Room",
+    "details": "Details",
+    "building": "Building",
+    "floor": "Floor",
+    "capacity": "Capacity",
+    "equipment": "Equipment",
+    "editRoom": "Edit Room",
+    "saveChanges": "Save Changes",
+    "saving": "Saving...",
+    "loadingRoomDetails": "Loading room details...",
+    "selectRoomToView": "Select a room to view details.",
+    "equipmentPlaceholder": "Item1, Item2, ..."
+  },
+  "schedulePage": {
+    "title": "Schedule",
+    "welcome": "Welcome to the admin schedule. view schedules, and more."
+  },
+  "languages": {
+    "english": "English",
+    "khmer": "ខ្មែរ"
+  }
+}

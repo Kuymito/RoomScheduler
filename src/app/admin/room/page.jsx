@@ -1,5 +1,7 @@
 'use client';
 
+import React from 'react'; 
+
 import { useState, useEffect, useRef } from 'react';
 import AdminLayout from '@/components/AdminLayout';
 
@@ -311,3 +313,4 @@ export default function AdminRoomPage() {
       </AdminLayout>
   );
 }
+
