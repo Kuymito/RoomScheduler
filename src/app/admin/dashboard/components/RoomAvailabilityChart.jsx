@@ -65,7 +65,7 @@ export default function RoomAvailabilityChart({ chartData, selectedTimeSlot, set
   return (
     <div>
       <div className="flex justify-between pb-10 items-center  ">
-        <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-400">Room Available</h3>
+        <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-400">Room Available</h3>
         <select
           value={selectedTimeSlot}
           onChange={(e) => setSelectedTimeSlot(e.target.value)}

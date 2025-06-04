@@ -1,9 +1,10 @@
 'use client';
 
 import React from 'react';
+import Image from 'next/image';
 import ThemeToggle from './ThemeToggle'; // Assuming ThemeToggle is in the same directory or adjust path
 
-const Topbar = ({ onToggleSidebar, isSidebarCollapsed, onUserIconClick, pageSubtitle, userIconRef }) => {
+const Topbar = ({ onToggleSidebar, isSidebarCollapsed, onUserIconClick, pageSubtitle, userIconRef, onNotificationIconClick, notificationIconRef, hasUnreadNotifications, }) => {
   return (
     // This div assumes its parent in AdminLayout will handle fixed positioning, width, height, background, and shadow.
     // It is just responsible for its internal layout.
@@ -24,14 +25,24 @@ const Topbar = ({ onToggleSidebar, isSidebarCollapsed, onUserIconClick, pageSubt
       </div>
       <div className="topbar-icons flex items-center gap-4">
         <ThemeToggle />
-        <div className="icon-wrapper relative w-10 h-10 flex items-center justify-center border border-num-icon-border dark:bg-gray-800 dark:border-gray-700 p-[10px] rounded-md">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-6 text-black dark:text-white">
+        
+        <div
+          ref={notificationIconRef} 
+          className="icon-wrapper relative w-10 h-10 flex items-center justify-center border border-num-icon-border  dark:bg-gray-800 dark:border-gray-700 p-[10px] rounded-md cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700" // Added dark:border-gray-700 and dark:hover:bg-gray-800
+          onClick={onNotificationIconClick} 
+          title="Notifications"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="h-16 w-12 text-black dark:text-white">
             <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0" />
           </svg>
+          {hasUnreadNotifications && (
+            <div className="notification-badge absolute w-2 h-2 bg-num-red rounded-full top-[5px] right-[5px]"></div>
+          )}
         </div>
+        
         <div
           ref={userIconRef}
-          className="user-icon relative w-10 h-10 flex items-center justify-center border border-num-icon-border dark:bg-gray-800 dark:border-gray-700 p-[10px] rounded-md cursor-pointer"
+          className="user-icon relative w-10 h-10 flex items-center justify-center border border-num-icon-border dark:bg-gray-800 dark:border-gray-700 p-[10px] rounded-md cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
           onClick={onUserIconClick}
         >
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-6 text-black dark:text-white">
