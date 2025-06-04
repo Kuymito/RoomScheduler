@@ -1,7 +1,6 @@
 'use client';
 
 import React from 'react';
-import Image from 'next/image';
 import ThemeToggle from './ThemeToggle'; // Assuming ThemeToggle is in the same directory or adjust path
 
 const Topbar = ({ onToggleSidebar, isSidebarCollapsed, onUserIconClick, pageSubtitle, userIconRef, onNotificationIconClick, notificationIconRef, hasUnreadNotifications, }) => {

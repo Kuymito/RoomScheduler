@@ -2,6 +2,7 @@
 
 // 1. Imports
 import { useState, useEffect, useRef } from 'react';
+import { useRouter, usePathname } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
 import Topbar from '@/components/Topbar';
 import AdminPopup from 'src/app/admin/profile/components/AdminPopup';
@@ -32,9 +33,19 @@ export default function AdminLayout({ children, activeItem, pageTitle }) {
     // 4. Refs
     const adminPopupRef = useRef(null);
     const userIconRef = useRef(null);
+    const router = useRouter();
+    const pathname = usePathname();
+
+    const [ isProfileNavigating, setIsProfileNavigating] = useState(false);
 
     // 5. Side Effects
     // Effect to persist sidebar state in localStorage
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            localStorage.setItem('sidebarCollapsed', isSidebarCollapsed);
+        }
+    }, [isSidebarCollapsed]);
+
     useEffect(() => {
         if (typeof window !== 'undefined') {
             localStorage.setItem('sidebarCollapsed', isSidebarCollapsed);
@@ -71,6 +82,15 @@ export default function AdminLayout({ children, activeItem, pageTitle }) {
         ];
         setNotifications(mockNotificationsData);
     }, []);
+
+    // This effect runs every time the page URL changes.
+    useEffect(() => {
+        // If the navigation loading state is true, it means we just finished navigating.
+        // We can now safely turn it off.
+        if (isProfileNavigating) {
+            setIsProfileNavigating(false);
+        }
+    }, [pathname]); 
 
     // 6. Event Handlers
     const toggleSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
@@ -143,6 +163,24 @@ export default function AdminLayout({ children, activeItem, pageTitle }) {
     };
 
     const hasUnreadNotifications = notifications.some(n => n.isUnread); // From HEAD
+
+    const handleProfileNav = (path) => {
+        // Prevent any action if a navigation is already in progress.
+        if (isProfileNavigating) {
+            return;
+        }
+
+        // Check if we are already on the target page.
+        if (pathname === path) {
+            // If so, just close the popup. Do not set a loading state.     
+            setShowAdminPopup(false);
+            return;
+        }
+
+        // If we are on a DIFFERENT page, set the loading state AND navigate.
+        setIsProfileNavigating(true);
+        router.push(path);
+    };
     
     const handleNavItemClick = (item) => {
         console.log("Navigating to:", item);
@@ -203,7 +241,12 @@ export default function AdminLayout({ children, activeItem, pageTitle }) {
             {/* Popups */}
             {/* Admin/User Popup (structure from HEAD with ref) */}
             <div ref={adminPopupRef}>
-                <AdminPopup show={showAdminPopup} onLogoutClick={handleLogoutClick} />
+                <AdminPopup 
+                    show={showAdminPopup} 
+                    onLogoutClick={handleLogoutClick} 
+                    isNavigating={isProfileNavigating}
+                    onNavigate={handleProfileNav}
+                />
             </div>
 
             {/* Notification Popup (From HEAD) */}

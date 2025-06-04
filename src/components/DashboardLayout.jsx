@@ -7,6 +7,7 @@ import AdminPopup from 'src/app/admin/profile/components/AdminPopup'; // Adjust 
 import LogoutAlert from '@/components/LogoutAlert';
 import Footer from '@/components/Footer';
 import NotificationPopup from '@/app/admin/notification/AdminNotificationPopup';
+import { usePathname, useRouter } from 'next/navigation';
 
 export default function DashboardLayout({ children, activeItem, pageTitle }) {
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
@@ -32,6 +33,10 @@ export default function DashboardLayout({ children, activeItem, pageTitle }) {
 
     const adminPopupRef = useRef(null);
     const userIconRef = useRef(null);
+    const router = useRouter();
+    const pathname = usePathname();
+
+    const [isProfileNavigating, setIsProfileNavigating] = useState(false);
 
     useEffect(() => {
         if (typeof window !== 'undefined') {
@@ -89,6 +94,14 @@ export default function DashboardLayout({ children, activeItem, pageTitle }) {
         setNotifications(mockNotificationsData);
     }, []);
 
+    useEffect(() => {
+        // If the navigation loading state is true, it means we just finished navigating.
+        // We can now safely turn it off.
+        if (isProfileNavigating) {
+            setIsProfileNavigating(false);
+        }
+    }, [pathname]);
+
     // --- Notification Handlers (From HEAD) ---
     const handleToggleNotificationPopup = (event) => {
         event.stopPropagation();
@@ -144,6 +157,24 @@ export default function DashboardLayout({ children, activeItem, pageTitle }) {
     };
 
     const hasUnreadNotifications = notifications.some(n => n.isUnread); // From HEAD
+
+    const handleProfileNav = (path) => {
+        // Prevent any action if a navigation is already in progress.
+        if (isProfileNavigating) {
+            return;
+        }
+
+        // Check if we are already on the target page.
+        if (pathname === path) {
+            // If so, just close the popup. Do not set a loading state.
+            setShowAdminPopup(false);
+            return;
+        }
+
+        // If we are on a DIFFERENT page, set the loading state AND navigate.
+        setIsProfileNavigating(true);
+        router.push(path);
+    };
 
     // Define sidebar widths for calculations
     const sidebarWidth = isSidebarCollapsed ? '80px' : '265px';
@@ -206,7 +237,12 @@ export default function DashboardLayout({ children, activeItem, pageTitle }) {
 
             {/* Popups (positioned independently, often fixed or absolutely) */}
             <div ref={adminPopupRef}>
-                <AdminPopup show={showAdminPopup} onLogoutClick={handleLogoutClick} />
+                <AdminPopup 
+                    show={showAdminPopup} 
+                    onLogoutClick={handleLogoutClick}
+                    isNavigating={isProfileNavigating}
+                    onNavigate={handleProfileNav}
+                />
             </div>
             <div ref={notificationPopupRef}>
                 <NotificationPopup
