@@ -1,113 +1,143 @@
-
+// dashboard/page.jsx
 "use client";
 
 import { useEffect, useState } from 'react';
-import DashboardLayout from '@/components/DashboardLayout';
+import DashboardLayout from '@/components/DashboardLayout'; // Assuming this path is correct
 import DashboardHeader from './components/DashboardHeader'; 
 import StatCard from './components/StatCard';
 import RoomAvailabilityChart from './components/RoomAvailabilityChart';
+// Removed: import RecentActivity from './components/RecentActivity'; 
 
+// --- Updated Data Fetching Functions ---
 const fetchDashboardData = async () => {
   return new Promise(resolve => setTimeout(() => resolve({
     classAssign: 65,
     expired: 15,
     unassignedClass: 16,
     onlineClass: 28,
-    currentDate: new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }),
-    academicYear: '2025 - 2028',
+    currentDate: '19 May 2025', 
+    academicYear: '2025 - 2026', 
   }), 500));
 };
 
 const fetchChartData = async (timeSlot) => {
   console.log(`Fetching chart data for: ${timeSlot}`);
+  let dataPoints;
+  switch (timeSlot) {
+    case '07:00 - 10:00':
+      dataPoints = [23, 60, 32, 55, 13, 45, 48]; 
+      break;
+    case '10:00 - 13:00':
+      dataPoints = [45, 22, 50, 30, 65, 25, 40];
+      break;
+    case '13:00 - 16:00':
+      dataPoints = [30, 55, 18, 48, 33, 60, 22];
+      break;
+    case '16:00 - 19:00':
+      dataPoints = [15, 35, 40, 20, 50, 30, 55];
+      break;
+    default:
+      dataPoints = [10, 20, 30, 40, 50, 60, 70];
+  }
   return new Promise(resolve => setTimeout(() => resolve({
     labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-    data: [23, 60, 32, 55, 13, 45, 48],
+    data: dataPoints,
   }), 500));
 };
 
-const fetchActivityData = async () => {
-  return new Promise(resolve => setTimeout(() => resolve([
-    { id: 1, type: 'Create new class', time: '1 hour ago', icon: '' },
-    { id: 2, type: 'Create new class', time: '2 hours ago', icon: '' },
-    { id: 3, type: 'Add class to room', time: '10 hours ago', icon: '' },
-    { id: 4, type: 'Add class to room', time: '11 hours ago', icon: '' },
-    { id: 5, type: 'Add class to room', time: '12 hours ago', icon: '' },
-  ]), 500));
-};
+// Removed: fetchActivityData function
 
-
+// --- Main Page Component ---
 const DashboardPage = () => {
   const [dashboardStats, setDashboardStats] = useState(null);
   const [chartData, setChartData] = useState(null);
-  const [activityData, setActivityData] = useState(null);
+  // Removed: const [activityData, setActivityData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [selectedTimeSlot, setSelectedTimeSlot] = useState('07:00 - 10:00');
 
   useEffect(() => {
-    const loadData = async () => {
-      setLoading(true);
+    const loadInitialData = async () => {
+      setLoading(true); // Set loading true at the start
       try {
         const stats = await fetchDashboardData();
-        const activities = await fetchActivityData();
         setDashboardStats(stats);
-        setActivityData(activities);
+        // Removed: fetching activities
       } catch (error) {
-        console.error("Failed to fetch initial data:", error);
+        console.error("Failed to fetch dashboard stats:", error);
       }
-      setLoading(false);
+      // setLoading(false) will be handled by the chart data useEffect or after chart loads
     };
-    loadData();
+    loadInitialData();
   }, []);
 
   useEffect(() => {
-    const loadChartData = async () => {
-      if (!selectedTimeSlot) return;
+    if (!selectedTimeSlot || !dashboardStats) {
+        if (dashboardStats && chartData) { // If stats and chart are loaded
+             setLoading(false);
+        }
+        return;
+    }
+
+    const loadChart = async () => {
+      setLoading(true); 
       try {
         const data = await fetchChartData(selectedTimeSlot);
         setChartData(data);
       } catch (error) {
         console.error("Failed to fetch chart data:", error);
+      } finally {
+        if (dashboardStats) { // Chart data would have been set
+          setLoading(false);
+        }
       }
     };
-    loadChartData();
-  }, [selectedTimeSlot]);
+    
+    loadChart();
 
-  // ==>> loading page
-  if (loading || !dashboardStats) {
-    return <div className="flex justify-center items-center h-screen dark:text-gray-200">Loading dashboard...</div>;
+  }, [selectedTimeSlot, dashboardStats]); // Removed activityData from dependencies
+
+  // Updated loading condition
+  if (loading || !dashboardStats || !chartData) { 
+    return (
+        <div className="flex justify-center items-center h-screen dark:text-gray-200">
+            <svg className="animate-spin h-10 w-10 text-blue-600 dark:text-blue-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <span className="ml-3 text-gray-700 dark:text-gray-300">Loading dashboard...</span>
+        </div>
+    );
   }
 
   const { classAssign, expired, unassignedClass, onlineClass, currentDate, academicYear } = dashboardStats;
 
-// ===>> Return here
   return (
-    <div>
+    <> 
       <DashboardHeader
         title="Welcome to Schedule Management"
-        description="Easily plan, track, and manage your school schedule all in one place. 
-                    From classes to exams, stay organized and never miss a deadline again."
+        description="Easily plan, track, and manage your school schedule all in one place. From classes to exams, stay organized and never miss a deadline again."
         currentDate={currentDate}
         academicYear={academicYear}
       />
 
-      <div className=" grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-6">
-        <StatCard  title="Class Assign" value={classAssign} />
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-6">
+        <StatCard title="Class Assign" value={classAssign} />
         <StatCard title="Expired" value={expired} />
         <StatCard title="Unassigned Class" value={unassignedClass} />
         <StatCard title="Online Class" value={onlineClass} />
       </div>
 
-      <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-8 ">
-        <div className="lg:col-span-2 bg-white dark:bg-gray-900 p-6 rounded-lg shadow">
+      {/* Layout for Chart - now takes full width */}
+      <div className="mt-6 grid grid-cols-1 gap-6"> {/* Removed lg:grid-cols-3 */}
+        <div className="lg:col-span-1 bg-white dark:bg-gray-900 p-4 sm:p-6 rounded-lg shadow"> {/* Changed to lg:col-span-1 (effectively full width in a single column grid) */}
           <RoomAvailabilityChart
-            chartData={chartData}
+            chartData={chartData} 
             selectedTimeSlot={selectedTimeSlot}
             setSelectedTimeSlot={setSelectedTimeSlot}
           />
         </div>
       </div>
-    </div>
+    </>
   );
 }
 
