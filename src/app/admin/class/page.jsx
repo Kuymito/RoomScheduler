@@ -1,14 +1,13 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import AdminLayout from '@/components/AdminLayout';
 import ClassCreatePopup from './components/ClassCreatePopup';
 import { useRouter } from 'next/navigation';
 
-const ClassViewContent = () => {
-    // --- Data ---
+const fetchClassData = async () => {
     const initialClassData = [
-        // Added semester to existing data
+        // Data is now inside the "API" function
         { id: 1, name: 'NUM30-01', generation: '30', group: '01', major: 'IT', degrees: 'Bachelor', faculty: 'Faculty of IT', semester: 'Semester 1', shift: '7:00 - 10:00', status: 'active' },
         { id: 2, name: 'NUM30-01', generation: '30', group: '01', major: 'IT', degrees: 'Bachelor', faculty: 'Faculty of IT', semester: 'Semester 1', shift: '7:00 - 10:00', status: 'active' },
         { id: 3, name: 'NUM30-02', generation: '30', group: '02', major: 'CS', degrees: 'Bachelor', faculty: 'Faculty of CS', semester: 'Semester 1', shift: '8:00 - 11:00', status: 'active' },
@@ -17,15 +16,46 @@ const ClassViewContent = () => {
         { id: 6, name: 'NUM32-05', generation: '32', group: '05', major: 'AI', degrees: 'Bachelor', faculty: 'Faculty of AI & R', semester: 'Semester 2', shift: '15:00 PM - 18:00', status: 'active' },
         { id: 7, name: 'NUM33-06', generation: '33', group: '06', major: 'DS', degrees: 'Bachelor', faculty: 'Faculty of DS', semester: 'Semester 3', shift: '17:00 - 20:00', status: 'active' },
         { id: 8, name: 'NUM33-07', generation: '33', group: '07', major: 'ML', degrees: 'Bachelor', faculty: 'Faculty of ML', semester: '2Semester 3', shift: '18:00 - 21:00', status: 'active' },
-        { id: 9, name: 'NUM33-08', generation: '33', group: '08', major: 'DA', degrees: 'Bachelor', faculty: 'Faculty of DA', semester: 'Semester 3', shift: '19:00 - 22:00', status: 'archived' }, // Example archived
+        { id: 9, name: 'NUM33-08', generation: '33', group: '08', major: 'DA', degrees: 'Bachelor', faculty: 'Faculty of DA', semester: 'Semester 3', shift: '19:00 - 22:00', status: 'archived' },
         { id: 10, name: 'NUM33-09', generation: '33', group: '09', major: 'SE', degrees: 'Bachelor', faculty: 'Faculty of SE & R', semester: '2024-2025 S3', shift: '8:00 - 11:00', status: 'active' }
     ];
+    // Simulate a network delay of 1 second
+    return new Promise(resolve => setTimeout(() => resolve(initialClassData), 1000));
+};
 
-    const [classData, setClassData] = useState(initialClassData);
+// --- A small, reusable spinner component for the row ---
+const LoadingSpinnerIcon = () => (
+    <svg className="animate-spin h-5 w-5 text-blue-600 dark:text-blue-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+    </svg>
+);
+
+const ClassViewContent = () => {
+    // --- Data ---
+    // const initialClassData = [
+    //     // Added semester to existing data
+    //     { id: 1, name: 'NUM30-01', generation: '30', group: '01', major: 'IT', degrees: 'Bachelor', faculty: 'Faculty of IT', semester: 'Semester 1', shift: '7:00 - 10:00', status: 'active' },
+    //     { id: 2, name: 'NUM30-01', generation: '30', group: '01', major: 'IT', degrees: 'Bachelor', faculty: 'Faculty of IT', semester: 'Semester 1', shift: '7:00 - 10:00', status: 'active' },
+    //     { id: 3, name: 'NUM30-02', generation: '30', group: '02', major: 'CS', degrees: 'Bachelor', faculty: 'Faculty of CS', semester: 'Semester 1', shift: '8:00 - 11:00', status: 'active' },
+    //     { id: 4, name: 'NUM32-03', generation: '32', group: '03', major: 'IS', degrees: 'Bachelor', faculty: 'Faculty of IS', semester: 'Semester 2', shift: '9:00 - 12:00', status: 'active' },
+    //     { id: 5, name: 'NUM32-04', generation: '32', group: '04', major: 'SE', degrees: 'Bachelor', faculty: 'Faculty of SE', semester: 'Semester 2', shift: '13:00 - 16:00', status: 'active' },
+    //     { id: 6, name: 'NUM32-05', generation: '32', group: '05', major: 'AI', degrees: 'Bachelor', faculty: 'Faculty of AI & R', semester: 'Semester 2', shift: '15:00 PM - 18:00', status: 'active' },
+    //     { id: 7, name: 'NUM33-06', generation: '33', group: '06', major: 'DS', degrees: 'Bachelor', faculty: 'Faculty of DS', semester: 'Semester 3', shift: '17:00 - 20:00', status: 'active' },
+    //     { id: 8, name: 'NUM33-07', generation: '33', group: '07', major: 'ML', degrees: 'Bachelor', faculty: 'Faculty of ML', semester: '2Semester 3', shift: '18:00 - 21:00', status: 'active' },
+    //     { id: 9, name: 'NUM33-08', generation: '33', group: '08', major: 'DA', degrees: 'Bachelor', faculty: 'Faculty of DA', semester: 'Semester 3', shift: '19:00 - 22:00', status: 'archived' }, // Example archived
+    //     { id: 10, name: 'NUM33-09', generation: '33', group: '09', major: 'SE', degrees: 'Bachelor', faculty: 'Faculty of SE & R', semester: '2024-2025 S3', shift: '8:00 - 11:00', status: 'active' }
+    // ];
+
+    const [classData, setClassData] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
     const [showCreatePopup, setShowCreatePopup] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPageOptions = [5, 10, 20, 50];
     const [itemsPerPage, setItemsPerPage] = useState(itemsPerPageOptions[0]);
+
+    // This will store the ID of the row that the user clicked to navigate.
+    const [navigatingRowId, setNavigatingRowId] = useState(null);
 
     const handleCreateClick = () => {
         setShowCreatePopup(true);
@@ -198,8 +228,45 @@ const ClassViewContent = () => {
     const router = useRouter();
     
     const handleRowClick = (classId) => {
+        // Prevent another navigation if one is already in progress
+        if (navigatingRowId) return;
+
+        // Set the ID of the row we are navigating from
+        setNavigatingRowId(classId);
+
+        // Proceed with the navigation
         router.push(`/admin/class/${classId}`);
     };
+
+    useEffect(() => {
+        const loadInitialData = async () => {
+            try {
+                const data = await fetchClassData();
+                setClassData(data);
+            } catch (error) {
+                console.error("Failed to fetch class data:", error);
+                // You could set an error state here to show an error message
+            } finally {
+                setIsLoading(false); // Set loading to false after data is fetched or if an error occurs
+            }
+        };
+
+        loadInitialData();
+    }, []);
+
+    // Add conditional rendering for the loading state ---
+    if (isLoading) {
+        return (
+            // A centered spinner, with height calculated to fit within your layout
+            <div className="flex justify-center items-center h-[calc(100vh-200px)] dark:text-gray-200">
+                <svg className="animate-spin h-10 w-10 text-blue-600 dark:text-blue-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <span className="ml-3 text-gray-700 dark:text-gray-300">Loading class list...</span>
+            </div>
+        );
+    }
 
     const EditIcon = ({ className = "w-[14px] h-[14px]" }) => (
         <svg className={className} width="14" height="14" viewBox="0 0 17 17" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -337,7 +404,15 @@ const ClassViewContent = () => {
                     <tbody className="text-xs font-normal text-gray-700 dark:text-gray-400">
                         {currentTableData.length > 0 ? (
                             currentTableData.map((data) => (
-                                <tr key={data.id} className="bg-white border-b border-gray-200 dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 cursor-pointer" onClick={() => handleRowClick(data.id)}>
+                                <tr 
+                                    key={data.id} 
+                                    className={` bg-white border-b border-gray-200 dark:bg-gray-800 dark:border-gray-700 ${navigatingRowId === data.id 
+                                            ? 'opacity-60 bg-gray-100 dark:bg-gray-700' // Style for the loading row
+                                            : 'hover:bg-gray-50 dark:hover:bg-gray-600 cursor-pointer' // Normal hover style
+                                        }
+                                    `}
+                                    onClick={() => !navigatingRowId && handleRowClick(data.id)}
+                                >
                                     <th scope="row" className="px-6 py-2.5 font-medium text-gray-900 whitespace-nowrap dark:text-white md:table-cell hidden">
                                         <div className="flex gap-2">
                                             {/* I've made the Edit button functional as an example, it also needs stopPropagation */}

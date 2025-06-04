@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import AdminLayout from '@/components/AdminLayout';
 import InstructorCreatePopup from './components/InstructorCreatePopup';
 import { useRouter } from 'next/navigation';
@@ -13,9 +13,7 @@ const DefaultAvatarIcon = ({ className = "w-8 h-8" }) => (
 
 );
 
-
-const InstructorViewContent = () => {
-    // --- Data ---
+const fetchInstructorData = async () => {
     const initialInstructorData = [
         { id: 1, name: 'Sok Mean', firstName: 'Sok', lastName: 'Mean', email: 'sok.mean@example.com', phone: '012345678', majorStudied: 'Computer Science', qualifications: 'PhD', status: 'active', profileImage: 'https://i.pravatar.cc/150?img=68' },
         { id: 2, name: 'Sok Chan', firstName: 'Sok', lastName: 'Chan', email: 'sok.chan@example.com', phone: '012345679', majorStudied: 'Information Technology', qualifications: 'Master', status: 'active', profileImage: 'https://i.pravatar.cc/150?img=52' },
@@ -27,13 +25,48 @@ const InstructorViewContent = () => {
         { id: 8, name: 'Vicheka Sreng', firstName: 'Vicheka', lastName: 'Sreng', email: 'vicheka.sreng@example.com', phone: '012345685', majorStudied: 'Software Engineering', qualifications: 'PhD', status: 'archived', profileImage: 'https://i.pravatar.cc/150?img=41' },
     ];
 
+    return new Promise(resolve => setTimeout(() => resolve(initialInstructorData), 1000));
+};
+
+// --- A small, reusable spinner component for the row ---
+const LoadingSpinnerIcon = () => (
+    <svg className="animate-spin h-5 w-5 text-blue-600 dark:text-blue-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+    </svg>
+);
+
+const InstructorViewContent = () => {
+    // --- Data ---
+    // const initialInstructorData = [
+    //     { id: 1, name: 'Sok Mean', firstName: 'Sok', lastName: 'Mean', email: 'sok.mean@example.com', phone: '012345678', majorStudied: 'Computer Science', qualifications: 'PhD', status: 'active', profileImage: 'https://i.pravatar.cc/150?img=68' },
+    //     { id: 2, name: 'Sok Chan', firstName: 'Sok', lastName: 'Chan', email: 'sok.chan@example.com', phone: '012345679', majorStudied: 'Information Technology', qualifications: 'Master', status: 'active', profileImage: 'https://i.pravatar.cc/150?img=52' },
+    //     { id: 3, name: 'Dara Kim', firstName: 'Dara', lastName: 'Kim', email: 'dara.kim@example.com', phone: '012345680', majorStudied: 'Information Systems', qualifications: 'Professor', status: 'active', profileImage: null }, // No image
+    //     { id: 4, name: 'Lina Heng', firstName: 'Lina', lastName: 'Heng', email: 'lina.heng@example.com', phone: '012345681', majorStudied: 'Artificial Intelligence', qualifications: 'PhD', status: 'archived', profileImage: 'https://i.pravatar.cc/150?img=25' },
+    //     { id: 5, name: 'Virak Chea', firstName: 'Virak', lastName: 'Chea', email: 'virak.chea@example.com', phone: '012345682', majorStudied: 'Data Science', qualifications: 'Master', status: 'active', profileImage: 'https://i.pravatar.cc/150?img=33' },
+    //     { id: 6, name: 'Sophea Nov', firstName: 'Sophea', lastName: 'Nov', email: 'sophea.nov@example.com', phone: '012345683', majorStudied: 'Machine Learning', qualifications: 'Lecturer', status: 'active', profileImage: null }, // No image
+    //     { id: 7, name: 'Chanthy Pen', firstName: 'Chanthy', lastName: 'Pen', email: 'chanthy.pen@example.com', phone: '012345684', majorStudied: 'Data Analytics', qualifications: 'Associate Professor', status: 'active', profileImage: 'https://i.pravatar.cc/150?img=17' },
+    //     { id: 8, name: 'Vicheka Sreng', firstName: 'Vicheka', lastName: 'Sreng', email: 'vicheka.sreng@example.com', phone: '012345685', majorStudied: 'Software Engineering', qualifications: 'PhD', status: 'archived', profileImage: 'https://i.pravatar.cc/150?img=41' },
+    // ];
+
     const router = useRouter();
 
     const handleRowClick = (instructorId) => {
+        // Prevent another navigation if one is already in progress
+        if (navigatingRowId) return;
+
+        // Set the ID of the row we are navigating from
+        setNavigatingRowId(instructorId);
+
+        // Proceed with the navigation
         router.push(`/admin/instructor/${instructorId}`);
     };
 
-    const [instructorData, setInstructorData] = useState(initialInstructorData);
+    const [instructorData, setInstructorData] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
+
+    // This will store the ID of the row that the user clicked to navigate.
+    const [navigatingRowId, setNavigatingRowId] = useState(null);
 
     // --- Popup Form State for Instructor ---
     const [showCreateInstructorPopup, setShowCreateInstructorPopup] = useState(false);
@@ -222,6 +255,36 @@ const InstructorViewContent = () => {
         </svg>
     );
 
+    useEffect(() => {
+        const loadInitialData = async () => {
+            try {
+                const data = await fetchInstructorData();
+                setInstructorData(data);
+            } catch (error) {
+                console.error("Failed to fetch class data:", error);
+                // You could set an error state here to show an error message
+            } finally {
+                setIsLoading(false); // Set loading to false after data is fetched or if an error occurs
+            }
+        };
+
+        loadInitialData();
+    }, []);
+    
+    // Add conditional rendering for the loading state ---
+    if (isLoading) {
+        return (
+            // A centered spinner, with height calculated to fit within your layout
+            <div className="flex justify-center items-center h-[calc(100vh-200px)] dark:text-gray-200">
+                <svg className="animate-spin h-10 w-10 text-blue-600 dark:text-blue-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <span className="ml-3 text-gray-700 dark:text-gray-300">Loading instructor list...</span>
+            </div>
+        );
+    }
+
     return (
         <div className="p-6 dark:text-white">
             <div className="flex items-center justify-between">
@@ -327,7 +390,17 @@ const InstructorViewContent = () => {
                     <tbody className="text-xs font-normal text-gray-700 dark:text-gray-400">
                         {currentTableData.length > 0 ? (
                             currentTableData.map((data) => (
-                                <tr key={data.id} className="bg-white border-b border-gray-200 dark:bg-gray-800 dark:border-gray-700" onClick={() => handleRowClick(data.id)}>
+                                <tr 
+                                    key={data.id} 
+                                    className={`
+                                        bg-white border-b border-gray-200 dark:bg-gray-800 dark:border-gray-700
+                                        ${navigatingRowId === data.id 
+                                            ? 'opacity-60 bg-gray-100 dark:bg-gray-700' // Style for the loading row
+                                            : 'hover:bg-gray-50 dark:hover:bg-gray-600 cursor-pointer' // Normal hover style
+                                        }
+                                    `}
+                                    onClick={() => !navigatingRowId && handleRowClick(data.id)}
+                                >
                                     <th scope="row" className="px-6 py-2.5 font-medium text-gray-900 whitespace-nowrap dark:text-white">
                                         <div className="flex gap-2">
                                             <button 
