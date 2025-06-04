@@ -118,6 +118,18 @@ const ClassDetailsContent = () => {
         }
     };
 
+    const handleCancelClick = (section) => {
+        if (section === 'general') {
+            setIsEditing(false);
+            setEditableClassDetails(null);
+            setIsNameManuallySet(false);
+        }
+        // Add more sections as needed
+        // For now, we only handle the 'general' section
+        // Reset the editableClassDetails to the original classDetails
+        setEditableClassDetails(classDetails);
+    };
+
     const handleInputChange = (e) => {
         const { name, value } = e.target;
 
@@ -232,12 +244,29 @@ const ClassDetailsContent = () => {
 
                         {/* Action Buttons are the same */}
                         <div className="form-actions flex justify-end items-center gap-3 mt-4">
-                             <button onClick={() => router.back()} className="back-button bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 shadow-custom-light rounded-md text-gray-800 dark:text-white border-none py-2 px-3 font-semibold text-xs cursor-pointer" disabled={loading}>
+                            {/* <button onClick={() => router.back()} className="back-button bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 shadow-custom-light rounded-md text-gray-800 dark:text-white border-none py-2 px-3 font-semibold text-xs cursor-pointer" disabled={loading}>
                                 Back
                             </button>
                             <button onClick={handleEditToggle} className="save-button bg-blue-600 hover:bg-blue-700 shadow-custom-light rounded-md text-white border-none py-2 px-3 font-semibold text-xs cursor-pointer" disabled={loading}>
                                 {loading && isEditing ? "Saving..." : isEditing ? "Save Changes" : "Edit Class"}
-                            </button>
+                            </button> */}
+                            { isEditing ? (
+                                <>
+                                    <button onClick={() => handleCancelClick('general')} className="back-button bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 shadow-custom-light rounded-md text-gray-800 dark:text-white border-none py-2 px-3 font-semibold text-xs cursor-pointer" disabled={loading}>Cancel</button>
+                                    <button onClick={handleEditToggle} className="save-button bg-blue-600 hover:bg-blue-700 shadow-custom-light rounded-md text-white border-none py-2 px-3 font-semibold text-xs cursor-pointer" disabled={loading}>
+                                    {loading && isEditing ? "Saving..." : isEditing ? "Save Changes" : "Edit Class"}
+                                    </button>
+                                </>
+                            ) : (
+                                <>
+                                    <button onClick={() => router.back()} className="back-button bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 shadow-custom-light rounded-md text-gray-800 dark:text-white border-none py-2 px-3 font-semibold text-xs cursor-pointer" disabled={loading}>
+                                            Back
+                                    </button>
+                                    <button onClick={handleEditToggle} className="edit-button bg-blue-600 hover:bg-blue-700 shadow-custom-light rounded-md text-white border-none py-2 px-3 font-semibold text-xs cursor-pointer" disabled={loading}>
+                                        {loading ? "Loading..." : "Edit Class"}
+                                    </button>
+                                </>
+                            )}
                         </div>
                     </div>
                 </div>
