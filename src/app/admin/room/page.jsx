@@ -5,15 +5,8 @@ import { useState, useEffect, useRef } from 'react';
 import AdminLayout from '@/components/AdminLayout';
 import SuccessAlert from './components/UpdateSuccessComponent'; // Assuming this path is correct
 
-const RoomViewContent = () => {
-    const [selectedBuilding, setSelectedBuilding] = useState("Building A");
-    const [selectedRoom, setSelectedRoom] = useState(null);
-    const [roomDetails, setRoomDetails] = useState(null);
-    const [loading, setLoading] = useState(false);
-    const [isEditing, setIsEditing] = useState(false);
-    const [editableRoomDetails, setEditableRoomDetails] = useState(null);
-    const [showSuccessAlert, setShowSuccessAlert] = useState(false);
-
+// This function mimics fetching data from an API by using a Promise and a timeout.
+const fetchRoomData = async () => {
     const initialRoomsData = {
         A1: { id: "A1", name: "Room A1", building: "Building A", floor: 5, capacity: 30, equipment: ["Projector", "Whiteboard", "AC"] },
         A2: { id: "A2", name: "Room A2", building: "Building A", floor: 5, capacity: 20, equipment: ["Whiteboard", "AC"] },
@@ -33,7 +26,40 @@ const RoomViewContent = () => {
         H1: { id: "H1", name: "Room H1", building: "Building B", floor: 1, capacity: 5, equipment: ["AC"] },
         H2: { id: "H2", name: "Room H2", building: "Building B", floor: 1, capacity: 4, equipment: ["Whiteboard"] },
     };
-    const [allRoomsData, setAllRoomsData] = useState(initialRoomsData);
+    // Simulate a network delay of 1 second
+    return new Promise(resolve => setTimeout(() => resolve(initialRoomsData), 1000));
+};
+
+const RoomViewContent = () => {
+    const [selectedBuilding, setSelectedBuilding] = useState("Building A");
+    const [selectedRoom, setSelectedRoom] = useState(null);
+    const [roomDetails, setRoomDetails] = useState(null);
+    const [loading, setLoading] = useState(false);
+    const [isEditing, setIsEditing] = useState(false);
+    const [editableRoomDetails, setEditableRoomDetails] = useState(null);
+    const [showSuccessAlert, setShowSuccessAlert] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
+    // const initialRoomsData = {
+    //     A1: { id: "A1", name: "Room A1", building: "Building A", floor: 5, capacity: 30, equipment: ["Projector", "Whiteboard", "AC"] },
+    //     A2: { id: "A2", name: "Room A2", building: "Building A", floor: 5, capacity: 20, equipment: ["Whiteboard", "AC"] },
+    //     A3: { id: "A3", name: "Room A3", building: "Building A", floor: 5, capacity: 25, equipment: ["Projector", "AC"] },
+    //     B1: { id: "B1", name: "Room B1", building: "Building A", floor: 4, capacity: 15, equipment: ["Projector", "AC"] },
+    //     B2: { id: "B2", name: "Room B2", building: "Building A", floor: 4, capacity: 20, equipment: ["Whiteboard"] },
+    //     C1: { id: "C1", name: "Room C1", building: "Building A", floor: 3, capacity: 10, equipment: ["AC"] },
+    //     C2: { id: "C2", name: "Room C2", building: "Building A", floor: 3, capacity: 12, equipment: ["Whiteboard", "AC"] },
+    //     D1: { id: "D1", name: "Room D1", building: "Building A", floor: 2, capacity: 8, equipment: ["Projector"] },
+    //     D2: { id: "D2", name: "Room D2", building: "Building A", floor: 2, capacity: 10, equipment: ["Whiteboard"] },
+    //     E1: { id: "E1", name: "Room E1", building: "Building A", floor: 1, capacity: 5, equipment: ["AC"] },
+    //     E2: { id: "E2", name: "Room E2", building: "Building A", floor: 1, capacity: 6, equipment: ["Projector", "Whiteboard"] },
+    //     F1: { id: "F1", name: "Room F1", building: "Building B", floor: 3, capacity: 12, equipment: ["Projector", "Whiteboard"] },
+    //     F2: { id: "F2", name: "Room F2", building: "Building B", floor: 3, capacity: 10, equipment: ["AC"] },
+    //     G1: { id: "G1", name: "Room G1", building: "Building B", floor: 2, capacity: 8, equipment: ["Whiteboard"] },
+    //     G2: { id: "G2", name: "Room G2", building: "Building B", floor: 2, capacity: 6, equipment: ["Projector"] },
+    //     H1: { id: "H1", name: "Room H1", building: "Building B", floor: 1, capacity: 5, equipment: ["AC"] },
+    //     H2: { id: "H2", name: "Room H2", building: "Building B", floor: 1, capacity: 4, equipment: ["Whiteboard"] },
+    // };
+    
+    const [allRoomsData, setAllRoomsData] = useState([]);
 
     const buildings = {
         "Building A": [
@@ -49,6 +75,22 @@ const RoomViewContent = () => {
             { floor: 1, rooms: ["H1", "H2"] },
         ],
     };
+
+    useEffect(() => {
+        const loadInitialData = async () => {
+            try {
+                const data = await fetchRoomData();
+                setAllRoomsDataUp(data);
+            } catch (error) {
+                console.error("Failed to fetch class data:", error);
+                // You could set an error state here to show an error message
+            } finally {
+                setIsLoading(false); // Set loading to false after data is fetched or if an error occurs
+            }
+        };
+
+        loadInitialData();
+    }, []);
 
     const handleRoomClick = async (roomId) => {
         setSelectedRoom(roomId);
@@ -132,6 +174,19 @@ const RoomViewContent = () => {
     const inputStyle = "py-[9px] px-3 w-full h-full bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-[6px] font-normal text-sm leading-[22px] text-slate-900 dark:text-slate-50 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500";
     const equipmentInputContainerSize = "w-full sm:w-[132px] h-[72px]";
     const textareaStyle = "py-[10px] px-3 w-full h-full bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-[6px] font-normal text-sm leading-[22px] text-slate-900 dark:text-slate-50 placeholder:text-slate-400 dark:placeholder:text-slate-500 resize-none focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 scrollbar-thin scrollbar-thumb-slate-400 dark:scrollbar-thumb-slate-500 scrollbar-track-slate-100 dark:scrollbar-track-slate-800";
+
+    if (isLoading) {
+        return (
+            // A centered spinner, with height calculated to fit within your layout
+            <div className="flex justify-center items-center h-[calc(100vh-200px)] dark:text-gray-200">
+                <svg className="animate-spin h-10 w-10 text-blue-600 dark:text-blue-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <span className="ml-3 text-gray-700 dark:text-gray-300">Loading room ...</span>
+            </div>
+        );
+    }
 
     return (
         <>
