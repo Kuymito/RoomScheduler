@@ -4,7 +4,7 @@ const ScheduleViewContent = () => {
     return (
         <div className="p-6 dark:text-white">
             <h1 className="text-lg font-bold mb-4">Schedule</h1>
-            <hr className="border-t border-gray-200 mt-4 mb-4" />
+            <hr className="border-t border-slate-300 dark:border-slate-700 mt-4 mb-4" />
             <p>Welcome to the admin schedule. view schedules, and more.</p>
         {/* Add more dashboard content here */}
         </div>

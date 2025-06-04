@@ -224,7 +224,7 @@ const ClassViewContent = () => {
                     Class List
                 </h1>
             </div>
-            <hr className="border-t border-gray-200 mt-4 mb-4" />
+            <hr className="border-t border-slate-300 dark:border-slate-700 mt-4 mb-4" />
             <div className="flex items-center justify-between mt-2 mb-4 gap-2">
                 <div className="flex items-center gap-2">
                     <input

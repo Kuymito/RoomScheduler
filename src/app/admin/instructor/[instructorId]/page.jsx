@@ -11,7 +11,11 @@ const initialInstructorData = [
     { id: 1, name: 'Sok Mean', firstName: 'Sok', lastName: 'Mean', email: 'sok.mean@example.com', phone: '012345678', major: 'Computer Science', degree: 'PhD', department:'Faculty of CS', status: 'active', profileImage: 'https://i.pravatar.cc/150?img=68', address : '123 Main St, Phnom Penh, Cambodia', password: 'password123' },
     { id: 2, name: 'Sok Chan', firstName: 'Sok', lastName: 'Chan', email: 'sok.chan@example.com', phone: '012345679', major: 'Information Technology', degree: 'Master', department:'Faculty of IT', status: 'active', profileImage: 'https://i.pravatar.cc/150?img=52', address : '123 Main St, Phnom Penh, Cambodia', password: 'password456' },
     { id: 3, name: 'Dara Kim', firstName: 'Dara', lastName: 'Kim', email: 'dara.kim@example.com', phone: '012345680', major: 'Information Systems', degree: 'Professor', department:'Faculty of IS', status: 'active', profileImage: null, address : '123 Main St, Phnom Penh, Cambodia', password: 'password789' },
-    // ... other instructors
+    { id: 4, name: 'Lina Heng', firstName: 'Lina', lastName: 'Heng', email: 'lina.heng@example.com', phone: '012345681', majorStudied: 'Artificial Intelligence', qualifications: 'PhD', status: 'archived', profileImage: 'https://i.pravatar.cc/150?img=25', address : '123 Main St, Phnom Penh, Cambodia', password: 'password789' },
+    { id: 5, name: 'Virak Chea', firstName: 'Virak', lastName: 'Chea', email: 'virak.chea@example.com', phone: '012345682', majorStudied: 'Data Science', qualifications: 'Master', status: 'active', profileImage: 'https://i.pravatar.cc/150?img=33', address : '123 Main St, Phnom Penh, Cambodia', password: 'password789' },
+    { id: 6, name: 'Sophea Nov', firstName: 'Sophea', lastName: 'Nov', email: 'sophea.nov@example.com', phone: '012345683', majorStudied: 'Machine Learning', qualifications: 'Lecturer', status: 'active', profileImage: null, address : '123 Main St, Phnom Penh, Cambodia', password: 'password789' }, // No image
+    { id: 7, name: 'Chanthy Pen', firstName: 'Chanthy', lastName: 'Pen', email: 'chanthy.pen@example.com', phone: '012345684', majorStudied: 'Data Analytics', qualifications: 'Associate Professor', status: 'active', profileImage: 'https://i.pravatar.cc/150?img=17', address : '123 Main St, Phnom Penh, Cambodia', password: 'password789' },
+    { id: 8, name: 'Vicheka Sreng', firstName: 'Vicheka', lastName: 'Sreng', email: 'vicheka.sreng@example.com', phone: '012345685', majorStudied: 'Software Engineering', qualifications: 'PhD', status: 'archived', profileImage: 'https://i.pravatar.cc/150?img=41', address : '123 Main St, Phnom Penh, Cambodia', password: 'password789' },
 ];
 
 const majorOptions = ['Computer Science', 'Information Technology', 'Information Systems', 'Software Engineering', 'Artificial Intelligence', 'Data Science', 'Machine Learning', 'Data Analytics', 'Robotics'];
@@ -296,7 +300,7 @@ const InstructorDetailsContent = () => {
                 <input
                     type={passwordVisibility[fieldName] ? "text" : "password"}
                     name={name}
-                    className={`form-input w-full py-2 px-3 bg-num-content-bg border rounded-md font-medium text-xs text-num-dark-text dark:text-white pr-10 ${
+                    className={`form-input w-full py-2 px-3 bg-gray-100 border border-num-gray-light dark:bg-gray-800 dark:border-gray-700 rounded-md font-medium text-xs text-gray-500 dark:text-gray-400 ${
                         hasError || emptyPasswordError[fieldName]
                         ? 'border-red-500 ring-1 ring-red-500' 
                         : 'border-num-gray-light dark:border-gray-600'
@@ -324,7 +328,7 @@ const InstructorDetailsContent = () => {
     return (
         <div className='p-6 dark:text-white'>
             <div className="section-title font-semibold text-lg text-num-dark-text dark:text-white mb-4">Instructor Details</div>
-            <hr className="border-t border-gray-200 mt-4 mb-8" />
+            <hr className="border-t border-slate-300 dark:border-slate-700 mt-4 mb-8" />
 
             <div className="profile-section flex gap-8 mb-4 flex-wrap">
                 <div className="avatar-card w-[220px] h-[110px] p-3 bg-white border border-num-gray-light dark:bg-gray-800 dark:border-gray-700 shadow-custom-light rounded-lg flex-shrink-0">
@@ -395,7 +399,7 @@ const InstructorDetailsContent = () => {
                                         type={passwordVisibility.current ? "text" : "password"}
                                         readOnly
                                         value={instructorDetails.password}
-                                        className="form-input w-full py-2 px-3 bg-gray-100 border border-num-gray-light dark:bg-gray-800 dark:border-gray-700 rounded-md font-medium text-[14px] text-gray-500 dark:text-gray-400 pr-10"
+                                        className="form-input w-full py-2 px-3  bg-gray-100 border border-num-gray-light dark:bg-gray-800 dark:border-gray-700 rounded-md font-medium text-xs text-gray-500 dark:text-gray-400"
                                     />
                                     <button
                                         type="button"

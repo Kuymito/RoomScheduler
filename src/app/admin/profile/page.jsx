@@ -225,7 +225,7 @@ const ProfileContent = () => {
                 <input
                     type={passwordVisibility[fieldName] ? "text" : "password"}
                     name={name}
-                    className={`form-input w-full py-2 px-3 bg-num-content-bg border rounded-md font-medium text-[14px] text-num-dark-text dark:text-white pr-10 ${
+                    className={`form-input w-full py-2 px-3  bg-gray-100 border border-num-gray-light dark:bg-gray-800 dark:border-gray-700 rounded-md font-medium text-xs text-gray-500 dark:text-gray-400 ${
                         hasError || emptyPasswordError[fieldName]
                             ? 'border-red-500 ring-1 ring-red-500'
                             : 'border-num-gray-light dark:border-gray-600'
@@ -255,7 +255,7 @@ const ProfileContent = () => {
             <div className="section-title font-semibold text-lg text-num-dark-text dark:text-white mb-4">
                 Profile
             </div>
-            <hr className="border-t border-gray-200 mt-4 mb-8" />
+            <hr className="border-t border-slate-300 dark:border-slate-700 mt-4 mb-8" />
             <div className="profile-section flex gap-8 mb-4 flex-wrap">
                 {/* Avatar Card */}
                 <div className="avatar-card w-[220px] h-[110px] p-3 bg-white border border-num-gray-light dark:bg-gray-800 dark:border-gray-700 shadow-custom-light rounded-lg flex-shrink-0">
@@ -304,7 +304,7 @@ const ProfileContent = () => {
                         <div className="form-row flex gap-3 mb-2 flex-wrap">
                             <div className="form-group flex-1 min-w-[200px]">
                                 <label className="form-label block font-semibold text-xs text-num-dark-text dark:text-white mb-1">Email</label>
-                                <input type="email" name="email" className="form-input w-full py-2 px-3 bg-gray-100 border border-num-gray-light dark:bg-gray-800 dark:border-gray-600 rounded-md font-medium text-[14px] text-gray-500"
+                                <input type="email" name="email" className="form-input w-full py-2 px-3 bg-gray-100 border border-num-gray-light dark:bg-gray-800 dark:border-gray-600 rounded-md font-medium text-xs text-gray-500"
                                     value={profileData.email} readOnly disabled />
                             </div>
                             <div className="form-group flex-1 min-w-[200px]">
@@ -345,7 +345,7 @@ const ProfileContent = () => {
                                         type={passwordVisibility.current ? "text" : "password"}
                                         readOnly
                                         value={profileData.password}
-                                        className="form-input w-full py-2 px-3 bg-gray-100 border border-num-gray-light dark:bg-gray-800 dark:border-gray-700 rounded-md font-medium text-[14px] text-gray-500 dark:text-gray-400 pr-10"
+                                        className="form-input w-full py-2 px-3  bg-gray-100 border border-num-gray-light dark:bg-gray-800 dark:border-gray-700 rounded-md font-medium text-xs text-gray-500 dark:text-gray-400"
                                     />
                                     <button
                                         type="button"

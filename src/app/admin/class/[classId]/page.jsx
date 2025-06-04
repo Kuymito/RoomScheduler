@@ -195,7 +195,7 @@ const ClassDetailsContent = () => {
         <div className='p-6 dark:text-white'>
             {/* Header and messages are the same */}
             <div className="section-title font-semibold text-lg text-num-dark-text dark:text-white mb-4">Class Details</div>
-            <hr className="border-t border-gray-200 mt-4 mb-8" />
+            <hr className="border-t border-slate-300 dark:border-slate-700 mt-4 mb-8" />
 
             <div className="class-section flex gap-8 mb-4 flex-wrap">
                 {/* Right Details Card with updated fields */}
