@@ -11,6 +11,8 @@ const fetchRoomData = async () => {
         A1: { id: "A1", name: "Room A1", building: "Building A", floor: 5, capacity: 30, equipment: ["Projector", "Whiteboard", "AC"] },
         A2: { id: "A2", name: "Room A2", building: "Building A", floor: 5, capacity: 20, equipment: ["Whiteboard", "AC"] },
         A3: { id: "A3", name: "Room A3", building: "Building A", floor: 5, capacity: 25, equipment: ["Projector", "AC"] },
+        A4: { id: "A4", name: "Room A4", building: "Building A", floor: 5, capacity: 18, equipment: ["Whiteboard"] },
+        A5: { id: "A5", name: "Room A5", building: "Building A", floor: 5, capacity: 22, equipment: ["Projector", "AC"] },
         B1: { id: "B1", name: "Room B1", building: "Building A", floor: 4, capacity: 15, equipment: ["Projector", "AC"] },
         B2: { id: "B2", name: "Room B2", building: "Building A", floor: 4, capacity: 20, equipment: ["Whiteboard"] },
         C1: { id: "C1", name: "Room C1", building: "Building A", floor: 3, capacity: 10, equipment: ["AC"] },
@@ -30,6 +32,79 @@ const fetchRoomData = async () => {
     return new Promise(resolve => setTimeout(() => resolve(initialRoomsData), 1000));
 };
 
+// --- Skeleton Loader for Room Page ---
+const RoomPageSkeleton = () => {
+  // A small, reusable component for a single room card skeleton
+  const SkeletonRoomCard = () => (
+    <div className="h-[90px] sm:h-[100px] bg-slate-200 dark:bg-slate-700 rounded-md animate-pulse"></div>
+  );
+
+  // A reusable component for a single row in the details panel
+  const SkeletonDetailRow = () => (
+    <div className="flex flex-row items-center w-full min-h-[56px] border-b border-slate-200 dark:border-slate-700/50">
+      <div className="p-4 w-[120px]">
+        <div className="h-4 bg-slate-300 dark:bg-slate-600 rounded w-3/4"></div>
+      </div>
+      <div className="px-3 flex-1">
+        <div className="h-4 bg-slate-300 dark:bg-slate-600 rounded w-1/2"></div>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className='p-4 sm:p-6 min-h-full animate-pulse'>
+      {/* Page Header Skeleton */}
+      <div className="mb-4 w-full">
+        <div className="h-7 w-24 bg-slate-300 dark:bg-slate-600 rounded"></div>
+        <div className="h-px bg-slate-300 dark:bg-slate-700 mt-3" />
+      </div>
+      
+      <div className="flex flex-col lg:flex-row gap-6">
+        {/* Left Panel (Room List) Skeleton */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-3 sm:mb-4">
+            <div className="h-10 w-40 bg-slate-200 dark:bg-slate-700 rounded-md"></div>
+            <div className="flex-1 h-px bg-slate-300 dark:bg-slate-700" />
+          </div>
+          <div className="space-y-4">
+            {[...Array(2)].map((_, i) => ( // Create 2 floor sections
+              <div key={i} className="space-y-3">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="h-5 w-16 bg-slate-300 dark:bg-slate-600 rounded"></div>
+                  <div className="flex-1 h-px bg-slate-300 dark:bg-slate-700" />
+                </div>
+                <div className="grid xl:grid-cols-5 lg:grid-cols-2 md:grid-cols-2 gap-3">
+                  {[...Array(5)].map((_, j) => ( // Create 5 room cards per floor
+                    <SkeletonRoomCard key={j} />
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Right Panel (Details) Skeleton */}
+        <div className="w-full lg:w-[320px] shrink-0">
+          <div className="flex items-center gap-2 mb-3 sm:mb-4">
+            <div className="h-6 w-20 bg-slate-300 dark:bg-slate-600 rounded"></div>
+            <div className="flex-1 h-px bg-slate-300 dark:bg-slate-700" />
+          </div>
+          <div className="flex flex-col items-start gap-6 w-full min-h-[420px] bg-white dark:bg-slate-800 p-4 rounded-lg shadow-lg">
+             <div className="w-full border border-slate-200 dark:border-slate-700/50 rounded-md flex-grow">
+                <SkeletonDetailRow />
+                <SkeletonDetailRow />
+                <SkeletonDetailRow />
+                <SkeletonDetailRow />
+                <SkeletonDetailRow />
+             </div>
+             <div className="w-full h-[50px] bg-slate-300 dark:bg-slate-600 rounded-md"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const RoomViewContent = () => {
     const [selectedBuilding, setSelectedBuilding] = useState("Building A");
     const [selectedRoom, setSelectedRoom] = useState(null);
@@ -39,31 +114,12 @@ const RoomViewContent = () => {
     const [editableRoomDetails, setEditableRoomDetails] = useState(null);
     const [showSuccessAlert, setShowSuccessAlert] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
-    // const initialRoomsData = {
-    //     A1: { id: "A1", name: "Room A1", building: "Building A", floor: 5, capacity: 30, equipment: ["Projector", "Whiteboard", "AC"] },
-    //     A2: { id: "A2", name: "Room A2", building: "Building A", floor: 5, capacity: 20, equipment: ["Whiteboard", "AC"] },
-    //     A3: { id: "A3", name: "Room A3", building: "Building A", floor: 5, capacity: 25, equipment: ["Projector", "AC"] },
-    //     B1: { id: "B1", name: "Room B1", building: "Building A", floor: 4, capacity: 15, equipment: ["Projector", "AC"] },
-    //     B2: { id: "B2", name: "Room B2", building: "Building A", floor: 4, capacity: 20, equipment: ["Whiteboard"] },
-    //     C1: { id: "C1", name: "Room C1", building: "Building A", floor: 3, capacity: 10, equipment: ["AC"] },
-    //     C2: { id: "C2", name: "Room C2", building: "Building A", floor: 3, capacity: 12, equipment: ["Whiteboard", "AC"] },
-    //     D1: { id: "D1", name: "Room D1", building: "Building A", floor: 2, capacity: 8, equipment: ["Projector"] },
-    //     D2: { id: "D2", name: "Room D2", building: "Building A", floor: 2, capacity: 10, equipment: ["Whiteboard"] },
-    //     E1: { id: "E1", name: "Room E1", building: "Building A", floor: 1, capacity: 5, equipment: ["AC"] },
-    //     E2: { id: "E2", name: "Room E2", building: "Building A", floor: 1, capacity: 6, equipment: ["Projector", "Whiteboard"] },
-    //     F1: { id: "F1", name: "Room F1", building: "Building B", floor: 3, capacity: 12, equipment: ["Projector", "Whiteboard"] },
-    //     F2: { id: "F2", name: "Room F2", building: "Building B", floor: 3, capacity: 10, equipment: ["AC"] },
-    //     G1: { id: "G1", name: "Room G1", building: "Building B", floor: 2, capacity: 8, equipment: ["Whiteboard"] },
-    //     G2: { id: "G2", name: "Room G2", building: "Building B", floor: 2, capacity: 6, equipment: ["Projector"] },
-    //     H1: { id: "H1", name: "Room H1", building: "Building B", floor: 1, capacity: 5, equipment: ["AC"] },
-    //     H2: { id: "H2", name: "Room H2", building: "Building B", floor: 1, capacity: 4, equipment: ["Whiteboard"] },
-    // };
     
     const [allRoomsData, setAllRoomsData] = useState([]);
 
     const buildings = {
         "Building A": [
-            { floor: 5, rooms: ["A1", "A2", "A3"] },
+            { floor: 5, rooms: ["A1", "A2", "A3", "A4", "A5"] },
             { floor: 4, rooms: ["B1", "B2"] },
             { floor: 3, rooms: ["C1", "C2"] },
             { floor: 2, rooms: ["D1", "D2"] },
@@ -80,7 +136,7 @@ const RoomViewContent = () => {
         const loadInitialData = async () => {
             try {
                 const data = await fetchRoomData();
-                setAllRoomsDataUp(data);
+                setAllRoomsData(data);
             } catch (error) {
                 console.error("Failed to fetch class data:", error);
                 // You could set an error state here to show an error message
@@ -176,16 +232,7 @@ const RoomViewContent = () => {
     const textareaStyle = "py-[10px] px-3 w-full h-full bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-[6px] font-normal text-sm leading-[22px] text-slate-900 dark:text-slate-50 placeholder:text-slate-400 dark:placeholder:text-slate-500 resize-none focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 scrollbar-thin scrollbar-thumb-slate-400 dark:scrollbar-thumb-slate-500 scrollbar-track-slate-100 dark:scrollbar-track-slate-800";
 
     if (isLoading) {
-        return (
-            // A centered spinner, with height calculated to fit within your layout
-            <div className="flex justify-center items-center h-[calc(100vh-200px)] dark:text-gray-200">
-                <svg className="animate-spin h-10 w-10 text-blue-600 dark:text-blue-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                <span className="ml-3 text-gray-700 dark:text-gray-300">Loading room ...</span>
-            </div>
-        );
+        return <RoomPageSkeleton />;
     }
 
     return (
@@ -207,7 +254,7 @@ const RoomViewContent = () => {
             <div className="mb-4 w-full">
             <h2 className="text-xl font-semibold text-slate-800 dark:text-white">Room</h2>
             <hr className="border-t border-slate-300 dark:border-slate-700 mt-3" />
-                </div>
+            </div>
                 <div className="flex flex-col lg:flex-row gap-6">
                     <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-3 sm:mb-4">
@@ -234,7 +281,7 @@ const RoomViewContent = () => {
                                             </h4>
                                             <hr className="flex-1 border-t border-slate-300 dark:border-slate-700" />
                                         </div>
-                                        <div className="grid grid-cols-[repeat(auto-fill,minmax(160px,1fr))] sm:grid-cols-[repeat(auto-fill,minmax(180px,1fr))] gap-3 sm:gap-4">
+                                        <div className="grid xl:grid-cols-5 lg:grid-cols-2 md:grid-cols-2 gap-3">
                                             {rooms.map((roomId) => (
                                                 <div
                                                     key={roomId}
@@ -363,7 +410,7 @@ const RoomViewContent = () => {
                             )}
                         </div>
                     </div>
-                </div>
+            </div>
             </div>
         </>
     );

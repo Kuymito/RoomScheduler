@@ -31,22 +31,105 @@ const LoadingSpinnerIcon = () => (
     </svg>
 );
 
-const ClassViewContent = () => {
-    // --- Data ---
-    // const initialClassData = [
-    //     // Added semester to existing data
-    //     { id: 1, name: 'NUM30-01', generation: '30', group: '01', major: 'IT', degrees: 'Bachelor', faculty: 'Faculty of IT', semester: 'Semester 1', shift: '7:00 - 10:00', status: 'active' },
-    //     { id: 2, name: 'NUM30-01', generation: '30', group: '01', major: 'IT', degrees: 'Bachelor', faculty: 'Faculty of IT', semester: 'Semester 1', shift: '7:00 - 10:00', status: 'active' },
-    //     { id: 3, name: 'NUM30-02', generation: '30', group: '02', major: 'CS', degrees: 'Bachelor', faculty: 'Faculty of CS', semester: 'Semester 1', shift: '8:00 - 11:00', status: 'active' },
-    //     { id: 4, name: 'NUM32-03', generation: '32', group: '03', major: 'IS', degrees: 'Bachelor', faculty: 'Faculty of IS', semester: 'Semester 2', shift: '9:00 - 12:00', status: 'active' },
-    //     { id: 5, name: 'NUM32-04', generation: '32', group: '04', major: 'SE', degrees: 'Bachelor', faculty: 'Faculty of SE', semester: 'Semester 2', shift: '13:00 - 16:00', status: 'active' },
-    //     { id: 6, name: 'NUM32-05', generation: '32', group: '05', major: 'AI', degrees: 'Bachelor', faculty: 'Faculty of AI & R', semester: 'Semester 2', shift: '15:00 PM - 18:00', status: 'active' },
-    //     { id: 7, name: 'NUM33-06', generation: '33', group: '06', major: 'DS', degrees: 'Bachelor', faculty: 'Faculty of DS', semester: 'Semester 3', shift: '17:00 - 20:00', status: 'active' },
-    //     { id: 8, name: 'NUM33-07', generation: '33', group: '07', major: 'ML', degrees: 'Bachelor', faculty: 'Faculty of ML', semester: '2Semester 3', shift: '18:00 - 21:00', status: 'active' },
-    //     { id: 9, name: 'NUM33-08', generation: '33', group: '08', major: 'DA', degrees: 'Bachelor', faculty: 'Faculty of DA', semester: 'Semester 3', shift: '19:00 - 22:00', status: 'archived' }, // Example archived
-    //     { id: 10, name: 'NUM33-09', generation: '33', group: '09', major: 'SE', degrees: 'Bachelor', faculty: 'Faculty of SE & R', semester: '2024-2025 S3', shift: '8:00 - 11:00', status: 'active' }
-    // ];
+const ClassPageSkeleton = () => {
+  // A reusable component for a single, pulsing table row
+    const SkeletonTableRow = () => (
+        <tr className="bg-white dark:bg-gray-800 animate-pulse w-full">
+            {/* Action */}
+            <td className="px-4 py-4">
+                <div className="h-4 w-12 bg-slate-300 dark:bg-slate-600 rounded"></div>
+            </td>
+            {/* Name */}
+            <td className="px-4 py-4">
+                <div className="h-4 w-24 bg-slate-300 dark:bg-slate-600 rounded"></div>
+            </td>
+            {/* Generation */}
+            <td className="px-4 py-4 sm:table-cell hidden">
+                <div className="h-4 w-32 bg-slate-300 dark:bg-slate-600 rounded"></div>
+            </td>
+            {/* Group */}
+            <td className="px-4 py-4 lg:table-cell hidden">
+                <div className="h-4 w-24 bg-slate-300 dark:bg-slate-600 rounded"></div>
+            </td>
+            {/* Major */}
+            <td className="px-4 py-4">
+                <div className="h-4 w-20 bg-slate-300 dark:bg-slate-600 rounded"></div>
+            </td>
+            {/* Degree */}
+            <td className="px-4 py-4 sm:table-cell hidden">
+                <div className="h-4 w-16 bg-slate-300 dark:bg-slate-600 rounded"></div>
+            </td>
+            {/* Faculty */}
+            <td className="px-4 py-4">
+                <div className="h-5 w-12 bg-slate-300 dark:bg-slate-600 rounded-full"></div>
+            </td>
+            {/* Semester */}
+            <td className="px-4 py-4 2xl:table-cell hidden">
+                <div className="h-4 w-20 bg-slate-300 dark:bg-slate-600 rounded"></div>
+            </td>
+            {/* Shift */}
+            <td className="px-4 py-4 sm:table-cell hidden">
+                <div className="h-4 w-20 bg-slate-300 dark:bg-slate-600 rounded"></div>
+            </td>
+            {/* Status */}
+            <td className="px-4 py-4 sm:table-cell hidden">
+                <div className="h-4 w-20 bg-slate-300 dark:bg-slate-600 rounded"></div>
+            </td>
+        </tr>
+    );
 
+    return (
+        <div className="p-6 animate-pulse">
+        {/* Header */}
+        <div className="h-7 w-36 bg-slate-300 dark:bg-slate-600 rounded"></div>
+        <div className="h-px bg-slate-300 dark:bg-slate-700 mt-4 mb-4" />
+
+        {/* Filter/Action Controls */}
+        <div className="flex items-center justify-between mt-2 mb-4 gap-2">
+            <div className="flex items-center gap-2">
+            <div className="h-9 w-72 bg-slate-200 dark:bg-slate-700 rounded-lg"></div>
+            <div className="h-9 w-48 bg-slate-200 dark:bg-slate-700 rounded-lg"></div>
+            </div>
+            <div className="h-9 w-24 bg-slate-200 dark:bg-slate-700 rounded-md"></div>
+        </div>
+
+        {/* Table Skeleton */}
+        <div className="relative overflow-x-auto border border-gray-200 dark:border-gray-600 rounded-lg">
+            <table className="w-full text-xs text-left rtl:text-right text-gray-500 dark:text-gray-400">
+                <thead className="text-xs text-gray-700 bg-gray-50 dark:text-gray-400 dark:bg-gray-700">
+                    {/* You can keep the real header as it provides context, or skeletonize it too */}
+                    <tr>
+                    <th scope="col" className="px-4 py-4">Action</th>
+                    <th scope="col" className="px-4 py-4">Name</th>
+                    <th scope="col" className="px-4 py-4 sm:table-cell hidden">Generation</th>
+                    <th scope="col" className="px-4 py-4 lg:table-cell hidden">Group</th>
+                    <th scope="col" className="px-4 py-4">Major</th>
+                    <th scope="col" className="px-4 py-4 sm:table-cell hidden">Degree</th>
+                    <th scope="col" className="px-4 py-4 2xl:table-cell hidden"> Faculty </th>
+                    <th scope="col" className="px-4 py-4 2xl:table-cell hidden"> Semester </th>
+                    <th scope="col" className="px-4 py-4 sm:table-cell hidden"> Shift </th>
+                <th scope="col" className="px-6 py-3">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {/* Create several skeleton rows to fill the table */}
+                    {[...Array(5)].map((_, i) => (
+                    <SkeletonTableRow key={i} />
+                    ))}
+                </tbody>
+            </table>
+        </div>
+
+        {/* Pagination Skeleton */}
+        <nav className="flex items-center flex-wrap justify-between pt-4">
+            <div className="h-5 w-40 bg-slate-200 dark:bg-slate-700 rounded mb-4 md:mb-0"></div>
+            <div className="h-8 w-64 bg-slate-200 dark:bg-slate-700 rounded-lg"></div>
+        </nav>
+        </div>
+    );
+};
+
+const ClassViewContent = () => {
     const [classData, setClassData] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [showCreatePopup, setShowCreatePopup] = useState(false);
@@ -256,16 +339,7 @@ const ClassViewContent = () => {
 
     // Add conditional rendering for the loading state ---
     if (isLoading) {
-        return (
-            // A centered spinner, with height calculated to fit within your layout
-            <div className="flex justify-center items-center h-[calc(100vh-200px)] dark:text-gray-200">
-                <svg className="animate-spin h-10 w-10 text-blue-600 dark:text-blue-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                <span className="ml-3 text-gray-700 dark:text-gray-300">Loading class list...</span>
-            </div>
-        );
+        return <ClassPageSkeleton />;
     }
 
     const EditIcon = ({ className = "w-[14px] h-[14px]" }) => (
@@ -404,9 +478,7 @@ const ClassViewContent = () => {
                     <tbody className="text-xs font-normal text-gray-700 dark:text-gray-400">
                         {currentTableData.length > 0 ? (
                             currentTableData.map((data) => (
-                                <tr 
-                                    key={data.id} 
-                                    className={` bg-white border-b border-gray-200 dark:bg-gray-800 dark:border-gray-700 ${navigatingRowId === data.id 
+                                <tr key={data.id} className={` bg-white border-b border-gray-200 dark:bg-gray-800 dark:border-gray-700 ${navigatingRowId === data.id 
                                             ? 'opacity-60 bg-gray-100 dark:bg-gray-700' // Style for the loading row
                                             : 'hover:bg-gray-50 dark:hover:bg-gray-600 cursor-pointer' // Normal hover style
                                         }

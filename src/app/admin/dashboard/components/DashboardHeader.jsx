@@ -13,8 +13,7 @@ export default function DashboardHeader({
           mb-4 
           space-y-10
           rounded-lg 
-          num-dark-bg bg-gray-50 
-          border dark:border-gray-500 dark:bg-gray-900
+          num-dark-bg bg-white dark:bg-gray-900
         "
       >
         <div className="mb-4 md:mb-0 md:mr-6">

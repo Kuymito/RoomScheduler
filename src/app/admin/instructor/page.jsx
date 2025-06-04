@@ -36,18 +36,95 @@ const LoadingSpinnerIcon = () => (
     </svg>
 );
 
+// --- Skeleton Loader for Instructor Page ---
+const InstructorPageSkeleton = () => {
+    
+  // A reusable component for a single, pulsing table row
+  const SkeletonTableRow = () => (
+    <tr className="bg-white dark:bg-gray-800 animate-pulse">
+      {/* Action */}
+      <td className="px-4 py-4">
+        <div className="h-4 w-12 bg-slate-300 dark:bg-slate-600 rounded"></div>
+      </td>
+      {/* Name with Avatar */}
+      <td className="px-4 py-2">
+        <div className="flex items-center gap-2">
+          <div className="h-8 w-8 bg-slate-300 dark:bg-slate-600 rounded-full"></div>
+          <div className="h-4 w-24 bg-slate-300 dark:bg-slate-600 rounded"></div>
+        </div>
+      </td>
+      {/* Email */}
+      <td className="px-4 py-2 sm:table-cell hidden">
+        <div className="h-4 w-32 bg-slate-300 dark:bg-slate-600 rounded"></div>
+      </td>
+      {/* Phone */}
+      <td className="px-4 py-2 lg:table-cell hidden">
+        <div className="h-4 w-24 bg-slate-300 dark:bg-slate-600 rounded"></div>
+      </td>
+      {/* Major */}
+      <td className="px-4 py-2">
+        <div className="h-4 w-20 bg-slate-300 dark:bg-slate-600 rounded"></div>
+      </td>
+      {/* Degree */}
+      <td className="px-4 py-2 sm:table-cell hidden">
+        <div className="h-4 w-16 bg-slate-300 dark:bg-slate-600 rounded"></div>
+      </td>
+      {/* Status */}
+      <td className="px-4 py-2">
+        <div className="h-5 w-12 bg-slate-300 dark:bg-slate-600 rounded-full"></div>
+      </td>
+    </tr>
+  );
+
+  return (
+    <div className="p-6 animate-pulse">
+      {/* Header */}
+      <div className="h-7 w-36 bg-slate-300 dark:bg-slate-600 rounded"></div>
+      <div className="h-px bg-slate-300 dark:bg-slate-700 mt-4 mb-4" />
+
+      {/* Filter/Action Controls */}
+      <div className="flex items-center justify-between mt-2 mb-4 gap-2">
+        <div className="flex items-center gap-2">
+          <div className="h-9 w-72 bg-slate-200 dark:bg-slate-700 rounded-lg"></div>
+          <div className="h-9 w-48 bg-slate-200 dark:bg-slate-700 rounded-lg"></div>
+        </div>
+        <div className="h-9 w-24 bg-slate-200 dark:bg-slate-700 rounded-md"></div>
+      </div>
+
+      {/* Table Skeleton */}
+      <div className="relative overflow-x-auto border border-gray-200 dark:border-gray-600 rounded-lg">
+        <table className="w-full text-xs text-left rtl:text-right text-gray-500 dark:text-gray-400">
+          <thead className="text-xs text-gray-700 bg-gray-50 dark:text-gray-400 dark:bg-gray-700">
+             {/* You can keep the real header as it provides context, or skeletonize it too */}
+             <tr>
+               <th scope="col" className="px-4 py-2">Action</th>
+               <th scope="col" className="px-4 py-2">Name</th>
+               <th scope="col" className="px-4 py-2 sm:table-cell hidden">Email</th>
+               <th scope="col" className="px-4 py-2 lg:table-cell hidden">Phone</th>
+               <th scope="col" className="px-4 py-2">Major</th>
+               <th scope="col" className="px-4 py-2 sm:table-cell hidden">Degree</th>
+               <th scope="col" className="px-4 py-2">Status</th>
+             </tr>
+          </thead>
+          <tbody>
+            {/* Create several skeleton rows to fill the table */}
+            {[...Array(5)].map((_, i) => (
+              <SkeletonTableRow key={i} />
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+       {/* Pagination Skeleton */}
+       <nav className="flex items-center flex-wrap justify-between pt-4">
+         <div className="h-5 w-40 bg-slate-200 dark:bg-slate-700 rounded mb-4 md:mb-0"></div>
+         <div className="h-8 w-64 bg-slate-200 dark:bg-slate-700 rounded-lg"></div>
+       </nav>
+    </div>
+  );
+};
+
 const InstructorViewContent = () => {
-    // --- Data ---
-    // const initialInstructorData = [
-    //     { id: 1, name: 'Sok Mean', firstName: 'Sok', lastName: 'Mean', email: 'sok.mean@example.com', phone: '012345678', majorStudied: 'Computer Science', qualifications: 'PhD', status: 'active', profileImage: 'https://i.pravatar.cc/150?img=68' },
-    //     { id: 2, name: 'Sok Chan', firstName: 'Sok', lastName: 'Chan', email: 'sok.chan@example.com', phone: '012345679', majorStudied: 'Information Technology', qualifications: 'Master', status: 'active', profileImage: 'https://i.pravatar.cc/150?img=52' },
-    //     { id: 3, name: 'Dara Kim', firstName: 'Dara', lastName: 'Kim', email: 'dara.kim@example.com', phone: '012345680', majorStudied: 'Information Systems', qualifications: 'Professor', status: 'active', profileImage: null }, // No image
-    //     { id: 4, name: 'Lina Heng', firstName: 'Lina', lastName: 'Heng', email: 'lina.heng@example.com', phone: '012345681', majorStudied: 'Artificial Intelligence', qualifications: 'PhD', status: 'archived', profileImage: 'https://i.pravatar.cc/150?img=25' },
-    //     { id: 5, name: 'Virak Chea', firstName: 'Virak', lastName: 'Chea', email: 'virak.chea@example.com', phone: '012345682', majorStudied: 'Data Science', qualifications: 'Master', status: 'active', profileImage: 'https://i.pravatar.cc/150?img=33' },
-    //     { id: 6, name: 'Sophea Nov', firstName: 'Sophea', lastName: 'Nov', email: 'sophea.nov@example.com', phone: '012345683', majorStudied: 'Machine Learning', qualifications: 'Lecturer', status: 'active', profileImage: null }, // No image
-    //     { id: 7, name: 'Chanthy Pen', firstName: 'Chanthy', lastName: 'Pen', email: 'chanthy.pen@example.com', phone: '012345684', majorStudied: 'Data Analytics', qualifications: 'Associate Professor', status: 'active', profileImage: 'https://i.pravatar.cc/150?img=17' },
-    //     { id: 8, name: 'Vicheka Sreng', firstName: 'Vicheka', lastName: 'Sreng', email: 'vicheka.sreng@example.com', phone: '012345685', majorStudied: 'Software Engineering', qualifications: 'PhD', status: 'archived', profileImage: 'https://i.pravatar.cc/150?img=41' },
-    // ];
 
     const router = useRouter();
 
@@ -273,16 +350,7 @@ const InstructorViewContent = () => {
     
     // Add conditional rendering for the loading state ---
     if (isLoading) {
-        return (
-            // A centered spinner, with height calculated to fit within your layout
-            <div className="flex justify-center items-center h-[calc(100vh-200px)] dark:text-gray-200">
-                <svg className="animate-spin h-10 w-10 text-blue-600 dark:text-blue-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                <span className="ml-3 text-gray-700 dark:text-gray-300">Loading instructor list...</span>
-            </div>
-        );
+        return <InstructorPageSkeleton />;
     }
 
     return (
@@ -392,8 +460,7 @@ const InstructorViewContent = () => {
                             currentTableData.map((data) => (
                                 <tr 
                                     key={data.id} 
-                                    className={`
-                                        bg-white border-b border-gray-200 dark:bg-gray-800 dark:border-gray-700
+                                    className={`bg-white border-b border-gray-200 dark:bg-gray-800 dark:border-gray-700
                                         ${navigatingRowId === data.id 
                                             ? 'opacity-60 bg-gray-100 dark:bg-gray-700' // Style for the loading row
                                             : 'hover:bg-gray-50 dark:hover:bg-gray-600 cursor-pointer' // Normal hover style

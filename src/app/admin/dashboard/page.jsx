@@ -44,6 +44,58 @@ const fetchChartData = async (timeSlot) => {
   }), 500));
 };
 
+// --- Skeleton Loader for Dashboard Page ---
+const DashboardSkeleton = () => {
+    
+  // A small, reusable component for a single stat card skeleton
+  const SkeletonStatCard = () => (
+    <div className="bg-white dark:bg-gray-900 p-6 rounded-lg shadow animate-pulse">
+      <div className="h-4 bg-slate-300 dark:bg-slate-700 rounded w-3/4 mb-4"></div>
+      <div className="h-10 bg-slate-300 dark:bg-slate-700 rounded w-1/2"></div>
+    </div>
+  );
+
+  return (
+    // We don't need the DashboardLayout here, as the skeleton will be placed inside it.
+    // The main page component will handle the layout.
+    <>
+      {/* Header Skeleton */}
+      <div className="animate-pulse">
+        <div className="flex justify-between items-start bg-white dark:bg-gray-900 p-4 sm:p-6 rounded-lg shadow mb-6">
+            <div className="w-2/3">
+                <div className="h-8 bg-slate-200 dark:bg-slate-700 rounded w-3/4 mb-3"></div>
+                <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-full mb-2"></div>
+                <div className="h-4 bg-slate-200 dark:bg-slate-600 rounded w-5/6"></div>
+            </div>
+            <div className="w-1/4 flex flex-col items-end gap-2">
+                 <div className="h-5 bg-slate-200 dark:bg-slate-700 rounded w-full"></div>
+                 <div className="h-5 bg-slate-200 dark:bg-slate-700 rounded w-3/4"></div>
+            </div>
+        </div>
+      </div>
+
+      {/* Stat Cards Skeleton */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-6">
+        <SkeletonStatCard />
+        <SkeletonStatCard />
+        <SkeletonStatCard />
+        <SkeletonStatCard />
+      </div>
+      
+      {/* Chart Section Skeleton */}
+      <div className="mt-6 grid grid-cols-1 gap-6 animate-pulse">
+        <div className="lg:col-span-1 bg-white dark:bg-gray-900 p-4 sm:p-6 rounded-lg shadow">
+          <div className="flex justify-between items-center mb-4">
+            <div className="h-6 w-1/3 bg-slate-200 dark:bg-slate-700 rounded"></div>
+            <div className="h-9 w-1/4 bg-slate-200 dark:bg-slate-700 rounded-md"></div>
+          </div>
+          <div className="h-64 sm:h-72 bg-slate-200 dark:bg-slate-800 rounded-md"></div>
+        </div>
+      </div>
+    </>
+  );
+};
+
 // --- Main Page Component ---
 const DashboardPage = () => {
   const [dashboardStats, setDashboardStats] = useState(null);
@@ -108,15 +160,7 @@ const DashboardPage = () => {
   // --- KEY CHANGE 3: Update the main loading condition ---
   // This now only shows the full-screen loader on the initial page load.
   if (isPageLoading) { 
-    return (
-        <div className="flex justify-center items-center h-screen dark:text-gray-200">
-            <svg className="animate-spin h-10 w-10 text-blue-600 dark:text-blue-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-            <span className="ml-3 text-gray-700 dark:text-gray-300">Loading dashboard...</span>
-        </div>
-    );
+    return <DashboardSkeleton />;
   }
 
   // Fallback in case stats didn't load, but page loading is finished

@@ -29,6 +29,58 @@ const facultyOptions = ['Faculty of IT', 'Faculty of CS', 'Faculty of IS', 'Facu
 const semesterOptions = ['Semester 1', 'Semester 2', 'Semester 3', 'Semester 4', 'Semester 5', 'Semester 6'];
 const shiftOptions = ['7:00 - 10:00', '8:00 - 11:00', '9:00 - 12:00', '13:00 - 16:00', '15:00 - 18:00', '17:00 - 20:00', '18:00 - 21:00', '19:00 - 22:00'];
 
+// --- Skeleton Loader for Class Detail Page ---
+const ClassDetailSkeleton = () => {
+
+  // A small, reusable component for a single form field (label + input)
+  const SkeletonFormField = () => (
+    <div className="flex-1 min-w-[200px] space-y-2">
+      <div className="h-4 bg-slate-300 dark:bg-slate-600 rounded w-1/3"></div>
+      <div className="h-9 bg-slate-200 dark:bg-slate-700 rounded-md w-full"></div>
+    </div>
+  );
+
+  return (
+    <div className='p-6 animate-pulse'>
+      {/* Page Header Skeleton */}
+      <div className="h-7 w-32 bg-slate-300 dark:bg-slate-600 rounded"></div>
+      <hr className="border-t border-slate-300 dark:border-slate-700 mt-4 mb-8" />
+
+      {/* Main Details Card Skeleton */}
+      <div className="info-card p-3 sm:p-4 bg-white border border-num-gray-light dark:bg-gray-800 dark:border-gray-700 shadow-custom-light rounded-lg">
+        {/* Card Header */}
+        <div className="h-6 w-48 bg-slate-300 dark:bg-slate-600 rounded mb-5"></div>
+        
+        {/* Form Fields Skeleton */}
+        <div className="space-y-4">
+          <div className="flex gap-3 flex-wrap">
+            <SkeletonFormField />
+            <SkeletonFormField />
+          </div>
+          <div className="flex gap-3 flex-wrap">
+            <SkeletonFormField />
+            <SkeletonFormField />
+          </div>
+          <div className="flex gap-3 flex-wrap">
+            <SkeletonFormField />
+            <SkeletonFormField />
+          </div>
+           <div className="flex gap-3 flex-wrap">
+            <SkeletonFormField />
+            <SkeletonFormField />
+          </div>
+        </div>
+        
+        {/* Action Buttons Skeleton */}
+        <div className="flex justify-end items-center gap-3 mt-6">
+          <div className="h-8 w-20 bg-gray-300 dark:bg-gray-600 rounded-md"></div>
+          <div className="h-8 w-28 bg-slate-400 dark:bg-slate-500 rounded-md"></div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const ClassDetailsContent = () => {
     const router = useRouter();
     const params = useParams();
@@ -145,16 +197,7 @@ const ClassDetailsContent = () => {
     };
 
     if (loading && !classDetails) {
-        return (
-            // A centered spinner, with height calculated to fit within your layout
-            <div className="flex justify-center items-center h-[calc(100vh-200px)] dark:text-gray-200">
-                <svg className="animate-spin h-10 w-10 text-blue-600 dark:text-blue-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                <span className="ml-3 text-gray-700 dark:text-gray-300">Loading class detail...</span>
-            </div>
-        );
+        return <ClassDetailSkeleton />;
     }
 
     if (!classDetails) {
@@ -244,12 +287,6 @@ const ClassDetailsContent = () => {
 
                         {/* Action Buttons are the same */}
                         <div className="form-actions flex justify-end items-center gap-3 mt-4">
-                            {/* <button onClick={() => router.back()} className="back-button bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 shadow-custom-light rounded-md text-gray-800 dark:text-white border-none py-2 px-3 font-semibold text-xs cursor-pointer" disabled={loading}>
-                                Back
-                            </button>
-                            <button onClick={handleEditToggle} className="save-button bg-blue-600 hover:bg-blue-700 shadow-custom-light rounded-md text-white border-none py-2 px-3 font-semibold text-xs cursor-pointer" disabled={loading}>
-                                {loading && isEditing ? "Saving..." : isEditing ? "Save Changes" : "Edit Class"}
-                            </button> */}
                             { isEditing ? (
                                 <>
                                     <button onClick={() => handleCancelClick('general')} className="back-button bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 shadow-custom-light rounded-md text-gray-800 dark:text-white border-none py-2 px-3 font-semibold text-xs cursor-pointer" disabled={loading}>Cancel</button>
