@@ -144,14 +144,14 @@ const ClassDetailsContent = () => {
 
     const renderSelectField = (label, name, value, options) => (
         <div className="form-group flex-1 min-w-[200px]">
-            <label className="form-label block font-medium text-sm text-num-dark-text dark:text-white mb-1">{label}</label>
+            <label className="form-label block font-semibold text-xs text-num-dark-text dark:text-white mb-1">{label}</label>
             {isEditing ? (
                 <select
                     name={name}
                     value={value}
                     onChange={handleInputChange}
                     disabled={loading}
-                    className="form-input w-full py-2 px-3 bg-num-content-bg border border-num-gray-light dark:bg-gray-700 dark:border-gray-600 rounded-md font-medium text-[14px] text-num-dark-text dark:text-white"
+                    className="form-input w-full py-2 px-3 bg-num-content-bg border border-num-gray-light dark:bg-gray-700 dark:border-gray-600 rounded-md font-medium text-xs text-num-dark-text dark:text-white"
                 >
                     {options.map(option => (
                         <option key={option} value={option}>{option}</option>
@@ -162,7 +162,7 @@ const ClassDetailsContent = () => {
                     type="text"
                     value={value}
                     readOnly
-                    className="form-input w-full py-2 px-3 bg-gray-100 border border-num-gray-light dark:bg-gray-800 dark:border-gray-700 rounded-md font-medium text-[14px] text-gray-500 dark:text-gray-400"
+                    className="form-input w-full py-2 px-3 bg-gray-100 border border-num-gray-light dark:bg-gray-800 dark:border-gray-700 rounded-md font-medium text-xs text-gray-500 dark:text-gray-400"
                 />
             )}
         </div>
@@ -170,7 +170,7 @@ const ClassDetailsContent = () => {
 
     const renderTextField = (label, name, value) => (
          <div className="form-group flex-1 min-w-[200px]">
-            <label className="form-label block font-medium text-sm text-num-dark-text dark:text-white mb-1">{label}</label>
+            <label className="form-label block font-semibold text-xs text-num-dark-text dark:text-white mb-1">{label}</label>
             {isEditing ? (
                 <input
                     type="text"
@@ -178,14 +178,14 @@ const ClassDetailsContent = () => {
                     value={value}
                     onChange={handleInputChange}
                     disabled={loading}
-                    className="form-input w-full py-2 px-3 bg-num-content-bg border border-num-gray-light dark:bg-gray-700 dark:border-gray-600 rounded-md font-medium text-[14px] text-num-dark-text dark:text-white"
+                    className="form-input w-full py-2 px-3 bg-num-content-bg border border-num-gray-light dark:bg-gray-700 dark:border-gray-600 rounded-md font-medium text-xs text-num-dark-text dark:text-white"
                 />
             ) : (
                 <input
                     type="text"
                     value={value}
                     readOnly
-                    className="form-input w-full py-2 px-3 bg-gray-100 border border-num-gray-light dark:bg-gray-800 dark:border-gray-700 rounded-md font-medium text-[14px] text-gray-500 dark:text-gray-400"
+                    className="form-input w-full py-2 px-3 bg-gray-100 border border-num-gray-light dark:bg-gray-800 dark:border-gray-700 rounded-md font-medium text-xs text-gray-500 dark:text-gray-400"
                 />
             )}
         </div>
@@ -201,7 +201,7 @@ const ClassDetailsContent = () => {
                 {/* Right Details Card with updated fields */}
                 <div className="info-details-wrapper flex-grow flex flex-col gap-8 min-w-[300px]">
                     <div className="info-card p-3 sm:p-4 bg-white border border-num-gray-light dark:bg-gray-800 dark:border-gray-700 shadow-custom-light rounded-lg">
-                        <div className="section-title font-semibold text-base text-num-dark-text dark:text-white mb-3">General Information</div>
+                        <div className="section-title font-semibold text-mb text-num-dark-text dark:text-white mb-3">General Information</div>
                         
                         {/* --- UPDATED FORM SECTION --- */}
                         <div className="form-row flex gap-3 mb-2 flex-wrap">
@@ -223,10 +223,10 @@ const ClassDetailsContent = () => {
 
                         {/* Action Buttons are the same */}
                         <div className="form-actions flex justify-end items-center gap-3 mt-4">
-                             <button onClick={() => router.back()} className="back-button bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 shadow-custom-light rounded-md text-gray-800 dark:text-white border-none py-2 px-3 font-semibold text-sm cursor-pointer" disabled={loading}>
+                             <button onClick={() => router.back()} className="back-button bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 shadow-custom-light rounded-md text-gray-800 dark:text-white border-none py-2 px-3 font-semibold text-xs cursor-pointer" disabled={loading}>
                                 Back
                             </button>
-                            <button onClick={handleEditToggle} className="save-button bg-blue-600 hover:bg-blue-700 shadow-custom-light rounded-md text-white border-none py-2 px-3 font-semibold text-sm cursor-pointer" disabled={loading}>
+                            <button onClick={handleEditToggle} className="save-button bg-blue-600 hover:bg-blue-700 shadow-custom-light rounded-md text-white border-none py-2 px-3 font-semibold text-xs cursor-pointer" disabled={loading}>
                                 {loading && isEditing ? "Saving..." : isEditing ? "Save Changes" : "Edit Class"}
                             </button>
                         </div>

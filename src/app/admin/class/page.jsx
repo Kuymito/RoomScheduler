@@ -9,15 +9,15 @@ const ClassViewContent = () => {
     // --- Data ---
     const initialClassData = [
         // Added semester to existing data
-        { id: 1, name: 'NUM30-01', generation: '30', group: '01', major: 'IT', degrees: 'Bachelor', faculty: 'Faculty of IT', semester: '2024-2025 S1', shift: '7:00 - 10:00', status: 'active' },
-        { id: 2, name: 'NUM30-01', generation: '30', group: '01', major: 'IT', degrees: 'Bachelor', faculty: 'Faculty of IT', semester: '2024-2025 S1', shift: '7:00 - 10:00', status: 'active' },
-        { id: 3, name: 'NUM30-02', generation: '30', group: '02', major: 'CS', degrees: 'Bachelor', faculty: 'Faculty of CS', semester: '2024-2025 S1', shift: '8:00 - 11:00', status: 'active' },
-        { id: 4, name: 'NUM32-03', generation: '32', group: '03', major: 'IS', degrees: 'Bachelor', faculty: 'Faculty of IS', semester: '2024-2025 S2', shift: '9:00 - 12:00', status: 'active' },
-        { id: 5, name: 'NUM32-04', generation: '32', group: '04', major: 'SE', degrees: 'Bachelor', faculty: 'Faculty of SE', semester: '2024-2025 S2', shift: '13:00 - 16:00', status: 'active' },
-        { id: 6, name: 'NUM32-05', generation: '32', group: '05', major: 'AI', degrees: 'Bachelor', faculty: 'Faculty of AI & R', semester: '2024-2025 S2', shift: '15:00 PM - 18:00', status: 'active' },
-        { id: 7, name: 'NUM33-06', generation: '33', group: '06', major: 'DS', degrees: 'Bachelor', faculty: 'Faculty of DS', semester: '2024-2025 S3', shift: '17:00 - 20:00', status: 'active' },
-        { id: 8, name: 'NUM33-07', generation: '33', group: '07', major: 'ML', degrees: 'Bachelor', faculty: 'Faculty of ML', semester: '2024-2025 S3', shift: '18:00 - 21:00', status: 'active' },
-        { id: 9, name: 'NUM33-08', generation: '33', group: '08', major: 'DA', degrees: 'Bachelor', faculty: 'Faculty of DA', semester: '2024-2025 S3', shift: '19:00 - 22:00', status: 'archived' }, // Example archived
+        { id: 1, name: 'NUM30-01', generation: '30', group: '01', major: 'IT', degrees: 'Bachelor', faculty: 'Faculty of IT', semester: 'Semester 1', shift: '7:00 - 10:00', status: 'active' },
+        { id: 2, name: 'NUM30-01', generation: '30', group: '01', major: 'IT', degrees: 'Bachelor', faculty: 'Faculty of IT', semester: 'Semester 1', shift: '7:00 - 10:00', status: 'active' },
+        { id: 3, name: 'NUM30-02', generation: '30', group: '02', major: 'CS', degrees: 'Bachelor', faculty: 'Faculty of CS', semester: 'Semester 1', shift: '8:00 - 11:00', status: 'active' },
+        { id: 4, name: 'NUM32-03', generation: '32', group: '03', major: 'IS', degrees: 'Bachelor', faculty: 'Faculty of IS', semester: 'Semester 2', shift: '9:00 - 12:00', status: 'active' },
+        { id: 5, name: 'NUM32-04', generation: '32', group: '04', major: 'SE', degrees: 'Bachelor', faculty: 'Faculty of SE', semester: 'Semester 2', shift: '13:00 - 16:00', status: 'active' },
+        { id: 6, name: 'NUM32-05', generation: '32', group: '05', major: 'AI', degrees: 'Bachelor', faculty: 'Faculty of AI & R', semester: 'Semester 2', shift: '15:00 PM - 18:00', status: 'active' },
+        { id: 7, name: 'NUM33-06', generation: '33', group: '06', major: 'DS', degrees: 'Bachelor', faculty: 'Faculty of DS', semester: 'Semester 3', shift: '17:00 - 20:00', status: 'active' },
+        { id: 8, name: 'NUM33-07', generation: '33', group: '07', major: 'ML', degrees: 'Bachelor', faculty: 'Faculty of ML', semester: '2Semester 3', shift: '18:00 - 21:00', status: 'active' },
+        { id: 9, name: 'NUM33-08', generation: '33', group: '08', major: 'DA', degrees: 'Bachelor', faculty: 'Faculty of DA', semester: 'Semester 3', shift: '19:00 - 22:00', status: 'archived' }, // Example archived
         { id: 10, name: 'NUM33-09', generation: '33', group: '09', major: 'SE', degrees: 'Bachelor', faculty: 'Faculty of SE & R', semester: '2024-2025 S3', shift: '8:00 - 11:00', status: 'active' }
     ];
 
@@ -201,16 +201,16 @@ const ClassViewContent = () => {
         router.push(`/admin/class/${classId}`);
     };
 
-    const EditIcon = ({ className = "w-[17px] h-[17px]" }) => (
-        <svg className={className} width="17" height="17" viewBox="0 0 17 17" fill="none" xmlns="http://www.w3.org/2000/svg">
+    const EditIcon = ({ className = "w-[14px] h-[14px]" }) => (
+        <svg className={className} width="14" height="14" viewBox="0 0 17 17" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M8.06671 2.125H4.95837C3.00254 2.125 2.12504 3.0025 2.12504 4.95833V12.0417C2.12504 13.9975 3.00254 14.875 4.95837 14.875H12.0417C13.9975 14.875 14.875 13.9975 14.875 12.0417V8.93333" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
             <path d="M10.6579 3.2658L6.28042 7.64327C6.10542 7.81827 5.93042 8.15055 5.89125 8.3928L5.64958 10.112C5.56625 10.7037 6.01958 11.157 6.61125 11.0737L8.33042 10.832C8.57292 10.7928 8.90542 10.6178 9.08042 10.4428L13.4579 6.0653C14.2662 5.25705 14.5796 4.26827 13.4579 3.14662C12.3362 2.03205 11.3479 2.45705 10.6579 3.2658Z" stroke="currentColor" strokeWidth="1.2" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round"/>
             <path d="M9.8999 4.02502C10.2716 5.66752 11.0583 6.45419 12.7008 6.82585" stroke="currentColor" strokeWidth="1.2" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round"/>
         </svg>
     );
 
-    const ArchiveIcon = ({ className = "w-[17px] h-[17px]" }) => (
-        <svg className={className} width="17" height="17" viewBox="0 0 17 17" fill="none" xmlns="http://www.w3.org/2000/svg">
+    const ArchiveIcon = ({ className = "w-[14px] h-[14px]" }) => (
+        <svg className={className} width="14" height="14" viewBox="0 0 17 17" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M14.1667 5.66667V12.0417C14.1667 13.9975 13.2892 14.875 11.3334 14.875H5.66671C3.71087 14.875 2.83337 13.9975 2.83337 12.0417V5.66667" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
             <path d="M14.875 2.125H2.125L2.12504 5.66667H14.875V2.125Z" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
             <path d="M7.79163 8.5H9.20829" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -232,13 +232,13 @@ const ClassViewContent = () => {
                         placeholder="Search by name..."
                         value={searchTexts.name}
                         onChange={(e) => handleSearchChange('name', e.target.value)}
-                        className="block w-72 p-2 text-sm font-medium text-gray-900 bg-white border border-gray-200 rounded-lg hover:bg-gray-100 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:hover:text-white dark:hover:bg-gray-700"
+                        className="block w-72 p-2 text-xs font-medium text-gray-900 bg-white border border-gray-200 rounded-lg hover:bg-gray-100 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:hover:text-white dark:hover:bg-gray-700"
                     />
                     <div className="inline-flex rounded-md shadow-xs" role="group">
                         <button
                             type="button"
                             onClick={() => { setStatusFilter('active'); setCurrentPage(1); }}
-                            className={`px-4 py-2 text-sm font-medium rounded-s-lg border ${
+                            className={`px-4 py-2 text-xs font-medium rounded-s-lg border ${
                                 statusFilter === 'active'
                                     ? 'text-blue-700 bg-blue-50 border-blue-300 dark:bg-gray-700 dark:text-blue-300 dark:border-blue-600'
                                     : 'text-gray-900 bg-white border-gray-200 hover:bg-gray-100 hover:text-blue-700 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:hover:text-white dark:hover:bg-gray-700'
@@ -249,7 +249,7 @@ const ClassViewContent = () => {
                         <button
                             type="button"
                             onClick={() => { setStatusFilter('archived'); setCurrentPage(1); }}
-                            className={`px-4 py-2 text-sm font-medium border-t border-b ${
+                            className={`px-4 py-2 text-xs font-medium border-t border-b ${
                                 statusFilter === 'archived'
                                     ? 'text-red-700 bg-red-50 border-red-300 dark:bg-gray-700 dark:text-red-300 dark:border-red-600'
                                     : 'text-gray-900 bg-white border-gray-200 hover:bg-gray-100 hover:text-red-700 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:hover:text-white dark:hover:bg-gray-700'
@@ -260,7 +260,7 @@ const ClassViewContent = () => {
                         <button
                             type="button"
                             onClick={() => { setStatusFilter('all'); setCurrentPage(1); }}
-                            className={`px-4 py-2 text-sm font-medium rounded-e-lg border ${
+                            className={`px-4 py-2 text-xs font-medium rounded-e-lg border ${
                                 statusFilter === 'all'
                                     ? 'text-purple-700 bg-purple-50 border-purple-300 dark:bg-gray-700 dark:text-purple-300 dark:border-purple-600'
                                     : 'text-gray-900 bg-white border-gray-200 hover:bg-gray-100 hover:text-purple-700 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:hover:text-white dark:hover:bg-gray-700'
@@ -274,7 +274,7 @@ const ClassViewContent = () => {
                 <button
                     type="button"
                     onClick={handleCreateClick}
-                    className="text-white bg-green-700 hover:bg-green-800 focus:ring-2 focus:ring-green-600 font-medium rounded-md text-sm px-3 py-2 text-center inline-flex items-center dark:bg-green-600 me-2 mb-2 dark:hover:bg-green-700 dark:focus:ring-green-800 gap-1"
+                    className="text-white bg-green-700 hover:bg-green-800 focus:ring-2 focus:ring-green-600 font-medium rounded-md text-xs px-3 py-2 text-center inline-flex items-center dark:bg-green-600 me-2 mb-2 dark:hover:bg-green-700 dark:focus:ring-green-800 gap-1"
                 >
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-4">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
@@ -283,7 +283,7 @@ const ClassViewContent = () => {
                 </button>
             </div>
             <div className="relative overflow-x-auto border border-gray-200 dark:border-gray-600 rounded-lg">
-                <table className="w-full rounded-lg text-sm text-left rtl:text-right text-gray-500">
+                <table className="w-full rounded-lg text-xs text-left rtl:text-right text-gray-500">
                     <thead className="text-xs text-gray-700 border-b border-gray-200 bg-gray-50 dark:text-gray-400 dark:border-gray-600 dark:bg-gray-700">
                         <tr>
                             <th scope="col" className="px-6 py-2.5 md:table-cell hidden"> Action </th>
@@ -337,9 +337,7 @@ const ClassViewContent = () => {
                     <tbody className="text-xs font-normal text-gray-700 dark:text-gray-400">
                         {currentTableData.length > 0 ? (
                             currentTableData.map((data) => (
-                                <tr key={data.id} className="bg-white border-b border-gray-200 dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 cursor-pointer"
-                                onClick={() => handleRowClick(data.id)}
-                                >
+                                <tr key={data.id} className="bg-white border-b border-gray-200 dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 cursor-pointer" onClick={() => handleRowClick(data.id)}>
                                     <th scope="row" className="px-6 py-2.5 font-medium text-gray-900 whitespace-nowrap dark:text-white md:table-cell hidden">
                                         <div className="flex gap-2">
                                             {/* I've made the Edit button functional as an example, it also needs stopPropagation */}
@@ -350,9 +348,8 @@ const ClassViewContent = () => {
                                                 }}
                                                 className={`p-1 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300`} 
                                             >
-                                                <EditIcon className="size-5" />
+                                                <EditIcon className="size-4" />
                                             </button>
-
                                             <button
                                                 onClick={(e) => {
                                                     e.stopPropagation(); // Stop the event from bubbling to the <tr>
@@ -361,7 +358,7 @@ const ClassViewContent = () => {
                                                 className={`p-1 ${data.status === 'active' ? 'text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300' : 'text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300'}`}
                                                 title={data.status === 'active' ? 'Archive Classroom' : 'Activate Classroom'}
                                             >
-                                                <ArchiveIcon className="size-5" />
+                                                <ArchiveIcon className="size-4" />
                                             </button>
                                         </div>
                                     </th>
@@ -401,7 +398,7 @@ const ClassViewContent = () => {
                                     placeholder="Search name..."
                                     value={searchTexts.name}
                                     onChange={(e) => handleSearchChange('name', e.target.value)}
-                                    className="block w-full p-1.5 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                                    className="block w-full p-1.5 text-xs text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
                                 />
                             </td>
                             <td className="px-6 py-2.5 lg:table-cell hidden">
@@ -410,7 +407,7 @@ const ClassViewContent = () => {
                                     placeholder="Search gen..."
                                     value={searchTexts.generation}
                                     onChange={(e) => handleSearchChange('generation', e.target.value)}
-                                    className="block w-full p-1.5 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                                    className="block w-full p-1.5 text-xs text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
                                 />
                             </td>
                             <td className="px-6 py-2.5 lg:table-cell hidden">
@@ -419,7 +416,7 @@ const ClassViewContent = () => {
                                     placeholder="Search group..."
                                     value={searchTexts.group}
                                     onChange={(e) => handleSearchChange('group', e.target.value)}
-                                    className="block w-full p-1.5 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                                    className="block w-full p-1.5 text-xs text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
                                 />
                             </td>
                             <td className="px-6 py-2.5">
@@ -428,7 +425,7 @@ const ClassViewContent = () => {
                                     placeholder="Search major..."
                                     value={searchTexts.major}
                                     onChange={(e) => handleSearchChange('major', e.target.value)}
-                                    className="block w-full p-1.5 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                                    className="block w-full p-1.5 text-xs text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
                                 />
                             </td>
                             <td className="px-6 py-2.5">
@@ -437,7 +434,7 @@ const ClassViewContent = () => {
                                     placeholder="Search degrees..."
                                     value={searchTexts.degrees}
                                     onChange={(e) => handleSearchChange('degrees', e.target.value)}
-                                    className="block w-full p-1.5 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                                    className="block w-full p-1.5 text-xs text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
                                 />
                             </td>
                             <td className="px-6 py-2.5 2xl:table-cell hidden">
@@ -446,7 +443,7 @@ const ClassViewContent = () => {
                                     placeholder="Search faculty..."
                                     value={searchTexts.faculty}
                                     onChange={(e) => handleSearchChange('faculty', e.target.value)}
-                                    className="block w-full p-1.5 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                                    className="block w-full p-1.5 text-xs text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
                                 />
                             </td>
                             <td className="px-6 py-2.5 2xl:table-cell hidden"> {/* New Semester Search */}
@@ -455,7 +452,7 @@ const ClassViewContent = () => {
                                     placeholder="Search sem..."
                                     value={searchTexts.semester}
                                     onChange={(e) => handleSearchChange('semester', e.target.value)}
-                                    className="block w-full p-1.5 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                                    className="block w-full p-1.5 text-xs text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
                                 />
                             </td>
                             <td className="px-6 py-2.5 sm:table-cell hidden">
@@ -464,7 +461,7 @@ const ClassViewContent = () => {
                                     placeholder="Search shift..."
                                     value={searchTexts.shift}
                                     onChange={(e) => handleSearchChange('shift', e.target.value)}
-                                    className="block w-full p-1.5 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                                    className="block w-full p-1.5 text-xs text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
                                 />
                             </td>
                             <td className="px-6 py-2.5"></td>
@@ -473,7 +470,7 @@ const ClassViewContent = () => {
                 </table>
             </div>
             <nav className="flex items-center flex-column flex-wrap md:flex-row justify-between pt-4" aria-label="Table navigation">
-                <span className="text-sm font-normal text-gray-500 dark:text-gray-400 mb-4 md:mb-0 block w-full md:w-auto">
+                <span className="text-xs font-normal text-gray-500 dark:text-gray-400 mb-4 md:mb-0 block w-full md:w-auto">
                     Showing{' '}
                     <span className="font-semibold text-gray-900 dark:text-white">
                         {(currentPage - 1) * itemsPerPage + 1}-
@@ -485,12 +482,12 @@ const ClassViewContent = () => {
                     </span>
                 </span>
                 <div className="flex items-center gap-2">
-                    <label htmlFor="items-per-page" className="text-sm font-normal text-gray-500 dark:text-gray-400">
+                    <label htmlFor="items-per-page" className="text-xs font-normal text-gray-500 dark:text-gray-400">
                         Items per page:
                     </label>
                     <select
                         id="items-per-page"
-                        className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-full focus:ring-blue-500 focus:border-blue-500 px-2 py-1 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                        className="bg-gray-50 border border-gray-300 text-gray-900 text-xs rounded-full focus:ring-blue-500 focus:border-blue-500 px-2 py-1 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
                         value={itemsPerPage}
                         onChange={handleItemsPerPageChange}
                     >
@@ -501,7 +498,7 @@ const ClassViewContent = () => {
                         ))}
                     </select>
                 </div>
-                <ul className="inline-flex -space-x-px rtl:space-x-reverse text-sm h-8">
+                <ul className="inline-flex -space-x-px rtl:space-x-reverse text-xs h-8">
                     <li>
                         <button
                             onClick={goToPreviousPage}

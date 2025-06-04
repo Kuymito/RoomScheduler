@@ -75,7 +75,7 @@ const SuccessAlert = ({
   return (
     <div
       className={`
-        relative w-[480px] h-[330px] bg-white dark:bg-gray-700 shadow-custom-heavy rounded-[6px] font-sans
+        relative w-[480px] h-[330px] bg-white dark:bg-gray-800 shadow-custom-heavy rounded-[6px] font-sans
         transition-all duration-200 ease-out
         ${isShowing ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}
       `}
