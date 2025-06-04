@@ -5,7 +5,7 @@ export default function LeftPanel() {
       <div className="logo w-[115px] h-[115px] rounded-full  mb-7 mt-5 flex items-center justify-center text-xs  font-bold ">
         <span className="logo-placeholder-text p-3.4">
           <img
-            src="/image/num-logo.png"
+            src="https://numregister.com/assets/img/logo/num.png"
             alt=""
             className="w-full h-full object-contain"
           />
