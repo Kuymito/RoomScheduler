@@ -467,8 +467,9 @@ const ClassViewContent = () => {
                     </thead>
                     <tbody className="text-xs font-normal text-gray-700 dark:text-gray-400">
                         {currentTableData.length > 0 ? (
-                            currentTableData.map((data) => (
-                                <tr key={data.id} className={` bg-white border-b border-gray-200 dark:bg-gray-800 dark:border-gray-700 ${navigatingRowId === data.id 
+                            currentTableData.map((data) => ( <tr 
+                                    key={data.id} 
+                                    className={` bg-white border-b border-gray-200 dark:bg-gray-800 dark:border-gray-700 ${navigatingRowId === data.id 
                                             ? 'opacity-60 bg-gray-100 dark:bg-gray-700' // Style for the loading row
                                             : 'hover:bg-gray-50 dark:hover:bg-gray-600 cursor-pointer' // Normal hover style
                                         }
