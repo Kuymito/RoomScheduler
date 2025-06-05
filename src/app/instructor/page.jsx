@@ -5,7 +5,7 @@ const ScheduleViewContent = () => {
         <div className="p-6 dark:text-white">
             <h1 className="text-lg font-bold mb-4">Schedule</h1>
             <hr className="border-t border-gray-200 mt-4 mb-4" />
-            <p className='bg-red-500'>Room</p>
+            <p>Welcome to the instructor Schedule Management.</p>
         {/* Add more dashboard content here */}
         </div>
     );

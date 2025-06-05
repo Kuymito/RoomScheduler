@@ -9,7 +9,7 @@ import Footer from '@/components/Footer';
 import NotificationPopup from '@/app/admin/notification/AdminNotificationPopup';
 import { usePathname, useRouter } from 'next/navigation';
 
-export default function DashboardLayout({ children, activeItem, pageTitle }) {
+export default function InstructorDashboardLayout({ children, activeItem, pageTitle }) {
     const [showAdminPopup, setShowAdminPopup] = useState(false);
     const [showLogoutAlert, setShowLogoutAlert] = useState(false);
     const [showNotificationPopup, setShowNotificationPopup] = useState(false);
