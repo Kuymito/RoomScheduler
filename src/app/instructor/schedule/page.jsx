@@ -1,20 +1,20 @@
 import InstructorLayout from '@/components/InstructorLayout';
 
-const InstructorScheduleViewContent = () => {    
+const ScheduleViewContent = () => {    
     return (
         <div className="p-6 dark:text-white">
             <h1 className="text-lg font-bold mb-4">Schedule</h1>
             <hr className="border-t border-gray-200 mt-4 mb-4" />
-            <p>Welcome to the admin schedule. view schedules, and more.</p>
+            <p>Welcome to the instructor Schedule Management.</p>
         {/* Add more dashboard content here */}
         </div>
     );
 };
 
-export default function InstructorDashboardPage() {
+export default function InstructorSchedulePage() {
     return (
         <InstructorLayout activeItem="schedule" pageTitle="Schedule Management">
-            <InstructorScheduleViewContent/>
+            <ScheduleViewContent/>
         </InstructorLayout>
     );
 }

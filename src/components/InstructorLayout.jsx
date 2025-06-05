@@ -10,7 +10,7 @@ import NotificationPopup from '@/app/admin/notification/AdminNotificationPopup';
 
 const TOPBAR_HEIGHT = '90px'; // Adjust this value to match your actual Topbar height.
 
-export default function AdminLayout({ children, activeItem, pageTitle }) {
+export default function InstructorLayout({ children, activeItem, pageTitle }) {
     // --- State Variables ---
     const [showAdminPopup, setShowAdminPopup] = useState(false);
     const [showLogoutAlert, setShowLogoutAlert] = useState(false);

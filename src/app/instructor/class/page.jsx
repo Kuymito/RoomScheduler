@@ -5,7 +5,7 @@ const InstructorClassViewContent = () => {
         <div className="p-6 dark:text-white">
             <h1 className="text-lg font-bold mb-4">Schedule</h1>
             <hr className="border-t border-gray-200 mt-4 mb-4" />
-            <p>Welcome to the admin schedule. view schedules, and more.</p>
+            <p>Welcome to the instructor Class Management.</p>
         {/* Add more dashboard content here */}
         </div>
     );
@@ -13,7 +13,7 @@ const InstructorClassViewContent = () => {
 
 export default function InstructorClassPage() {
     return (
-        <InstructorLayout activeItem="schedule" pageTitle="Schedule Management">
+        <InstructorLayout activeItem="class" pageTitle="Class Management">
             <InstructorClassViewContent/>
         </InstructorLayout>
     );
