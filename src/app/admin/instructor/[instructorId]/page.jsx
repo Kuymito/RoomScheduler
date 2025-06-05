@@ -176,7 +176,7 @@ const InstructorDetailsContent = () => {
                 <div className="overview-card w-full h-min sm:w-auto md:w-[300px] p-4 bg-white border border-gray-200 dark:bg-gray-800 dark:border-gray-700 shadow-md rounded-lg flex-shrink-0">
                     {!isEditing ? (
                         // --- VIEW MODE ---
-                        <div className="flex items-center gap-4">
+                        (<div className="flex items-center gap-4">
                             <div className="relative mb-4">
                                 {currentData.profileImage ? (
                                     <Image 
@@ -190,21 +190,21 @@ const InstructorDetailsContent = () => {
                                     <DefaultAvatarIcon className="w-24 h-24 rounded-full" />
                                 )}
                                 {instructorDetails && ( // Status dot
-                                    <span
+                                    (<span
                                         className={`absolute bottom-1 right-1 block h-4 w-4 rounded-full border-2 border-white dark:border-gray-800 ${instructorDetails.status === 'active' ? 'bg-green-500' : 'bg-red-500'}`}
                                         title={`Status: ${instructorDetails.status}`}
-                                    ></span>
+                                    ></span>)
                                 )}
                             </div>
                             <div>
                                 <h2 className="text-xl font-semibold text-gray-900 dark:text-white">{currentData.name}</h2>
                                 <p className="text-sm text-gray-500 dark:text-gray-400">Instructor</p>
                             </div>
-                        </div>
+                        </div>)
                     ) : (
                         // --- EDIT MODE ---
                         // This entire block is now styled like your InstructorCreatePopup's image section
-                        <div>
+                        (<div>
                             <div className="flex flex-col gap-4"> {/* Centering items */}
                                 <div className='flex flex-row items-center gap-4 mb-4'>
                                     {imagePreviewUrl ? (
@@ -246,7 +246,7 @@ const InstructorDetailsContent = () => {
                                     className="sr-only"
                                 />
                             </div>
-                        </div>
+                        </div>)
                     )}
                 </div>
 
