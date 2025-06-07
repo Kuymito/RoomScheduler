@@ -1,395 +1,279 @@
 'use client';
 
-import React, { useState, useMemo, useRef, useEffect } from 'react'; // Ensured React is imported
-import { useRouter, useParams } from 'next/navigation'; // Kept for context
-import AdminLayout from '@/components/AdminLayout';
-import jsPDF from 'jspdf'; // Import jsPDF
-import html2canvas from 'html2canvas'; // Import html2canvas
+import React, { useState, useMemo } from 'react';
+import AdminLayout from '@/components/AdminLayout'; // Assuming you use this layout
 
-// --- DefaultAvatarIcon Component ---
-const DefaultAvatarIcon = ({ className = "w-8 h-8" }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={`${className} text-gray-500 dark:text-gray-400 border border-gray-300 rounded-full p-1 dark:border-gray-600`}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
+// --- Default Icon for items without an image ---
+const DefaultClassIcon = ({ className = "w-8 h-8" }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={`${className} text-gray-500 dark:text-gray-400`}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
     </svg>
 );
 
-// --- Initial Data (with degree) ---
-const initialInstructorsData = [ // Renamed to avoid conflict with schedule state name
-    { id: 'inst1', name: 'Dr. Evelyn Reed', profileImage: '/images/admin.jpg', degree: 'PhD' },
-    { id: 'inst2', name: 'Prof. Samuel Green', profileImage: null, degree: 'Master' },
-    { id: 'inst3', name: 'Ms. Olivia Blue', profileImage: '', degree: 'Associate' },
-    { id: 'inst4', name: 'Mr. Kenji Tanaka', profileImage: '/images/reach.jpg', degree: 'PhD' },
-    { id: 'inst5', name: 'Dr. Aisha Khan', profileImage: null, degree: 'Master' },
-    { id: 'inst6', name: 'Prof. Ethan Brown', profileImage: null, degree: 'Associate' },
-    { id: 'inst7', name: 'Ms. Olivia Green', profileImage: null, degree: 'PhD' },
-    { id: 'inst8', name: 'Mr. Kenji Tanaka', profileImage: null, degree: 'Master' },
-    { id: 'inst9', name: 'Dr. Aisha Khan', profileImage: null, degree: 'Associate' },
-    { id: 'inst10', name: 'Prof. Ethan Brown', profileImage: null, degree: 'PhD' },
+// --- Initial Data & Constants ---
+const initialClasses = [
+    { id: 'class_101', name: 'Intro to Physics', code: 'PHY-101' },
+    { id: 'class_102', name: 'Calculus I', code: 'MTH-110' },
+    { id: 'class_103', name: 'Organic Chemistry', code: 'CHM-220' },
+    { id: 'class_104', name: 'World History', code: 'HIS-100' },
+    { id: 'class_105', name: 'English Composition', code: 'ENG-101' },
+    { id: 'class_106', name: 'Linear Algebra', code: 'MTH-210' },
+    { id: 'class_107', name: 'Data Structures', code: 'CS-250' },
+    { id: 'class_108', name: 'Microeconomics', code: 'ECN-200' },
+    { id: 'class_109', name: 'Art History', code: 'ART-150' },
+    { id: 'class_110', name: 'Computer Networks', code: 'CS-350' },
 ];
 
-const daysOfWeek = ['Mon', 'Tue', 'Wed', 'Thur', 'Fri', 'Sat', 'Sun'];
-const studyModes = [
-    { value: 'in-class', label: 'In Class' },
-    { value: 'online', label: 'Online' },
-];
+const buildings = ['A', 'B', 'C', 'D', 'E'];
+const weekdays = ['Mon', 'Tue', 'Wed', 'Thur', 'Fri', 'Sat', 'Sun'];
+const timeSlots = ['7:00 - 10:00', '10:30 - 13:30', '14:00 - 17:00', '17:30 - 20:30'];
+const gridDimensions = { rows: 5, cols: 5 };
 
-// --- Draggable Scheduled Item Component ---
-const ScheduledInstructorCard = ({ instructorData, day, onDragStart, onDragEnd, onRemove, studyMode, onStudyModeChange }) => {
-    // ... (ScheduledInstructorCard component remains the same)
-    if (!instructorData || !instructorData.instructor) return null;
-    const { instructor } = instructorData;
-    const baseCardClasses = "w-full p-2 rounded-md shadow text-center flex flex-col items-center cursor-grab active:cursor-grabbing group relative transition-all duration-150 hover:shadow-lg hover:scale-[1.02] border-2";
-    let colorCardClasses = "";
-    let cardTextColorClasses = "";
-    const baseSelectClasses = "block w-full p-1.5 text-xs rounded-md shadow-sm transition-colors";
-    let colorSelectClasses = "";
-    if (studyMode === 'in-class') {
-        colorCardClasses = "bg-green-100 dark:bg-green-800 border-green-500 dark:border-green-700";
-        cardTextColorClasses = "text-green-800 dark:text-green-100";
-        colorSelectClasses = "bg-green-50 dark:bg-green-700 border-green-400 dark:border-green-600 text-green-700 dark:text-green-100 focus:ring-green-500 focus:border-green-500";
-    } else if (studyMode === 'online') {
-        colorCardClasses = "bg-orange-100 dark:bg-orange-800 border-orange-500 dark:border-orange-700";
-        cardTextColorClasses = "text-orange-800 dark:text-orange-100";
-        colorSelectClasses = "bg-orange-50 dark:bg-orange-700 border-orange-400 dark:border-orange-600 text-orange-700 dark:text-orange-100 focus:ring-orange-500 focus:border-orange-500";
-    } else { 
-        colorCardClasses = "bg-sky-100 dark:bg-sky-700 border-sky-500 dark:border-sky-700";
-        cardTextColorClasses = "text-sky-800 dark:text-sky-50";
-        colorSelectClasses = "border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 focus:ring-sky-500 focus:border-sky-500";
+const initialRooms = [];
+let roomCounter = 1;
+for (const building of buildings) {
+    roomCounter = 1;
+    for (let floor = 1; floor <= gridDimensions.rows; floor++) {
+        for (let col = 1; col <= gridDimensions.cols; col++) {
+            initialRooms.push({ id: `${building}-${roomCounter}`, name: `${building}${roomCounter}`, building, floor, capacity: (floor + col) % 2 === 0 ? 30 : 45 });
+            roomCounter++;
+        }
     }
+}
+
+const createInitialSchedules = () => {
+    const schedules = {};
+    weekdays.forEach(day => {
+        schedules[day] = {};
+        timeSlots.forEach(time => {
+            schedules[day][time] = {};
+            buildings.forEach(building => {
+                const buildingRooms = initialRooms.filter(r => r.building === building);
+                const floors = Array.from({ length: gridDimensions.rows }, (_, i) => gridDimensions.rows - i);
+                schedules[day][time][building] = floors.map(floorNum => buildingRooms.filter(r => r.floor === floorNum).map(room => ({ room, class: null })));
+            });
+        });
+    });
+    return schedules;
+};
+
+// --- Child Components ---
+const ScheduledClassCard = ({ classData, onDragStart, onDragEnd }) => (
+    <div draggable onDragStart={onDragStart} onDragEnd={onDragEnd} className="w-full h-24 p-2 bg-blue-100 dark:bg-blue-800 border-2 border-blue-400 dark:border-blue-600 rounded-lg shadow-md flex flex-col justify-center items-center text-center cursor-grab active:cursor-grabbing transition-all duration-150">
+        <DefaultClassIcon className="w-6 h-6 mb-1 text-blue-600 dark:text-blue-200" />
+        <p className="text-xs font-semibold text-blue-800 dark:text-blue-100 break-words">{classData.name}</p>
+        <p className="text-xs text-blue-600 dark:text-blue-300 opacity-80">{classData.code}</p>
+    </div>
+);
+
+// UPDATED: RoomCard now accepts an isWarning prop
+const RoomCard = ({ cellData, isDragOver, isWarning, dragHandlers }) => {
+    const { room, class: classData } = cellData;
+    const isOccupied = !!classData;
+
+    const getBorderColor = () => {
+        if (isWarning) return 'border-red-500 dark:border-red-400 shadow-lg scale-105';
+        if (isDragOver) return 'border-emerald-400 dark:border-emerald-500 scale-105 shadow-lg';
+        return 'border-gray-300 dark:border-gray-700 shadow-sm';
+    };
+
     return (
-        <div className="w-full flex flex-col items-center">
-            <div className="mb-3 w-full">
-                <label htmlFor={`studyMode-${day}`} className="sr-only">Study Mode for {day}</label>
-                <select id={`studyMode-${day}`} name={`studyMode-${day}`} value={studyMode} onChange={(e) => onStudyModeChange(day, e.target.value)} className={`${baseSelectClasses} ${colorSelectClasses}`}>
-                    {studyModes.map(mode => (<option key={mode.value} value={mode.value}>{mode.label}</option>))}
-                </select>
+        <div className={`rounded-lg border-2 flex flex-col transition-all duration-150 overflow-hidden ${getBorderColor()}`}>
+            <div className={`px-2 py-1 flex justify-between items-center border-b-2 transition-colors ${isWarning ? 'bg-red-100 dark:bg-red-800/50' : 'bg-gray-50 dark:bg-gray-800'}`}>
+                <a href="#" onClick={(e) => { e.preventDefault(); alert(`Link to details for Room ${room.name}`); }} className="text-xs font-bold text-gray-700 dark:text-gray-300 hover:underline">{room.name}</a>
+                <div className={`w-2.5 h-2.5 rounded-full ring-1 ring-white/50 ${isOccupied ? 'bg-red-500' : 'bg-green-500'}`} title={isOccupied ? 'Occupied' : 'Available'}></div>
             </div>
-            <div draggable onDragStart={(e) => onDragStart(e, instructor, day)} onDragEnd={onDragEnd} className={`${baseCardClasses} ${colorCardClasses}`}>
-                {instructor.profileImage ? (<img src={instructor.profileImage} alt={instructor.name} className="w-10 h-10 rounded-full object-cover border-2 border-white dark:border-gray-400 mb-1" onError={(e) => { e.currentTarget.style.display = 'none'; }}/>) : (<DefaultAvatarIcon className={`w-10 h-10 flex-shrink-0 flex items-center justify-center mb-1`} />)}
-                <p className={`text-sm font-semibold break-words ${cardTextColorClasses}`}>{instructor.name}</p>
-                {instructor.degree && (<p className={`text-xs mt-0.5 ${cardTextColorClasses} opacity-80`}>{instructor.degree}</p>)}
-                <button onClick={() => onRemove(day)} className="absolute top-1 right-1 text-xs text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity duration-150 p-1 bg-white/70 dark:bg-gray-900/70 rounded-full leading-none" title={`Remove ${instructor.name}`} aria-label={`Remove ${instructor.name}`}>&#x2715;</button>
+            <div onDragOver={dragHandlers.onDragOver} onDragEnter={dragHandlers.onDragEnter} onDragLeave={dragHandlers.onDragLeave} onDrop={dragHandlers.onDrop} className={`flex-grow p-2 flex justify-center items-center text-center transition-colors min-h-[100px] ${isDragOver ? 'bg-emerald-100 dark:bg-emerald-800/50' : 'bg-white dark:bg-gray-900'}`}>
+                {isOccupied ? (<ScheduledClassCard classData={classData} onDragStart={dragHandlers.onDragStart} onDragEnd={dragHandlers.onDragEnd} />) : (<span className="text-xs text-gray-400 dark:text-gray-600 italic select-none pointer-events-none">Room {room.name}</span>)}
             </div>
         </div>
     );
 };
 
 
-const ClassDetailsContent = () => {
-    const clientInitialSchedule = useMemo(() => daysOfWeek.reduce((acc, day) => { acc[day] = null; return acc; }, {}), []);
-    
-    const [schedule, setSchedule] = useState(clientInitialSchedule);
-    const [initialScheduleForCheck, setInitialScheduleForCheck] = useState(null);
-    const [isDirty, setIsDirty] = useState(false);
-
+const BuildingSchedulePage = () => {
+    // --- State Management ---
+    const [schedules, setSchedules] = useState(createInitialSchedules);
+    const [selectedDay, setSelectedDay] = useState(weekdays[0]);
+    const [selectedTime, setSelectedTime] = useState(timeSlots[0]);
+    const [selectedBuilding, setSelectedBuilding] = useState(buildings[0]);
     const [draggedItem, setDraggedItem] = useState(null);
-    const [dragOverDay, setDragOverDay] = useState(null);
-    const [searchTerm, setSearchTerm] = useState('');
+    const [dragOverCell, setDragOverCell] = useState(null);
+    // NEW State for warnings
+    const [warningCellId, setWarningCellId] = useState(null);
+    const [toastMessage, setToastMessage] = useState('');
 
-    const [isSaving, setIsSaving] = useState(false);
-    const [saveStatus, setSaveStatus] = useState('');
-    const [saveMessage, setSaveMessage] = useState('');
-    
-    const saveStatusRef = useRef(saveStatus);
-    useEffect(() => { saveStatusRef.current = saveStatus; }, [saveStatus]);
-
-    // Effect to set the baseline for dirty checking once, or when data would be "loaded"
-    useEffect(() => {
-        // In a real app, you might fetch schedule here and then set both states.
-        // For now, using the client-side initialSchedule generated by useMemo
-        setInitialScheduleForCheck(JSON.parse(JSON.stringify(clientInitialSchedule)));
-    }, [clientInitialSchedule]); // Depend on clientInitialSchedule in case it could ever change (though it won't here)
-
-    // Effect for dirty checking
-    useEffect(() => {
-        if (initialScheduleForCheck) {
-            const currentScheduleString = JSON.stringify(schedule);
-            const initialCheckString = JSON.stringify(initialScheduleForCheck);
-            setIsDirty(currentScheduleString !== initialCheckString);
-        } else {
-             // If initialScheduleForCheck is not yet set, assume not dirty or handle as per app logic
-            setIsDirty(false);
-        }
-    }, [schedule, initialScheduleForCheck]);
-
-    const availableInstructors = useMemo(() => {
-        const assignedInstructorIds = new Set();
-        Object.values(schedule).forEach(daySchedule => {
-            if (daySchedule && daySchedule.instructor) {
-                assignedInstructorIds.add(daySchedule.instructor.id);
-            }
-        });
-        let filtered = initialInstructorsData.filter(instructor => !assignedInstructorIds.has(instructor.id));
-        if (searchTerm.trim() !== '') {
-            const lowerCaseSearchTerm = searchTerm.toLowerCase();
-            filtered = filtered.filter(instructor =>
-                instructor.name.toLowerCase().includes(lowerCaseSearchTerm) ||
-                (instructor.degree && instructor.degree.toLowerCase().includes(lowerCaseSearchTerm))
-            );
-        }
-        return filtered;
-    }, [schedule, searchTerm]);
-
-    // --- Drag and Drop Handlers ---
-    const handleNewInstructorDragStart = (e, instructor) => { /* ... */ 
-        setDraggedItem({ item: instructor, type: 'new' });
-        e.dataTransfer.effectAllowed = 'move';
-        e.dataTransfer.setData('application/json', JSON.stringify(instructor));
-        e.currentTarget.classList.add('opacity-60', 'scale-95');
+    // --- Toast Handler ---
+    const showToast = (message) => {
+        setToastMessage(message);
+        setTimeout(() => {
+            setToastMessage('');
+        }, 3000);
     };
-    const handleNewInstructorDragEnd = (e) => { /* ... */ 
-        if (draggedItem?.type === 'new') { setDraggedItem(null); }
-        e.currentTarget.classList.remove('opacity-60', 'scale-95');
-        setDragOverDay(null);
+
+    // --- Derived State ---
+    const availableClasses = useMemo(() => {
+        const assignedClassIds = new Set();
+        Object.values(schedules).forEach(d => Object.values(d).forEach(t => Object.values(t).forEach(b => b.forEach(f => f.forEach(c => {
+            if (c.class) assignedClassIds.add(c.class.id);
+        })))));
+        return initialClasses.filter(c => !assignedClassIds.has(c.id));
+    }, [schedules]);
+
+    const currentGrid = useMemo(() => schedules[selectedDay]?.[selectedTime]?.[selectedBuilding] ?? [], [schedules, selectedDay, selectedTime, selectedBuilding]);
+
+    // --- Drag Handlers ---
+    const handleDragStartFromList = (e, classData) => {
+        setDraggedItem({ item: classData, type: 'new' });
+        e.currentTarget.classList.add('opacity-50');
     };
-    const handleScheduledInstructorDragStart = (e, instructor, originDay) => { /* ... */ 
-        setDraggedItem({ item: instructor, type: 'scheduled', originDay: originDay });
-        e.dataTransfer.effectAllowed = 'move';
-        e.dataTransfer.setData('application/json', JSON.stringify({ ...instructor, originDay }));
+
+    const handleDragStartFromGrid = (e, classData, originFloorIndex, originRoomIndex) => {
+        setDraggedItem({ item: classData, type: 'scheduled', origin: { day: selectedDay, time: selectedTime, building: selectedBuilding, floorIndex: originFloorIndex, roomIndex: originRoomIndex } });
     };
-    const handleScheduledInstructorDragEnd = (e) => { /* ... (Swap logic for handleDayDrop covers this effectively) ... */ 
+
+    const handleDragEnd = (e) => {
         if (draggedItem?.type === 'scheduled' && e.dataTransfer.dropEffect === 'none') {
-            setSchedule(prevSchedule => ({ ...prevSchedule, [draggedItem.originDay]: null, }));
+            const { day, time, building, floorIndex, roomIndex } = draggedItem.origin;
+            setSchedules(prev => {
+                const newSchedules = JSON.parse(JSON.stringify(prev));
+                newSchedules[day][time][building][floorIndex][roomIndex].class = null;
+                return newSchedules;
+            });
         }
-        setDraggedItem(null); setDragOverDay(null);
+        setDraggedItem(null);
+        setDragOverCell(null);
+        setWarningCellId(null); // Clear any warnings on drag end
     };
-    const handleDayDragOver = (e) => { e.preventDefault(); if (draggedItem) e.dataTransfer.dropEffect = 'move'; };
-    const handleDayDragEnter = (e, day) => { e.preventDefault(); if (draggedItem) setDragOverDay(day); };
-    const handleDayDragLeave = (e, day) => { /* ... */ 
-        if (e.currentTarget.contains(e.relatedTarget)) return;
-        if (dragOverDay === day) { setDragOverDay(null); }
+
+    const handleGridCellDragOver = (e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; };
+
+    // UPDATED: onDragEnter now handles the warning logic
+    const handleGridCellDragEnter = (e, floorIndex, roomIndex) => {
+        e.preventDefault();
+        setDragOverCell({ floorIndex, roomIndex });
+
+        // Check for warning condition: dragging a new class over an occupied cell
+        if (draggedItem?.type === 'new') {
+            const targetCell = currentGrid[floorIndex][roomIndex];
+            if (targetCell.class) {
+                setWarningCellId(targetCell.room.id);
+            }
+        }
     };
-    const handleDayDrop = (e, targetDay) => {
+    
+    // UPDATED: onDragLeave clears the warning
+    const handleGridCellDragLeave = (e) => {
+        if (!e.currentTarget.contains(e.relatedTarget)) {
+            setDragOverCell(null);
+            setWarningCellId(null);
+        }
+    };
+
+    // UPDATED: onDrop shows toast notification
+    const handleGridCellDrop = (e, targetFloorIndex, targetRoomIndex) => {
         e.preventDefault();
         if (!draggedItem) return;
-        const newSchedule = { ...schedule };
-        if (draggedItem.type === 'new') {
-            newSchedule[targetDay] = {
-                instructor: {id: draggedItem.item.id, name: draggedItem.item.name, profileImage: draggedItem.item.profileImage, degree: draggedItem.item.degree,},
-                studyMode: studyModes[0].value,
-            };
-        } else if (draggedItem.type === 'scheduled') {
-            const originDay = draggedItem.originDay;
-            if (originDay === targetDay) { setDragOverDay(null); return; }
-            const dataFromOriginDay = schedule[originDay];
-            const dataFromTargetDay = schedule[targetDay];
-            if (dataFromTargetDay && dataFromTargetDay.instructor) { // SWAP
-                newSchedule[originDay] = { instructor: dataFromTargetDay.instructor, studyMode: dataFromTargetDay.studyMode,};
-                newSchedule[targetDay] = { instructor: draggedItem.item, studyMode: dataFromOriginDay.studyMode,};
-            } else { // MOVE TO EMPTY
-                newSchedule[targetDay] = { instructor: draggedItem.item, studyMode: dataFromOriginDay.studyMode,};
-                if (originDay) { newSchedule[originDay] = null;}
-            }
-        }
-        setSchedule(newSchedule);
-        setDragOverDay(null);
-    };
-    const handleRemoveInstructorFromDay = (day) => { /* ... */ 
-        setSchedule(prevSchedule => ({ ...prevSchedule, [day]: null, }));
-    };
-    const handleStudyModeChange = (day, newMode) => { /* ... */ 
-        setSchedule(prevSchedule => {
-            if (prevSchedule[day] && prevSchedule[day].instructor) {
-                return { ...prevSchedule, [day]: { ...prevSchedule[day], studyMode: newMode, }, };
-            }
-            return prevSchedule;
-        });
-    };
 
-    // --- Save Schedule Function ---
-    const handleSaveSchedule = async () => {
-        setIsSaving(true);
-        setSaveStatus('saving');
-        setSaveMessage('Saving schedule...');
-        const schedulePayload = Object.entries(schedule)
-            .filter(([_, dayData]) => dayData && dayData.instructor)
-            .map(([day, dayData]) => ({ day: day, instructorId: dayData.instructor.id, studyMode: dayData.studyMode, }));
-        console.log("Payload to send to backend:", { schedule: schedulePayload });
-        try {
-            // --- Actual API Call (Commented Out) ---
-            // ... (API call code as before) ...
-            await new Promise(resolve => setTimeout(resolve, 2000));
-            setSaveStatus('success');
-            setSaveMessage('Schedule saved successfully!');
-            // IMPORTANT: Update the baseline for dirty checking after successful save
-            setInitialScheduleForCheck(JSON.parse(JSON.stringify(schedule)));
-        } catch (error) {
-            console.error('Failed to save schedule:', error);
-            setSaveStatus('error');
-            setSaveMessage(error.message || 'An error occurred while saving.');
-        } finally {
-            setIsSaving(false);
-            setTimeout(() => {
-                if (saveStatusRef.current !== 'saving') { 
-                    setSaveMessage('');
-                    setSaveStatus('');
+        setSchedules(prev => {
+            const newSchedules = JSON.parse(JSON.stringify(prev));
+            const targetGrid = newSchedules[selectedDay][selectedTime][selectedBuilding];
+            const targetCell = targetGrid[targetFloorIndex][targetRoomIndex];
+
+            if (draggedItem.type === 'new') {
+                if (targetCell.class) {
+                    showToast("This room is already occupied."); // Show warning message
+                    return prev; // Prevent drop
                 }
-            }, 5000);
-        }
-    };
-
-    // --- Download Schedule Function ---
-    const handleDownloadSchedule = async () => {
-        const schedulePanelElement = document.getElementById('weeklySchedulePanel');
-
-        if (!schedulePanelElement) {
-            alert("Error: Schedule panel element not found.");
-            return;
-        }
-
-        const scheduleIsEmpty = Object.values(schedule).every(dayData => !dayData || !dayData.instructor);
-        if (scheduleIsEmpty) {
-            alert("Schedule is empty. Nothing to download.");
-            return;
-        }
-
-        alert("Generating PDF, please wait... ⏳");
-
-        try {
-            const canvas = await html2canvas(schedulePanelElement, {
-                scale: 4, // Using a higher scale can improve image quality in the PDF
-                useCORS: true, // If you ever load images from other domains onto the schedule
-                logging: false, // Set to true for debugging html2canvas issues
-                // Adjust width/height or scroll properties if content is cut off
-                // For example, if your panel has specific scroll dimensions:
-                // windowWidth: schedulePanelElement.scrollWidth,
-                // windowHeight: schedulePanelElement.scrollHeight,
-            });
-
-            const imgData = canvas.toDataURL('image/png'); // Get image data from canvas
-
-            // Determine PDF orientation based on aspect ratio (optional, landscape is often good for schedules)
-            const orientation = canvas.width > canvas.height ? 'l' : 'p'; // 'l' for landscape, 'p' for portrait
-            
-            const pdf = new jsPDF({
-                orientation: orientation,
-                unit: 'pt', // points are a common unit
-                format: 'a4' // standard page size
-            });
-
-            const pdfWidth = pdf.internal.pageSize.getWidth();
-            const pdfHeight = pdf.internal.pageSize.getHeight();
-            
-            // Calculate image dimensions to fit into PDF page while maintaining aspect ratio
-            const imgProps = pdf.getImageProperties(imgData);
-            const imgWidth = imgProps.width;
-            const imgHeight = imgProps.height;
-            const ratio = imgWidth / imgHeight;
-
-            let newImgWidth = pdfWidth - 20; // With some margin (10pt each side)
-            let newImgHeight = newImgWidth / ratio;
-
-            if (newImgHeight > pdfHeight - 20) {
-                newImgHeight = pdfHeight - 20; // With some margin
-                newImgWidth = newImgHeight * ratio;
+                targetCell.class = draggedItem.item;
+            } else if (draggedItem.type === 'scheduled') {
+                const { day: originDay, time: originTime, building: originBuilding, floorIndex: originFloorIndex, roomIndex: originRoomIndex } = draggedItem.origin;
+                if (originDay === selectedDay && originTime === selectedTime && originBuilding === selectedBuilding && originFloorIndex === targetFloorIndex && originRoomIndex === targetRoomIndex) return prev;
+                
+                const originGrid = newSchedules[originDay][originTime][originBuilding];
+                const originCell = originGrid[originFloorIndex][originRoomIndex];
+                
+                const tempClass = targetCell.class;
+                targetCell.class = originCell.class;
+                originCell.class = tempClass;
             }
-            
-            // Center the image on the page (optional)
-            const xOffset = (pdfWidth - newImgWidth) / 2;
-            const yOffset = (pdfHeight - newImgHeight) / 2;
-
-            pdf.addImage(imgData, 'PNG', xOffset, yOffset, newImgWidth, newImgHeight);
-            pdf.save('class_schedule.pdf'); // Triggers download
-
-            // No need for an alert here, the browser's download prompt is sufficient
-            // alert("PDF download initiated!");
-
-        } catch (error) {
-            console.error("Error generating PDF:", error);
-            alert("Failed to generate PDF. Please check the console for details.");
-        }
+            return newSchedules;
+        });
+        
+        setDragOverCell(null);
+        setWarningCellId(null); // Clear warnings on successful drop
     };
-
-    // --- Button Classes based on state ---
-    let saveButtonBaseClasses = "w-full sm:w-auto px-6 py-2 text-white font-semibold rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-opacity-50 transition-all duration-150 ease-in-out transform active:scale-95";
-    let saveButtonColorClasses = "";
-    let downloadButtonBaseClasses = "w-full sm:w-auto px-6 py-2 text-white font-semibold rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-opacity-50 transition-colors duration-150 ease-in-out transform active:scale-95";
-    let downloadButtonColorClasses = "";
-
-    if (isSaving) {
-        saveButtonColorClasses = "bg-gray-400 opacity-60 cursor-not-allowed"; // Saving state
-        downloadButtonColorClasses = "bg-gray-300 hover:bg-gray-300 focus:ring-gray-200 opacity-60 cursor-not-allowed"; // Disabled during save
-    } else if (isDirty) {
-        saveButtonColorClasses = "bg-blue-600 hover:bg-blue-700 focus:ring-blue-500"; // Dirty: Save is blue
-        downloadButtonColorClasses = "bg-gray-400 hover:bg-gray-500 focus:ring-gray-300 opacity-80"; // Dirty: Download is gray
-    } else {
-        saveButtonColorClasses = "bg-gray-400 opacity-80 cursor-not-allowed"; // Clean: Save is gray (disabled appearance)
-        downloadButtonColorClasses = "bg-blue-500 hover:bg-blue-600 focus:ring-blue-400"; // Clean: Download is blue
-    }
-    
-    const scheduleIsEmpty = Object.values(schedule).every(dayData => !dayData || !dayData.instructor);
 
     return (
-        <div className='p-6 dark:text-white'>
-            <div className="section-title font-semibold text-lg text-num-dark-text dark:text-white mb-1">Class Details & Schedule</div>
-            <hr className="border-t border-slate-300 dark:border-slate-700 mt-2 mb-4" />
-            <div className="class-section flex flex-col gap-6">
-                <div className='flex-grow flex flex-col lg:flex-row gap-6 min-w-[300px]'>
-                    {/* Instructor Panel */}
-                    <div className='h-[530px] lg:w-[250px] xl:w-[280px] flex-shrink-0 p-4 bg-white border border-num-gray-light dark:bg-gray-800 dark:border-gray-700 shadow-custom-light rounded-lg self-start flex flex-col'>
-                        <div> 
-                            <h3 className="text-base sm:text-lg font-semibold mb-2 text-num-dark-text dark:text-gray-100 border-b dark:border-gray-600 pb-2">Available Instructors</h3>
-                            <div className="my-3">
-                                <input type="text" placeholder="Search by name or degree..." className="w-full p-2 text-sm border border-gray-300 rounded-md dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200 focus:ring-sky-500 focus:border-sky-500 placeholder-gray-400 dark:placeholder-gray-500" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}/>
+        <AdminLayout activeItem="class-locations" pageTitle="Building Class Scheduler">
+            {/* NEW: Toast Notification Component */}
+            {toastMessage && (
+                <div className="fixed top-20 right-6 bg-red-500 text-white py-2 px-4 rounded-lg shadow-lg z-50 animate-pulse">
+                    <p className="font-semibold">{toastMessage}</p>
+                </div>
+            )}
+            
+            <div className='p-6 dark:text-white flex flex-col lg:flex-row gap-6 h-[calc(100vh-100px)]'>
+                {/* Left Panel */}
+                <div className='w-full lg:w-[300px] xl:w-[350px] flex-shrink-0 p-4 bg-white dark:bg-gray-900 border dark:border-gray-700 shadow-lg rounded-xl flex flex-col'>
+                    <h3 className="text-lg font-semibold mb-4 text-num-dark-text dark:text-gray-100 border-b dark:border-gray-600 pb-2">Available Classes</h3>
+                    <div className="space-y-3 flex-grow overflow-y-auto pr-2">
+                        {availableClasses.map((classData) => (
+                            <div key={classData.id} draggable onDragStart={(e) => handleDragStartFromList(e, classData)} onDragEnd={handleDragEnd} className="p-3 bg-gray-50 dark:bg-gray-800 dark:hover:bg-gray-700 border dark:border-gray-700 rounded-md shadow-sm hover:shadow-md cursor-grab active:cursor-grabbing transition-all flex items-center gap-3 group">
+                                <DefaultClassIcon className="w-8 h-8 flex-shrink-0 text-gray-400" />
+                                <div><p className="text-sm font-medium text-gray-800 dark:text-gray-200">{classData.name}</p><p className="text-xs text-gray-500 dark:text-gray-400">{classData.code}</p></div>
                             </div>
-                        </div>
-                        <div className="space-y-3 flex-grow overflow-y-auto pr-1 min-h-[200px]">
-                            {availableInstructors.length > 0 ? availableInstructors.map((instructor) => (
-                                <div key={instructor.id} draggable onDragStart={(e) => handleNewInstructorDragStart(e, instructor)} onDragEnd={handleNewInstructorDragEnd} className="p-3 bg-sky-50 dark:bg-sky-700 dark:hover:bg-sky-600 border border-sky-200 dark:border-sky-600 rounded-md shadow-sm hover:shadow-md cursor-grab active:cursor-grabbing transition-all duration-150 ease-in-out flex items-center gap-3 group">
-                                    {instructor.profileImage ? (<img src={instructor.profileImage} alt={instructor.name} className="w-10 h-10 rounded-full object-cover border border-gray-200 dark:border-gray-600 flex-shrink-0" onError={(e) => { e.currentTarget.style.display = 'none'; }}/>) : (<DefaultAvatarIcon className={`w-10 h-10 flex-shrink-0`} /> )}
-                                    <div className="flex-grow">
-                                        <p className="text-sm font-medium text-sky-800 dark:text-sky-100 group-hover:text-sky-900 dark:group-hover:text-white">{instructor.name}</p>
-                                        {instructor.degree && (<p className="text-xs text-gray-500 dark:text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300">{instructor.degree}</p>)}
-                                    </div>
-                                </div>)) : 
-                                (<p className="text-sm text-gray-500 dark:text-gray-400 italic">{searchTerm ? 'No matching instructors found.' : 'No instructors currently available or all are scheduled.'}</p>)}
+                        ))}
+                    </div>
+                </div>
+
+                {/* Right Panel */}
+                <div className='flex-1 p-4 sm:p-6 bg-white dark:bg-gray-900 border dark:border-gray-700 shadow-xl rounded-xl flex flex-col overflow-y-auto'>
+                    <div className="flex flex-row items-center justify-between mb-4 border-b dark:border-gray-600 pb-3">
+                        <h3 className="text-lg font-semibold text-num-dark-text dark:text-gray-100">Building Schedule</h3>
+                        <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 p-2 rounded-lg">
+                            {weekdays.map(day => <button key={day} onClick={() => setSelectedDay(day)} className={`px-2.5 py-2 border-2 dark:border-gray-600 border-gray-300 text-sm font-medium rounded-full transition-colors duration-200 ${selectedDay === day ? 'bg-sky-600 text-white shadow' : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600'}`}>{day}</button>)}
                         </div>
                     </div>
-
-                    {/* Scheduler Grid Panel */}
-                    <div id="weeklySchedulePanel" className='flex-1 p-4 sm:p-6 bg-white border border-num-gray-light dark:bg-gray-800 dark:border-gray-700 shadow-custom-light rounded-lg flex flex-col'>
-                        <h3 className="text-base sm:text-lg font-semibold mb-6 text-num-dark-text dark:text-gray-100 border-b dark:border-gray-600 pb-2">Weekly Class Schedule</h3>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-7 gap-3 sm:gap-4">
-                            {daysOfWeek.map((day) => (
-                                <div key={day} onDragOver={handleDayDragOver} onDragEnter={(e) => handleDayDragEnter(e, day)} onDragLeave={(e) => handleDayDragLeave(e, day)} onDrop={(e) => handleDayDrop(e, day)}
-                                    className={`p-3 rounded-lg min-h-[160px] sm:min-h-[220px] flex flex-col justify-start items-center group border-2 transition-all duration-200 ease-in-out ${dragOverDay === day && draggedItem ? 'bg-emerald-50 dark:bg-emerald-800 border-emerald-400 dark:border-emerald-500 ring-2 ring-emerald-300 dark:ring-emerald-600 scale-105 shadow-lg' : 'bg-gray-50 dark:bg-gray-800 border-dashed border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'}`}>
-                                    <h4 className="text-sm sm:text-base font-semibold text-gray-700 dark:text-gray-200 mb-3 select-none pt-1">{day}</h4>
-                                    {schedule[day] && schedule[day].instructor ? (<ScheduledInstructorCard instructorData={schedule[day]} day={day} onDragStart={handleScheduledInstructorDragStart} onDragEnd={handleScheduledInstructorDragEnd} onRemove={handleRemoveInstructorFromDay} studyMode={schedule[day].studyMode} onStudyModeChange={handleStudyModeChange}/>) : 
-                                    (<div className="flex-grow flex items-center justify-center text-xs text-gray-400 dark:text-gray-500 italic select-none px-2 text-center">Drag instructor here</div>)}
+                    
+                    <div className="flex flex-col sm:flex-row justify-between items-center mb-4 gap-4">
+                        <h4 className="text-md font-semibold text-num-dark-text dark:text-gray-200">Schedule for <span className="text-sky-600 dark:text-sky-400">{selectedDay}</span></h4>
+                        <div className="flex items-center gap-4">
+                            <div className="flex items-center gap-2"><label htmlFor="time-select" className="text-sm font-medium dark:text-gray-300">Time:</label><select id="time-select" value={selectedTime} onChange={(e) => setSelectedTime(e.target.value)} className="p-2 text-sm border border-gray-300 rounded-md dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200 focus:ring-sky-500 focus:border-sky-500">{timeSlots.map(t => <option key={t} value={t}>{t}</option>)}</select></div>
+                            <div className="flex items-center gap-2"><label htmlFor="building-select" className="text-sm font-medium dark:text-gray-300">Building:</label><select id="building-select" value={selectedBuilding} onChange={(e) => setSelectedBuilding(e.target.value)} className="p-2 text-sm border border-gray-300 rounded-md dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200 focus:ring-sky-500 focus:border-sky-500">{buildings.map(b => <option key={b} value={b}>{b}</option>)}</select></div>
+                        </div>
+                    </div>
+                    
+                    {/* Grid */}
+                    <div className="flex-grow flex flex-col gap-y-4">
+                        {currentGrid.map((floor, floorIndex) => (
+                            <div key={floorIndex}>
+                                <div className="flex items-center gap-2 mb-2"><h4 className="text-xs sm:text-sm font-medium text-slate-600 dark:text-slate-400 whitespace-nowrap">Floor {floor[0]?.room.floor}</h4><hr className="flex-1 border-t border-slate-300 dark:border-slate-700" /></div>
+                                <div className="grid gap-3" style={{ gridTemplateColumns: `repeat(${gridDimensions.cols}, 1fr)`}}>
+                                    {floor.map((cellData, roomIndex) => (
+                                        <RoomCard
+                                            key={cellData.room.id}
+                                            cellData={cellData}
+                                            isDragOver={dragOverCell?.floorIndex === floorIndex && dragOverCell?.roomIndex === roomIndex}
+                                            isWarning={warningCellId === cellData.room.id} // Pass warning prop
+                                            dragHandlers={{
+                                                onDragOver: handleGridCellDragOver,
+                                                onDragEnter: (e) => handleGridCellDragEnter(e, floorIndex, roomIndex),
+                                                onDragLeave: handleGridCellDragLeave,
+                                                onDrop: (e) => handleGridCellDrop(e, floorIndex, roomIndex),
+                                                onDragStart: (e) => handleDragStartFromGrid(e, cellData.class, floorIndex, roomIndex),
+                                                onDragEnd: handleDragEnd,
+                                            }}
+                                        />
+                                    ))}
                                 </div>
-                            ))}
-                        </div>
-                        {/* Action Buttons: Save and Download */}
-                        <div className="mt-auto pt-6 border-t border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row justify-between items-center gap-4">
-                            <div className="flex flex-col items-start gap-1 w-full sm:w-auto">
-                                <button
-                                    onClick={handleSaveSchedule}
-                                    disabled={isSaving || !isDirty} // Disable if saving OR if not dirty
-                                    className={`${saveButtonBaseClasses} ${saveButtonColorClasses}`}
-                                >
-                                    {isSaving ? ( <span className="flex items-center justify-center"><svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Saving...</span>) : 'Save Schedule'}
-                                </button>
-                                {saveMessage && (<p className={`text-xs w-full text-center sm:text-left ${saveStatus === 'success' ? 'text-green-600 dark:text-green-400' : saveStatus === 'error' ? 'text-red-600 dark:text-red-400' : 'text-gray-500 dark:text-gray-400'}`}>{saveMessage}</p>)}
                             </div>
-                            <button
-                                onClick={handleDownloadSchedule}
-                                className={`${downloadButtonBaseClasses} ${downloadButtonColorClasses}`}
-                                disabled={isSaving || scheduleIsEmpty} // Disable if saving or schedule is empty
-                            >
-                                Download Schedule
-                            </button>
-                        </div>
+                        ))}
                     </div>
                 </div>
             </div>
-        </div>
+        </AdminLayout>
     );
 };
 
-export default function ClassDetailsPage() {
-    return (
-        <AdminLayout activeItem="class" pageTitle="Class Details">
-            <ClassDetailsContent />
-        </AdminLayout>
-    );
-}
+export default BuildingSchedulePage;
