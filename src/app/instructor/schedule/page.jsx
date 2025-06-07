@@ -6,28 +6,8 @@ import InstructorLayout from '@/components/InstructorLayout';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 
-// --- Helper Components ---
-
-// Sun and Moon Icons for the toggle button
-const SunIcon = (props) => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
-        <circle cx="12" cy="12" r="5"></circle>
-        <line x1="12" y1="1" x2="12" y2="3"></line>
-        <line x1="12" y1="21" x2="12" y2="23"></line>
-        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
-        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
-        <line x1="1" y1="12" x2="3" y2="12"></line>
-        <line x1="21" y1="12" x2="23" y2="12"></line>
-        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
-        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
-    </svg>
-);
-
-const MoonIcon = (props) => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
-        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
-    </svg>
-);
+// --- ICONS REMOVED ---
+// SunIcon and MoonIcon components have been deleted.
 
 // --- Constants ---
 const DAYS_OF_WEEK = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
@@ -107,9 +87,10 @@ const ScheduleViewContent = () => {
         localStorage.setItem('theme', theme);
     }, [theme]);
 
-    const toggleTheme = () => {
-        setTheme(prevTheme => prevTheme === 'light' ? 'dark' : 'light');
-    };
+    // The toggleTheme function is no longer needed by a UI element.
+    // const toggleTheme = () => {
+    //     setTheme(prevTheme => prevTheme === 'light' ? 'dark' : 'light');
+    // };
 
     // Effect to calculate class counts
     useEffect(() => {
@@ -125,8 +106,10 @@ const ScheduleViewContent = () => {
     const handleDownloadPdf = () => {
         if (scheduleRef.current) {
             // Temporarily switch to light mode for PDF generation for consistent output
-            const originalTheme = theme;
-            document.documentElement.classList.remove('dark');
+            const originalThemeIsDark = document.documentElement.classList.contains('dark');
+            if (originalThemeIsDark) {
+                document.documentElement.classList.remove('dark');
+            }
 
             setTimeout(() => {
                 html2canvas(scheduleRef.current, {
@@ -145,13 +128,13 @@ const ScheduleViewContent = () => {
                     pdf.save(`${roomName}_Schedule.pdf`);
 
                     // Restore the original theme
-                    if (originalTheme === 'dark') {
+                    if (originalThemeIsDark) {
                         document.documentElement.classList.add('dark');
                     }
                 }).catch(err => {
                     console.error("Error generating PDF:", err);
                     // Restore theme even if there's an error
-                    if (originalTheme === 'dark') {
+                    if (originalThemeIsDark) {
                         document.documentElement.classList.add('dark');
                     }
                 });
@@ -161,29 +144,20 @@ const ScheduleViewContent = () => {
 
 
     return (
-        <div className='p-6  dark:bg-slate-900 min-h-screen'>
-            <div className="flex justify-between items-center mb-6">
-                <div>
-                    <h1 className="text-2xl font-semibold text-gray-800 dark:text-gray-100">Schedule</h1>
-                </div>
-                <button
-                    onClick={toggleTheme}
-                    className="p-2 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-slate-700"
-                    aria-label="Toggle dark mode"
-                >
-                    {theme === 'light' ? <MoonIcon /> : <SunIcon />}
-                </button>
+        <div className='p-6 bg-gray-50 dark:bg-slate-900 min-h-screen'>
+            {/* The toggle button has been removed from this header section */}
+            <div className="mb-6">
+                <h1 className="text-2xl font-semibold text-gray-800 dark:text-gray-100">Schedule</h1>
+                <hr className="border-t border-gray-200 dark:border-slate-700 mt-3" />
             </div>
-            <hr className="border-t border-gray-200 dark:border-slate-700 mt-3" />
 
-
-            <div ref={scheduleRef} className="bg-white dark:bg-slate-800 p-4 sm:p-6 rounded-lg shadow-md border border-gray-200 dark:border-slate-700 mt-6">
+            <div ref={scheduleRef} className="bg-white dark:bg-slate-800 p-4 sm:p-6 rounded-lg shadow-md border border-gray-200 dark:border-slate-700">
                 <h2 className="text-xl font-medium text-gray-700 dark:text-gray-200 mb-4">{roomName} Schedule</h2>
 
                 <div className="overflow-x-auto">
                     <div className="grid grid-cols-[minmax(100px,1.5fr)_repeat(7,minmax(120px,2fr))] border border-gray-300 dark:border-slate-600 rounded-md min-w-[900px]">
                         {/* Header Row */}
-                        <div className="font-semibold text-sm text-gray-700 dark:text-gray-300 p-3 text-center border-r border-b border-gray-300 dark:border-slate-600  dark:bg-slate-700/50 sticky top-0 z-10">Time</div>
+                        <div className="font-semibold text-sm text-gray-700 dark:text-gray-300 p-3 text-center border-r border-b border-gray-300 dark:border-slate-600 bg-gray-50 dark:bg-slate-700/50 sticky top-0 z-10">Time</div>
                         {DAYS_OF_WEEK.map(day => (
                             <div key={day} className={`font-semibold text-sm p-3 text-center border-b border-gray-300 dark:border-slate-600 ${DAY_HEADER_COLORS[day]} ${day !== 'Sunday' ? 'border-r dark:border-r-slate-600' : ''} sticky top-0 z-10`}>
                                 {day}
