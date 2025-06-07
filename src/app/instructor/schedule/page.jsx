@@ -6,10 +6,6 @@ import InstructorLayout from '@/components/InstructorLayout';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 
-// --- ICONS REMOVED ---
-// SunIcon and MoonIcon components have been deleted.
-
-// --- Constants ---
 const DAYS_OF_WEEK = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 const TIME_SLOTS = ['07:00 - 10:00', '10:30 - 13:30', '14:00 - 17:00', '17:30 - 20:30'];
 
@@ -72,7 +68,6 @@ const ScheduleViewContent = () => {
     const publicDate = "2025-06-22 13:11:46";
     const scheduleRef = useRef(null);
 
-    // Effect to handle theme changes and persist to localStorage
     useEffect(() => {
         const savedTheme = localStorage.getItem('theme') || 'light';
         setTheme(savedTheme);
@@ -87,12 +82,6 @@ const ScheduleViewContent = () => {
         localStorage.setItem('theme', theme);
     }, [theme]);
 
-    // The toggleTheme function is no longer needed by a UI element.
-    // const toggleTheme = () => {
-    //     setTheme(prevTheme => prevTheme === 'light' ? 'dark' : 'light');
-    // };
-
-    // Effect to calculate class counts
     useEffect(() => {
         let assigned = 0;
         Object.values(scheduleData).forEach(daySchedule => {
@@ -105,7 +94,6 @@ const ScheduleViewContent = () => {
 
     const handleDownloadPdf = () => {
         if (scheduleRef.current) {
-            // Temporarily switch to light mode for PDF generation for consistent output
             const originalThemeIsDark = document.documentElement.classList.contains('dark');
             if (originalThemeIsDark) {
                 document.documentElement.classList.remove('dark');
@@ -116,7 +104,7 @@ const ScheduleViewContent = () => {
                     scale: 2,
                     useCORS: true,
                     logging: true,
-                    backgroundColor: '#ffffff' // Force a white background
+                    backgroundColor: '#ffffff' 
                 }).then(canvas => {
                     const imgData = canvas.toDataURL('image/png');
                     const pdf = new jsPDF({
@@ -127,25 +115,22 @@ const ScheduleViewContent = () => {
                     pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
                     pdf.save(`${roomName}_Schedule.pdf`);
 
-                    // Restore the original theme
                     if (originalThemeIsDark) {
                         document.documentElement.classList.add('dark');
                     }
                 }).catch(err => {
                     console.error("Error generating PDF:", err);
-                    // Restore theme even if there's an error
                     if (originalThemeIsDark) {
                         document.documentElement.classList.add('dark');
                     }
                 });
-            }, 100); // Small delay to ensure styles are re-rendered
+            }, 100); 
         }
     };
 
 
     return (
         <div className='p-6 bg-gray-50 dark:bg-slate-900 min-h-screen'>
-            {/* The toggle button has been removed from this header section */}
             <div className="mb-6">
                 <h1 className="text-2xl font-semibold text-gray-800 dark:text-gray-100">Schedule</h1>
                 <hr className="border-t border-gray-200 dark:border-slate-700 mt-3" />
