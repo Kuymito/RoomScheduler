@@ -1,20 +1,243 @@
-import InstructorLayout from '@/components/InstructorLayout';
+'use client';
 
-const ScheduleViewContent = () => {    
+import React from 'react';
+import { useState, useEffect, useRef } from 'react';
+import InstructorLayout from '@/components/InstructorLayout';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
+
+// --- Helper Components ---
+
+// Sun and Moon Icons for the toggle button
+const SunIcon = (props) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+        <circle cx="12" cy="12" r="5"></circle>
+        <line x1="12" y1="1" x2="12" y2="3"></line>
+        <line x1="12" y1="21" x2="12" y2="23"></line>
+        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+        <line x1="1" y1="12" x2="3" y2="12"></line>
+        <line x1="21" y1="12" x2="23" y2="12"></line>
+        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+);
+
+const MoonIcon = (props) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+    </svg>
+);
+
+// --- Constants ---
+const DAYS_OF_WEEK = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+const TIME_SLOTS = ['07:00 - 10:00', '10:30 - 13:30', '14:00 - 17:00', '17:30 - 20:30'];
+
+const DAY_HEADER_COLORS = {
+    Monday: 'bg-yellow-50 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-200',
+    Tuesday: 'bg-purple-50 text-purple-800 dark:bg-purple-900/50 dark:text-purple-200',
+    Wednesday: 'bg-green-50 text-green-800 dark:bg-green-900/50 dark:text-green-200',
+    Thursday: 'bg-green-50 text-green-800 dark:bg-green-900/50 dark:text-green-200',
+    Friday: 'bg-blue-50 text-blue-800 dark:bg-blue-900/50 dark:text-blue-200',
+    Saturday: 'bg-orange-50 text-orange-800 dark:bg-orange-900/50 dark:text-orange-200',
+    Sunday: 'bg-pink-50 text-pink-800 dark:bg-pink-900/50 dark:text-pink-200',
+};
+const SCHEDULE_ITEM_BG_COLOR = 'bg-green-50 dark:bg-slate-700';
+
+const initialScheduleData = {
+    'Monday': {
+        '07:00 - 10:00': { subject: '32/27 IT', year: 'Year 2', semester: 'Semester 1', timeDisplay: '07:00 - 10:00' },
+        '17:30 - 20:30': { subject: '32/34 MG', year: 'Year 2', semester: 'Semester 1', timeDisplay: '17:30 - 20:30' },
+    },
+    'Tuesday': {},
+    'Wednesday': {
+        '10:30 - 13:30': { subject: '33/29 FA', year: 'Year 1', semester: 'Semester 1', timeDisplay: '10:30 - 13:30' },
+    },
+    'Thursday': {
+        '14:00 - 17:00': { subject: '32/98 law', year: 'Year 2', semester: 'Semester 1', timeDisplay: '14:00 - 17:00' },
+    },
+    'Friday': {
+        '07:00 - 10:00': { subject: '31/35 MG', year: 'Year 3', semester: 'Semester 1', timeDisplay: '07:00 - 10:00' },
+        '17:30 - 20:30': { subject: '30/11 IT', year: 'Year 4', semester: 'Semester 2', timeDisplay: '17:30 - 20:30' },
+    },
+    'Saturday': {},
+    'Sunday': {},
+};
+
+const ROW_CONFIG = {
+    '07:00 - 10:00': { heightClass: 'h-36' },
+    '10:30 - 13:30': { heightClass: 'h-28' },
+    '14:00 - 17:00': { heightClass: 'h-28' },
+    '17:30 - 20:30': { heightClass: 'h-36' },
+};
+
+
+const ScheduleItemCard = ({ item }) => (
+    <div className={`${SCHEDULE_ITEM_BG_COLOR} p-2 h-full w-full flex flex-col text-xs rounded-md shadow-sm border border-green-200 dark:border-slate-600`}>
+        <div className="flex justify-between items-start mb-1">
+            <span className="font-semibold text-[13px] text-gray-800 dark:text-gray-100">{item.subject}</span>
+            <span className="text-gray-500 dark:text-gray-400 text-[10px] leading-tight pt-0.5">{item.timeDisplay}</span>
+        </div>
+        <div className="text-gray-700 dark:text-gray-300 text-[11px]">{item.year}</div>
+        <div className="mt-auto text-right text-gray-500 dark:text-gray-400 text-[11px]">{item.semester}</div>
+    </div>
+);
+
+const ScheduleViewContent = () => {
+    const [scheduleData, setScheduleData] = useState(initialScheduleData);
+    const [roomName, setRoomName] = useState("Room A21");
+    const [classAssignCount, setClassAssignCount] = useState(0);
+    const [availableShiftCount, setAvailableShiftCount] = useState(0);
+    const [theme, setTheme] = useState('light');
+    const publicDate = "2025-06-22 13:11:46";
+    const scheduleRef = useRef(null);
+
+    // Effect to handle theme changes and persist to localStorage
+    useEffect(() => {
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        setTheme(savedTheme);
+    }, []);
+
+    useEffect(() => {
+        if (theme === 'dark') {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+        localStorage.setItem('theme', theme);
+    }, [theme]);
+
+    const toggleTheme = () => {
+        setTheme(prevTheme => prevTheme === 'light' ? 'dark' : 'light');
+    };
+
+    // Effect to calculate class counts
+    useEffect(() => {
+        let assigned = 0;
+        Object.values(scheduleData).forEach(daySchedule => {
+            assigned += Object.keys(daySchedule).length;
+        });
+        setClassAssignCount(assigned);
+        const totalSlots = TIME_SLOTS.length * DAYS_OF_WEEK.length;
+        setAvailableShiftCount(totalSlots - assigned);
+    }, [scheduleData]);
+
+    const handleDownloadPdf = () => {
+        if (scheduleRef.current) {
+            // Temporarily switch to light mode for PDF generation for consistent output
+            const originalTheme = theme;
+            document.documentElement.classList.remove('dark');
+
+            setTimeout(() => {
+                html2canvas(scheduleRef.current, {
+                    scale: 2,
+                    useCORS: true,
+                    logging: true,
+                    backgroundColor: '#ffffff' // Force a white background
+                }).then(canvas => {
+                    const imgData = canvas.toDataURL('image/png');
+                    const pdf = new jsPDF({
+                        orientation: 'landscape',
+                        unit: 'px',
+                        format: [canvas.width, canvas.height]
+                    });
+                    pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
+                    pdf.save(`${roomName}_Schedule.pdf`);
+
+                    // Restore the original theme
+                    if (originalTheme === 'dark') {
+                        document.documentElement.classList.add('dark');
+                    }
+                }).catch(err => {
+                    console.error("Error generating PDF:", err);
+                    // Restore theme even if there's an error
+                    if (originalTheme === 'dark') {
+                        document.documentElement.classList.add('dark');
+                    }
+                });
+            }, 100); // Small delay to ensure styles are re-rendered
+        }
+    };
+
+
     return (
-        <div className="p-6 dark:text-white">
-            <h1 className="text-lg font-bold mb-4">Schedule</h1>
-            <hr className="border-t border-gray-200 mt-4 mb-4" />
-            <p>Welcome to the instructor Schedule Management.</p>
-        {/* Add more dashboard content here */}
+        <div className='p-6  dark:bg-slate-900 min-h-screen'>
+            <div className="flex justify-between items-center mb-6">
+                <div>
+                    <h1 className="text-2xl font-semibold text-gray-800 dark:text-gray-100">Schedule</h1>
+                </div>
+                <button
+                    onClick={toggleTheme}
+                    className="p-2 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-slate-700"
+                    aria-label="Toggle dark mode"
+                >
+                    {theme === 'light' ? <MoonIcon /> : <SunIcon />}
+                </button>
+            </div>
+            <hr className="border-t border-gray-200 dark:border-slate-700 mt-3" />
+
+
+            <div ref={scheduleRef} className="bg-white dark:bg-slate-800 p-4 sm:p-6 rounded-lg shadow-md border border-gray-200 dark:border-slate-700 mt-6">
+                <h2 className="text-xl font-medium text-gray-700 dark:text-gray-200 mb-4">{roomName} Schedule</h2>
+
+                <div className="overflow-x-auto">
+                    <div className="grid grid-cols-[minmax(100px,1.5fr)_repeat(7,minmax(120px,2fr))] border border-gray-300 dark:border-slate-600 rounded-md min-w-[900px]">
+                        {/* Header Row */}
+                        <div className="font-semibold text-sm text-gray-700 dark:text-gray-300 p-3 text-center border-r border-b border-gray-300 dark:border-slate-600  dark:bg-slate-700/50 sticky top-0 z-10">Time</div>
+                        {DAYS_OF_WEEK.map(day => (
+                            <div key={day} className={`font-semibold text-sm p-3 text-center border-b border-gray-300 dark:border-slate-600 ${DAY_HEADER_COLORS[day]} ${day !== 'Sunday' ? 'border-r dark:border-r-slate-600' : ''} sticky top-0 z-10`}>
+                                {day}
+                            </div>
+                        ))}
+
+                        {/* Data Rows */}
+                        {TIME_SLOTS.map(timeSlot => (
+                            <React.Fragment key={timeSlot}>
+                                <div className={`p-3 text-sm font-medium text-gray-600 dark:text-gray-400 text-center border-r border-gray-300 dark:border-slate-600 ${timeSlot !== TIME_SLOTS[TIME_SLOTS.length - 1] ? 'border-b' : ''} ${ROW_CONFIG[timeSlot].heightClass} flex items-center justify-center bg-gray-50 dark:bg-slate-700/50`}>
+                                    {timeSlot}
+                                </div>
+                                {DAYS_OF_WEEK.map(day => {
+                                    const item = scheduleData[day]?.[timeSlot];
+                                    return (
+                                        <div
+                                            key={`${day}-${timeSlot}`}
+                                            className={`p-1.5 border-gray-300 dark:border-slate-600 ${day !== 'Sunday' ? 'border-r' : ''} ${timeSlot !== TIME_SLOTS[TIME_SLOTS.length - 1] ? 'border-b' : ''} ${ROW_CONFIG[timeSlot].heightClass} flex items-stretch justify-stretch`}
+                                        >
+                                            {item ? <ScheduleItemCard item={item} /> : <div className="w-full h-full"></div>}
+                                        </div>
+                                    );
+                                })}
+                            </React.Fragment>
+                        ))}
+                    </div>
+                </div>
+            </div>
+
+            <div className="mt-6 text-sm text-gray-700 dark:text-gray-300 space-y-1">
+                <p>• Class assign <span className="font-semibold">: {classAssignCount}</span></p>
+                <p>• Available shift <span className="font-semibold">: {availableShiftCount}</span></p>
+            </div>
+
+            <div className="mt-8 flex flex-col sm:flex-row justify-between items-center">
+                <button
+                    onClick={handleDownloadPdf}
+                    className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 px-6 rounded-md shadow-sm order-1 sm:order-2 mb-4 sm:mb-0 dark:bg-blue-500 dark:hover:bg-blue-600"
+                >
+                    Download PDF file
+                </button>
+                <p className="text-sm text-gray-500 dark:text-gray-400 order-2 sm:order-1">
+                    Public Date : {publicDate}
+                </p>
+            </div>
         </div>
     );
 };
 
-export default function InstructorSchedulePage() {
+
+export default function AdminSchedulePage() {
     return (
-        <InstructorLayout activeItem="schedule" pageTitle="Schedule Management">
-            <ScheduleViewContent/>
+        <InstructorLayout activeItem="schedule" pageTitle="Schedule">
+            <ScheduleViewContent />
         </InstructorLayout>
     );
 }
