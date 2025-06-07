@@ -41,8 +41,8 @@ export default function DashboardLayout({ children, activeItem, pageTitle }) {
     const handleLogoutClick = () => { setShowAdminPopup(false); setShowLogoutAlert(true); };
     const handleCloseLogoutAlert = () => setShowLogoutAlert(false);
     const handleConfirmLogout = () => { 
-        alert('Logged out'); 
-        setShowLogoutAlert(false); 
+        setShowLogoutAlert(false);
+        router.push('/auth/login');
     };
 
     const handleNavItemClick = (item) => {

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from 'react';
-import { useRouter } from 'next/navigation'; // Import useRouter
+import { useRouter } from 'next/navigation';
 import { Moul } from 'next/font/google';
 
 const moul = Moul({
@@ -13,7 +13,8 @@ const LoginForm = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [passwordVisible, setPasswordVisible] = useState(false);
-  const router = useRouter(); // Initialize useRouter
+  const [isLoading, setIsLoading] = useState(false); // State for loading
+  const router = useRouter();
 
   const togglePasswordVisibility = () => {
     setPasswordVisible(!passwordVisible);
@@ -30,30 +31,68 @@ const LoginForm = () => {
     } else if (!password) {
       alert("Please enter your password.");
       return;
-    }else if(!email){
+    } else if(!email){
       alert("Please enter your email.")
       return;
     }
-    else if (email !== correctEmail || password !== correctPassword) {
+    
+    if (email !== correctEmail || password !== correctPassword) {
       alert("Incorrect email or password. Please try again.");
       return;
     } else {
-    //   alert('Login successful!');
+      setIsLoading(true); // Show loading state
       console.log("Logging in with:", { email, password });
-      router.push('/admin/dashboard'); // Redirect to the dashboard page
+      
+      // Simulate a delay for the loading state to be visible before navigation
+      setTimeout(() => {
+        router.push('/admin/dashboard');
+        // It's often not necessary to set isLoading back to false here,
+        // as the component will unmount upon successful navigation.
+      }, 1500); // 1.5-second delay, adjust as needed
     }
   };
 
+  // If isLoading is true, render the loading screen
+  if (isLoading) {
+    return (
+      <div className="min-h-screen w-screen flex flex-col items-center justify-center bg-blue-100 text-center p-6">
+        <img 
+          src="https://numregister.com/assets/img/logo/num.png" 
+          alt="University Logo" 
+          className="mx-auto mb-6 w-24 sm:w-28 md:w-32" 
+        />
+        <h1 className={`${moul.className} text-2xl sm:text-3xl font-bold mb-3 text-blue-800`}>
+          សាកលវិទ្យាល័យជាតិគ្រប់គ្រង
+        </h1>
+        <h2 className="text-xl sm:text-2xl font-medium mb-8 text-blue-700">
+          National University of Management
+        </h2>
+        <p className="text-lg sm:text-xl text-gray-700 font-semibold mb-4">
+          Logging in, please wait...
+        </p>
+        {/* Simple Tailwind CSS Spinner */}
+        <div 
+          className="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-blue-600"
+          role="status"
+        >
+          <span className="sr-only">Loading...</span>
+        </div>
+      </div>
+    );
+  }
+
+  // Otherwise, render the login form
   return (
     <div className="min-h-screen w-screen flex flex-col lg:flex-row font-sans">
-      <div className="lg:w-3/5 w-full bg-blue-100 text-white flex items-center justify-center p-6 sm:p-8 md:p-12 lg:p-16 relative overflow-hidden">
+      {/* Left Column (Informational) */}
+      <div className="w-[2500px] bg-blue-400 text-white flex items-center justify-center p-6 sm:p-8 md:p-12 lg:p-16 relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-blue-900 to-blue-700 opacity-75"></div>
         <div className="relative z-10 max-w-sm sm:max-w-md lg:max-w-lg">
           <img src="https://numregister.com/assets/img/logo/num.png" alt="University Logo" className="mx-auto mb-4 w-16 sm:w-20 md:w-24 lg:w-28" />
           <h1 className={`${moul.className} text-3xl font-bold mb-2 text-center`}>សាកលវិទ្យាល័យជាតិគ្រប់គ្រង</h1>
           <h2 className="text-2xl font-medium mb-6 text-center">Nation University of Management</h2>
           <h3 className="text-lg font-medium mb-3">Welcome student login form.</h3>
-          <p className="text-sm leading-relaxed">
+          <p className="text-md leading-relaxed">
             First, as the Rector of the National University of Management (NUM), I would like to
             sincerely welcome you to our institution here in the Capital City of Phnom Penh,
             Cambodia. For those who have become our partners and friends, I extend a heartfelt
@@ -65,8 +104,8 @@ const LoginForm = () => {
         </div>
       </div>
 
-      {/* Right Column */}
-      <div className="lg:w-2/5 w-full bg-white flex items-center justify-center p-6 sm:p-8 md:p-12 lg:p-16">
+      {/* Right Column (Login Form) */}
+      <div className="w-full bg-white flex items-center justify-center p-6 sm:p-8 md:p-12 lg:p-16">
         <div className="w-full max-w-xs sm:max-w-sm md:max-w-md">
           <h2 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-6 text-center">Welcome back!</h2>
           <p className="text-sm sm:text-base text-gray-600 mb-4 text-center">Please sign in to continue.</p>
@@ -117,12 +156,12 @@ const LoginForm = () => {
 
             <div className="flex flex-col items-center justify-between">
               <button
-                  type="submit"
+                type="submit"
                 className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-3 rounded-lg transition duration-150 ease-in-out mb-3"
               >
                 Login
               </button>
-              <a href="#" className="text-sm text-blue-600 hover:text-blue-800">Forgot Password</a>
+              <a href="/admin/dashboard" className="text-sm text-blue-600 hover:text-blue-800">Forgot Password</a>
             </div>
           </form>
         </div>
