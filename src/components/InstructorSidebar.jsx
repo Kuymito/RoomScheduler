@@ -2,9 +2,8 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import React from 'react'; // Import React
+import React from 'react'; 
 
-// --- Icon Components ---
 const DashboardIcon = ({ className }) => (
   <svg className={className} width="15" height="16" viewBox="0 0 15 16" fill="none" xmlns="http://www.w3.org/2000/svg">
     <path d="M13.75 5.52422V2.68672C13.75 1.80547 13.35 1.44922 12.3563 1.44922H9.83125C8.8375 1.44922 8.4375 1.80547 8.4375 2.68672V5.51797C8.4375 6.40547 8.8375 6.75547 9.83125 6.75547H12.3563C13.35 6.76172 13.75 6.40547 13.75 5.52422Z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round"/>
@@ -54,14 +53,18 @@ const ScheduleIcon = ({ className }) => (
   </svg>
 );
 
-const NavItem = ({ href, icon: Icon, label, isActive, isCollapsed, onClick }) => (
-  <Link href={href} passHref legacyBehavior>
-    <a
+const NavItem = ({ href, icon: Icon, label, isActive, isCollapsed, onClick }) => {
+  // The 'return' statement contains JSX markup.
+  return (
+    <Link
+      href={href}
       onClick={onClick}
+      // 'className' is JSX for the HTML 'class' attribute.
       className={`nav-item flex items-center py-2.5 mb-1.5 rounded-[5px] cursor-pointer overflow-hidden transition-all duration-150 ease-in-out hover:bg-gray-100 dark:hover:bg-gray-800
         ${isActive ? 'hover:bg-sky-100 dark:hover:bg-blue-800' : ''}
         ${isCollapsed ? 'px-0 justify-center' : 'px-[60px]'}`}
     >
+      {/* JavaScript expressions like this are embedded directly in JSX */}
       <div className={`nav-icon-wrapper transition-all duration-300 ease-in-out flex-shrink-0 ${isCollapsed ? 'mr-0' : 'mr-[15px]'}`}>
         <Icon className={`h-[15px] w-[15px] ${isActive ? 'text-num-blue' : 'text-[#737373] dark:text-gray-300'}`} />
       </div>
@@ -72,9 +75,9 @@ const NavItem = ({ href, icon: Icon, label, isActive, isCollapsed, onClick }) =>
       >
         {label}
       </div>
-    </a>
-  </Link>
-);
+    </Link>
+  );
+};
 
 const InstructorSidebar = ({ isCollapsed, activeItem, onNavItemClick }) => {
   const navItemsData = [
