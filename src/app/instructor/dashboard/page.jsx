@@ -6,6 +6,7 @@ import InstructorDashboardHeader from './components/InstructorDashboardHeader';
 import ScheduleTable from './components/ScheduleTable';
 import ClassCard from './components/ClassCard';
 
+// --- MOCK API CALLS (No changes here) ---
 const fetchDashboardData = async () => {
   return new Promise(resolve => setTimeout(() => resolve({
     classAssign: 65,
@@ -13,7 +14,7 @@ const fetchDashboardData = async () => {
     onlineClass: 28,
     currentDate: '19 May 2025',
     academicYear: '2025 - 2026',
-  }), 500));
+  }), 1500)); // Increased delay to better see the skeleton
 };
 
 const fetchScheduleTableData = async () => {
@@ -24,8 +25,76 @@ const fetchScheduleTableData = async () => {
     { id: 4, classNum: '32/15', major: 'IT', date: 'Thursday', session: 'Online', shift: '02:00 - 05:00', room: 'Unavailable' },
     { id: 5, classNum: '32/49', major: 'IT', date: 'Friday', session: 'Online', shift: '07:00 - 10:00', room: 'Unavailable' },
     { id: 6, classNum: '31/17', major: 'BIT', date: 'Saturday', session: 'Online', shift: '05:30 - 08:30', room: 'Unavailable' },
-  ]), 100));
+  ]), 1500));
 };
+
+// ===================================================================
+// --- NEW SKELETON COMPONENTS ---
+// ===================================================================
+
+const HeaderSkeleton = () => (
+    <div className="animate-pulse flex justify-between items-start">
+        <div>
+            <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded-full w-72 mb-4"></div>
+            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded-full w-96 mb-2"></div>
+            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded-full w-80"></div>
+        </div>
+        <div className="text-right">
+            <div className="h-5 bg-gray-200 dark:bg-gray-700 rounded-full w-32 mb-2"></div>
+            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded-full w-40"></div>
+        </div>
+    </div>
+);
+
+const CardSkeleton = () => (
+    <div className="animate-pulse p-5 bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-200 dark:border-gray-700">
+        <div className="h-5 bg-gray-200 dark:bg-gray-700 rounded-full w-24 mb-4"></div>
+        <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded-full w-16"></div>
+    </div>
+);
+
+const TableSkeleton = ({ rows = 6 }) => (
+    <div className="animate-pulse mt-6 overflow-x-auto relative border border-gray-200 dark:border-gray-700 rounded-xl">
+        <div className="w-full">
+            {/* Table Header */}
+            <div className="flex bg-gray-50 dark:bg-gray-700/50 p-4">
+                <div className="w-1/6 h-4 bg-gray-300 dark:bg-gray-600 rounded-full"></div>
+                <div className="w-1/6 h-4 bg-gray-300 dark:bg-gray-600 rounded-full ml-4"></div>
+                <div className="w-1/6 h-4 bg-gray-300 dark:bg-gray-600 rounded-full ml-4"></div>
+                <div className="w-1/6 h-4 bg-gray-300 dark:bg-gray-600 rounded-full ml-4"></div>
+                <div className="w-1/6 h-4 bg-gray-300 dark:bg-gray-600 rounded-full ml-4"></div>
+                <div className="w-1/6 h-4 bg-gray-300 dark:bg-gray-600 rounded-full ml-4"></div>
+            </div>
+            {/* Table Body */}
+            <div className="p-4 space-y-4">
+                {Array.from({ length: rows }).map((_, i) => (
+                    <div key={i} className="flex items-center">
+                        <div className="w-1/6 h-4 bg-gray-200 dark:bg-gray-700 rounded-full"></div>
+                        <div className="w-1/6 h-4 bg-gray-200 dark:bg-gray-700 rounded-full ml-4"></div>
+                        <div className="w-1/6 h-4 bg-gray-200 dark:bg-gray-700 rounded-full ml-4"></div>
+                        <div className="w-1/6 h-4 bg-gray-200 dark:bg-gray-700 rounded-full ml-4"></div>
+                        <div className="w-1/6 h-4 bg-gray-200 dark:bg-gray-700 rounded-full ml-4"></div>
+                        <div className="w-1/6 h-4 bg-gray-200 dark:bg-gray-700 rounded-full ml-4"></div>
+                    </div>
+                ))}
+            </div>
+        </div>
+    </div>
+);
+
+// This component assembles all the skeleton parts into the page layout
+const DashboardSkeleton = () => (
+    <>
+        <HeaderSkeleton />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-6">
+            <CardSkeleton />
+            <CardSkeleton />
+            <CardSkeleton />
+            <CardSkeleton />
+        </div>
+        <TableSkeleton />
+    </>
+);
 
 
 const InstructorDashboardViewContent = () => {
@@ -52,21 +121,15 @@ const InstructorDashboardViewContent = () => {
     loadInitialData();
   }, []);
 
+  // --- UPDATED LOADING STATE ---
   if (loading) {
-    return (
-      <div className="flex justify-center items-center h-screen dark:text-gray-200">
-        <svg className="animate-spin h-10 w-10 text-blue-600 dark:text-blue-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-        </svg>
-        <span className="ml-3 text-gray-700 dark:text-gray-300">Loading dashboard...</span>
-      </div>
-    );
+    return <DashboardSkeleton />;
   }
 
   if (!dashboardStats) {
     return <div className="text-center text-red-500">Failed to load dashboard data. Please try again later.</div>;
   }
+
   const { classAssign, ClassToday, onlineClass, currentDate, academicYear } = dashboardStats;
 
   return (
@@ -82,6 +145,8 @@ const InstructorDashboardViewContent = () => {
         <ClassCard title="Class Assign" value={classAssign} />
         <ClassCard title="Class Today" value={ClassToday} />
         <ClassCard title="Online Class" value={onlineClass} />
+        {/* We only have 3 stats, so the 4th card is empty, which is fine */}
+         <div /> 
       </div>
 
       <div className="mt-6">
