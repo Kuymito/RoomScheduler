@@ -1,18 +1,16 @@
-// components/ClassCreatePopup.jsx
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
 
 const ClassCreatePopup = ({ isOpen, onClose, onSave }) => {
-    // Define options for select fields
+    /// --- State Variables ---
     const generationOptions = ['30', '31', '32', '33', '34', '35'];
     const majorOptions = ['IT', 'CS', 'IS', 'SE', 'AI', 'DS', 'ML', 'DA'];
     const degreesOptions = ['Associate', 'Bachelor', 'Master', 'PhD'];
     const facultyOptions = ['Faculty of IT', 'Faculty of CS', 'Faculty of IS', 'Faculty of AI', 'Faculty of DS', 'Faculty of ML', 'Faculty of DA', 'Faculty of SE']; // Example faculties
     const semesterOptions = ['Semester 1', 'Semester 2', 'Semester 3', 'Semester 4', 'Semester 5', 'Semester 6']; // Example semesters
     const shiftOptions = ['7:00 - 10:00', '8:00 - 11:00', '9:00 - 12:00', '13:00 - 16:00', '15:00 - 18:00', '17:00 - 20:00', '18:00 - 21:00', '19:00 - 22:00']; // Example shifts
-
-    // State to manage the form fields for the new class
+    const popupRef = useRef(null);
     const [newClass, setNewClass] = useState({
         name: '',
         generation: generationOptions[0], // Default to first option
@@ -23,11 +21,8 @@ const ClassCreatePopup = ({ isOpen, onClose, onSave }) => {
         semester: semesterOptions[0],     // Default to first option
         shift: shiftOptions[0],           // Default to first option
     });
-
-    // Create a ref to store the DOM element of the popup content
-    const popupRef = useRef(null);
-
-    // Handle changes to form input/select fields
+    
+    // --- Handlers ---
     const handleInputChange = (e) => {
         const { name, value } = e.target;
         setNewClass(prev => ({
@@ -36,7 +31,6 @@ const ClassCreatePopup = ({ isOpen, onClose, onSave }) => {
         }));
     };
 
-    // Handle form submission
     const handleSubmit = (e) => {
         e.preventDefault(); // Prevent default form submission behavior
 
@@ -81,7 +75,7 @@ const ClassCreatePopup = ({ isOpen, onClose, onSave }) => {
         onClose();
     };
 
-    // Effect to handle clicks outside the popup
+    // --- Hooks ---
     useEffect(() => {
         const handleClickOutside = (event) => {
             // If the modal is open and the click is outside the popup content
@@ -99,9 +93,9 @@ const ClassCreatePopup = ({ isOpen, onClose, onSave }) => {
         return () => {
             document.removeEventListener('mousedown', handleClickOutside);
         };
-    }, [isOpen, onClose]); // Re-run effect if isOpen or onClose changes
+    }, [isOpen, onClose]);
 
-    // If the modal is not open, return null to render nothing
+    // --- Render Logic ---
     if (!isOpen) {
         return null;
     }
@@ -109,32 +103,32 @@ const ClassCreatePopup = ({ isOpen, onClose, onSave }) => {
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
             {/* Attach the ref to the inner div which represents the actual popup content */}
-            <div ref={popupRef} className="relative p-6 bg-white rounded-lg shadow-lg max-w-xl w-full dark:bg-gray-800 dark:text-white">
-                <h2 className="text-xl font-bold mb-3">Create New Class</h2>
+            <div ref={popupRef} className="relative p-5 bg-white rounded-lg shadow-lg max-w-lg w-full dark:bg-gray-800 dark:text-white">
+                <h2 className="text-mb font-bold mb-3">Create New Class</h2>
                 <hr className="border-t-2 border-gray-200 mb-5" />
-                <form onSubmit={handleSubmit} className="space-y-4">
+                <form onSubmit={handleSubmit} className="space-y-3">
                     {/* Removed mb-20 from here to prevent excessive bottom margin */}
-                    <div className="grid grid-cols-2 gap-4 mb-24">
+                    <div className="grid grid-cols-2 gap-3 mb-16">
                         <div className="col-span-2">
-                            <label htmlFor="name" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Name (Optional, will auto-generate if empty)</label>
+                            <label htmlFor="name" className="block mb-2 text-xs font-medium text-gray-900 dark:text-white">Name (Optional, will auto-generate if empty)</label>
                             <input
                                 type="text"
                                 id="name"
                                 name="name"
                                 value={newClass.name}
                                 onChange={handleInputChange}
-                                className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="e.g., NUM30-01 or your custom name"
+                                className="bg-gray-50 border border-gray-300 text-gray-900 text-xs rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="e.g., NUM30-01 or your custom name"
                             />
                         </div>
 
                         <div>
-                            <label htmlFor="generation" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Generation</label>
+                            <label htmlFor="generation" className="block text-xs font-medium text-gray-700 dark:text-gray-300">Generation</label>
                             <select
                                 id="generation"
                                 name="generation"
                                 value={newClass.generation}
                                 onChange={handleInputChange}
-                                className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                                className="mt-1 block w-full p-2 text-xs border border-gray-300 rounded-md shadow-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                                 required // Select fields are required to ensure a value is chosen
                             >
                                 {generationOptions.map(option => (
@@ -143,25 +137,25 @@ const ClassCreatePopup = ({ isOpen, onClose, onSave }) => {
                             </select>
                         </div>
                         <div>
-                            <label htmlFor="group" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Group</label>
+                            <label htmlFor="group" className="block text-xs font-medium text-gray-700 dark:text-gray-300">Group</label>
                             <input
                                 type="text"
                                 id="group"
                                 name="group"
                                 value={newClass.group}
                                 onChange={handleInputChange}
-                                className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white" placeholder="01"
+                                className="mt-1 block w-full p-2 text-xs border border-gray-300 rounded-md shadow-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white" placeholder="01"
                                 required
                             />
                         </div>
                         <div>
-                            <label htmlFor="degrees" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Degrees</label>
+                            <label htmlFor="degrees" className="block text-xs font-medium text-gray-700 dark:text-gray-300">Degrees</label>
                             <select
                                 id="degrees"
                                 name="degrees"
                                 value={newClass.degrees}
                                 onChange={handleInputChange}
-                                className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                                className="mt-1 block w-full p-2 text-xs border border-gray-300 rounded-md shadow-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                                 required
                             >
                                 {degreesOptions.map(option => (
@@ -170,13 +164,13 @@ const ClassCreatePopup = ({ isOpen, onClose, onSave }) => {
                             </select>
                         </div>
                         <div>
-                            <label htmlFor="major" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Major</label>
+                            <label htmlFor="major" className="block text-xs font-medium text-gray-700 dark:text-gray-300">Major</label>
                             <select
                                 id="major"
                                 name="major"
                                 value={newClass.major}
                                 onChange={handleInputChange}
-                                className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                                className="mt-1 block w-full p-2 text-xs border border-gray-300 rounded-md shadow-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                                 required
                             >
                                 {majorOptions.map(option => (
@@ -185,13 +179,13 @@ const ClassCreatePopup = ({ isOpen, onClose, onSave }) => {
                             </select>
                         </div>
                         <div className="col-span-2">
-                            <label htmlFor="semester" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Semester</label>
+                            <label htmlFor="semester" className="block text-xs font-medium text-gray-700 dark:text-gray-300">Semester</label>
                             <select
                                 id="semester"
                                 name="semester"
                                 value={newClass.semester}
                                 onChange={handleInputChange}
-                                className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                                className="mt-1 block w-full p-2 text-xs border border-gray-300 rounded-md shadow-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                                 required
                             >
                                 {semesterOptions.map(option => (
@@ -200,13 +194,13 @@ const ClassCreatePopup = ({ isOpen, onClose, onSave }) => {
                             </select>
                         </div>
                         <div className="col-span-2">
-                            <label htmlFor="faculty" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Faculty</label>
+                            <label htmlFor="faculty" className="block text-xs font-medium text-gray-700 dark:text-gray-300">Faculty</label>
                             <select
                                 id="faculty"
                                 name="faculty"
                                 value={newClass.faculty}
                                 onChange={handleInputChange}
-                                className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                                className="mt-1 block w-full p-2 text-xs border border-gray-300 rounded-md shadow-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                                 required
                             >
                                 {facultyOptions.map(option => (
@@ -215,13 +209,13 @@ const ClassCreatePopup = ({ isOpen, onClose, onSave }) => {
                             </select>
                         </div>
                         <div className="col-span-2">
-                            <label htmlFor="shift" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Shift</label>
+                            <label htmlFor="shift" className="block text-xs font-medium text-gray-700 dark:text-gray-300">Shift</label>
                             <select
                                 id="shift"
                                 name="shift"
                                 value={newClass.shift}
                                 onChange={handleInputChange}
-                                className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                                className="mt-1 block w-full p-2 text-xs border border-gray-300 rounded-md shadow-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                                 required
                             >
                                 {shiftOptions.map(option => (
@@ -234,13 +228,13 @@ const ClassCreatePopup = ({ isOpen, onClose, onSave }) => {
                         <button
                             type="button"
                             onClick={onClose}
-                            className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
+                            className="px-4 py-2 text-xs font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
                         >
                             Cancel
                         </button>
                         <button
                             type="submit"
-                            className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
+                            className="px-4 py-2 text-xs font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
                         >
                             Create Class
                         </button>

@@ -5,19 +5,14 @@ import { useState, useEffect, useRef } from 'react';
 import AdminLayout from '@/components/AdminLayout';
 import SuccessAlert from './components/UpdateSuccessComponent'; // Assuming this path is correct
 
-const RoomViewContent = () => {
-    const [selectedBuilding, setSelectedBuilding] = useState("Building A");
-    const [selectedRoom, setSelectedRoom] = useState(null);
-    const [roomDetails, setRoomDetails] = useState(null);
-    const [loading, setLoading] = useState(false);
-    const [isEditing, setIsEditing] = useState(false);
-    const [editableRoomDetails, setEditableRoomDetails] = useState(null);
-    const [showSuccessAlert, setShowSuccessAlert] = useState(false);
-
+// This function mimics fetching data from an API by using a Promise and a timeout.
+const fetchRoomData = async () => {
     const initialRoomsData = {
         A1: { id: "A1", name: "Room A1", building: "Building A", floor: 5, capacity: 30, equipment: ["Projector", "Whiteboard", "AC"] },
         A2: { id: "A2", name: "Room A2", building: "Building A", floor: 5, capacity: 20, equipment: ["Whiteboard", "AC"] },
         A3: { id: "A3", name: "Room A3", building: "Building A", floor: 5, capacity: 25, equipment: ["Projector", "AC"] },
+        A4: { id: "A4", name: "Room A4", building: "Building A", floor: 5, capacity: 18, equipment: ["Whiteboard"] },
+        A5: { id: "A5", name: "Room A5", building: "Building A", floor: 5, capacity: 22, equipment: ["Projector", "AC"] },
         B1: { id: "B1", name: "Room B1", building: "Building A", floor: 4, capacity: 15, equipment: ["Projector", "AC"] },
         B2: { id: "B2", name: "Room B2", building: "Building A", floor: 4, capacity: 20, equipment: ["Whiteboard"] },
         C1: { id: "C1", name: "Room C1", building: "Building A", floor: 3, capacity: 10, equipment: ["AC"] },
@@ -33,11 +28,107 @@ const RoomViewContent = () => {
         H1: { id: "H1", name: "Room H1", building: "Building B", floor: 1, capacity: 5, equipment: ["AC"] },
         H2: { id: "H2", name: "Room H2", building: "Building B", floor: 1, capacity: 4, equipment: ["Whiteboard"] },
     };
-    const [allRoomsData, setAllRoomsData] = useState(initialRoomsData);
+    // Simulate a network delay of 1 second
+    return new Promise(resolve => setTimeout(() => resolve(initialRoomsData), 1000));
+};
 
+// --- Skeleton Loader for Room Page ---
+const RoomPageSkeleton = () => {
+  // A small, reusable component for a single room card skeleton
+  const SkeletonRoomCard = () => (
+    <div className="h-[90px] sm:h-[100px] bg-slate-200 dark:bg-slate-700 rounded-md animate-pulse"></div>
+  );
+
+  // A reusable component for a single row in the details panel
+  const SkeletonDetailRow = () => (
+    <div className="flex flex-row items-center w-full min-h-[56px] border-b border-slate-200 dark:border-slate-700/50">
+      <div className="p-4 w-[120px]">
+        <div className="h-4 bg-slate-300 dark:bg-slate-600 rounded w-3/4"></div>
+      </div>
+      <div className="px-3 flex-1">
+        <div className="h-4 bg-slate-300 dark:bg-slate-600 rounded w-1/2"></div>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className='p-4 sm:p-6 min-h-full animate-pulse'>
+      {/* Page Header Skeleton */}
+      <div className="mb-4 w-full">
+        <div className="h-7 w-24 bg-slate-300 dark:bg-slate-600 rounded"></div>
+        <div className="h-px bg-slate-300 dark:bg-slate-700 mt-3" />
+      </div>
+      
+      <div className="flex flex-col lg:flex-row gap-6">
+        {/* Left Panel (Room List) Skeleton */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-3 sm:mb-4">
+            <div className="h-10 w-40 bg-slate-200 dark:bg-slate-700 rounded-md"></div>
+            <div className="flex-1 h-px bg-slate-300 dark:bg-slate-700" />
+          </div>
+          <div className="space-y-4">
+            {[...Array(2)].map((_, i) => ( // Create 2 floor sections
+              <div key={i} className="space-y-3">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="h-5 w-16 bg-slate-300 dark:bg-slate-600 rounded"></div>
+                  <div className="flex-1 h-px bg-slate-300 dark:bg-slate-700" />
+                </div>
+                <div className="grid xl:grid-cols-5 lg:grid-cols-2 md:grid-cols-2 gap-3">
+                  {[...Array(5)].map((_, j) => ( // Create 5 room cards per floor
+                    <SkeletonRoomCard key={j} />
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Right Panel (Details) Skeleton */}
+        <div className="w-full lg:w-[320px] shrink-0">
+          <div className="flex items-center gap-2 mb-3 sm:mb-4">
+            <div className="h-6 w-20 bg-slate-300 dark:bg-slate-600 rounded"></div>
+            <div className="flex-1 h-px bg-slate-300 dark:bg-slate-700" />
+          </div>
+          <div className="flex flex-col items-start gap-6 w-full min-h-[420px] bg-white dark:bg-slate-800 p-4 rounded-lg shadow-lg">
+             <div className="w-full border border-slate-200 dark:border-slate-700/50 rounded-md flex-grow">
+                <SkeletonDetailRow />
+                <SkeletonDetailRow />
+                <SkeletonDetailRow />
+                <SkeletonDetailRow />
+                <SkeletonDetailRow />
+             </div>
+             <div className="w-full h-[50px] bg-slate-300 dark:bg-slate-600 rounded-md"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const RoomViewContent = () => {
+    // --- Styles ---
+    const textLabelRoom = "font-medium text-base leading-7 text-slate-700 dark:text-slate-300 tracking-[-0.01em]";
+    const textValueRoomDisplay = "font-medium text-base leading-7 text-slate-900 dark:text-slate-100 tracking-[-0.01em]";
+    const textLabelDefault = "font-medium text-sm leading-6 text-slate-700 dark:text-slate-300 tracking-[-0.01em]";
+    const textValueDefaultDisplay = "font-medium text-sm leading-6 text-slate-900 dark:text-slate-100 tracking-[-0.01em]";
+    const inputContainerSizeDefault = "w-full sm:w-[132px] h-[40px]";
+    const inputStyle = "py-[9px] px-3 w-full h-full bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-[6px] font-normal text-sm leading-[22px] text-slate-900 dark:text-slate-50 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500";
+    const equipmentInputContainerSize = "w-full sm:w-[132px] h-[72px]";
+    const textareaStyle = "py-[10px] px-3 w-full h-full bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-[6px] font-normal text-sm leading-[22px] text-slate-900 dark:text-slate-50 placeholder:text-slate-400 dark:placeholder:text-slate-500 resize-none focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 scrollbar-thin scrollbar-thumb-slate-400 dark:scrollbar-thumb-slate-500 scrollbar-track-slate-100 dark:scrollbar-track-slate-800";
+    
+    // --- State Variables ---
+    const [selectedBuilding, setSelectedBuilding] = useState("Building A");
+    const [selectedRoom, setSelectedRoom] = useState(null);
+    const [roomDetails, setRoomDetails] = useState(null);
+    const [loading, setLoading] = useState(false);
+    const [isEditing, setIsEditing] = useState(false);
+    const [editableRoomDetails, setEditableRoomDetails] = useState(null);
+    const [showSuccessAlert, setShowSuccessAlert] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
+    const [allRoomsData, setAllRoomsData] = useState([]);
     const buildings = {
         "Building A": [
-            { floor: 5, rooms: ["A1", "A2", "A3"] },
+            { floor: 5, rooms: ["A1", "A2", "A3", "A4", "A5"] },
             { floor: 4, rooms: ["B1", "B2"] },
             { floor: 3, rooms: ["C1", "C2"] },
             { floor: 2, rooms: ["D1", "D2"] },
@@ -50,6 +141,7 @@ const RoomViewContent = () => {
         ],
     };
 
+    // --- Handler ---
     const handleRoomClick = async (roomId) => {
         setSelectedRoom(roomId);
         setIsEditing(false);
@@ -123,15 +215,28 @@ const RoomViewContent = () => {
     };
 
     const floors = buildings[selectedBuilding] || [];
+    
+    // --- Hooks ---
+    useEffect(() => {
+        const loadInitialData = async () => {
+            try {
+                const data = await fetchRoomData();
+                setAllRoomsData(data);
+            } catch (error) {
+                console.error("Failed to fetch class data:", error);
+                // You could set an error state here to show an error message
+            } finally {
+                setIsLoading(false); // Set loading to false after data is fetched or if an error occurs
+            }
+        };
 
-    const textLabelRoom = "font-medium text-base leading-7 text-slate-700 dark:text-slate-300 tracking-[-0.01em]";
-    const textValueRoomDisplay = "font-medium text-base leading-7 text-slate-900 dark:text-slate-100 tracking-[-0.01em]";
-    const textLabelDefault = "font-medium text-sm leading-6 text-slate-700 dark:text-slate-300 tracking-[-0.01em]";
-    const textValueDefaultDisplay = "font-medium text-sm leading-6 text-slate-900 dark:text-slate-100 tracking-[-0.01em]";
-    const inputContainerSizeDefault = "w-full sm:w-[132px] h-[40px]";
-    const inputStyle = "py-[9px] px-3 w-full h-full bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-[6px] font-normal text-sm leading-[22px] text-slate-900 dark:text-slate-50 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500";
-    const equipmentInputContainerSize = "w-full sm:w-[132px] h-[72px]";
-    const textareaStyle = "py-[10px] px-3 w-full h-full bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-[6px] font-normal text-sm leading-[22px] text-slate-900 dark:text-slate-50 placeholder:text-slate-400 dark:placeholder:text-slate-500 resize-none focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 scrollbar-thin scrollbar-thumb-slate-400 dark:scrollbar-thumb-slate-500 scrollbar-track-slate-100 dark:scrollbar-track-slate-800";
+        loadInitialData();
+    }, []);
+
+    // --- Render Logic ---
+    if (isLoading) {
+        return <RoomPageSkeleton />;
+    }
 
     return (
         <>
@@ -152,7 +257,7 @@ const RoomViewContent = () => {
             <div className="mb-4 w-full">
             <h2 className="text-xl font-semibold text-slate-800 dark:text-white">Room</h2>
             <hr className="border-t border-slate-300 dark:border-slate-700 mt-3" />
-                </div>
+            </div>
                 <div className="flex flex-col lg:flex-row gap-6">
                     <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-3 sm:mb-4">
@@ -179,7 +284,7 @@ const RoomViewContent = () => {
                                             </h4>
                                             <hr className="flex-1 border-t border-slate-300 dark:border-slate-700" />
                                         </div>
-                                        <div className="grid grid-cols-[repeat(auto-fill,minmax(160px,1fr))] sm:grid-cols-[repeat(auto-fill,minmax(180px,1fr))] gap-3 sm:gap-4">
+                                        <div className="grid xl:grid-cols-5 lg:grid-cols-2 md:grid-cols-2 gap-3">
                                             {rooms.map((roomId) => (
                                                 <div
                                                     key={roomId}
@@ -293,7 +398,7 @@ const RoomViewContent = () => {
                                         </div>
                                     </div>
                                     <button
-                                        className="flex flex-row justify-center items-center pyx-3 px-5 sm:px-6 gap-2 w-full h-[48px] sm:h-[50px] bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 shadow-md hover:shadow-lg rounded-md text-white font-semibold text-sm sm:text-base self-stretch disabled:opacity-60 transition-all duration-150"
+                                        className="flex flex-row justify-center items-center pyx-3 px-5 sm:px-6 gap-2 w-full h-[48px] sm:h-[50px] bg-blue-600 hover:bg-blue-700 shadow-md hover:shadow-lg rounded-md text-white font-semibold text-sm sm:text-base self-stretch disabled:opacity-60 transition-all duration-150"
                                         onClick={handleEditToggle}
                                         disabled={loading && isEditing}
                                     >
@@ -308,7 +413,7 @@ const RoomViewContent = () => {
                             )}
                         </div>
                     </div>
-                </div>
+            </div>
             </div>
         </>
     );
