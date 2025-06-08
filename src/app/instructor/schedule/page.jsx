@@ -10,15 +10,15 @@ const DAYS_OF_WEEK = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'S
 const TIME_SLOTS = ['07:00 - 10:00', '10:30 - 13:30', '14:00 - 17:00', '17:30 - 20:30'];
 
 const DAY_HEADER_COLORS = {
-    Monday: 'bg-yellow-50 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-200',
-    Tuesday: 'bg-purple-50 text-purple-800 dark:bg-purple-900/50 dark:text-purple-200',
-    Wednesday: 'bg-green-50 text-green-800 dark:bg-green-900/50 dark:text-green-200',
-    Thursday: 'bg-green-50 text-green-800 dark:bg-green-900/50 dark:text-green-200',
-    Friday: 'bg-blue-50 text-blue-800 dark:bg-blue-900/50 dark:text-blue-200',
-    Saturday: 'bg-orange-50 text-orange-800 dark:bg-orange-900/50 dark:text-orange-200',
-    Sunday: 'bg-pink-50 text-pink-800 dark:bg-pink-900/50 dark:text-pink-200',
+    Monday: 'bg-yellow-50 text-yellow-800', // Lighter yellow
+    Tuesday: 'bg-purple-50 text-purple-800', // Lighter purple
+    Wednesday: 'bg-green-50 text-green-800', // Lighter green
+    Thursday: 'bg-green-50 text-green-800', // Lighter green
+    Friday: 'bg-blue-50 text-blue-800',     // Lighter blue
+    Saturday: 'bg-orange-50 text-orange-800', // Lighter orange/peach for Saturday
+    Sunday: 'bg-pink-50 text-pink-800',     // Lighter pink
 };
-const SCHEDULE_ITEM_BG_COLOR = 'bg-green-50 dark:bg-slate-700';
+const SCHEDULE_ITEM_BG_COLOR = 'bg-green-50'; // Same as Wednesday/Thursday header, as per image
 
 const initialScheduleData = {
     'Monday': {
@@ -41,46 +41,31 @@ const initialScheduleData = {
 };
 
 const ROW_CONFIG = {
-    '07:00 - 10:00': { heightClass: 'h-36' },
-    '10:30 - 13:30': { heightClass: 'h-28' },
-    '14:00 - 17:00': { heightClass: 'h-28' },
-    '17:30 - 20:30': { heightClass: 'h-36' },
+  '07:00 - 10:00': { heightClass: 'h-36' }, // Taller row
+  '10:30 - 13:30': { heightClass: 'h-28' }, // Shorter row
+  '14:00 - 17:00': { heightClass: 'h-28' }, // Shorter row
+  '17:30 - 20:30': { heightClass: 'h-36' }, // Taller row
 };
 
 
 const ScheduleItemCard = ({ item }) => (
-    <div className={`${SCHEDULE_ITEM_BG_COLOR} p-2 h-full w-full flex flex-col text-xs rounded-md shadow-sm border border-green-200 dark:border-slate-600`}>
-        <div className="flex justify-between items-start mb-1">
-            <span className="font-semibold text-[13px] text-gray-800 dark:text-gray-100">{item.subject}</span>
-            <span className="text-gray-500 dark:text-gray-400 text-[10px] leading-tight pt-0.5">{item.timeDisplay}</span>
-        </div>
-        <div className="text-gray-700 dark:text-gray-300 text-[11px]">{item.year}</div>
-        <div className="mt-auto text-right text-gray-500 dark:text-gray-400 text-[11px]">{item.semester}</div>
+  <div className={`${SCHEDULE_ITEM_BG_COLOR} p-2 h-full flex flex-col text-xs rounded-md shadow-sm border border-green-200`}>
+    <div className="flex justify-between items-start mb-1">
+      <span className="font-semibold text-[13px] text-gray-800">{item.subject}</span>
+      <span className="text-gray-500 text-[10px] leading-tight pt-0.5">{item.timeDisplay}</span>
     </div>
+    <div className="text-gray-700 text-[11px]">{item.year}</div>
+    <div className="mt-auto text-right text-gray-500 text-[11px]">{item.semester}</div>
+  </div>
 );
 
-const ScheduleViewContent = () => {
+const InstructorScheduleViewContent = () => {
     const [scheduleData, setScheduleData] = useState(initialScheduleData);
     const [roomName, setRoomName] = useState("Room A21");
     const [classAssignCount, setClassAssignCount] = useState(0);
     const [availableShiftCount, setAvailableShiftCount] = useState(0);
-    const [theme, setTheme] = useState('light');
     const publicDate = "2025-06-22 13:11:46";
     const scheduleRef = useRef(null);
-
-    useEffect(() => {
-        const savedTheme = localStorage.getItem('theme') || 'light';
-        setTheme(savedTheme);
-    }, []);
-
-    useEffect(() => {
-        if (theme === 'dark') {
-            document.documentElement.classList.add('dark');
-        } else {
-            document.documentElement.classList.remove('dark');
-        }
-        localStorage.setItem('theme', theme);
-    }, [theme]);
 
     useEffect(() => {
         let assigned = 0;
@@ -94,109 +79,95 @@ const ScheduleViewContent = () => {
 
     const handleDownloadPdf = () => {
         if (scheduleRef.current) {
-            const originalThemeIsDark = document.documentElement.classList.contains('dark');
-            if (originalThemeIsDark) {
-                document.documentElement.classList.remove('dark');
-            }
-
-            setTimeout(() => {
-                html2canvas(scheduleRef.current, {
-                    scale: 2,
-                    useCORS: true,
-                    logging: true,
-                    backgroundColor: '#ffffff' 
-                }).then(canvas => {
-                    const imgData = canvas.toDataURL('image/png');
-                    const pdf = new jsPDF({
-                        orientation: 'landscape',
-                        unit: 'px',
-                        format: [canvas.width, canvas.height]
-                    });
-                    pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
-                    pdf.save(`${roomName}_Schedule.pdf`);
-
-                    if (originalThemeIsDark) {
-                        document.documentElement.classList.add('dark');
-                    }
-                }).catch(err => {
-                    console.error("Error generating PDF:", err);
-                    if (originalThemeIsDark) {
-                        document.documentElement.classList.add('dark');
-                    }
+            html2canvas(scheduleRef.current, {
+                scale: 2, // Increase scale for better resolution
+                useCORS: true, // If you have external images/fonts
+                logging: true,
+            }).then(canvas => {
+                const imgData = canvas.toDataURL('image/png');
+                const pdf = new jsPDF({
+                    orientation: 'landscape',
+                    unit: 'px',
+                    format: [canvas.width, canvas.height] // Use canvas dimensions for PDF page size
                 });
-            }, 100); 
+                pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
+                pdf.save(`${roomName}_Schedule.pdf`);
+            }).catch(err => {
+                console.error("Error generating PDF:", err);
+            });
         }
     };
+    
 
+     return (
+    <div className='p-6 bg-gray-50 min-h-screen dark:bg-gray-900'> {/* Page background */}
+      <div className="mb-6">
+        <h1 className="text-2xl font-semibold text-gray-800 dark:text-gray-200">Schedule</h1>
+        <hr className="border-t border-gray-200 dark:border-gray-700 mt-3" />
+      </div>
 
-    return (
-        <div className='p-6 bg-gray-50 dark:bg-slate-900 min-h-screen'>
-            <div className="mb-6">
-                <h1 className="text-2xl font-semibold text-gray-800 dark:text-gray-100">Schedule</h1>
-                <hr className="border-t border-gray-200 dark:border-slate-700 mt-3" />
-            </div>
+      <div ref={scheduleRef} className="bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-lg shadow-md border border-gray-200 dark:border-gray-700">
+        <h2 className="text-xl font-medium text-gray-700 dark:text-gray-300 mb-4">{roomName} Schedule</h2>
 
-            <div ref={scheduleRef} className="bg-white dark:bg-slate-800 p-4 sm:p-6 rounded-lg shadow-md border border-gray-200 dark:border-slate-700">
-                <h2 className="text-xl font-medium text-gray-700 dark:text-gray-200 mb-4">{roomName} Schedule</h2>
+        <div className="overflow-x-auto">
+          <div className="grid grid-cols-[minmax(100px,1.5fr)_repeat(7,minmax(120px,2fr))] border border-gray-300 dark:border-gray-600 rounded-md min-w-[900px]">
+            {/* Header Row */}
+            <div className="font-semibold text-sm text-gray-700 dark:text-gray-300 p-3 text-center border-r border-b border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 sticky top-0 z-10">Time</div>
+            {DAYS_OF_WEEK.map(day => (
+              <div key={day} className={`font-semibold text-sm p-3 text-center border-b border-gray-300 dark:border-gray-600 ${DAY_HEADER_COLORS[day]} ${day !== 'Sunday' ? 'border-r dark:border-r-gray-600' : ''} sticky top-0 z-10`}>
+                {day}
+              </div>
+            ))}
 
-                <div className="overflow-x-auto">
-                    <div className="grid grid-cols-[minmax(100px,1.5fr)_repeat(7,minmax(120px,2fr))] border border-gray-300 dark:border-slate-600 rounded-md min-w-[900px]">
-                        {/* Header Row */}
-                        <div className="font-semibold text-sm text-gray-700 dark:text-gray-300 p-3 text-center border-r border-b border-gray-300 dark:border-slate-600 bg-gray-50 dark:bg-slate-700/50 sticky top-0 z-10">Time</div>
-                        {DAYS_OF_WEEK.map(day => (
-                            <div key={day} className={`font-semibold text-sm p-3 text-center border-b border-gray-300 dark:border-slate-600 ${DAY_HEADER_COLORS[day]} ${day !== 'Sunday' ? 'border-r dark:border-r-slate-600' : ''} sticky top-0 z-10`}>
-                                {day}
-                            </div>
-                        ))}
-
-                        {/* Data Rows */}
-                        {TIME_SLOTS.map(timeSlot => (
-                            <React.Fragment key={timeSlot}>
-                                <div className={`p-3 text-sm font-medium text-gray-600 dark:text-gray-400 text-center border-r border-gray-300 dark:border-slate-600 ${timeSlot !== TIME_SLOTS[TIME_SLOTS.length - 1] ? 'border-b' : ''} ${ROW_CONFIG[timeSlot].heightClass} flex items-center justify-center bg-gray-50 dark:bg-slate-700/50`}>
-                                    {timeSlot}
-                                </div>
-                                {DAYS_OF_WEEK.map(day => {
-                                    const item = scheduleData[day]?.[timeSlot];
-                                    return (
-                                        <div
-                                            key={`${day}-${timeSlot}`}
-                                            className={`p-1.5 border-gray-300 dark:border-slate-600 ${day !== 'Sunday' ? 'border-r' : ''} ${timeSlot !== TIME_SLOTS[TIME_SLOTS.length - 1] ? 'border-b' : ''} ${ROW_CONFIG[timeSlot].heightClass} flex items-stretch justify-stretch`}
-                                        >
-                                            {item ? <ScheduleItemCard item={item} /> : <div className="w-full h-full"></div>}
-                                        </div>
-                                    );
-                                })}
-                            </React.Fragment>
-                        ))}
-                    </div>
+            {/* Data Rows */}
+            {TIME_SLOTS.map(timeSlot => (
+              <React.Fragment key={timeSlot}>
+                <div className={`p-3 text-sm font-medium text-gray-600 dark:text-gray-400 text-center border-r border-gray-300 dark:border-gray-600 ${timeSlot !== TIME_SLOTS[TIME_SLOTS.length - 1] ? 'border-b dark:border-b-gray-600' : ''} ${ROW_CONFIG[timeSlot].heightClass} flex items-center justify-center bg-gray-50 dark:bg-gray-700/50`}>
+                  {timeSlot}
                 </div>
-            </div>
-
-            <div className="mt-6 text-sm text-gray-700 dark:text-gray-300 space-y-1">
-                <p>• Class assign <span className="font-semibold">: {classAssignCount}</span></p>
-                <p>• Available shift <span className="font-semibold">: {availableShiftCount}</span></p>
-            </div>
-
-            <div className="mt-8 flex flex-col sm:flex-row justify-between items-center">
-                <button
-                    onClick={handleDownloadPdf}
-                    className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 px-6 rounded-md shadow-sm order-1 sm:order-2 mb-4 sm:mb-0 dark:bg-blue-500 dark:hover:bg-blue-600"
-                >
-                    Download PDF file
-                </button>
-                <p className="text-sm text-gray-500 dark:text-gray-400 order-2 sm:order-1">
-                    Public Date : {publicDate}
-                </p>
-            </div>
+                {DAYS_OF_WEEK.map(day => {
+                  const item = scheduleData[day]?.[timeSlot];
+                  return (
+                    <div
+                      key={`${day}-${timeSlot}`}
+                      className={`p-1.5 border-gray-300 dark:border-gray-600 ${day !== 'Sunday' ? 'border-r dark:border-r-gray-600' : ''} ${timeSlot !== TIME_SLOTS[TIME_SLOTS.length - 1] ? 'border-b dark:border-b-gray-600' : ''} ${ROW_CONFIG[timeSlot].heightClass} flex items-stretch justify-stretch`}
+                    >
+                      {item ? <ScheduleItemCard item={item} /> : <div className="w-full h-full"></div>}
+                    </div>
+                  );
+                })}
+              </React.Fragment>
+            ))}
+          </div>
         </div>
-    );
+      </div>
+
+      <div className="mt-6 text-sm text-gray-700 dark:text-gray-300 space-y-1">
+        <p>• Class assign <span className="font-semibold">: {classAssignCount}</span></p>
+        <p>• Available shift <span className="font-semibold">: {availableShiftCount}</span></p>
+      </div>
+
+      <div className="mt-8 flex flex-col sm:flex-row justify-between items-center">
+        <button
+          onClick={handleDownloadPdf}
+          className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 px-6 rounded-md shadow-sm order-1 sm:order-2 mb-4 sm:mb-0"
+        >
+          Download PDF file
+        </button>
+        <p className="text-sm text-gray-500 dark:text-gray-400 order-2 sm:order-1">
+          Public Date : {publicDate}
+        </p>
+      </div>
+    </div>
+  );
 };
 
 
-export default function AdminSchedulePage() {
-    return (
-        <InstructorLayout activeItem="schedule" pageTitle="Schedule">
-            <ScheduleViewContent />
-        </InstructorLayout>
-    );
+
+export default function InstructorSchedulePage() {
+  return (
+      <InstructorLayout  activeItem="schedule" pageTitle="Schedule">
+          <InstructorScheduleViewContent  />
+      </InstructorLayout>
+  );
 }
