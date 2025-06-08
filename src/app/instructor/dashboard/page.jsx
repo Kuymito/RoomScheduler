@@ -18,7 +18,7 @@ const fetchDashboardData = async () => {
 
 const fetchScheduleTableData = async () => {
   return new Promise(resolve => setTimeout(() => resolve([
-    { id: 1, classNum: '34/27', major: 'IT', date: 'Monday', session: 'In Class', shift: '07:00 - 10:00', room: 'TA' },
+    { id: 1, classNum: '34/27', major: 'IT', date: 'Monday', session: 'In Class', shift: '07:00 - 10:00', room: '1A' },
     { id: 2, classNum: '32/12', major: 'IT', date: 'Monday', session: 'In Class', shift: '05:30 - 08:30', room: '2B' },
     { id: 3, classNum: '31/21', major: 'MG', date: 'Wednesday', session: 'In Class', shift: '10:30 - 01:30', room: '6A' },
     { id: 4, classNum: '32/15', major: 'IT', date: 'Thursday', session: 'Online', shift: '02:00 - 05:00', room: 'Unavailable' },

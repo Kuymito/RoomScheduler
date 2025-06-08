@@ -2,7 +2,7 @@
 import React from 'react';
 const SortableHeader = ({ children, sortable = true }) => {
   return (
-    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">
+    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 tracking-wider whitespace-nowrap">
       <div className="flex items-center">
         {children}
       </div>
