@@ -123,7 +123,7 @@ const InstructorScheduleViewContent = () => {
     };
     
     return (
-    <div className='p-6 bg-gray-50 min-h-screen dark:bg-gray-900'>
+    <div className='p-6  min-h-screen dark:bg-gray-900'>
       <div className="mb-6">
         <h1 className="text-2xl font-semibold text-gray-800 dark:text-gray-200">Schedule</h1>
         <hr className="border-t border-gray-200 dark:border-gray-700 mt-3" />
@@ -135,7 +135,7 @@ const InstructorScheduleViewContent = () => {
         <div className="overflow-x-auto">
           <div className="grid grid-cols-[minmax(100px,1.5fr)_repeat(7,minmax(120px,2fr))] border border-gray-300 dark:border-gray-600 rounded-md min-w-[900px]">
             {/* Header Row (always visible) */}
-            <div className="font-semibold text-sm text-gray-700 dark:text-gray-300 p-3 text-center border-r border-b border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 sticky top-0 z-10">Time</div>
+            <div className="font-semibold text-sm text-gray-700 dark:text-gray-300 p-3 text-center border-r border-b border-gray-300 dark:border-gray-600  dark:bg-gray-700 sticky top-0 z-10">Time</div>
             {DAYS_OF_WEEK.map(day => (
               <div key={day} className={`font-semibold text-sm p-3 text-center border-b border-gray-300 dark:border-gray-600 ${DAY_HEADER_COLORS[day]} ${day !== 'Sunday' ? 'border-r dark:border-r-gray-600' : ''} sticky top-0 z-10`}>
                 {day}
@@ -145,7 +145,7 @@ const InstructorScheduleViewContent = () => {
             {/* Data Rows */}
             {TIME_SLOTS.map(timeSlot => (
               <React.Fragment key={timeSlot}>
-                <div className={`p-3 text-sm font-medium text-gray-600 dark:text-gray-400 text-center border-r border-gray-300 dark:border-gray-600 ${timeSlot !== TIME_SLOTS[TIME_SLOTS.length - 1] ? 'border-b dark:border-b-gray-600' : ''} ${ROW_CONFIG[timeSlot].heightClass} flex items-center justify-center bg-gray-50 dark:bg-gray-700/50`}>
+                <div className={`p-3 text-sm font-medium text-gray-600 dark:text-gray-400 text-center border-r border-gray-300 dark:border-gray-600 ${timeSlot !== TIME_SLOTS[TIME_SLOTS.length - 1] ? 'border-b dark:border-b-gray-600' : ''} ${ROW_CONFIG[timeSlot].heightClass} flex items-center justify-center  dark:bg-gray-700/50`}>
                   {timeSlot}
                 </div>
                 {DAYS_OF_WEEK.map(day => {

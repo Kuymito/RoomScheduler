@@ -5,20 +5,19 @@ import InstructorLayout from "@/components/InstructorLayout";
 import SuccessAlert from "./components/UpdateSuccessComponent";
 
 // ===================================================================
-// --- NEW SKELETON COMPONENTS ---
+// --- SKELETON COMPONENTS (No Changes) ---
 // ===================================================================
 
-// Skeleton for a single room card in the selection grid
 const RoomCardSkeleton = () => (
     <div className="h-[90px] sm:h-[100px] bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-md animate-pulse">
         <div className="h-[30px] bg-slate-100 dark:bg-slate-700 rounded-t-md border-b border-slate-200 dark:border-slate-600"></div>
-        <div className="p-2 flex justify-center items-center">
+        <div className="p-2 flex flex-col justify-center items-center gap-2">
             <div className="h-4 w-16 bg-slate-200 dark:bg-slate-600 rounded-full"></div>
+            <div className="h-4 w-20 bg-slate-200 dark:bg-slate-600 rounded-full"></div>
         </div>
     </div>
 );
 
-// Skeleton for the entire left-side room selection panel
 const RoomSelectionSkeleton = ({ floors = 3, roomsPerFloor = 4 }) => (
     <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 mb-3 sm:mb-4">
@@ -44,7 +43,6 @@ const RoomSelectionSkeleton = ({ floors = 3, roomsPerFloor = 4 }) => (
 );
 
 
-// Skeleton for the right-side room details panel
 const RoomDetailsSkeleton = () => (
     <div className="flex flex-col items-start gap-6 w-full animate-pulse">
         <div className="flex flex-col items-start self-stretch w-full flex-grow">
@@ -77,12 +75,35 @@ const InstructorRoomViewContent = () => {
   const [editableRoomDetails, setEditableRoomDetails] = useState(null);
   const [showSuccessAlert, setShowSuccessAlert] = useState(false);
 
-  const initialRoomsData = { /* ... your initial data ... */ 
-  A1: {id: "A1",name: "Room A1",building: "Building A",floor: 5,capacity: 30,equipment: ["Projector", "Whiteboard", "AC"],},A2: {id: "A2",name: "Room A2",building: "Building A",floor: 5,capacity: 20,equipment: ["Whiteboard", "AC"],},A3: {id: "A3",name: "Room A3",building: "Building A",floor: 5,capacity: 25,equipment: ["Projector", "AC"],},B1: {id: "B1",name: "Room B1",building: "Building A",floor: 4,capacity: 15,equipment: ["Projector", "AC"],},B2: {id: "B2",name: "Room B2",building: "Building A",floor: 4,capacity: 20,equipment: ["Whiteboard"],},C1: {id: "C1",name: "Room C1",building: "Building A",floor: 3,capacity: 10,equipment: ["AC"],},C2: {id: "C2",name: "Room C2",building: "Building A",floor: 3,capacity: 12,equipment: ["Whiteboard", "AC"],},D1: {id: "D1",name: "Room D1",building: "Building A",floor: 2,capacity: 8,equipment: ["Projector"],},D2: {id: "D2",name: "Room D2",building: "Building A",floor: 2,capacity: 10,equipment: ["Whiteboard"],},E1: {id: "E1",name: "Room E1",building: "Building A",floor: 1,capacity: 5,equipment: ["AC"],},E2: {id: "E2",name: "Room E2",building: "Building A",floor: 1,capacity: 6,equipment: ["Projector", "Whiteboard"],},F1: {id: "F1",name: "Room F1",building: "Building B",floor: 3,capacity: 12,equipment: ["Projector", "Whiteboard"],},F2: {id: "F2",name: "Room F2",building: "Building B",floor: 3,capacity: 10,equipment: ["AC"],},G1: {id: "G1",name: "Room G1",building: "Building B",floor: 2,capacity: 8,equipment: ["Whiteboard"],},G2: {id: "G2",name: "Room G2",building: "Building B",floor: 2,capacity: 6,equipment: ["Projector"],},H1: {id: "H1",name: "Room H1",building: "Building B",floor: 1,capacity: 5,equipment: ["AC"],},H2: {id: "H2",name: "Room H2",building: "Building B",floor: 1,capacity: 4,equipment: ["Whiteboard"],},};
+  // ===================================================================
+  // --- UPDATED DUMMY DATA with 'status' field ---
+  // ===================================================================
+  const initialRoomsData = {
+    A1: {id: "A1",name: "Room A1",building: "Building A",floor: 5,capacity: 30,equipment: ["Projector", "Whiteboard", "AC"], status: "Available"},
+    A2: {id: "A2",name: "Room A2",building: "Building A",floor: 5,capacity: 20,equipment: ["Whiteboard", "AC"], status: "Unavailable"},
+    A3: {id: "A3",name: "Room A3",building: "Building A",floor: 5,capacity: 25,equipment: ["Projector", "AC"], status: "Available"},
+    B1: {id: "B1",name: "Room B1",building: "Building A",floor: 4,capacity: 15,equipment: ["Projector", "AC"], status: "Available"},
+    B2: {id: "B2",name: "Room B2",building: "Building A",floor: 4,capacity: 20,equipment: ["Whiteboard"], status: "Available"},
+    C1: {id: "C1",name: "Room C1",building: "Building A",floor: 3,capacity: 10,equipment: ["AC"], status: "Unavailable"},
+    C2: {id: "C2",name: "Room C2",building: "Building A",floor: 3,capacity: 12,equipment: ["Whiteboard", "AC"], status: "Available"},
+    D1: {id: "D1",name: "Room D1",building: "Building A",floor: 2,capacity: 8,equipment: ["Projector"], status: "Available"},
+    D2: {id: "D2",name: "Room D2",building: "Building A",floor: 2,capacity: 10,equipment: ["Whiteboard"], status: "Unavailable"},
+    E1: {id: "E1",name: "Room E1",building: "Building A",floor: 1,capacity: 5,equipment: ["AC"], status: "Available"},
+    E2: {id: "E2",name: "Room E2",building: "Building A",floor: 1,capacity: 6,equipment: ["Projector", "Whiteboard"], status: "Available"},
+    F1: {id: "F1",name: "Room F1",building: "Building B",floor: 3,capacity: 12,equipment: ["Projector", "Whiteboard"], status: "Available"},
+    F2: {id: "F2",name: "Room F2",building: "Building B",floor: 3,capacity: 10,equipment: ["AC"], status: "Unavailable"},
+    G1: {id: "G1",name: "Room G1",building: "Building B",floor: 2,capacity: 8,equipment: ["Whiteboard"], status: "Available"},
+    G2: {id: "G2",name: "Room G2",building: "Building B",floor: 2,capacity: 6,equipment: ["Projector"], status: "Available"},
+    H1: {id: "H1",name: "Room H1",building: "Building B",floor: 1,capacity: 5,equipment: ["AC"], status: "Unavailable"},
+    H2: {id: "H2",name: "Room H2",building: "Building B",floor: 1,capacity: 4,equipment: ["Whiteboard"], status: "Available"},
+  };
+
   const [allRoomsData, setAllRoomsData] = useState(initialRoomsData);
 
-  const buildings = { /* ... your building data ... */ 
-  "Building A": [{ floor: 5, rooms: ["A1", "A2", "A3"] },{ floor: 4, rooms: ["B1", "B2"] },{ floor: 3, rooms: ["C1", "C2"] },{ floor: 2, rooms: ["D1", "D2"] },{ floor: 1, rooms: ["E1", "E2"] },],"Building B": [{ floor: 3, rooms: ["F1", "F2"] },{ floor: 2, rooms: ["G1", "G2"] },{ floor: 1, rooms: ["H1", "H2"] },],};
+  const buildings = {
+  "Building A": [{ floor: 5, rooms: ["A1", "A2", "A3"] },{ floor: 4, rooms: ["B1", "B2"] },{ floor: 3, rooms: ["C1", "C2"] },{ floor: 2, rooms: ["D1", "D2"] },{ floor: 1, rooms: ["E1", "E2"] },],
+  "Building B": [{ floor: 3, rooms: ["F1", "F2"] },{ floor: 2, rooms: ["G1", "G2"] },{ floor: 1, rooms: ["H1", "H2"] },],
+  };
 
   useEffect(() => {
     // Simulate initial data fetch for the whole page
@@ -94,7 +115,10 @@ const InstructorRoomViewContent = () => {
   }, []);
 
   const handleRoomClick = async (roomId) => {
+    // Prevent clicking on unavailable rooms
+    if (allRoomsData[roomId]?.status === 'Unavailable') return;
     if (selectedRoom === roomId && !isEditing) return; // Don't reload if already selected
+
     setSelectedRoom(roomId);
     setIsEditing(false);
     setLoading(true);
@@ -119,7 +143,7 @@ const InstructorRoomViewContent = () => {
     setIsEditing(false);
   };
 
-  const handleEditToggle = () => { /* ... (no changes) ... */ 
+  const handleEditToggle = () => { 
     if (isEditing) {
         handleSaveChanges();
       } else {
@@ -133,7 +157,7 @@ const InstructorRoomViewContent = () => {
       }
   };
 
-  const handleInputChange = (event) => { /* ... (no changes) ... */ 
+  const handleInputChange = (event) => { 
     const { name, value } = event.target;
     setEditableRoomDetails((prevDetails) => ({
       ...prevDetails,
@@ -146,7 +170,7 @@ const InstructorRoomViewContent = () => {
     }));
   };
 
-  const handleSaveChanges = async () => { /* ... (no changes) ... */ 
+  const handleSaveChanges = async () => { 
     if (!editableRoomDetails) return;
     setLoading(true);
     const updatedRoomData = {
@@ -188,7 +212,7 @@ const InstructorRoomViewContent = () => {
 
   return (
     <>
-      {showSuccessAlert && ( /* ... (no changes) ... */ 
+      {showSuccessAlert && ( 
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 ">
           <SuccessAlert
             title="Request was sent Successfully "
@@ -228,17 +252,49 @@ const InstructorRoomViewContent = () => {
                                 <hr className="flex-1 border-t border-slate-300 dark:border-slate-700" />
                             </div>
                             <div className="grid grid-cols-[repeat(auto-fill,minmax(160px,1fr))] sm:grid-cols-[repeat(auto-fill,minmax(180px,1fr))] gap-3 sm:gap-4">
-                                {rooms.map((roomId) => (
-                                    <div key={roomId} className={`h-[90px] sm:h-[100px] border rounded-md flex flex-col cursor-pointer transition-all duration-150 shadow-sm hover:shadow-md bg-white dark:bg-slate-800 ${selectedRoom === roomId && !isEditing ? "border-blue-500 ring-2 ring-blue-500 dark:border-blue-500" : "border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600"}`} onClick={() => handleRoomClick(roomId)}>
-                                        <div className={`h-[30px] rounded-t-md flex items-center justify-center px-2 relative border-b border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700`}>
-                                            <div className={`absolute left-2 top-1/2 -translate-y-1/2 w-2 h-2 ${allRoomsData[roomId]?.id === selectedRoom && !isEditing ? "bg-blue-500" : "bg-green-500"} rounded-full`}></div>
-                                            <span className={`ml-3 text-xs sm:text-sm font-medium ${selectedRoom === roomId && !isEditing ? "text-blue-700 dark:text-blue-300" : "text-slate-700 dark:text-slate-300"}`}>{allRoomsData[roomId]?.name || roomId}</span>
+                                {rooms.map((roomId) => {
+                                    const room = allRoomsData[roomId];
+                                    const isAvailable = room?.status === 'Available';
+                                    const isSelected = selectedRoom === roomId;
+
+                                    // ===================================================================
+                                    // --- UPDATED ROOM CARD ---
+                                    // ===================================================================
+                                    return (
+                                        <div 
+                                            key={roomId} 
+                                            className={`
+                                                h-[90px] sm:h-[100px] border rounded-md flex flex-col transition-all duration-150 shadow-sm
+                                                ${isAvailable ? 'cursor-pointer hover:shadow-md bg-white dark:bg-slate-800' : 'cursor-not-allowed bg-slate-50 dark:bg-slate-800/50 opacity-70'}
+                                                ${isSelected && !isEditing ? "border-blue-500 ring-2 ring-blue-500 dark:border-blue-500" : isAvailable ? "border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600" : "border-slate-200 dark:border-slate-700"}
+                                            `}
+                                            onClick={() => handleRoomClick(roomId)}
+                                        >
+                                            <div className={`h-[30px] rounded-t-md flex items-center justify-center px-2 relative border-b
+                                                ${isSelected && !isEditing ? 'border-b-transparent' : 'border-slate-200 dark:border-slate-600'}
+                                                ${isAvailable ? 'bg-slate-50 dark:bg-slate-700' : 'bg-slate-100 dark:bg-slate-700/60'}
+                                            `}>
+                                                <div className={`absolute left-2 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full
+                                                    ${isAvailable ? 'bg-green-500' : 'bg-red-500'}
+                                                    ${isSelected && !isEditing ? 'bg-blue-500' : ''}
+                                                `}></div>
+                                                <span className={`ml-3 text-xs sm:text-sm font-medium
+                                                    ${isSelected && !isEditing ? "text-blue-700 dark:text-blue-300" : isAvailable ? "text-slate-700 dark:text-slate-300" : "text-slate-500 dark:text-slate-400"}
+                                                `}>{room?.name || roomId}</span>
+                                            </div>
+                                            <div className={`flex-1 rounded-b-md p-2 flex flex-col justify-center items-center ${isAvailable ? 'bg-white dark:bg-slate-800' : 'bg-slate-50 dark:bg-slate-800/50'}`}>
+                                                <span className={`font-semibold text-xs
+                                                    ${isAvailable ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}
+                                                `}>
+                                                    {room?.status}
+                                                </span>
+                                                <span className={`text-xs text-slate-500 dark:text-slate-400 ${isSelected && !isEditing ? "text-slate-600 dark:text-slate-300" : ""} mt-1`}>
+                                                    Capacity: {room?.capacity}
+                                                </span>
+                                            </div>
                                         </div>
-                                        <div className={`flex-1 rounded-b-md p-2 flex flex-col justify-center items-center bg-white dark:bg-slate-800`}>
-                                            <span className={`text-xs text-slate-500 dark:text-slate-400 ${selectedRoom === roomId && !isEditing ? "text-slate-600 dark:text-slate-300" : ""}`}>Capacity: {allRoomsData[roomId]?.capacity}</span>
-                                        </div>
-                                    </div>
-                                ))}
+                                    )
+                                })}
                             </div>
                         </div>
                     </div>

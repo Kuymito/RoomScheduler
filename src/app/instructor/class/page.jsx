@@ -206,13 +206,13 @@ const InstructorClassViewContent = () => {
                             {currentTableData.length > 0 ? (
                                 currentTableData.map((data) => (
                                     <tr key={data.id} className="bg-white border-b border-gray-200 dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 cursor-pointer" onClick={() => handleRowClick(data.id)}>
-                                        <td className="px-6 py-2 font-medium text-gray-900 whitespace-nowrap dark:text-white">{data.name}</td>
-                                        <td className="px-6 py-2 lg:table-cell hidden">{data.generation}</td>
-                                        <td className="px-6 py-2 lg:table-cell hidden">{data.group}</td>
-                                        <td className="px-6 py-2">{data.major}</td>
-                                        <td className="px-6 py-2">{data.degrees}</td>
-                                        <td className="px-6 py-2 2xl:table-cell hidden">{data.faculty}</td>
-                                        <td className="px-6 py-2 sm:table-cell hidden">{data.shift}</td>
+                                        <td className="px-6 py-2.5 font-medium text-gray-900 whitespace-nowrap dark:text-white">{data.name}</td>
+                                        <td className="px-6 py-2.5 lg:table-cell hidden">{data.generation}</td>
+                                        <td className="px-6 py-2.5 lg:table-cell hidden">{data.group}</td>
+                                        <td className="px-6 py-2.5">{data.major}</td>
+                                        <td className="px-6 py-2.5">{data.degrees}</td>
+                                        <td className="px-6 py-2.5 2xl:table-cell hidden">{data.faculty}</td>
+                                        <td className="px-6 py-2.5 sm:table-cell hidden">{data.shift}</td>
                                     </tr>
                                 ))
                             ) : (

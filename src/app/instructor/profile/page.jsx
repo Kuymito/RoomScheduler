@@ -1,11 +1,8 @@
-// components/ProfileContent.js
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
 import InstructorLayout from '@/components/InstructorLayout'; // Adjusted import path
 import Image from 'next/image';
-
-// --- Icon Components ---
 const EyeOpenIcon = ({ className = "h-5 w-5" }) => (
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
@@ -20,7 +17,6 @@ const EyeClosedIcon = ({ className = "h-5 w-5" }) => (
     </svg>
 );
 
-// Follow Icon (Placeholder - Replace with your image or SVG)
 const FollowIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="h-4 w-4 mr-1">
         <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
@@ -34,12 +30,12 @@ const ProfileContent = () => {
         email: "KeoLinda@gmail.com",
         phoneNumber: "123456789",
         address: "Phnom Penh",
-        avatarUrl: "/images/reach.jpg", // Replace with the actual avatar URL from the image
+        avatarUrl: "/images/reach.jpg", 
         password: "password123",
         degree: "M.A.",
         department: "Faculty of IT",
-        major: "",
-        dateOfBirth: "",
+        major: "IT",
+        
     });
 
     const [editableProfileData, setEditableProfileData] = useState(null);
@@ -233,39 +229,16 @@ const ProfileContent = () => {
         fileInputRef.current?.click();
     };
 
-    const renderPasswordField = (label, name, value, onChange, fieldName, hasError = false, readOnly = false) => (
-        <div className="form-group flex-1 min-w-[200px]">
-            <label className="form-label block font-semibold text-xs text-gray-700 dark:text-gray-300 mb-1">{label}</label>
-            <div className="relative">
-                <input
-                    type={passwordVisibility[fieldName] ? "text" : "password"}
-                    name={name}
-                    className={`form-input w-full py-2 px-3 bg-gray-100 border border-gray-300 dark:bg-gray-700 dark:border-gray-600 rounded-md font-medium text-xs text-gray-700 dark:text-gray-300 ${
-                        hasError || emptyPasswordError[fieldName]
-                            ? 'border-red-500 ring-1 ring-red-500'
-                            : 'border-gray-300 dark:border-gray-600'
-                    }`}
-                    placeholder={`Enter ${label.toLowerCase()}`}
-                    value={value}
-                    onChange={onChange}
-                    readOnly={readOnly || !isEditingPassword}
-                    disabled={loading}
-                />
-                {isEditingPassword && (
-                    <button
-                        type="button"
-                        onClick={() => togglePasswordVisibility(fieldName)}
-                        className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500 hover:text-gray-700"
-                        aria-label={passwordVisibility[fieldName] ? "Hide password" : "Show password"}
-                    >
-                        {passwordVisibility[fieldName] ? <EyeClosedIcon /> : <EyeOpenIcon />}
-                    </button>
-                )}
-            </div>
-        </div>
-    );
+   const handlePasswordEditToggle = () => {
+    if (isEditingPassword) {
+      savePassword();
+    } else {
+      setIsEditingPassword(true);
+      setSuccessMessage(null); // Clear success message
+      setError(null); // Clear error message
+    }
+  };
 
-    // --- Hooks ---
     useEffect(() => {
         fetchProfileData();
     }, []);
@@ -519,90 +492,62 @@ const ProfileContent = () => {
                   </div>
                 </div>
               </div>
-
-              <div className="form-actions flex justify-end items-center gap-3 mt-4">
-                {isEditingGeneral ? (
-                  <>
-                    <button
-                      onClick={() => handleCancelClick("general")}
-                      className="back-button bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 shadow-sm rounded-md text-gray-800 dark:text-gray-200 border-none py-2 px-3 font-semibold text-xs cursor-pointer"
-                      disabled={loading}
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      onClick={() => handleSaveClick("general")}
-                      className="save-button bg-blue-600 hover:bg-blue-700 shadow-sm rounded-md text-white text-xs border-none py-2 px-3 font-semibold  cursor-pointer"
-                      disabled={loading}
-                    >
-                      {loading ? "Saving..." : "Save"}
-                    </button>
-                  </>
-                ) : (
-                  <button
-                    onClick={() => handleEditClick("general")}
-                    className="save-button bg-blue-600 hover:bg-blue-700 shadow-sm rounded-md text-white border-none py-2 px-3 font-semibold text-xs cursor-pointer"
-                    disabled={loading}
-                  >
-                    Edit Profile
-                  </button>
-                )}
-              </div>
             </div>
 
-            {/* Password Information Card */}
-            <div className="info-card-password p-3 sm:p-4 bg-white border border-gray-300 dark:bg-gray-800 dark:border-gray-700 shadow-sm rounded-lg">
-              <div className="section-title font-semibold text-sm text-gray-800 dark:text-gray-200 mb-3">
-                Password Information
+             {/* Password Information Card */}
+            <div className="info-card-password p-3 sm:p-4 bg-white border border-num-gray-light dark:bg-gray-800 dark:border-gray-700 shadow-custom-light rounded-lg">
+              <div className="section-title font-semibold text-base text-num-dark-text dark:text-white mb-3">Password information</div>
+              <div className="form-row flex gap-3 mb-2 flex-wrap">
+                <div className="form-group flex-1 min-w-[200px]">
+                  <label className="form-label block font-medium text-sm text-num-dark-text dark:text-white mb-1">Current Password</label>
+                  <input
+                    type="password"
+                    className="form-input w-full py-2 px-3 bg-num-content-bg border border-num-gray-light dark:bg-gray-700 dark:border-gray-600 rounded-md font-medium text-[14px] text-num-dark-text dark:text-white"
+                    placeholder="Enter current password"
+                    value={currentPassword}
+                    onChange={handleCurrentPasswordChange}
+                    readOnly={!isEditingPassword}
+                    disabled={loading}
+                  />
+                </div>
+                <div className="form-group flex-1 min-w-[200px]">
+                  <label className="form-label block font-medium text-sm text-num-dark-text dark:text-white mb-1">New Password</label>
+                  <input
+                    type="password"
+                    className="form-input w-full py-2 px-3 bg-num-content-bg border border-num-gray-light dark:bg-gray-700 dark:border-gray-600 rounded-md font-medium text-[14px] text-num-dark-text dark:text-white"
+                    placeholder="Enter new password"
+                    value={newPassword}
+                    onChange={handleNewPasswordChange}
+                    readOnly={!isEditingPassword}
+                    disabled={loading}
+                  />
+                </div>
               </div>
               <div className="form-row flex gap-3 mb-2 flex-wrap">
-                {renderPasswordField(
-                  "Current Password",
-                  "currentPassword",
-                  currentPassword,
-                  handleCurrentPasswordChange,
-                  "current",
-                  emptyPasswordError.current
-                )}
-                {renderPasswordField(
-                  "New Password",
-                  "newPassword",
-                  newPassword,
-                  handleNewPasswordChange,
-                  "new",
-                  emptyPasswordError.new
-                )}
-              </div>
-
-              <div className="form-actions flex justify-end items-center gap-3 mt-4">
-                {isEditingPassword ? (
-                  <>
-                    <button
-                      onClick={() => handleCancelClick("password")}
-                      className="back-button bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 shadow-sm rounded-md text-gray-800 dark:text-gray-200 border-none py-2 px-3 font-semibold text-xs cursor-pointer"
-                      disabled={loading}
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      onClick={() => handleSaveClick("password")}
-                      className="save-button bg-blue-600 hover:bg-blue-700 shadow-sm rounded-md text-white text-xs border-none py-2 px-3 font-semibold  cursor-pointer"
-                      disabled={loading}
-                    >
-                      {loading ? "Saving..." : "Save"}
-                    </button>
-                  </>
-                ) : (
-                  <button
-                    onClick={() => handleEditClick("password")}
-                    className="save-button bg-blue-600 hover:bg-blue-700 shadow-sm rounded-md text-white border-none py-2 px-3 font-semibold text-xs cursor-pointer"
+                <div className="form-group flex-1 min-w-[200px]">
+                  <label className="form-label block font-medium text-sm text-num-dark-text dark:text-white mb-1">Confirm New Password</label>
+                  <input
+                    type="password"
+                    className="form-input w-full py-2 px-3 bg-num-content-bg border border-num-gray-light dark:bg-gray-700 dark:border-gray-600 rounded-md font-medium text-[14px] text-num-dark-text dark:text-white"
+                    placeholder="Confirm new password"
+                    value={confirmNewPassword}
+                    onChange={handleConfirmPasswordChange}
+                    readOnly={!isEditingPassword}
                     disabled={loading}
-                  >
-                    Change Password
-                  </button>
-                )}
+                  />
+                </div>
+              </div>
+              <div className="form-actions flex justify-end mt-3">
+                <button
+                  className="save-button bg-blue-600 hover:bg-blue-700 shadow-custom-light rounded-md text-white border-none py-2 px-3 font-semibold text-sm cursor-pointer"
+                  onClick={handlePasswordEditToggle}
+                  disabled={loading} // Disable button during loading
+                >
+                  {loading && isEditingPassword ? "Saving..." : isEditingPassword ? "Save Password" : "Change Password"}
+                </button>
               </div>
             </div>
+
           </div>
         </div>
       </div>
