@@ -5,6 +5,7 @@ import AdminLayout from '@/components/AdminLayout'; // Assuming you use this lay
 import ConfirmationModal from './components/ConfirmationModal';
 import RoomCardSkeleton from './components/RoomCardSkeleton';
 import ClassListSkeleton from './components/ClassListSkeleton';
+import { useRouter } from 'next/navigation'; 
 
 // --- Default Icon for items without an image ---
 const DefaultClassIcon = ({ className = "w-8 h-8" }) => (
@@ -108,6 +109,7 @@ const ScheduledClassCard = ({ classData, onDragStart, onDragEnd }) => (
 );
 
 const RoomCard = ({ cellData, isDragOver, isWarning, dragHandlers }) => {
+    const router = useRouter();
     const { room, class: classData } = cellData;
     const isOccupied = !!classData;
 
@@ -117,11 +119,21 @@ const RoomCard = ({ cellData, isDragOver, isWarning, dragHandlers }) => {
         return 'border-gray-300 dark:border-gray-700 shadow-sm';
     };
 
+    // This function will be called when the header is clicked
+    const handleHeaderClick = () => {
+        router.push(`/admin/schedule/${room.id}`);
+    };
+
     return (
         <div className={`rounded-lg border-2 flex flex-col transition-all duration-150 overflow-hidden ${getBorderColor()}`}>
-            <div className={`px-2 py-1 flex justify-between items-center border-b-2 transition-colors ${isWarning ? 'bg-red-100 dark:bg-red-800/50' : 'bg-gray-50 dark:bg-gray-800'}`}>
+            {/* --- MODIFIED HEADER DIV --- */}
+            <div
+                onClick={handleHeaderClick}
+                className={`px-2 py-1 flex justify-between items-center border-b-2 transition-colors cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 ${isWarning ? 'bg-red-100 dark:bg-red-800/50' : 'bg-gray-50 dark:bg-gray-800'}`}
+            >
                 <div className={`w-2 h-2 rounded-full ring-1 ring-white/50 ${isOccupied ? 'bg-red-500' : 'bg-green-500'}`} title={isOccupied ? 'Occupied' : 'Available'}></div>
-                <a href="#" onClick={(e) => { e.preventDefault(); alert(`Link to details for Room ${room.name}`); }} className="text-xs font-bold text-gray-700 dark:text-gray-300 hover:underline">{room.name}</a>
+                {/* The <a> tag is now a <span> as it no longer needs link behavior */}
+                <span className="text-xs font-bold text-gray-700 dark:text-gray-300">{room.name}</span>
             </div>
             <div onDragOver={dragHandlers.onDragOver} onDragEnter={dragHandlers.onDragEnter} onDragLeave={dragHandlers.onDragLeave} onDrop={dragHandlers.onDrop} className={`flex-grow p-2 flex justify-center items-center text-center transition-colors min-h-[100px] ${isDragOver ? 'bg-emerald-100 dark:bg-emerald-800/50' : 'bg-white dark:bg-gray-900'}`}>
                 {isOccupied ? (<ScheduledClassCard classData={classData} onDragStart={dragHandlers.onDragStart} onDragEnd={dragHandlers.onDragEnd} />) : (<span className="text-xs text-gray-400 dark:text-gray-600 italic select-none pointer-events-none">Room {room.name}</span>)}
