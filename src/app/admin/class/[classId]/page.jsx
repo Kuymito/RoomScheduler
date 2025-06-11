@@ -536,6 +536,7 @@ const ClassDetailsContent = () => {
     
     const scheduleIsEmpty = Object.values(schedule).every(dayData => !dayData || !dayData.instructor);
 
+    // general information
     return (
         <div className='p-6 dark:text-white'>
             <div className="section-title font-semibold text-lg text-num-dark-text dark:text-white mb-1">Class Details</div>
