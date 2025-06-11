@@ -1,11 +1,10 @@
 'use client';
 
-import { useRouter, useParams } from 'next/navigation';
-import React, { useState, useMemo, useRef, useEffect } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react'; // Ensured React is imported
+import { useRouter, useParams } from 'next/navigation'; // Kept for context
 import AdminLayout from '@/components/AdminLayout';
-import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
-import ClassDetailSkeleton from '../components/ClassDetailSkeleton';
+import jsPDF from 'jspdf'; // Import jsPDF
+import html2canvas from 'html2canvas'; // Import html2canvas
 
 // --- DefaultAvatarIcon Component ---
 const DefaultAvatarIcon = ({ className = "w-8 h-8" }) => (
@@ -13,20 +12,8 @@ const DefaultAvatarIcon = ({ className = "w-8 h-8" }) => (
         <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
     </svg>
 );
-// --- Data Simulation ---
-const initialClassData = [
-    // Added semester to existing data
-        { id: 1, name: 'NUM30-01', generation: '30', group: '01', major: 'IT', degrees: 'Bachelor', faculty: 'Faculty of IT', semester: '2024-2025 S1', shift: '7:00 - 10:00', status: 'Active' },
-        { id: 2, name: 'NUM30-01', generation: '30', group: '01', major: 'IT', degrees: 'Bachelor', faculty: 'Faculty of IT', semester: '2024-2025 S1', shift: '7:00 - 10:00', status: 'Active' },
-        { id: 3, name: 'NUM30-02', generation: '30', group: '02', major: 'CS', degrees: 'Bachelor', faculty: 'Faculty of CS', semester: '2024-2025 S1', shift: '8:00 - 11:00', status: 'Active' },
-        { id: 4, name: 'NUM32-03', generation: '32', group: '03', major: 'IS', degrees: 'Bachelor', faculty: 'Faculty of IS', semester: '2024-2025 S2', shift: '9:00 - 12:00', status: 'Active' },
-        { id: 5, name: 'NUM32-04', generation: '32', group: '04', major: 'SE', degrees: 'Bachelor', faculty: 'Faculty of SE', semester: '2024-2025 S2', shift: '13:00 - 16:00', status: 'Active' },
-        { id: 6, name: 'NUM32-05', generation: '32', group: '05', major: 'AI', degrees: 'Bachelor', faculty: 'Faculty of AI & R', semester: '2024-2025 S2', shift: '15:00 PM - 18:00', status: 'Active' },
-        { id: 7, name: 'NUM33-06', generation: '33', group: '06', major: 'DS', degrees: 'Bachelor', faculty: 'Faculty of DS', semester: '2024-2025 S3', shift: '17:00 - 20:00', status: 'Active' },
-        { id: 8, name: 'NUM33-07', generation: '33', group: '07', major: 'ML', degrees: 'Bachelor', faculty: 'Faculty of ML', semester: '2024-2025 S3', shift: '18:00 - 21:00', status: 'Active' },
-        { id: 9, name: 'NUM33-08', generation: '33', group: '08', major: 'DA', degrees: 'Bachelor', faculty: 'Faculty of DA', semester: '2024-2025 S3', shift: '19:00 - 22:00', status: 'Archived' }, // Example archived
-        { id: 10, name: 'NUM33-09', generation: '33', group: '09', major: 'SE', degrees: 'Bachelor', faculty: 'Faculty of SE & R', semester: '2024-2025 S3', shift: '8:00 - 11:00', status: 'Active' }
-];
+
+// --- Initial Data (with degree) ---
 const initialInstructorsData = [ // Renamed to avoid conflict with schedule state name
     { id: 'inst1', name: 'Dr. Evelyn Reed', profileImage: '/images/admin.jpg', degree: 'PhD' },
     { id: 'inst2', name: 'Prof. Samuel Green', profileImage: null, degree: 'Master' },
@@ -39,14 +26,7 @@ const initialInstructorsData = [ // Renamed to avoid conflict with schedule stat
     { id: 'inst9', name: 'Dr. Aisha Khan', profileImage: null, degree: 'Associate' },
     { id: 'inst10', name: 'Prof. Ethan Brown', profileImage: null, degree: 'PhD' },
 ];
-// --- Options for Dropdown Menus ---
-const generationOptions = ['30', '31', '32', '33', '34', '35'];
-const majorOptions = ['IT', 'CS', 'IS', 'SE', 'AI', 'DS', 'ML', 'DA'];
-const degreesOptions = ['Associate', 'Bachelor', 'Master', 'PhD'];
-const facultyOptions = ['Faculty of IT', 'Faculty of CS', 'Faculty of IS', 'Faculty of AI', 'Faculty of DS', 'Faculty of ML', 'Faculty of DA', 'Faculty of SE'];
-const semesterOptions = ['Semester 1', 'Semester 2', 'Semester 3', 'Semester 4', 'Semester 5', 'Semester 6'];
-const shiftOptions = ['7:00 - 10:00', '8:00 - 11:00', '9:00 - 12:00', '13:00 - 16:00', '15:00 - 18:00', '17:00 - 20:00', '18:00 - 21:00', '19:00 - 22:00'];
-const statusOptions = ['Active', 'Archived'];
+
 const daysOfWeek = ['Mon', 'Tue', 'Wed', 'Thur', 'Fri', 'Sat', 'Sun'];
 const studyModes = [
     { value: 'in-class', label: 'In Class' },
@@ -94,105 +74,44 @@ const ScheduledInstructorCard = ({ instructorData, day, onDragStart, onDragEnd, 
     );
 };
 
+
 const ClassDetailsContent = () => {
-    // --- State Variables ---
-    const router = useRouter();
-    const params = useParams();
-    const [classDetails, setClassDetails] = useState(null);
-    const [editableClassDetails, setEditableClassDetails] = useState(null);
-    const [isEditing, setIsEditing] = useState(false);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
-    const [isNameManuallySet, setIsNameManuallySet] = useState(false);
-    const currentData = isEditing ? editableClassDetails : classDetails;
     const clientInitialSchedule = useMemo(() => daysOfWeek.reduce((acc, day) => { acc[day] = null; return acc; }, {}), []);
+    
     const [schedule, setSchedule] = useState(clientInitialSchedule);
     const [initialScheduleForCheck, setInitialScheduleForCheck] = useState(null);
     const [isDirty, setIsDirty] = useState(false);
+
     const [draggedItem, setDraggedItem] = useState(null);
     const [dragOverDay, setDragOverDay] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
+
     const [isSaving, setIsSaving] = useState(false);
     const [saveStatus, setSaveStatus] = useState('');
     const [saveMessage, setSaveMessage] = useState('');
     
     const saveStatusRef = useRef(saveStatus);
+    useEffect(() => { saveStatusRef.current = saveStatus; }, [saveStatus]);
 
-    // --- Handlers ---
-    const fetchClassDetails = async (id) => {
-        setLoading(true);
-        setError(null);
-        try {
-            await new Promise(resolve => setTimeout(resolve, 500));
-            const data = initialClassData.find(cls => cls.id === id);
-            if (data) {
-                setClassDetails(data);
-            } else {
-                setError('Class not found.');
-            }
-        } catch (err) {
-            setError("Failed to load class details.");
-        } finally {
-            setLoading(false);
-        }
-    };
-    const saveClassDetails = async () => {
-        setLoading(true);
-        setError(null);
-        try {
-            await new Promise(resolve => setTimeout(resolve, 700));
-            setClassDetails(editableClassDetails);
-            setIsEditing(false);
-            setSuccessMessage("Class details updated successfully!");
-        } catch (err) {
-            setError("Failed to save class details.");
-        } finally {
-            setLoading(false);
-        }
-    };
-    const handleEditToggle = () => {
-        if (isEditing) {
-            saveClassDetails();
+    // Effect to set the baseline for dirty checking once, or when data would be "loaded"
+    useEffect(() => {
+        // In a real app, you might fetch schedule here and then set both states.
+        // For now, using the client-side initialSchedule generated by useMemo
+        setInitialScheduleForCheck(JSON.parse(JSON.stringify(clientInitialSchedule)));
+    }, [clientInitialSchedule]); // Depend on clientInitialSchedule in case it could ever change (though it won't here)
+
+    // Effect for dirty checking
+    useEffect(() => {
+        if (initialScheduleForCheck) {
+            const currentScheduleString = JSON.stringify(schedule);
+            const initialCheckString = JSON.stringify(initialScheduleForCheck);
+            setIsDirty(currentScheduleString !== initialCheckString);
         } else {
-            const initialEditableData = { ...classDetails };
-            
-            // Check if the initial name is the default format or custom
-            const expectedName = `NUM${initialEditableData.generation}-${initialEditableData.group}`;
-            if (initialEditableData.name !== expectedName) {
-                setIsNameManuallySet(true);
-            } else {
-                setIsNameManuallySet(false);
-            }
+             // If initialScheduleForCheck is not yet set, assume not dirty or handle as per app logic
+            setIsDirty(false);
+        }
+    }, [schedule, initialScheduleForCheck]);
 
-            setEditableClassDetails(initialEditableData);
-            setIsEditing(true);
-            setError(null);
-        }
-    };
-    const handleCancelClick = (section) => {
-        if (section === 'general') {
-            setIsEditing(false);
-            setEditableClassDetails(null);
-            setIsNameManuallySet(false);
-        }
-        // Add more sections as needed
-        // For now, we only handle the 'general' section
-        // Reset the editableClassDetails to the original classDetails
-        setEditableClassDetails(classDetails);
-    };
-    const handleInputChange = (e) => {
-        const { name, value } = e.target;
-
-        if (name === 'name') {
-            if (value === '') {
-                setIsNameManuallySet(false);
-            } else {
-                setIsNameManuallySet(true);
-            }
-        }
-        
-        setEditableClassDetails(prev => ({ ...prev, [name]: value }));
-    };
     const availableInstructors = useMemo(() => {
         const assignedInstructorIds = new Set();
         Object.values(schedule).forEach(daySchedule => {
@@ -210,6 +129,7 @@ const ClassDetailsContent = () => {
         }
         return filtered;
     }, [schedule, searchTerm]);
+
     // --- Drag and Drop Handlers ---
     const handleNewInstructorDragStart = (e, instructor) => { /* ... */ 
         setDraggedItem({ item: instructor, type: 'new' });
@@ -275,6 +195,7 @@ const ClassDetailsContent = () => {
             return prevSchedule;
         });
     };
+
     // --- Save Schedule Function ---
     const handleSaveSchedule = async () => {
         setIsSaving(true);
@@ -306,6 +227,7 @@ const ClassDetailsContent = () => {
             }, 5000);
         }
     };
+
     // --- Download Schedule Function ---
     const handleDownloadSchedule = async () => {
         const schedulePanelElement = document.getElementById('weeklySchedulePanel');
@@ -377,106 +299,13 @@ const ClassDetailsContent = () => {
             alert("Failed to generate PDF. Please check the console for details.");
         }
     };
-    const renderSelectField = (label, name, value, options) => (
-        <div className="form-group flex-1 min-w-[200px]">
-            <label className="form-label block font-semibold text-xs text-num-dark-text dark:text-white mb-1">{label}</label>
-            {isEditing ? (
-                <select
-                    name={name}
-                    value={value}
-                    onChange={handleInputChange}
-                    disabled={loading}
-                    className="form-input w-full py-2 px-3 bg-num-content-bg border border-num-gray-light dark:bg-gray-700 dark:border-gray-600 rounded-md font-medium text-xs text-num-dark-text dark:text-white"
-                >
-                    {options.map(option => (
-                        <option key={option} value={option}>{option}</option>
-                    ))}
-                </select>
-            ) : (
-                <input
-                    type="text"
-                    value={value}
-                    readOnly
-                    className="form-input w-full py-2 px-3 bg-gray-100 border border-num-gray-light dark:bg-gray-800 dark:border-gray-700 rounded-md font-medium text-xs text-gray-500 dark:text-gray-400"
-                />
-            )}
-        </div>
-    );
-    const renderTextField = (label, name, value) => (
-         <div className="form-group flex-1 min-w-[200px]">
-            <label className="form-label block font-semibold text-xs text-num-dark-text dark:text-white mb-1">{label}</label>
-            {isEditing ? (
-                <input
-                    type="text"
-                    name={name}
-                    value={value}
-                    onChange={handleInputChange}
-                    disabled={loading}
-                    className="form-input w-full py-2 px-3 bg-num-content-bg border border-num-gray-light dark:bg-gray-700 dark:border-gray-600 rounded-md font-medium text-xs text-num-dark-text dark:text-white"
-                />
-            ) : (
-                <input
-                    type="text"
-                    value={value}
-                    readOnly
-                    className="form-input w-full py-2 px-3 bg-gray-100 border border-num-gray-light dark:bg-gray-800 dark:border-gray-700 rounded-md font-medium text-xs text-gray-500 dark:text-gray-400"
-                />
-            )}
-        </div>
-    );
-
-    // --- Hooks ---
-    useEffect(() => {
-        // Only run this logic if we are in edit mode and the name hasn't been manually set
-        if (!isEditing || !editableClassDetails || isNameManuallySet) {
-            return;
-        }
-
-        // Auto-update the name based on generation and group
-        setEditableClassDetails(prev => ({
-            ...prev,
-            name: `NUM${prev.generation}-${prev.group}`
-        }));
-
-    }, [editableClassDetails?.generation, editableClassDetails?.group, isEditing, isNameManuallySet]);
-    useEffect(() => {
-        const classIdFromUrl = params.classId;
-        if (classIdFromUrl) {
-            fetchClassDetails(parseInt(classIdFromUrl, 10));
-        }
-    }, [params.classId]);
-    useEffect(() => { saveStatusRef.current = saveStatus; }, [saveStatus]);
-    // Effect to set the baseline for dirty checking once, or when data would be "loaded"
-    useEffect(() => {
-        // In a real app, you might fetch schedule here and then set both states.
-        // For now, using the client-side initialSchedule generated by useMemo
-        setInitialScheduleForCheck(JSON.parse(JSON.stringify(clientInitialSchedule)));
-    }, [clientInitialSchedule]); // Depend on clientInitialSchedule in case it could ever change (though it won't here)
-    // Effect for dirty checking
-    useEffect(() => {
-        if (initialScheduleForCheck) {
-            const currentScheduleString = JSON.stringify(schedule);
-            const initialCheckString = JSON.stringify(initialScheduleForCheck);
-            setIsDirty(currentScheduleString !== initialCheckString);
-        } else {
-                // If initialScheduleForCheck is not yet set, assume not dirty or handle as per app logic
-            setIsDirty(false);
-        }
-    }, [schedule, initialScheduleForCheck]);
 
     // --- Button Classes based on state ---
     let saveButtonBaseClasses = "w-full sm:w-auto px-6 py-2 text-white font-semibold rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-opacity-50 transition-all duration-150 ease-in-out transform active:scale-95";
     let saveButtonColorClasses = "";
     let downloadButtonBaseClasses = "w-full sm:w-auto px-6 py-2 text-white font-semibold rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-opacity-50 transition-colors duration-150 ease-in-out transform active:scale-95";
     let downloadButtonColorClasses = "";
-    
-    // --- Render Logic ---
-    if (loading && !classDetails) {
-        return <ClassDetailSkeleton />;
-    }
-    if (!classDetails) {
-        return <div className="p-6 text-red-500 dark:text-red-400">Error: {error}</div>;
-    }
+
     if (isSaving) {
         saveButtonColorClasses = "bg-gray-400 opacity-60 cursor-not-allowed"; // Saving state
         downloadButtonColorClasses = "bg-gray-300 hover:bg-gray-300 focus:ring-gray-200 opacity-60 cursor-not-allowed"; // Disabled during save
@@ -492,54 +321,9 @@ const ClassDetailsContent = () => {
 
     return (
         <div className='p-6 dark:text-white'>
-            <div className="section-title font-semibold text-lg text-num-dark-text dark:text-white mb-1">Class Details</div>
+            <div className="section-title font-semibold text-lg text-num-dark-text dark:text-white mb-1">Class Details & Schedule</div>
             <hr className="border-t border-slate-300 dark:border-slate-700 mt-2 mb-4" />
             <div className="class-section flex flex-col gap-6">
-                <div className="info-details-wrapper flex-grow flex flex-col gap-8 min-w-[300px]">
-                    <div className="info-card p-3 sm:p-4 bg-white border border-num-gray-light dark:bg-gray-800 dark:border-gray-700 shadow-custom-light rounded-lg">
-                        <div className="section-title font-semibold text-md text-num-dark-text dark:text-white mb-3">General Information</div>
-                        
-                        <div className="form-row flex gap-3 mb-2 flex-wrap">
-                            {renderTextField("Class Name", "name", currentData.name)}
-                        </div>
-                        <div className="form-row flex gap-3 mb-2 flex-wrap">
-                            {renderTextField("Group", "group", currentData.group)}
-                            {renderSelectField("Generation", "generation", currentData.generation, generationOptions)}
-                        </div>
-                        <div className="form-row flex gap-3 mb-2 flex-wrap">
-                            {renderSelectField("Faculty", "faculty", currentData.faculty, facultyOptions)}
-                            {renderSelectField("Degrees", "degrees", currentData.degrees, degreesOptions)}
-                            {renderSelectField("Major", "major", currentData.major, majorOptions)}
-                        </div>
-                        <div className="form-row flex gap-3 mb-2 flex-wrap">
-                            {renderSelectField("Semester", "semester", currentData.semester, semesterOptions)}
-                            {renderSelectField("Shift", "shift", currentData.shift, shiftOptions)}
-                            {renderSelectField("Status", "status", currentData.status, statusOptions)}
-                        </div>
-
-                        <div className="form-actions flex justify-end items-center gap-3 mt-4">
-                            { isEditing ? (
-                                <>
-                                    <button onClick={() => handleCancelClick('general')} className="back-button bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 shadow-custom-light rounded-md text-gray-800 dark:text-white border-none py-2 px-3 font-semibold text-xs cursor-pointer" disabled={loading}>Cancel</button>
-                                    <button onClick={handleEditToggle} className="save-button bg-blue-600 hover:bg-blue-700 shadow-custom-light rounded-md text-white border-none py-2 px-3 font-semibold text-xs cursor-pointer" disabled={loading}>
-                                    {loading ? "Saving..." : "Save Changes"}
-                                    </button>
-                                </>
-                            ) : (
-                                <>
-                                    <button onClick={() => router.back()} className="back-button bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 shadow-custom-light rounded-md text-gray-800 dark:text-white border-none py-2 px-3 font-semibold text-xs cursor-pointer" disabled={loading}>
-                                        Back
-                                    </button>
-                                    <button onClick={handleEditToggle} className="edit-button bg-blue-600 hover:bg-blue-700 shadow-custom-light rounded-md text-white border-none py-2 px-3 font-semibold text-xs cursor-pointer" disabled={loading}>
-                                        {loading ? "Loading..." : "Edit Class"}
-                                    </button>
-                                </>
-                            )}
-                        </div>
-                    </div>
-                </div>
-                
-                {/* Scheduler Section */}
                 <div className='flex-grow flex flex-col lg:flex-row gap-6 min-w-[300px]'>
                     {/* Instructor Panel */}
                     <div className='h-[530px] lg:w-[250px] xl:w-[280px] flex-shrink-0 p-4 bg-white border border-num-gray-light dark:bg-gray-800 dark:border-gray-700 shadow-custom-light rounded-lg self-start flex flex-col'>
@@ -578,13 +362,6 @@ const ClassDetailsContent = () => {
                         {/* Action Buttons: Save and Download */}
                         <div className="mt-auto pt-6 border-t border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row justify-between items-center gap-4">
                             <div className="flex flex-col items-start gap-1 w-full sm:w-auto">
-                                <ul class="list-disc text-xs mb-4 ml-3">
-                                    <li>Generation: <span className="font-semibold text-num-dark-text dark:text-gray-100">{currentData.generation}</span></li>
-                                    <li>Group: <span className="font-semibold text-num-dark-text dark:text-gray-100">{currentData.group}</span></li>
-                                    <li>Semester: <span className="font-semibold text-num-dark-text dark:text-gray-100">{currentData.semester}</span></li>
-                                    <li>Shift: <span className="font-semibold text-num-dark-text dark:text-gray-100">{currentData.shift}</span></li>
-                                </ul>
-                                
                                 <button
                                     onClick={handleSaveSchedule}
                                     disabled={isSaving || !isDirty} // Disable if saving OR if not dirty
@@ -594,15 +371,13 @@ const ClassDetailsContent = () => {
                                 </button>
                                 {saveMessage && (<p className={`text-xs w-full text-center sm:text-left ${saveStatus === 'success' ? 'text-green-600 dark:text-green-400' : saveStatus === 'error' ? 'text-red-600 dark:text-red-400' : 'text-gray-500 dark:text-gray-400'}`}>{saveMessage}</p>)}
                             </div>
-                            <div className="flex flex-col items-end gap-1 w-full sm:w-auto mt-24">
-                                <button
-                                    onClick={handleDownloadSchedule}
-                                    className={`${downloadButtonBaseClasses} ${downloadButtonColorClasses}`}
-                                    disabled={isSaving || scheduleIsEmpty} // Disable if saving or schedule is empty
-                                >
-                                    Download Schedule
-                                </button>
-                            </div>
+                            <button
+                                onClick={handleDownloadSchedule}
+                                className={`${downloadButtonBaseClasses} ${downloadButtonColorClasses}`}
+                                disabled={isSaving || scheduleIsEmpty} // Disable if saving or schedule is empty
+                            >
+                                Download Schedule
+                            </button>
                         </div>
                     </div>
                 </div>

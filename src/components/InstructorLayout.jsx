@@ -42,8 +42,8 @@ export default function InstructorLayout({ children, activeItem, pageTitle }) {
     };
     const handleCloseLogoutAlert = () => setShowLogoutAlert(false);
     const handleConfirmLogout = () => { 
-        alert('Logged out'); 
-        setShowLogoutAlert(false); 
+        setShowLogoutAlert(false);
+        router.push('/auth/login');
     };
     
     const handleToggleNotificationPopup = (event) => {

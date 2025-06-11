@@ -7,6 +7,12 @@ import AdminPopup from 'src/app/admin/profile/components/AdminPopup';
 import LogoutAlert from '@/components/LogoutAlert';
 import Footer from '@/components/Footer';
 import NotificationPopup from '@/app/admin/notification/AdminNotificationPopup';
+import { Moul } from 'next/font/google';
+
+const moul = Moul({
+    weight: '400',
+    subsets: ['latin'],
+});
 
 const TOPBAR_HEIGHT = '90px'; // Adjust this value to match your actual Topbar height.
 
@@ -23,6 +29,7 @@ export default function AdminLayout({ children, activeItem, pageTitle }) {
     const router = useRouter();
     const pathname = usePathname();
     const [ isProfileNavigating, setIsProfileNavigating] = useState(false);
+    const [isLoading, setIsLoading] = useState(false); // State for loading
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
         if (typeof window !== 'undefined') {
             return localStorage.getItem('sidebarCollapsed') === 'true';
@@ -41,9 +48,12 @@ export default function AdminLayout({ children, activeItem, pageTitle }) {
         setShowLogoutAlert(true);
     };
     const handleCloseLogoutAlert = () => setShowLogoutAlert(false);
-    const handleConfirmLogout = () => { 
-        alert('Logged out'); 
-        setShowLogoutAlert(false); 
+    const handleConfirmLogout = () => {
+        setShowLogoutAlert(false);
+        setIsLoading(true);
+        setTimeout(() => {
+            router.push('/auth/login');
+        }, 1500);
     };
     
     const handleToggleNotificationPopup = (event) => {
@@ -171,7 +181,35 @@ export default function AdminLayout({ children, activeItem, pageTitle }) {
         if (isProfileNavigating) {
             setIsProfileNavigating(false);
         }
-    }, [pathname]); 
+    }, [pathname]);
+
+    if (isLoading) {
+        return (
+            <div className="min-h-screen w-screen flex flex-col items-center justify-center bg-blue-100 text-center p-6">
+                <img 
+                src="https://numregister.com/assets/img/logo/num.png" 
+                alt="University Logo" 
+                className="mx-auto mb-6 w-24 sm:w-28 md:w-32" 
+                />
+                <h1 className={`${moul.className} text-2xl sm:text-3xl font-bold mb-3 text-blue-800`}>
+                សាកលវិទ្យាល័យជាតិគ្រប់គ្រង
+                </h1>
+                <h2 className="text-xl sm:text-2xl font-medium mb-8 text-blue-700">
+                National University of Management
+                </h2>
+                <p className="text-lg sm:text-xl text-gray-700 font-semibold mb-4">
+                Logging out, please wait...
+                </p>
+                {/* Simple Tailwind CSS Spinner */}
+                <div 
+                className="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-blue-600"
+                role="status"
+                >
+                <span className="sr-only">Loading...</span>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="flex w-full min-h-screen bg-[#E2E1EF] dark:bg-gray-800">
