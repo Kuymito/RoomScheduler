@@ -59,7 +59,7 @@ const SkeletonCard = () => (
 );
 
 const ScheduleItemCard = ({ item }) => (
-  <div className={`${SCHEDULE_ITEM_BG_COLOR} p-2 h-full flex flex-col text-xs rounded-md shadow-sm border border-green-200 dark:border-green-800/60`}>
+  <div className={`${SCHEDULE_ITEM_BG_COLOR} p-2 h-full w-full flex flex-col text-xs rounded-md shadow-sm border border-green-200 dark:border-green-800/60`}>
     <div className="flex justify-between items-start mb-1">
       <span className="font-semibold text-[13px] text-gray-800 dark:text-gray-200">{item.subject}</span>
       <span className="text-gray-500 dark:text-gray-400 text-[10px] leading-tight pt-0.5">{item.timeDisplay}</span>

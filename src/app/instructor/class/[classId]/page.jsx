@@ -3,6 +3,7 @@
 import { useRouter, useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import InstructorLayout from '@/components/InstructorLayout';
+import InstructorClassDetailSkeleton from '../components/InstructorClassDetailSkeleton';
 
 // --- MOCK DATA (for demonstration) ---
 const mockClassData = {
@@ -81,7 +82,7 @@ const InstructorClassDetailsContent = () => {
             setError(null);
             try {
                 // Simulate network delay
-                await new Promise(resolve => setTimeout(resolve, 600));
+                await new Promise(resolve => setTimeout(resolve, 1500)); // Increased delay to show skeleton
                 if (mockClassData) {
                     setClassDetails(mockClassData);
                     setSchedule(mockScheduleData);
@@ -107,7 +108,7 @@ const InstructorClassDetailsContent = () => {
     };
 
     if (loading) {
-        return <div className="p-6 text-center dark:text-white">Loading Class Details...</div>;
+        return <InstructorClassDetailSkeleton />;
     }
 
     if (error) {
