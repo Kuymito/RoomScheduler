@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import InstructorSidebar from '@/components/InstructorSidebar';
 import InstructorTopbar from '@/components/InstructorTopbar';
-import AdminPopup from 'src/app/admin/profile/components/AdminPopup';
+import InstructorPopup from 'src/app/instructor/profile/components/InstructorPopup'; // Corrected import
 import LogoutAlert from '@/components/LogoutAlert';
 import Footer from '@/components/Footer';
 import NotificationPopup from '@/app/admin/notification/AdminNotificationPopup';
@@ -225,7 +225,7 @@ export default function InstructorLayout({ children, activeItem, pageTitle }) {
             {/* Popups */}
             {/* Admin/User Popup (structure from HEAD with ref) */}
             <div ref={adminPopupRef}>
-                <AdminPopup 
+                <InstructorPopup
                     show={showAdminPopup} 
                     onLogoutClick={handleLogoutClick} 
                     isNavigating={isProfileNavigating}

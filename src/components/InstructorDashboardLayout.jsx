@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import InstructorSidebar from '@/components/InstructorSidebar';
 import InstructorTopbar from '@/components/InstructorTopbar';
-import AdminPopup from 'src/app/admin/profile/components/AdminPopup'; // Adjust path if AdminPopup is more general
+import InstructorPopup from 'src/app/instructor/profile/components/InstructorPopup'; // Corrected import
 import LogoutAlert from '@/components/LogoutAlert';
 import Footer from '@/components/Footer';
 import NotificationPopup from '@/app/admin/notification/AdminNotificationPopup';
@@ -214,7 +214,7 @@ export default function DashboardLayout({ children, activeItem, pageTitle }) {
 
             {/* Popups (positioned independently, often fixed or absolutely) */}
             <div ref={adminPopupRef}>
-                <AdminPopup 
+                <InstructorPopup 
                     show={showAdminPopup} 
                     onLogoutClick={handleLogoutClick}
                     isNavigating={isProfileNavigating}
