@@ -6,6 +6,15 @@ import ClassCreatePopup from './components/ClassCreatePopup';
 import { useRouter } from 'next/navigation';
 import ClassPageSkeleton from './components/ClassPageSkeleton';
 
+// --- NEW: Spinner component ---
+const Spinner = () => (
+    <svg className="animate-spin h-6 w-6 text-gray-500 dark:text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+    </svg>
+);
+
+
 const fetchClassData = async () => {
     const initialClassData = [
         // Data is now inside the "API" function
@@ -32,7 +41,8 @@ const ClassViewContent = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPageOptions = [5, 10, 20, 50];
     const [itemsPerPage, setItemsPerPage] = useState(itemsPerPageOptions[0]);
-    const [navigatingRowId, setNavigatingRowId] = useState(null);
+    // --- UPDATED: Renamed state for clarity ---
+    const [rowLoadingId, setRowLoadingId] = useState(null);
     const [statusFilter, setStatusFilter] = useState('active');
     const [sortColumn, setSortColumn] = useState(null);
     const [sortDirection, setSortDirection] = useState('asc');
@@ -200,18 +210,24 @@ const ClassViewContent = () => {
                     : item
             )
         );
-        setCurrentPage(1);
+        // This is a quick UI update. In a real app, you would likely not reset the page
+        // to allow the user to see their change immediately without losing their view.
+        // setCurrentPage(1); 
     };
     
-    const handleRowClick = (classId) => {
-        // Prevent another navigation if one is already in progress
-        if (navigatingRowId) return;
+    // --- UPDATED: handleRowClick with async behavior and row loading state ---
+    const handleRowClick = async (classId) => {
+        if (rowLoadingId) return; // Prevent clicking if a row is already loading
 
-        // Set the ID of the row we are navigating from
-        setNavigatingRowId(classId);
+        setRowLoadingId(classId);
 
-        // Proceed with the navigation
+        // Simulate a network delay
+        await new Promise(resolve => setTimeout(resolve, 1500));
+
         router.push(`/admin/class/${classId}`);
+        
+        // This might not be seen if the page navigates away, but it's good practice
+        setRowLoadingId(null);
     };
 
     // --- Icons Components ---
@@ -370,61 +386,74 @@ const ClassViewContent = () => {
                     </thead>
                     <tbody className="text-xs font-normal text-gray-700 dark:text-gray-400">
                         {currentTableData.length > 0 ? (
-                            currentTableData.map((data) => ( <tr 
+                            currentTableData.map((data) => ( 
+                                // --- UPDATED: Row with conditional rendering for loading state ---
+                                <tr 
                                     key={data.id} 
-                                    className={` bg-white border-b border-gray-200 dark:bg-gray-800 dark:border-gray-700 ${navigatingRowId === data.id 
-                                            ? 'opacity-60 bg-gray-100 dark:bg-gray-700' // Style for the loading row
-                                            : 'hover:bg-gray-50 dark:hover:bg-gray-600 cursor-pointer' // Normal hover style
-                                        }
-                                    `}
-                                    onClick={() => !navigatingRowId && handleRowClick(data.id)}
+                                    className={`bg-white border-b border-gray-200 dark:bg-gray-800 dark:border-gray-700 ${
+                                        rowLoadingId === data.id 
+                                        ? 'cursor-wait bg-gray-100 dark:bg-gray-700' 
+                                        : 'hover:bg-gray-50 dark:hover:bg-gray-600 cursor-pointer'
+                                    }`}
+                                    onClick={() => handleRowClick(data.id)}
                                 >
-                                    <th scope="row" className="px-6 py-2.5 font-medium text-gray-900 whitespace-nowrap dark:text-white md:table-cell hidden">
-                                        <div className="flex gap-2">
-                                            {/* I've made the Edit button functional as an example, it also needs stopPropagation */}
-                                            <button 
-                                                onClick={(e) => {
-                                                    e.stopPropagation(); // Stop the event from bubbling to the <tr>
-                                                    handleRowClick(data.id); // Or a dedicated handleEditClick function
-                                                }}
-                                                className={`p-1 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300`} 
-                                            >
-                                                <EditIcon className="size-4" />
-                                            </button>
-                                            <button
-                                                onClick={(e) => {
-                                                    e.stopPropagation(); // Stop the event from bubbling to the <tr>
-                                                    toggleClassStatus(data.id);
-                                                }}
-                                                className={`p-1 ${data.status === 'active' ? 'text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300' : 'text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300'}`}
-                                                title={data.status === 'active' ? 'Archive Classroom' : 'Activate Classroom'}
-                                            >
-                                                <ArchiveIcon className="size-4" />
-                                            </button>
-                                        </div>
-                                    </th>
-                                    <td className="px-6 py-2"> {data.name} </td>
-                                    <td className="px-6 py-2 lg:table-cell hidden"> {data.generation} </td>
-                                    <td className="px-6 py-2 lg:table-cell hidden"> {data.group} </td>
-                                    <td className="px-6 py-2"> {data.major} </td>
-                                    <td className="px-6 py-2"> {data.degrees} </td>
-                                    <td className="px-6 py-2 2xl:table-cell hidden"> {data.faculty} </td>
-                                    <td className="px-6 py-2 2xl:table-cell hidden"> {data.semester} </td> {/* Display semester here */}
-                                    <td className="px-6 py-2 sm:table-cell hidden"> {data.shift} </td>
-                                    <td className="px-6 py-2 capitalize">
-                                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                                            data.status === 'active'
-                                                ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                                                : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
-                                        }`}>
-                                            {data.status}
-                                        </span>
-                                    </td>
+                                    {rowLoadingId === data.id ? (
+                                        // Loading state: Show spinner centered in the row
+                                        <td colSpan={10} className="px-6 py-2.5 text-center">
+                                            <div className="flex justify-center items-center">
+                                                <Spinner />
+                                            </div>
+                                        </td>
+                                    ) : (
+                                        // Normal state: Show class data
+                                        <>
+                                            <th scope="row" className="px-6 py-2.5 font-medium text-gray-900 whitespace-nowrap dark:text-white md:table-cell hidden">
+                                                <div className="flex gap-2">
+                                                    <button 
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleRowClick(data.id);
+                                                        }}
+                                                        className={`p-1 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300`} 
+                                                    >
+                                                        <EditIcon className="size-4" />
+                                                    </button>
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation(); 
+                                                            toggleClassStatus(data.id);
+                                                        }}
+                                                        className={`p-1 ${data.status === 'active' ? 'text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300' : 'text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300'}`}
+                                                        title={data.status === 'active' ? 'Archive Classroom' : 'Activate Classroom'}
+                                                    >
+                                                        <ArchiveIcon className="size-4" />
+                                                    </button>
+                                                </div>
+                                            </th>
+                                            <td className="px-6 py-2"> {data.name} </td>
+                                            <td className="px-6 py-2 lg:table-cell hidden"> {data.generation} </td>
+                                            <td className="px-6 py-2 lg:table-cell hidden"> {data.group} </td>
+                                            <td className="px-6 py-2"> {data.major} </td>
+                                            <td className="px-6 py-2"> {data.degrees} </td>
+                                            <td className="px-6 py-2 2xl:table-cell hidden"> {data.faculty} </td>
+                                            <td className="px-6 py-2 2xl:table-cell hidden"> {data.semester} </td>
+                                            <td className="px-6 py-2 sm:table-cell hidden"> {data.shift} </td>
+                                            <td className="px-6 py-2 capitalize">
+                                                <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                                                    data.status === 'active'
+                                                        ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                                                        : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+                                                }`}>
+                                                    {data.status}
+                                                </span>
+                                            </td>
+                                        </>
+                                    )}
                                 </tr>
                             ))
                         ) : (
                             <tr className="bg-white dark:bg-gray-800">
-                                <td colSpan="11" className="px-6 py-4 text-center text-gray-500 dark:text-gray-400"> {/* Updated colspan */}
+                                <td colSpan={10} className="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
                                     No matching results found.
                                 </td>
                             </tr>
@@ -543,7 +572,7 @@ const ClassViewContent = () => {
                     <li>
                         <button
                             onClick={goToPreviousPage}
-                            disabled={currentPage === 1}
+                            disabled={currentPage === 1 || rowLoadingId}
                             className="flex items-center justify-center px-3 h-8 ms-0 leading-tight text-gray-500 bg-white border border-gray-300 rounded-s-lg hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             Previous
@@ -553,11 +582,12 @@ const ClassViewContent = () => {
                         <li key={pageNumber}>
                             <button
                                 onClick={() => goToPage(pageNumber)}
+                                disabled={rowLoadingId}
                                 className={`flex items-center justify-center px-3 h-8 leading-tight border border-gray-300 ${
                                     currentPage === pageNumber
                                         ? 'text-blue-600 bg-blue-50 hover:bg-blue-100 hover:text-blue-700 dark:bg-gray-700 dark:text-white'
                                         : 'text-gray-500 bg-white hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white'
-                                }`}
+                                } disabled:opacity-50 disabled:cursor-not-allowed`}
                             >
                                 {pageNumber}
                             </button>
@@ -566,7 +596,7 @@ const ClassViewContent = () => {
                     <li>
                         <button
                             onClick={goToNextPage}
-                            disabled={currentPage === totalPages}
+                            disabled={currentPage === totalPages || rowLoadingId}
                             className="flex items-center justify-center px-3 h-8 leading-tight text-gray-500 bg-white border border-gray-300 rounded-e-lg hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             Next

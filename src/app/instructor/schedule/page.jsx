@@ -72,7 +72,7 @@ const ScheduleItemCard = ({ item }) => (
 const InstructorScheduleViewContent = () => {
     const [scheduleData, setScheduleData] = useState({});
     const [loading, setLoading] = useState(true); // Start in loading state
-    const [roomName, setRoomName] = useState("keo Linda");
+    const [instructorName, setinstructorName] = useState("Keo Linda");
     const [classAssignCount, setClassAssignCount] = useState(0);
     const [availableShiftCount, setAvailableShiftCount] = useState(0);
     const publicDate = "2025-06-22 13:11:46";
@@ -115,7 +115,7 @@ const InstructorScheduleViewContent = () => {
                     format: [canvas.width, canvas.height]
                 });
                 pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
-                pdf.save(`${roomName}_Schedule.pdf`);
+                pdf.save(`${instructorName}_Schedule.pdf`);
             }).catch(err => {
                 console.error("Error generating PDF:", err);
             });
@@ -130,7 +130,7 @@ const InstructorScheduleViewContent = () => {
       </div>
 
       <div ref={scheduleRef} className="bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-lg shadow-md border border-gray-200 dark:border-gray-700">
-        <h2 className="text-xl font-medium text-gray-700 dark:text-gray-300 mb-4">{roomName} </h2>
+        <h2 className="text-xl font-medium text-gray-700 dark:text-gray-300 mb-4">{instructorName}</h2>
 
         <div className="overflow-x-auto">
           <div className="grid grid-cols-[minmax(100px,1.5fr)_repeat(7,minmax(120px,2fr))] border border-gray-300 dark:border-gray-600 rounded-md min-w-[900px]">

@@ -3,19 +3,26 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import InstructorSidebar from '@/components/InstructorSidebar';
 import InstructorTopbar from '@/components/InstructorTopbar';
-import AdminPopup from 'src/app/admin/profile/components/AdminPopup';
+import InstructorPopup from 'src/app/instructor/profile/components/InstructorPopup';
 import LogoutAlert from '@/components/LogoutAlert';
 import Footer from '@/components/Footer';
 import NotificationPopup from '@/app/admin/notification/AdminNotificationPopup';
+import { Moul } from 'next/font/google';
 
-const TOPBAR_HEIGHT = '90px'; // Adjust this value to match your actual Topbar height.
+const moul = Moul({
+    weight: '400',
+    subsets: ['latin'],
+});
+
+const TOPBAR_HEIGHT = '90px';
 
 export default function InstructorLayout({ children, activeItem, pageTitle }) {
-    // --- State Variables ---
     const [showAdminPopup, setShowAdminPopup] = useState(false);
     const [showLogoutAlert, setShowLogoutAlert] = useState(false);
     const [showNotificationPopup, setShowNotificationPopup] = useState(false);
     const [notifications, setNotifications] = useState([]);
+    const [isLoading, setIsLoading] = useState(false);
+    const [navigatingTo, setNavigatingTo] = useState(null); // State for sidebar navigation
     const notificationPopupRef = useRef(null);
     const notificationIconRef = useRef(null);
     const adminPopupRef = useRef(null);
@@ -30,7 +37,6 @@ export default function InstructorLayout({ children, activeItem, pageTitle }) {
         return false;
     });
 
-    // --- Handlers ---
     const toggleSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
     const handleUserIconClick = (event) => { 
         event.stopPropagation(); 
@@ -41,24 +47,36 @@ export default function InstructorLayout({ children, activeItem, pageTitle }) {
         setShowLogoutAlert(true);
     };
     const handleCloseLogoutAlert = () => setShowLogoutAlert(false);
+
     const handleConfirmLogout = () => { 
         setShowLogoutAlert(false);
-        router.push('/auth/login');
+        setIsLoading(true);
+        setTimeout(() => {
+            router.push('/auth/login');
+        }, 1500);
     };
     
+    // Sidebar navigation handler
+    const handleNavItemClick = (item) => {
+        if (pathname !== item.href) {
+            setNavigatingTo(item.id);
+            router.push(item.href);
+        }
+    };
+
     const handleToggleNotificationPopup = (event) => {
         event.stopPropagation();
         setShowNotificationPopup(prev => !prev);
-        if (showAdminPopup) setShowAdminPopup(false); // Close other popup
+        if (showAdminPopup) setShowAdminPopup(false);
     };
     
-    const mockAPICall = async (action, data) => { // From HEAD
+    const mockAPICall = async (action, data) => {
         console.log(`MOCK API CALL: ${action}`, data || '');
         await new Promise(resolve => setTimeout(resolve, 300));
         return { success: true, message: `${action} successful.` };
     };
 
-    const handleMarkAllRead = async () => { // From HEAD
+    const handleMarkAllRead = async () => {
         try {
             await mockAPICall("Mark all notifications as read");
             setNotifications(prevNotifications =>
@@ -69,7 +87,7 @@ export default function InstructorLayout({ children, activeItem, pageTitle }) {
         }
     };
 
-    const handleApproveNotification = async (notificationId) => { // From HEAD
+    const handleApproveNotification = async (notificationId) => {
         try {
             await mockAPICall("Approve notification", { notificationId });
             setNotifications(prevNotifications =>
@@ -84,7 +102,7 @@ export default function InstructorLayout({ children, activeItem, pageTitle }) {
         }
     };
 
-    const handleDenyNotification = async (notificationId) => { // From HEAD
+    const handleDenyNotification = async (notificationId) => {
         try {
             await mockAPICall("Deny notification", { notificationId });
             setNotifications(prevNotifications =>
@@ -99,38 +117,21 @@ export default function InstructorLayout({ children, activeItem, pageTitle }) {
         }
     };
 
-    const hasUnreadNotifications = notifications.some(n => n.isUnread); // From HEAD
+    const hasUnreadNotifications = notifications.some(n => n.isUnread);
 
     const handleProfileNav = (path) => {
-        // Prevent any action if a navigation is already in progress.
         if (isProfileNavigating) {
             return;
         }
-
-        // Check if we are already on the target page.
         if (pathname === path) {
-            // If so, just close the popup. Do not set a loading state.     
             setShowAdminPopup(false);
             return;
         }
-
-        // If we are on a DIFFERENT page, set the loading state AND navigate.
         setIsProfileNavigating(true);
         router.push(path);
     };
     
-    const handleNavItemClick = (item) => {
-        console.log("Navigating to:", item);
-    };
-
     const sidebarWidth = isSidebarCollapsed ? '80px' : '265px';
-
-    // --- Hooks ---
-    useEffect(() => {
-        if (typeof window !== 'undefined') {
-            localStorage.setItem('sidebarCollapsed', isSidebarCollapsed);
-        }
-    }, [isSidebarCollapsed]);
 
     useEffect(() => {
         if (typeof window !== 'undefined') {
@@ -140,13 +141,11 @@ export default function InstructorLayout({ children, activeItem, pageTitle }) {
 
     useEffect(() => {
         const handleClickOutside = (event) => {
-            // Admin Popup
             if (showAdminPopup && 
                 adminPopupRef.current && !adminPopupRef.current.contains(event.target) &&
                 userIconRef.current && !userIconRef.current.contains(event.target)) {
                 setShowAdminPopup(false);
             }
-            // Notification Popup
             if (showNotificationPopup &&
                 notificationPopupRef.current && !notificationPopupRef.current.contains(event.target) &&
                 notificationIconRef.current && !notificationIconRef.current.contains(event.target)) {
@@ -171,18 +170,46 @@ export default function InstructorLayout({ children, activeItem, pageTitle }) {
         if (isProfileNavigating) {
             setIsProfileNavigating(false);
         }
+        // Reset sidebar navigation loading state on page change
+        setNavigatingTo(null);
     }, [pathname]); 
+
+    if (isLoading) {
+        return (
+            <div className="min-h-screen w-screen flex flex-col items-center justify-center bg-blue-100 text-center p-6">
+                <img 
+                src="https://numregister.com/assets/img/logo/num.png" 
+                alt="University Logo" 
+                className="mx-auto mb-6 w-24 sm:w-28 md:w-32" 
+                />
+                <h1 className={`${moul.className} text-2xl sm:text-3xl font-bold mb-3 text-blue-800`}>
+                សាកលវិទ្យាល័យជាតិគ្រប់គ្រង
+                </h1>
+                <h2 className="text-xl sm:text-2xl font-medium mb-8 text-blue-700">
+                National University of Management
+                </h2>
+                <p className="text-lg sm:text-xl text-gray-700 font-semibold mb-4">
+                Logging out, please wait...
+                </p>
+                <div 
+                className="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-blue-600"
+                role="status"
+                >
+                <span className="sr-only">Loading...</span>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="flex w-full min-h-screen bg-[#E2E1EF] dark:bg-gray-800">
-            {/* Sidebar (fixed) */}
             <InstructorSidebar
                 isCollapsed={isSidebarCollapsed}
                 activeItem={activeItem}
                 onNavItemClick={handleNavItemClick}
+                navigatingTo={navigatingTo}
             />
 
-            {/* Main Content Area (flex-grow, scrollable) */}
             <div
                 className="flex flex-col flex-grow transition-all duration-300 ease-in-out"
                 style={{
@@ -192,7 +219,6 @@ export default function InstructorLayout({ children, activeItem, pageTitle }) {
                     overflowY: 'auto',
                 }}
             >
-                {/* Topbar Wrapper (fixed at the top) */}
                 <div
                     className="fixed top-0 bg-white dark:bg-gray-900 shadow-custom-medium p-5 flex justify-between items-center z-30 transition-all duration-300 ease-in-out"
                     style={{
@@ -213,19 +239,16 @@ export default function InstructorLayout({ children, activeItem, pageTitle }) {
                     />
                 </div>
 
-                {/* Content and Footer Container */}
                 <div className="flex flex-col flex-grow" style={{ paddingTop: TOPBAR_HEIGHT }}>
                     <main className="content-area flex-grow p-3 m-6 bg-white dark:bg-gray-900 rounded-lg shadow-md">
-                        {children} {/* Dynamic page content */}
+                        {children}
                     </main>
                     <Footer />
                 </div>
             </div>
 
-            {/* Popups */}
-            {/* Admin/User Popup (structure from HEAD with ref) */}
             <div ref={adminPopupRef}>
-                <AdminPopup 
+                <InstructorPopup 
                     show={showAdminPopup} 
                     onLogoutClick={handleLogoutClick} 
                     isNavigating={isProfileNavigating}
@@ -233,7 +256,6 @@ export default function InstructorLayout({ children, activeItem, pageTitle }) {
                 />
             </div>
 
-            {/* Notification Popup (From HEAD) */}
             <div ref={notificationPopupRef}>
                 <NotificationPopup
                     show={showNotificationPopup}
