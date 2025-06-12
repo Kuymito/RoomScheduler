@@ -86,37 +86,43 @@ const NavItem = ({ href, icon: Icon, label, isActive, isCollapsed, onClick }) =>
   </Link>
 );
 
+
 const Sidebar = ({ isCollapsed, activeItem, onNavItemClick }) => {
   const navItemsData = [
-    {
-      id: 'dashboard',
-      href: '/admin/dashboard',
-      icon: DashboardIcon,
-      label: 'Dashboard'
+    { 
+      id: 'dashboard', 
+      href: 'dashboard', 
+      iconSrc: '/images/dashboardicon.png', 
+      altText: 'Dashboard', 
+      label: 'Dashboard' 
     },
-    {
-      id: 'class',
-      href: '/admin/class',
-      icon: ClassIcon,
-      label: 'Class'
+    { 
+      id: 'class', 
+      href: 'class', 
+      iconSrc: '/images/classicon.png', 
+      altText: 'Class', 
+      label: 'Class' 
     },
-    {
-      id: 'instructor',
-      href: '/admin/instructor',
-      icon: InstructorIcon,
-      label: 'Instructor'
+    { 
+      id: 'instructor', 
+      href: 'instructor', 
+      iconSrc: '/images/instructoricon.png', 
+      altText: 'Instructor', 
+      label: 'Instructor' 
     },
-    {
-      id: 'room',
-      href: '/admin/room',
-      icon: RoomIcon,
+    { 
+      id: 'room', 
+      href: 'room', 
+      iconSrc: '/images/roomicon.png', 
+      altText: 'Room', 
       label: 'Room'
     },
-    {
-      id: 'schedule',
-      href: '/admin/schedule',
-      icon: ScheduleIcon,
-      label: 'Schedule'
+    { 
+      id: 'schedule', 
+      href: 'schedule', 
+      iconSrc: '/images/scheduleicon.png', 
+      altText: 'Schedule', 
+      label: 'Schedule' 
     },
   ];
 
