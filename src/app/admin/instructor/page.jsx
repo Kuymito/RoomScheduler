@@ -6,6 +6,15 @@ import InstructorCreatePopup from './components/InstructorCreatePopup';
 import { useRouter } from 'next/navigation';
 import InstructorPageSkeleton from './components/InstructorPageSkeleton';
 
+
+// --- NEW: Spinner component ---
+const Spinner = () => (
+    <svg className="animate-spin h-5 w-5 text-gray-500 dark:text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+    </svg>
+);
+
 const fetchInstructorData = async () => {
     const initialInstructorData = [
         { id: 1, name: 'Sok Mean', firstName: 'Sok', lastName: 'Mean', email: 'sok.mean@example.com', phone: '012345678', majorStudied: 'Computer Science', qualifications: 'PhD', status: 'active', profileImage: 'https://i.pravatar.cc/150?img=68' },
@@ -26,7 +35,8 @@ const InstructorViewContent = () => {
     const router = useRouter();
     const [instructorData, setInstructorData] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [navigatingRowId, setNavigatingRowId] = useState(null);
+    // --- UPDATED: Renamed state for clarity ---
+    const [rowLoadingId, setRowLoadingId] = useState(null);
     const [showCreateInstructorPopup, setShowCreateInstructorPopup] = useState(false);
     const [statusFilter, setStatusFilter] = useState('active');
     const [sortColumn, setSortColumn] = useState(null);
@@ -35,23 +45,24 @@ const InstructorViewContent = () => {
         name: '',
         email: '',
         phone: '',
-        majorStudied: '', // Changed from 'department'
+        majorStudied: '',
         qualifications: '',
     });
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPageOptions = [5, 10, 20, 50];
     const [itemsPerPage, setItemsPerPage] = useState(itemsPerPageOptions[0]);
 
-    //  --- Handlers ---
-    const handleRowClick = (instructorId) => {
-        // Prevent another navigation if one is already in progress
-        if (navigatingRowId) return;
+    // --- UPDATED: handleRowClick with async behavior and row loading state ---
+    const handleRowClick = async (instructorId) => {
+        if (rowLoadingId) return;
 
-        // Set the ID of the row we are navigating from
-        setNavigatingRowId(instructorId);
+        setRowLoadingId(instructorId);
 
-        // Proceed with the navigation
+        // Simulate network delay
+        await new Promise(resolve => setTimeout(resolve, 1500));
+
         router.push(`/admin/instructor/${instructorId}`);
+        setRowLoadingId(null);
     };
 
     const handleCreateInstructorClick = () => {
@@ -67,15 +78,15 @@ const InstructorViewContent = () => {
         const newInstructorWithStatus = {
             id: newId,
             ...newInstructorData,
-            status: 'active', // New instructors default to active
+            status: 'active', 
         };
 
         setInstructorData(prevData => [...prevData, newInstructorWithStatus]);
-        setCurrentPage(1); // Reset page after adding a new instructor
+        setCurrentPage(1);
     };
 
     const handleSort = (column) => {
-        setCurrentPage(1); // Reset to first page when sorting changes
+        setCurrentPage(1); 
         if (sortColumn === column) {
             setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
         } else {
@@ -88,19 +99,17 @@ const InstructorViewContent = () => {
         if (!sortColumn) {
             return instructorData;
         }
-
         const sortableData = [...instructorData];
-
         sortableData.sort((a, b) => {
-            const aValue = String(a[sortColumn]).toLowerCase();
-            const bValue = String(b[sortColumn]).toLowerCase();
-
+            const aValue = String(a[sortColumn] || '').toLowerCase();
+            const bValue = String(b[sortColumn] || '').toLowerCase();
             if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
             if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
             return 0;
         });
         return sortableData;
     }, [instructorData, sortColumn, sortDirection]);
+
 
     const getSortIndicator = (column) => {
         if (sortColumn === column) {
@@ -125,7 +134,7 @@ const InstructorViewContent = () => {
             ...prev,
             [column]: value,
         }));
-        setCurrentPage(1); // Reset to first page on search
+        setCurrentPage(1);
     };
 
     const filteredInstructorData = useMemo(() => {
@@ -139,7 +148,7 @@ const InstructorViewContent = () => {
             const searchTerm = String(searchTexts[column]).toLowerCase().trim();
             if (searchTerm) {
                 currentFilteredData = currentFilteredData.filter(item =>
-                    String(item[column]).toLowerCase().includes(searchTerm)
+                    String(item[column] || '').toLowerCase().includes(searchTerm)
                 );
             }
         });
@@ -170,7 +179,7 @@ const InstructorViewContent = () => {
     const handleItemsPerPageChange = (event) => {
         const newItemsPerPage = parseInt(event.target.value, 10);
         setItemsPerPage(newItemsPerPage);
-        setCurrentPage(1); // Reset to first page when items per page changes
+        setCurrentPage(1); 
     };
 
     const getPageNumbers = () => {
@@ -197,7 +206,6 @@ const InstructorViewContent = () => {
                     : item
             )
         );
-        setCurrentPage(1); // Reset page after status change
     };
 
     // --- Icons Components ---
@@ -218,7 +226,7 @@ const InstructorViewContent = () => {
     );
 
     const DefaultAvatarIcon = ({ className = "w-8 h-8" }) => (
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-8 border border-gray-300 rounded-full p-1 dark:border-gray-600">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={`${className} border border-gray-300 rounded-full p-1 dark:border-gray-600`}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
         </svg>
     );
@@ -231,9 +239,8 @@ const InstructorViewContent = () => {
                 setInstructorData(data);
             } catch (error) {
                 console.error("Failed to fetch class data:", error);
-                // You could set an error state here to show an error message
             } finally {
-                setIsLoading(false); // Set loading to false after data is fetched or if an error occurs
+                setIsLoading(false); 
             }
         };
 
@@ -330,7 +337,7 @@ const InstructorViewContent = () => {
                                 </div>
                             </th>
                             <th scope="col" className="px-6 py-2.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600">
-                                <div className="flex items-center" onClick={() => handleSort('majorStudied')}> {/* Changed to majorStudied */}
+                                <div className="flex items-center" onClick={() => handleSort('majorStudied')}>
                                     Major {getSortIndicator('majorStudied')}
                                 </div>
                             </th>
@@ -349,62 +356,77 @@ const InstructorViewContent = () => {
                     <tbody className="text-xs font-normal text-gray-700 dark:text-gray-400">
                         {currentTableData.length > 0 ? (
                             currentTableData.map((data) => (
+                                // --- UPDATED: Row with conditional rendering for loading state ---
                                 <tr 
                                     key={data.id} 
-                                    className={`bg-white border-b border-gray-200 dark:bg-gray-800 dark:border-gray-700
-                                        ${navigatingRowId === data.id 
-                                            ? 'opacity-60 bg-gray-100 dark:bg-gray-700' // Style for the loading row
-                                            : 'hover:bg-gray-50 dark:hover:bg-gray-600 cursor-pointer' // Normal hover style
-                                        }
-                                    `}
-                                    onClick={() => !navigatingRowId && handleRowClick(data.id)}
+                                    className={`bg-white border-b border-gray-200 dark:bg-gray-800 dark:border-gray-700 ${
+                                        rowLoadingId === data.id 
+                                        ? 'cursor-wait bg-gray-100 dark:bg-gray-700' 
+                                        : 'hover:bg-gray-50 dark:hover:bg-gray-600 cursor-pointer'
+                                    }`}
+                                    onClick={() => handleRowClick(data.id)}
                                 >
-                                    <th scope="row" className="px-6 py-2.5 font-medium text-gray-900 whitespace-nowrap dark:text-white">
-                                        <div className="flex gap-2">
-                                            <button 
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    handleRowClick(data.id);
-                                                }}
-                                                className={`p-1 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300`} >
-                                                <EditIcon className="size-4" />
-                                            </button>
-                                            <button
-                                                onClick={() => toggleInstructorStatus(data.id)}
-                                                className={`p-1 ${data.status === 'active' ? 'text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300' : 'text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300'}`}
-                                                title={data.status === 'active' ? 'Archive Instructor' : 'Activate Instructor'}
-                                            >
-                                                <ArchiveIcon className="size-4" />
-                                            </button>
-                                        </div>
-                                    </th>
-                                    <td className="px-6 py-2">
-                                        <div className="flex items-center gap-2">
-                                            {data.profileImage ? (
-                                                <img
-                                                    src={data.profileImage}
-                                                    alt={data.name}
-                                                    className="w-8 h-8 rounded-full object-cover border border-gray-200 dark:border-gray-600"
-                                                />
-                                            ) : (
-                                                <DefaultAvatarIcon className="w-8 h-8 rounded-full text-gray-400 bg-gray-100 dark:bg-gray-700 dark:text-gray-500 p-1" />
-                                            )}
-                                            {data.name}
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-2 sm:table-cell hidden"> {data.email} </td>
-                                    <td className="px-6 py-2 lg:table-cell hidden"> {data.phone} </td>
-                                    <td className="px-6 py-2"> {data.majorStudied} </td> {/* Changed to majorStudied */}
-                                    <td className="px-6 py-2 sm:table-cell hidden"> {data.qualifications} </td>
-                                    <td className="px-6 py-2 capitalize">
-                                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                                            data.status === 'active'
-                                                ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                                                : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
-                                        }`}>
-                                            {data.status}
-                                        </span>
-                                    </td>
+                                    {rowLoadingId === data.id ? (
+                                        // Loading state: Show spinner centered in the row
+                                        <td colSpan={7} className="px-6 py-1 text-center">
+                                            <div className="flex justify-center items-center h-10">
+                                                <Spinner />
+                                            </div>
+                                        </td>
+                                    ) : (
+                                        // Normal state: Show instructor data
+                                        <>
+                                            <td scope="row" className="px-6 py-2.5 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                                                <div className="flex gap-2">
+                                                    <button 
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleRowClick(data.id);
+                                                        }}
+                                                        className={`p-1 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300`} >
+                                                        <EditIcon className="size-4" />
+                                                    </button>
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            toggleInstructorStatus(data.id);
+                                                        }}
+                                                        className={`p-1 ${data.status === 'active' ? 'text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300' : 'text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300'}`}
+                                                        title={data.status === 'active' ? 'Archive Instructor' : 'Activate Instructor'}
+                                                    >
+                                                        <ArchiveIcon className="size-4" />
+                                                    </button>
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-2">
+                                                <div className="flex items-center gap-2">
+                                                    {data.profileImage ? (
+                                                        <img
+                                                            src={data.profileImage}
+                                                            alt={data.name}
+                                                            className="w-8 h-8 rounded-full object-cover border border-gray-200 dark:border-gray-600"
+                                                        />
+                                                    ) : (
+                                                        <DefaultAvatarIcon className="size-8 text-gray-400 bg-gray-100 dark:bg-gray-700 dark:text-gray-500" />
+                                                    )}
+                                                    {data.name}
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-2 sm:table-cell hidden"> {data.email} </td>
+                                            <td className="px-6 py-2 lg:table-cell hidden"> {data.phone} </td>
+                                            <td className="px-6 py-2"> {data.majorStudied} </td>
+                                            <td className="px-6 py-2 sm:table-cell hidden"> {data.qualifications} </td>
+                                            <td className="px-6 py-2 capitalize">
+                                                <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                                                    data.status === 'active'
+                                                        ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                                                        : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+                                                }`}>
+                                                    {data.status}
+                                                </span>
+                                            </td>
+                                        </>
+                                    )}
                                 </tr>
                             ))
                         ) : (
@@ -449,7 +471,7 @@ const InstructorViewContent = () => {
                                 <input
                                     type="text"
                                     placeholder="Search major..."
-                                    value={searchTexts.majorStudied} // Changed to majorStudied
+                                    value={searchTexts.majorStudied} 
                                     onChange={(e) => handleSearchChange('majorStudied', e.target.value)}
                                     className="block w-full p-1.5 text-xs text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
                                 />
@@ -501,7 +523,7 @@ const InstructorViewContent = () => {
                     <li>
                         <button
                             onClick={goToPreviousPage}
-                            disabled={currentPage === 1}
+                            disabled={currentPage === 1 || rowLoadingId}
                             className="flex items-center justify-center px-3 h-8 ms-0 leading-tight text-gray-500 bg-white border border-gray-300 rounded-s-lg hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             Previous
@@ -511,11 +533,12 @@ const InstructorViewContent = () => {
                         <li key={pageNumber}>
                             <button
                                 onClick={() => goToPage(pageNumber)}
+                                disabled={rowLoadingId}
                                 className={`flex items-center justify-center px-3 h-8 leading-tight border border-gray-300 ${
                                     currentPage === pageNumber
                                         ? 'text-blue-600 bg-blue-50 hover:bg-blue-100 hover:text-blue-700 dark:bg-gray-700 dark:text-white'
                                         : 'text-gray-500 bg-white hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white'
-                                }`}
+                                } disabled:opacity-50 disabled:cursor-not-allowed`}
                             >
                                 {pageNumber}
                             </button>
@@ -524,7 +547,7 @@ const InstructorViewContent = () => {
                     <li>
                         <button
                             onClick={goToNextPage}
-                            disabled={currentPage === totalPages}
+                            disabled={currentPage === totalPages || rowLoadingId}
                             className="flex items-center justify-center px-3 h-8 leading-tight text-gray-500 bg-white border border-gray-300 rounded-e-lg hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             Next
@@ -533,7 +556,6 @@ const InstructorViewContent = () => {
                 </ul>
             </nav>
 
-            {/* Render the InstructorCreatePopup component */}
             <InstructorCreatePopup
                 isOpen={showCreateInstructorPopup}
                 onClose={handleCloseInstructorPopup}

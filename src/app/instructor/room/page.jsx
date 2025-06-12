@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import InstructorLayout from "@/components/InstructorLayout";
 import SuccessAlert from "./components/UpdateSuccessComponent";
-import RequestChangeForm from "./components/RequestChangeForm";
 
 const RoomCardSkeleton = () => (
     <div className="h-[90px] sm:h-[100px] bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-md animate-pulse">
@@ -60,154 +59,85 @@ const RoomDetailsSkeleton = () => (
     </div>
 );
 
-// --- MOCK DATABASE ---
-const mockInstructorClasses = {
-    "instructor01": [
-        { id: "CS101", name: "CS101 - Introduction to Programming" },
-        { id: "CS305", name: "CS305 - Databases and SQL" },
-        { id: "IT440", name: "IT440 - Web Development" },
-    ],
-    "instructor02": [
-        { id: "ENG210", name: "ENG210 - Advanced Literature" },
-        { id: "WRT101", name: "WRT101 - Composition and Rhetoric" },
-    ],
-};
-const weekdays = ['Mon', 'Tue', 'Wed', 'Thur', 'Fri', 'Sat', 'Sun'];
-const timeSlots = ['7:00 - 10:00', '10:30 - 13:30', '14:00 - 17:00', '17:30 - 20:30'];
-const generateDaySchedule = () => ({
-    '7:00 - 10:00': Math.random() > 0.5 ? "Available" : "Unavailable",
-    '10:30 - 13:30': Math.random() > 0.5 ? "Available" : "Unavailable",
-    '14:00 - 17:00': Math.random() > 0.5 ? "Available" : "Unavailable",
-    '17:30 - 20:30': Math.random() > 0.5 ? "Available" : "Unavailable",
-});
-const generateWeeklySchedule = () => ({
-    'Mon': generateDaySchedule(),
-    'Tue': generateDaySchedule(),
-    'Wed': generateDaySchedule(),
-    'Thur': generateDaySchedule(),
-    'Fri': generateDaySchedule(),
-    'Sat': generateDaySchedule(),
-    'Sun': generateDaySchedule(),
-});
-const initialRoomsData = {
-    A1: {id: "A1",name: "Room A1",building: "Building A",floor: 5,capacity: 30,equipment: ["Projector", "Whiteboard", "AC"], weeklySchedule: generateWeeklySchedule()},
-    A2: {id: "A2",name: "Room A2",building: "Building A",floor: 5,capacity: 20,equipment: ["Whiteboard", "AC"], weeklySchedule: generateWeeklySchedule()},
-    A3: {id: "A3",name: "Room A3",building: "Building A",floor: 5,capacity: 25,equipment: ["Projector", "AC"], weeklySchedule: generateWeeklySchedule()},
-    B1: {id: "B1",name: "Room B1",building: "Building A",floor: 4,capacity: 15,equipment: ["Projector", "AC"], weeklySchedule: generateWeeklySchedule()},
-    B2: {id: "B2",name: "Room B2",building: "Building A",floor: 4,capacity: 20,equipment: ["Whiteboard"], weeklySchedule: generateWeeklySchedule()},
-    C1: {id: "C1",name: "Room C1",building: "Building A",floor: 3,capacity: 10,equipment: ["AC"], weeklySchedule: generateWeeklySchedule()},
-    C2: {id: "C2",name: "Room C2",building: "Building A",floor: 3,capacity: 12,equipment: ["Whiteboard", "AC"], weeklySchedule: generateWeeklySchedule()},
-    D1: {id: "D1",name: "Room D1",building: "Building A",floor: 2,capacity: 8,equipment: ["Projector"], weeklySchedule: generateWeeklySchedule()},
-    D2: {id: "D2",name: "Room D2",building: "Building A",floor: 2,capacity: 10,equipment: ["Whiteboard"], weeklySchedule: generateWeeklySchedule()},
-    E1: {id: "E1",name: "Room E1",building: "Building A",floor: 1,capacity: 5,equipment: ["AC"], weeklySchedule: generateWeeklySchedule()},
-    E2: {id: "E2",name: "Room E2",building: "Building A",floor: 1,capacity: 6,equipment: ["Projector", "Whiteboard"], weeklySchedule: generateWeeklySchedule()},
-    F1: {id: "F1",name: "Room F1",building: "Building B",floor: 3,capacity: 12,equipment: ["Projector", "Whiteboard"], weeklySchedule: generateWeeklySchedule()},
-    F2: {id: "F2",name: "Room F2",building: "Building B",floor: 3,capacity: 10,equipment: ["AC"], weeklySchedule: generateWeeklySchedule()},
-    G1: {id: "G1",name: "Room G1",building: "Building B",floor: 2,capacity: 8,equipment: ["Whiteboard"], weeklySchedule: generateWeeklySchedule()},
-    G2: {id: "G2",name: "Room G2",building: "Building B",floor: 2,capacity: 6,equipment: ["Projector"], weeklySchedule: generateWeeklySchedule()},
-    H1: {id: "H1",name: "Room H1",building: "Building B",floor: 1,capacity: 5,equipment: ["AC"], weeklySchedule: generateWeeklySchedule()},
-    H2: {id: "H2",name: "Room H2",building: "Building B",floor: 1,capacity: 4,equipment: ["Whiteboard"], weeklySchedule: generateWeeklySchedule()},
-};
-
-const getInstructorClasses = async (instructorId) => {
-    console.log(`Fetching classes for instructor: ${instructorId}`);
-    await new Promise(resolve => setTimeout(resolve, 300)); // Simulate network delay
-    return mockInstructorClasses[instructorId] || [];
-};
 
 const InstructorRoomViewContent = () => {
-  const [selectedDay, setSelectedDay] = useState(weekdays[0]);
-  const [selectedTime, setSelectedTime] = useState(timeSlots[0]);
   const [selectedBuilding, setSelectedBuilding] = useState("Building A");
-
   const [selectedRoom, setSelectedRoom] = useState(null);
   const [roomDetails, setRoomDetails] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [initialLoading, setInitialLoading] = useState(true);
+  const [loading, setLoading] = useState(false); // For loading details on click
+  const [initialLoading, setInitialLoading] = useState(true); // For initial page load
   const [showSuccessAlert, setShowSuccessAlert] = useState(false);
-  const [isFormOpen, setIsFormOpen] = useState(false);
-  const [instructorClasses, setInstructorClasses] = useState([]);
-  const [allRoomsData, setAllRoomsData] = useState({});
-  
-  const currentInstructor = { id: "instructor01", name: "Dr. Ada Lovelace" };
+
+  const initialRoomsData = {
+    A1: {id: "A1",name: "Room A1",building: "Building A",floor: 5,capacity: 30,equipment: ["Projector", "Whiteboard", "AC"], status: "Available"},
+    A2: {id: "A2",name: "Room A2",building: "Building A",floor: 5,capacity: 20,equipment: ["Whiteboard", "AC"], status: "Unavailable"},
+    A3: {id: "A3",name: "Room A3",building: "Building A",floor: 5,capacity: 25,equipment: ["Projector", "AC"], status: "Available"},
+    B1: {id: "B1",name: "Room B1",building: "Building A",floor: 4,capacity: 15,equipment: ["Projector", "AC"], status: "Available"},
+    B2: {id: "B2",name: "Room B2",building: "Building A",floor: 4,capacity: 20,equipment: ["Whiteboard"], status: "Available"},
+    C1: {id: "C1",name: "Room C1",building: "Building A",floor: 3,capacity: 10,equipment: ["AC"], status: "Unavailable"},
+    C2: {id: "C2",name: "Room C2",building: "Building A",floor: 3,capacity: 12,equipment: ["Whiteboard", "AC"], status: "Available"},
+    D1: {id: "D1",name: "Room D1",building: "Building A",floor: 2,capacity: 8,equipment: ["Projector"], status: "Available"},
+    D2: {id: "D2",name: "Room D2",building: "Building A",floor: 2,capacity: 10,equipment: ["Whiteboard"], status: "Unavailable"},
+    E1: {id: "E1",name: "Room E1",building: "Building A",floor: 1,capacity: 5,equipment: ["AC"], status: "Available"},
+    E2: {id: "E2",name: "Room E2",building: "Building A",floor: 1,capacity: 6,equipment: ["Projector", "Whiteboard"], status: "Available"},
+    F1: {id: "F1",name: "Room F1",building: "Building B",floor: 3,capacity: 12,equipment: ["Projector", "Whiteboard"], status: "Available"},
+    F2: {id: "F2",name: "Room F2",building: "Building B",floor: 3,capacity: 10,equipment: ["AC"], status: "Unavailable"},
+    G1: {id: "G1",name: "Room G1",building: "Building B",floor: 2,capacity: 8,equipment: ["Whiteboard"], status: "Available"},
+    G2: {id: "G2",name: "Room G2",building: "Building B",floor: 2,capacity: 6,equipment: ["Projector"], status: "Available"},
+    H1: {id: "H1",name: "Room H1",building: "Building B",floor: 1,capacity: 5,equipment: ["AC"], status: "Unavailable"},
+    H2: {id: "H2",name: "Room H2",building: "Building B",floor: 1,capacity: 4,equipment: ["Whiteboard"], status: "Available"},
+  };
+
+  const [allRoomsData, setAllRoomsData] = useState(initialRoomsData);
 
   const buildings = {
-      "Building A": [{ floor: 5, rooms: ["A1", "A2", "A3"] }, { floor: 4, rooms: ["B1", "B2"] }],
-      "Building B": [{ floor: 3, rooms: ["F1", "F2"] }, { floor: 2, rooms: ["G1", "G2"] }, { floor: 1, rooms: ["H1", "H2"] }],
+    "Building A": [{ floor: 5, rooms: ["A1", "A2", "A3"] },{ floor: 4, rooms: ["B1", "B2"] },{ floor: 3, rooms: ["C1", "C2"] },{ floor: 2, rooms: ["D1", "D2"] },{ floor: 1, rooms: ["E1", "E2"] },],
+    "Building B": [{ floor: 3, rooms: ["F1", "F2"] },{ floor: 2, rooms: ["G1", "G2"] },{ floor: 1, rooms: ["H1", "H2"] },],
   };
 
   useEffect(() => {
-      const timer = setTimeout(() => {
-          setAllRoomsData(initialRoomsData);
-          setInitialLoading(false);
-      }, 1000);
-      return () => clearTimeout(timer);
+    const timer = setTimeout(() => {
+        setAllRoomsData(initialRoomsData);
+        setInitialLoading(false);
+    }, 1500); 
+    return () => clearTimeout(timer);
   }, []);
 
-  const resetSelection = () => {
-      setSelectedRoom(null);
-      setRoomDetails(null);
-  };
-  
-  const handleDayChange = (day) => {
-      setSelectedDay(day);
-      resetSelection();
-  };
+  const handleRoomClick = async (roomId) => {
+    if (allRoomsData[roomId]?.status === 'Unavailable') return;
+    if (selectedRoom === roomId) return; 
 
-  const handleTimeChange = (event) => {
-      setSelectedTime(event.target.value);
-      resetSelection();
+    setSelectedRoom(roomId);
+    setLoading(true);
+    setRoomDetails(null); 
+    try {
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      const data = allRoomsData[roomId];
+      if (!data) throw new Error("Room not found");
+      setRoomDetails(data);
+    } catch (error) {
+      console.error("Error fetching room details:", error);
+      setRoomDetails(null);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleBuildingChange = (event) => {
-      setSelectedBuilding(event.target.value);
-      resetSelection();
-  };
-
-  const handleRoomClick = async (roomId) => {
-      const room = allRoomsData[roomId];
-      const status = room?.weeklySchedule?.[selectedDay]?.[selectedTime] || 'Unavailable';
-      
-      if (status === 'Unavailable') return;
-      if (selectedRoom === roomId) return;
-
-      setSelectedRoom(roomId);
-      setLoading(true);
-      setRoomDetails(null);
-      try {
-          await new Promise((resolve) => setTimeout(resolve, 500));
-          if (!room) throw new Error("Room not found");
-          setRoomDetails({ ...room, status });
-      } catch (error) {
-          console.error("Error fetching room details:", error);
-      } finally {
-          setLoading(false);
-      }
+    setSelectedBuilding(event.target.value);
+    setSelectedRoom(null);
+    setRoomDetails(null);
   };
 
   const handleRequest = () => {
-      if (roomDetails) {
-          setIsFormOpen(true);
-      }
+    if (roomDetails) {
+        setShowSuccessAlert(true);
+    }
   };
 
-  const handleSaveRequest = (data) => {
-      console.log("Change Request Submitted:", {
-          instructor: currentInstructor,
-          requestDetails: data,
-      });
-      setShowSuccessAlert(true);
-  };
-
-  useEffect(() => {
-      if (isFormOpen) {
-          getInstructorClasses(currentInstructor.id).then(classes => {
-              setInstructorClasses(classes);
-          });
-      }
-  }, [isFormOpen]);
 
   const floors = buildings[selectedBuilding] || [];
+
   const textLabelRoom = "font-medium text-base leading-7 text-slate-700 dark:text-slate-300 tracking-[-0.01em]";
   const textValueRoomDisplay = "font-medium text-base leading-7 text-slate-900 dark:text-slate-100 tracking-[-0.01em]";
   const textLabelDefault = "font-medium text-sm leading-6 text-slate-700 dark:text-slate-300 tracking-[-0.01em]";
@@ -229,89 +159,79 @@ const InstructorRoomViewContent = () => {
           />
         </div>
       )}
-      <RequestChangeForm
-          isOpen={isFormOpen}
-          onClose={() => setIsFormOpen(false)}
-          onSave={handleSaveRequest}
-          roomDetails={roomDetails}
-          instructorClasses={instructorClasses} // Pass the fetched classes
-          selectedDay={selectedDay}
-          selectedTime={selectedTime}
-      />
+
       <div className="p-4 sm:p-6 min-h-full">
         <div className="mb-4 w-full">
           <h2 className="text-xl font-semibold text-slate-800 dark:text-white">Room</h2>
           <hr className="border-t border-slate-300 dark:border-slate-700 mt-3" />
         </div>
-
-        <div className="flex flex-col gap-4 mb-4">
-          {/* Weekly Schedule and Time Slot UI */}
-          <div className="flex flex-col sm:flex-row items-center justify-between border-b dark:border-gray-600 pb-3 gap-4">
-              <div className="flex rounded-lg border border-gray-300 dark:border-gray-600 overflow-hidden w-full sm:w-auto">
-                  {weekdays.map(day => (
-                      <button key={day} onClick={() => handleDayChange(day)} className={`px-3.5 py-1.5 text-sm font-medium transition-colors w-full ${selectedDay === day ? 'bg-sky-600 text-white shadow' : 'border-r dark:border-r-gray-500 last:border-r-0 hover:bg-gray-100 dark:hover:bg-gray-700'}`}>
-                          {day}
-                      </button>
-                  ))}
-              </div>
-              <div className="flex items-center gap-2 w-full sm:w-auto">
-                  <label htmlFor="time-select" className="text-sm font-medium dark:text-gray-300">Time:</label>
-                  <select id="time-select" value={selectedTime} onChange={handleTimeChange} className="p-2 text-sm border border-gray-300 rounded-md dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200 focus:ring-sky-500 focus:border-sky-500 w-full">
-                      {timeSlots.map(t => <option key={t} value={t}>{t}</option>)}
-                  </select>
-              </div>
-          </div>
-
-          {/* Building Selector */}
-          <div className="flex items-center gap-2">
-                <select value={selectedBuilding} onChange={handleBuildingChange} className="text-sm font-semibold text-slate-700 bg-white border border-slate-300 dark:text-slate-200 dark:bg-slate-800 dark:border-slate-600 rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500">
-                    {Object.keys(buildings).map((building) => ( <option key={building} value={building}>{building}</option>))}
+        <div className="flex flex-col lg:flex-row gap-6">
+          {initialLoading ? (
+            <RoomSelectionSkeleton />
+          ) : (
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-3 sm:mb-4">
+                <select value={selectedBuilding} onChange={handleBuildingChange} className="text-sm font-semibold text-slate-700 bg-white border border-slate-300 dark:text-slate-200 dark:bg-slate-800 dark:border-slate-600 rounded-md px-3 py-2 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                  {Object.keys(buildings).map((building) => ( <option key={building} value={building}>{building}</option>))}
                 </select>
                 <hr className="flex-1 border-t border-slate-300 dark:border-slate-700" />
-          </div>
-        </div>
-
-        <div className="flex flex-col lg:flex-row gap-6">
-          {initialLoading ? <RoomSelectionSkeleton /> : (
-            <div className="flex-1 min-w-0">
-                <div className="space-y-4">
-                    {floors.map(({ floor, rooms }) => (
-                        <div key={floor} className="space-y-3">
+              </div>
+              <div className="space-y-4">
+                  {floors.map(({ floor, rooms }) => (
+                    <div key={floor} className="space-y-3">
+                        <div className="floor-section">
                             <div className="flex items-center gap-2 mb-2">
-                                <h4 className="text-xs sm:text-sm font-medium text-slate-600 dark:text-slate-400">Floor {floor}</h4>
+                                <h4 className="text-xs sm:text-sm font-medium text-slate-600 dark:text-slate-400 whitespace-nowrap">Floor {floor}</h4>
                                 <hr className="flex-1 border-t border-slate-300 dark:border-slate-700" />
                             </div>
                             <div className="grid grid-cols-[repeat(auto-fill,minmax(160px,1fr))] sm:grid-cols-[repeat(auto-fill,minmax(180px,1fr))] gap-3 sm:gap-4">
                                 {rooms.map((roomId) => {
                                     const room = allRoomsData[roomId];
-                                    if (!room) return null;
-                                    const status = room.weeklySchedule?.[selectedDay]?.[selectedTime] || 'Unavailable';
-                                    const isAvailable = status === 'Available';
+                                    const isAvailable = room?.status === 'Available';
                                     const isSelected = selectedRoom === roomId;
                                     return (
-                                        // --- FIXED: Restored full JSX for the room card ---
-                                        <div key={roomId} onClick={() => handleRoomClick(roomId)} className={`h-[90px] sm:h-[100px] border rounded-md flex flex-col transition-all duration-150 shadow-sm ${isAvailable ? 'cursor-pointer hover:shadow-md bg-white dark:bg-slate-800' : 'cursor-not-allowed bg-slate-50 dark:bg-slate-800/50 opacity-70'} ${isSelected ? "border-blue-500 ring-2 ring-blue-500 dark:border-blue-500" : isAvailable ? "border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600" : "border-slate-200 dark:border-slate-700"}`}>
-                                            <div className={`h-[30px] rounded-t-md flex items-center justify-center px-2 relative border-b ${isSelected ? 'border-b-transparent' : 'border-slate-200 dark:border-slate-600'} ${isAvailable ? 'bg-slate-50 dark:bg-slate-700' : 'bg-slate-100 dark:bg-slate-700/60'}`}>
-                                                <div className={`absolute left-2 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full ${isAvailable ? 'bg-green-500' : 'bg-red-500'} ${isSelected ? 'bg-blue-500' : ''}`}></div>
-                                                <span className={`ml-3 text-xs sm:text-sm font-medium ${isSelected ? "text-blue-700 dark:text-blue-300" : isAvailable ? "text-slate-700 dark:text-slate-300" : "text-slate-500 dark:text-slate-400"}`}>{room?.name || roomId}</span>
+                                        <div 
+                                            key={roomId} 
+                                            className={`
+                                                h-[90px] sm:h-[100px] border rounded-md flex flex-col transition-all duration-150 shadow-sm
+                                                ${isAvailable ? 'cursor-pointer hover:shadow-md bg-white dark:bg-slate-800' : 'cursor-not-allowed bg-slate-50 dark:bg-slate-800/50 opacity-70'}
+                                                ${isSelected ? "border-blue-500 ring-2 ring-blue-500 dark:border-blue-500" : isAvailable ? "border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600" : "border-slate-200 dark:border-slate-700"}
+                                            `}
+                                            onClick={() => handleRoomClick(roomId)}
+                                        >
+                                            <div className={`h-[30px] rounded-t-md flex items-center justify-center px-2 relative border-b
+                                                ${isSelected ? 'border-b-transparent' : 'border-slate-200 dark:border-slate-600'}
+                                                ${isAvailable ? 'bg-slate-50 dark:bg-slate-700' : 'bg-slate-100 dark:bg-slate-700/60'}
+                                            `}>
+                                                <div className={`absolute left-2 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full
+                                                    ${isAvailable ? 'bg-green-500' : 'bg-red-500'}
+                                                    ${isSelected ? 'bg-blue-500' : ''}
+                                                `}></div>
+                                                <span className={`ml-3 text-xs sm:text-sm font-medium
+                                                    ${isSelected ? "text-blue-700 dark:text-blue-300" : isAvailable ? "text-slate-700 dark:text-slate-300" : "text-slate-500 dark:text-slate-400"}
+                                                `}>{room?.name || roomId}</span>
                                             </div>
                                             <div className={`flex-1 rounded-b-md p-2 flex flex-col justify-center items-center ${isAvailable ? 'bg-white dark:bg-slate-800' : 'bg-slate-50 dark:bg-slate-800/50'}`}>
-                                                <span className={`font-semibold text-xs ${isAvailable ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-                                                    {status}
+                                                <span className={`font-semibold text-xs
+                                                    ${isAvailable ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}
+                                                `}>
+                                                    {room?.status}
                                                 </span>
                                                 <span className={`text-xs text-slate-500 dark:text-slate-400 ${isSelected ? "text-slate-600 dark:text-slate-300" : ""} mt-1`}>
                                                     Capacity: {room?.capacity}
                                                 </span>
                                             </div>
                                         </div>
-                                    );
+                                    )
                                 })}
                             </div>
                         </div>
-                    ))}
-                </div>
+                    </div>
+                  ))}
+              </div>
             </div>
           )}
+
           {/* Details Panel */}
           <div className="w-full lg:w-[320px] shrink-0">
             <div className="flex items-center gap-2 mb-3 sm:mb-4">

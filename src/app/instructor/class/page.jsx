@@ -15,7 +15,15 @@ const initialClassData = [
     { id: 6, name: "NUM32-02", generation: "32", group: "02", major: "IT", degrees: "Bachelor", faculty: "Faculty of IT", shift: "8:00 - 11:00" },
 ];
 
-// NEW: Skeleton component for the table
+// --- NEW: Spinner component ---
+const Spinner = () => (
+    <svg className="animate-spin h-4 w-4 text-gray-500 dark:text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+    </svg>
+);
+
+
 const TableSkeleton = ({ columns, rows = 5 }) => (
     <div className="relative overflow-x-auto border border-gray-200 dark:border-gray-600 rounded-lg">
         <table className="w-full text-sm text-left text-gray-500">
@@ -47,6 +55,8 @@ const TableSkeleton = ({ columns, rows = 5 }) => (
 const InstructorClassViewContent = () => {
     const [classData, setClassData] = useState([]);
     const [loading, setLoading] = useState(true);
+    // --- NEW: State for row-specific loading ---
+    const [rowLoading, setRowLoading] = useState(null);
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPageOptions = [5, 10, 20, 50];
     const [itemsPerPage, setItemsPerPage] = useState(itemsPerPageOptions[0]);
@@ -152,13 +162,23 @@ const InstructorClassViewContent = () => {
     };
 
     const router = useRouter();
-    const handleRowClick = (classId) => {
-        if (!loading) {
-            router.push(`/instructor/class/${classId}`);
-        }
+
+    // --- UPDATED: handleRowClick with async behavior and row loading state ---
+    const handleRowClick = async (classId) => {
+        if (loading || rowLoading) return; // Prevent clicking if already loading
+
+        setRowLoading(classId);
+
+        // Simulate an API call or other async operation
+        await new Promise(resolve => setTimeout(resolve, 1500));
+
+        router.push(`/instructor/class/${classId}`);
+
+        // It's good practice to reset the loading state, though it might not be
+        // visible if the component unmounts immediately upon navigation.
+        setRowLoading(null);
     };
 
-    // Define columns for the skeleton
     const tableColumns = [
         { key: 'name', label: 'Name' },
         { key: 'generation', label: 'Generation', className: 'lg:table-cell hidden' },
@@ -205,14 +225,34 @@ const InstructorClassViewContent = () => {
                         <tbody className="text-xs font-normal text-gray-700 dark:text-gray-400">
                             {currentTableData.length > 0 ? (
                                 currentTableData.map((data) => (
-                                    <tr key={data.id} className="bg-white border-b border-gray-200 dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 cursor-pointer" onClick={() => handleRowClick(data.id)}>
-                                        <td className="px-6 py-2.5 font-medium text-gray-900 whitespace-nowrap dark:text-white">{data.name}</td>
-                                        <td className="px-6 py-2.5 lg:table-cell hidden">{data.generation}</td>
-                                        <td className="px-6 py-2.5 lg:table-cell hidden">{data.group}</td>
-                                        <td className="px-6 py-2.5">{data.major}</td>
-                                        <td className="px-6 py-2.5">{data.degrees}</td>
-                                        <td className="px-6 py-2.5 2xl:table-cell hidden">{data.faculty}</td>
-                                        <td className="px-6 py-2.5 sm:table-cell hidden">{data.shift}</td>
+                                    // --- UPDATED: Row with conditional rendering for loading state ---
+                                    <tr
+                                        key={data.id}
+                                        className={`bg-white border-b border-gray-200 dark:bg-gray-800 dark:border-gray-700 ${rowLoading === data.id
+                                            ? 'cursor-wait bg-gray-100 dark:bg-gray-700'
+                                            : 'hover:bg-gray-50 dark:hover:bg-gray-600 cursor-pointer'
+                                            }`}
+                                        onClick={() => handleRowClick(data.id)}
+                                    >
+                                        {rowLoading === data.id ? (
+                                            // Loading state: Show spinner centered in the row
+                                            <td colSpan={tableColumns.length} className="px-6 py-2.5 text-center">
+                                                <div className="flex justify-center items-center">
+                                                    <Spinner />
+                                                </div>
+                                            </td>
+                                        ) : (
+                                            // Normal state: Show class data
+                                            <>
+                                                <td className="px-6 py-2.5 font-medium text-gray-900 whitespace-nowrap dark:text-white">{data.name}</td>
+                                                <td className="px-6 py-2.5 lg:table-cell hidden">{data.generation}</td>
+                                                <td className="px-6 py-2.5 lg:table-cell hidden">{data.group}</td>
+                                                <td className="px-6 py-2.5">{data.major}</td>
+                                                <td className="px-6 py-2.5">{data.degrees}</td>
+                                                <td className="px-6 py-2.5 2xl:table-cell hidden">{data.faculty}</td>
+                                                <td className="px-6 py-2.5 sm:table-cell hidden">{data.shift}</td>
+                                            </>
+                                        )}
                                     </tr>
                                 ))
                             ) : (
