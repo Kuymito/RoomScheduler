@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import InstructorLayout from "@/components/InstructorLayout";
-import SuccessAlert from "./components/UpdateSuccessComponent";
+import SuccessAlert from "./components/RequestSuccessComponent";
 import RequestChangeForm from "./components/RequestChangeForm";
 
 const RoomCardSkeleton = () => (
