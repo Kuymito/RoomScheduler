@@ -18,7 +18,7 @@ const fetchClassData = async () => {
         { id: 7, name: 'NUM33-14', generation: '33', group: '14', major: 'IT', degrees: 'PH.D', faculty: 'NUM-FBE', semester: 'Semester 3', shift: '17:00 - 20:00', status: 'active' },
         { id: 8, name: 'NUM34-17', generation: '34', group: '17', major: 'Management', degrees: 'M.A', faculty: 'NUM-FON', semester: '2Semester 3', shift: '18:00 - 21:00', status: 'active' },
         { id: 9, name: 'NUM33-75', generation: '33', group: '75', major: 'Finance', degrees: 'M.A', faculty: 'NUM-FIT', semester: 'Semester 3', shift: '19:00 - 22:00', status: 'archived' },
-        { id: 10, name: 'NUM33-11', generation: '33', group: '11', major: 'IT', degrees: 'PH.D', faculty: 'NUM-FOT', semester: '2024-2025 S3', shift: '8:00 - 11:00', status: 'active' }
+        { id: 10, name: 'NUM33-45', generation: '33', group: '45', major: 'IT', degrees: 'PH.D', faculty: 'NUM-FOT', semester: '2024-2025 S3', shift: '8:00 - 11:00', status: 'active' }
     ];
     // Simulate a network delay of 1 second
     return new Promise(resolve => setTimeout(() => resolve(initialClassData), 1000));
