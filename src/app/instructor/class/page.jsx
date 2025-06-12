@@ -4,18 +4,31 @@ import { useState, useMemo, useEffect } from 'react';
 import InstructorLayout from '@/components/InstructorLayout';
 import { useRouter } from 'next/navigation';
 
-
 // --- Data ---
+// UPDATED: This data now matches the format in the detail page
 const initialClassData = [
-    { id: 1, name: "NUM33-09", generation: "33", group: "09", major: "SE", degrees: "Bachelor", faculty: "Faculty of SE & R", shift: "8:00 - 11:00" },
-    { id: 2, name: "NUM32-01", generation: "32", group: "01", major: "IT", degrees: "Bachelor", faculty: "Faculty of IT", shift: "7:00 - 10:00" },
-    { id: 3, name: "NUM31-05", generation: "31", group: "05", major: "CS", degrees: "Bachelor", faculty: "Faculty of CS", shift: "13:00 - 16:00" },
-    { id: 4, name: "NUM33-10", generation: "33", group: "10", major: "AI", degrees: "Master", faculty: "Faculty of AI", shift: "18:00 - 21:00" },
-    { id: 5, name: "NUM30-03", generation: "30", group: "03", major: "DS", degrees: "Bachelor", faculty: "Faculty of DS", shift: "9:00 - 12:00" },
-    { id: 6, name: "NUM32-02", generation: "32", group: "02", major: "IT", degrees: "Bachelor", faculty: "Faculty of IT", shift: "8:00 - 11:00" },
+    { id: 1, name: "NUM30-01", generation: "30", group: "01", major: "IT", degrees: "Bachelor", faculty: "Faculty of IT", semester: "2024-2025 S1", shift: "7:00 - 10:00", status: 'active' },
+    { id: 2, name: "NUM30-01", generation: "30", group: "01", major: "IT", degrees: "Bachelor", faculty: "Faculty of IT", semester: "2024-2025 S1", shift: "7:00 - 10:00", status: 'active' },
+    { id: 3, name: "NUM30-02", generation: "30", group: "02", major: "CS", degrees: "Bachelor", faculty: "Faculty of CS", semester: "2024-2025 S1", shift: "8:00 - 11:00", status: 'active' },
+    { id: 4, name: "NUM32-03", generation: "32", group: "03", major: "IS", degrees: "Bachelor", faculty: "Faculty of IS", semester: "2024-2025 S2", shift: "9:00 - 12:00", status: 'active' },
+    { id: 5, name: "NUM32-04", generation: "32", group: "04", major: "SE", degrees: "Bachelor", faculty: "Faculty of SE", semester: "2024-2025 S2", shift: "13:00 - 16:00", status: 'active' },
+    { id: 6, name: "NUM32-05", generation: "32", group: "05", major: "AI", degrees: "Bachelor", faculty: "Faculty of AI & R", semester: "2024-2025 S2", shift: "15:00 PM - 18:00", status: 'active' },
+    { id: 7, name: "NUM33-06", generation: "33", group: "06", major: "DS", degrees: "Bachelor", faculty: "Faculty of DS", semester: "2024-2025 S3", shift: "17:00 - 20:00", status: 'active' },
+    { id: 8, name: "NUM33-07", generation: "33", group: "07", major: "ML", degrees: "Bachelor", faculty: "Faculty of ML", semester: "2024-2025 S3", shift: "18:00 - 21:00", status: 'active' },
+    { id: 9, name: "NUM33-08", generation: "33", group: "08", major: "DA", degrees: "Bachelor", faculty: "Faculty of DA", semester: "2024-2025 S3", shift: "19:00 - 22:00", status: 'archived' },
+    { id: 10, name: "NUM33-09", generation: "33", group: "09", major: "SE", degrees: "Bachelor", faculty: "Faculty of SE & R", semester: "2024-2025 S3", shift: "8:00 - 11:00", status: 'active' }
 ];
 
-// NEW: Skeleton component for the table
+
+// --- NEW: Spinner component ---
+const Spinner = () => (
+    <svg className="animate-spin h-4 w-4 text-gray-500 dark:text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+    </svg>
+);
+
+
 const TableSkeleton = ({ columns, rows = 5 }) => (
     <div className="relative overflow-x-auto border border-gray-200 dark:border-gray-600 rounded-lg">
         <table className="w-full text-sm text-left text-gray-500">
@@ -47,6 +60,8 @@ const TableSkeleton = ({ columns, rows = 5 }) => (
 const InstructorClassViewContent = () => {
     const [classData, setClassData] = useState([]);
     const [loading, setLoading] = useState(true);
+    // --- NEW: State for row-specific loading ---
+    const [rowLoading, setRowLoading] = useState(null);
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPageOptions = [5, 10, 20, 50];
     const [itemsPerPage, setItemsPerPage] = useState(itemsPerPageOptions[0]);
@@ -152,13 +167,19 @@ const InstructorClassViewContent = () => {
     };
 
     const router = useRouter();
-    const handleRowClick = (classId) => {
-        if (!loading) {
-            router.push(`/instructor/class/${classId}`);
-        }
+
+    const handleRowClick = async (classId) => {
+        if (loading || rowLoading) return;
+
+        setRowLoading(classId);
+
+        await new Promise(resolve => setTimeout(resolve, 1500));
+
+        router.push(`/instructor/class/${classId}`);
+
+        setRowLoading(null);
     };
 
-    // Define columns for the skeleton
     const tableColumns = [
         { key: 'name', label: 'Name' },
         { key: 'generation', label: 'Generation', className: 'lg:table-cell hidden' },
@@ -205,14 +226,31 @@ const InstructorClassViewContent = () => {
                         <tbody className="text-xs font-normal text-gray-700 dark:text-gray-400">
                             {currentTableData.length > 0 ? (
                                 currentTableData.map((data) => (
-                                    <tr key={data.id} className="bg-white border-b border-gray-200 dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 cursor-pointer" onClick={() => handleRowClick(data.id)}>
-                                        <td className="px-6 py-2.5 font-medium text-gray-900 whitespace-nowrap dark:text-white">{data.name}</td>
-                                        <td className="px-6 py-2.5 lg:table-cell hidden">{data.generation}</td>
-                                        <td className="px-6 py-2.5 lg:table-cell hidden">{data.group}</td>
-                                        <td className="px-6 py-2.5">{data.major}</td>
-                                        <td className="px-6 py-2.5">{data.degrees}</td>
-                                        <td className="px-6 py-2.5 2xl:table-cell hidden">{data.faculty}</td>
-                                        <td className="px-6 py-2.5 sm:table-cell hidden">{data.shift}</td>
+                                    <tr
+                                        key={data.id}
+                                        className={`bg-white border-b border-gray-200 dark:bg-gray-800 dark:border-gray-700 ${rowLoading === data.id
+                                            ? 'cursor-wait bg-gray-100 dark:bg-gray-700'
+                                            : 'hover:bg-gray-50 dark:hover:bg-gray-600 cursor-pointer'
+                                            }`}
+                                        onClick={() => handleRowClick(data.id)}
+                                    >
+                                        {rowLoading === data.id ? (
+                                            <td colSpan={tableColumns.length} className="px-6 py-2.5 text-center">
+                                                <div className="flex justify-center items-center">
+                                                    <Spinner />
+                                                </div>
+                                            </td>
+                                        ) : (
+                                            <>
+                                                <td className="px-6 py-2.5 font-medium text-gray-900 whitespace-nowrap dark:text-white">{data.name}</td>
+                                                <td className="px-6 py-2.5 lg:table-cell hidden">{data.generation}</td>
+                                                <td className="px-6 py-2.5 lg:table-cell hidden">{data.group}</td>
+                                                <td className="px-6 py-2.5">{data.major}</td>
+                                                <td className="px-6 py-2.5">{data.degrees}</td>
+                                                <td className="px-6 py-2.5 2xl:table-cell hidden">{data.faculty}</td>
+                                                <td className="px-6 py-2.5 sm:table-cell hidden">{data.shift}</td>
+                                            </>
+                                        )}
                                     </tr>
                                 ))
                             ) : (

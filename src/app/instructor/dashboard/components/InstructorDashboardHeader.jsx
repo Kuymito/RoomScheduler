@@ -12,9 +12,7 @@ export default function InstructorDashboardHeader({
           p-4 sm:p-6 
           mb-4 
           space-y-10
-          rounded-lg 
-          num-dark-bg bg-gray-50 
-          border dark:border-gray-500 dark:bg-gray-900
+          dark:border-gray-500 bg-white rounded-lg shadow transition-shadow dark:bg-gray-900
         "
       >
         <div className="mb-4 md:mb-0 md:mr-6">
