@@ -4,16 +4,21 @@ import { useState, useMemo, useEffect } from 'react';
 import InstructorLayout from '@/components/InstructorLayout';
 import { useRouter } from 'next/navigation';
 
-
 // --- Data ---
+// UPDATED: This data now matches the format in the detail page
 const initialClassData = [
-    { id: 1, name: "NUM33-09", generation: "33", group: "09", major: "SE", degrees: "Bachelor", faculty: "Faculty of SE & R", shift: "8:00 - 11:00" },
-    { id: 2, name: "NUM32-01", generation: "32", group: "01", major: "IT", degrees: "Bachelor", faculty: "Faculty of IT", shift: "7:00 - 10:00" },
-    { id: 3, name: "NUM31-05", generation: "31", group: "05", major: "CS", degrees: "Bachelor", faculty: "Faculty of CS", shift: "13:00 - 16:00" },
-    { id: 4, name: "NUM33-10", generation: "33", group: "10", major: "AI", degrees: "Master", faculty: "Faculty of AI", shift: "18:00 - 21:00" },
-    { id: 5, name: "NUM30-03", generation: "30", group: "03", major: "DS", degrees: "Bachelor", faculty: "Faculty of DS", shift: "9:00 - 12:00" },
-    { id: 6, name: "NUM32-02", generation: "32", group: "02", major: "IT", degrees: "Bachelor", faculty: "Faculty of IT", shift: "8:00 - 11:00" },
+    { id: 1, name: "NUM30-01", generation: "30", group: "01", major: "IT", degrees: "Bachelor", faculty: "Faculty of IT", semester: "2024-2025 S1", shift: "7:00 - 10:00", status: 'active' },
+    { id: 2, name: "NUM30-01", generation: "30", group: "01", major: "IT", degrees: "Bachelor", faculty: "Faculty of IT", semester: "2024-2025 S1", shift: "7:00 - 10:00", status: 'active' },
+    { id: 3, name: "NUM30-02", generation: "30", group: "02", major: "CS", degrees: "Bachelor", faculty: "Faculty of CS", semester: "2024-2025 S1", shift: "8:00 - 11:00", status: 'active' },
+    { id: 4, name: "NUM32-03", generation: "32", group: "03", major: "IS", degrees: "Bachelor", faculty: "Faculty of IS", semester: "2024-2025 S2", shift: "9:00 - 12:00", status: 'active' },
+    { id: 5, name: "NUM32-04", generation: "32", group: "04", major: "SE", degrees: "Bachelor", faculty: "Faculty of SE", semester: "2024-2025 S2", shift: "13:00 - 16:00", status: 'active' },
+    { id: 6, name: "NUM32-05", generation: "32", group: "05", major: "AI", degrees: "Bachelor", faculty: "Faculty of AI & R", semester: "2024-2025 S2", shift: "15:00 PM - 18:00", status: 'active' },
+    { id: 7, name: "NUM33-06", generation: "33", group: "06", major: "DS", degrees: "Bachelor", faculty: "Faculty of DS", semester: "2024-2025 S3", shift: "17:00 - 20:00", status: 'active' },
+    { id: 8, name: "NUM33-07", generation: "33", group: "07", major: "ML", degrees: "Bachelor", faculty: "Faculty of ML", semester: "2024-2025 S3", shift: "18:00 - 21:00", status: 'active' },
+    { id: 9, name: "NUM33-08", generation: "33", group: "08", major: "DA", degrees: "Bachelor", faculty: "Faculty of DA", semester: "2024-2025 S3", shift: "19:00 - 22:00", status: 'archived' },
+    { id: 10, name: "NUM33-09", generation: "33", group: "09", major: "SE", degrees: "Bachelor", faculty: "Faculty of SE & R", semester: "2024-2025 S3", shift: "8:00 - 11:00", status: 'active' }
 ];
+
 
 // --- NEW: Spinner component ---
 const Spinner = () => (
@@ -163,19 +168,15 @@ const InstructorClassViewContent = () => {
 
     const router = useRouter();
 
-    // --- UPDATED: handleRowClick with async behavior and row loading state ---
     const handleRowClick = async (classId) => {
-        if (loading || rowLoading) return; // Prevent clicking if already loading
+        if (loading || rowLoading) return;
 
         setRowLoading(classId);
 
-        // Simulate an API call or other async operation
         await new Promise(resolve => setTimeout(resolve, 1500));
 
         router.push(`/instructor/class/${classId}`);
 
-        // It's good practice to reset the loading state, though it might not be
-        // visible if the component unmounts immediately upon navigation.
         setRowLoading(null);
     };
 
@@ -225,7 +226,6 @@ const InstructorClassViewContent = () => {
                         <tbody className="text-xs font-normal text-gray-700 dark:text-gray-400">
                             {currentTableData.length > 0 ? (
                                 currentTableData.map((data) => (
-                                    // --- UPDATED: Row with conditional rendering for loading state ---
                                     <tr
                                         key={data.id}
                                         className={`bg-white border-b border-gray-200 dark:bg-gray-800 dark:border-gray-700 ${rowLoading === data.id
@@ -235,14 +235,12 @@ const InstructorClassViewContent = () => {
                                         onClick={() => handleRowClick(data.id)}
                                     >
                                         {rowLoading === data.id ? (
-                                            // Loading state: Show spinner centered in the row
                                             <td colSpan={tableColumns.length} className="px-6 py-2.5 text-center">
                                                 <div className="flex justify-center items-center">
                                                     <Spinner />
                                                 </div>
                                             </td>
                                         ) : (
-                                            // Normal state: Show class data
                                             <>
                                                 <td className="px-6 py-2.5 font-medium text-gray-900 whitespace-nowrap dark:text-white">{data.name}</td>
                                                 <td className="px-6 py-2.5 lg:table-cell hidden">{data.generation}</td>
