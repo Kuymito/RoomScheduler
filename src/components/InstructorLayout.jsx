@@ -21,7 +21,8 @@ export default function InstructorLayout({ children, activeItem, pageTitle }) {
     const [showLogoutAlert, setShowLogoutAlert] = useState(false);
     const [showNotificationPopup, setShowNotificationPopup] = useState(false);
     const [notifications, setNotifications] = useState([]);
-    const [isLoading, setIsLoading] = useState(false); // Added loading state
+    const [isLoading, setIsLoading] = useState(false);
+    const [navigatingTo, setNavigatingTo] = useState(null); // State for sidebar navigation
     const notificationPopupRef = useRef(null);
     const notificationIconRef = useRef(null);
     const adminPopupRef = useRef(null);
@@ -47,7 +48,6 @@ export default function InstructorLayout({ children, activeItem, pageTitle }) {
     };
     const handleCloseLogoutAlert = () => setShowLogoutAlert(false);
 
-    // Updated logout handler with loading state
     const handleConfirmLogout = () => { 
         setShowLogoutAlert(false);
         setIsLoading(true);
@@ -56,6 +56,14 @@ export default function InstructorLayout({ children, activeItem, pageTitle }) {
         }, 1500);
     };
     
+    // Sidebar navigation handler
+    const handleNavItemClick = (item) => {
+        if (pathname !== item.href) {
+            setNavigatingTo(item.id);
+            router.push(item.href);
+        }
+    };
+
     const handleToggleNotificationPopup = (event) => {
         event.stopPropagation();
         setShowNotificationPopup(prev => !prev);
@@ -123,10 +131,6 @@ export default function InstructorLayout({ children, activeItem, pageTitle }) {
         router.push(path);
     };
     
-    const handleNavItemClick = (item) => {
-        console.log("Navigating to:", item);
-    };
-
     const sidebarWidth = isSidebarCollapsed ? '80px' : '265px';
 
     useEffect(() => {
@@ -166,9 +170,10 @@ export default function InstructorLayout({ children, activeItem, pageTitle }) {
         if (isProfileNavigating) {
             setIsProfileNavigating(false);
         }
+        // Reset sidebar navigation loading state on page change
+        setNavigatingTo(null);
     }, [pathname]); 
 
-    // Full page loading state for logout
     if (isLoading) {
         return (
             <div className="min-h-screen w-screen flex flex-col items-center justify-center bg-blue-100 text-center p-6">
@@ -202,6 +207,7 @@ export default function InstructorLayout({ children, activeItem, pageTitle }) {
                 isCollapsed={isSidebarCollapsed}
                 activeItem={activeItem}
                 onNavItemClick={handleNavItemClick}
+                navigatingTo={navigatingTo}
             />
 
             <div
