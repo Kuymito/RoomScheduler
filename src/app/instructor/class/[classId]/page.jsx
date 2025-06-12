@@ -29,16 +29,21 @@ const mockScheduleData = {
     Sunday: null,
 };
 
-// --- HELPER COMPONENTS (defined once at the top) ---
+// --- HELPER COMPONENTS ---
 
+// Updated to match the read-only style from the admin page
 const InfoField = ({ label, value }) => (
-    <div>
-        <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">{label}</label>
-        <div className="w-full py-2.5 px-3 bg-gray-100 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-700 rounded-lg">
-            <p className="text-sm font-medium text-gray-800 dark:text-gray-200">{value}</p>
-        </div>
+    <div className="form-group flex-1 min-w-[200px]">
+        <label className="form-label block font-semibold text-xs text-num-dark-text dark:text-white mb-1">{label}</label>
+        <input
+            type="text"
+            value={value}
+            readOnly
+            className="form-input w-full py-2 px-3 bg-gray-100 border border-num-gray-light dark:bg-gray-800 dark:border-gray-700 rounded-md font-medium text-xs text-gray-500 dark:text-gray-400"
+        />
     </div>
 );
+
 
 const ScheduledInstructorCard = ({ instructor }) => (
      <div className="flex flex-col items-center space-y-1">
@@ -82,7 +87,7 @@ const InstructorClassDetailsContent = () => {
             setError(null);
             try {
                 // Simulate network delay
-                await new Promise(resolve => setTimeout(resolve, 1500)); // Increased delay to show skeleton
+                await new Promise(resolve => setTimeout(resolve, 1500));
                 if (mockClassData) {
                     setClassDetails(mockClassData);
                     setSchedule(mockScheduleData);
@@ -122,33 +127,35 @@ const InstructorClassDetailsContent = () => {
     const daysOfWeek = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
     return (
-        <div className='p-4 sm:p-6 space-y-6 dark:bg-slate-900'>
+        <div className='p-6 dark:text-white'>
+            <div className="section-title font-semibold text-lg text-num-dark-text dark:text-white mb-4">Class Details</div>
+            <hr className="border-t border-slate-300 dark:border-slate-700 mt-4 mb-8" />
             
-            {/* Class Information Section */}
-            <div className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700">
-                <h2 className="text-lg font-semibold text-gray-800 dark:text-white mb-5">Class information</h2>
-                <div className="space-y-4">
-                    <div className="grid grid-cols-1">
-                        <InfoField label="Name" value={classDetails.name} />
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <InfoField label="Generation" value={classDetails.generation} />
-                        <InfoField label="Group" value={classDetails.group} />
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                          <InfoField label="Faculty" value={classDetails.faculty} />
-                          <InfoField label="Degree" value={classDetails.degrees} />
-                          <InfoField label="Major" value={classDetails.major} />
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                        <InfoField label="Semester" value={classDetails.semester} />
-                        <InfoField label="Shift" value={classDetails.shift} />
-                        <InfoField label="Status" value={classDetails.status} />
-                    </div>
+            {/* Class Information Section - STYLED LIKE ADMIN PAGE */}
+            <div className="info-card p-3 sm:p-4 bg-white border border-num-gray-light dark:bg-gray-800 dark:border-gray-700 shadow-custom-light rounded-lg mb-6">
+                <div className="section-title font-semibold text-md text-num-dark-text dark:text-white mb-3">General Information</div>
+                    <div className="space-y-2">
+                        <div className="form-row flex gap-3 mb-1 flex-wrap">
+                            <InfoField label="Class Name" value={classDetails.name} />
+                        </div>
+                        <div className="form-row flex gap-3 mb-1 flex-wrap">
+                            <InfoField label="Group" value={classDetails.group} />
+                            <InfoField label="Generation" value={classDetails.generation} />
+                        </div>
+                        <div className="form-row flex gap-3 mb-1 flex-wrap">
+                            <InfoField label="Faculty" value={classDetails.faculty} />
+                            <InfoField label="Degree" value={classDetails.degrees} />
+                            <InfoField label="Major" value={classDetails.major} />
+                        </div>
+                        <div className="form-row flex gap-3 mb-1 flex-wrap">
+                            <InfoField label="Semester" value={classDetails.semester} />
+                            <InfoField label="Shift" value={classDetails.shift} />
+                            <InfoField label="Status" value={classDetails.status} />
+                        </div>
                 </div>
             </div>
 
-            {/* Schedule Class Section - FIXED */}
+            {/* Schedule Class Section */}
             <div className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700">
                 <h2 className="text-lg font-semibold text-gray-800 dark:text-white mb-6">Schedule Class</h2>
                 {/* Schedule Grid */}
@@ -157,7 +164,6 @@ const InstructorClassDetailsContent = () => {
                         const scheduledItem = schedule[day];
                         const isNoClass = !scheduledItem;
 
-                        // Define styles based on schedule status
                         let dayHeaderStyle = "bg-gray-200 dark:bg-slate-700";
                         let dayBorderStyle = "border-gray-200 dark:border-slate-700";
                         let studyModeComponent = <div className="rounded-md bg-gray-200 dark:bg-slate-700 px-3 py-1 text-xs font-semibold text-gray-500 dark:text-gray-400">No Class</div>;
@@ -179,11 +185,9 @@ const InstructorClassDetailsContent = () => {
 
                         return (
                             <div key={day} className="flex flex-col gap-2">
-                                {/* Day Header */}
                                 <div className={`p-2 rounded-lg text-center ${dayHeaderStyle}`}>
                                     <h4 className="font-semibold text-gray-800 dark:text-gray-200 text-base">{day}</h4>
                                 </div>
-                                {/* Schedule Content Card */}
                                 <div className={`rounded-xl p-3 min-h-[160px] w-full border ${dayBorderStyle} flex flex-col justify-center items-center`}>
                                     {isNoClass ? (
                                         studyModeComponent
