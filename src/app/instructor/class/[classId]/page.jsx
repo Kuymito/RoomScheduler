@@ -6,16 +6,20 @@ import InstructorLayout from '@/components/InstructorLayout';
 
 // --- FIX: Added status for data consistency ---
 const initialClassData = [
-    { id: 1, name: 'NUM30-01', generation: '30', group: '01', major: 'IT', degrees: 'Bachelor', faculty: 'Faculty of IT', shift: '7:00 - 10:00', status: 'active' },
-    { id: 2, name: 'NUM30-01', generation: '30', group: '01', major: 'IT', degrees: 'Bachelor', faculty: 'Faculty of IT', shift: '7:00 - 10:00', status: 'active' },
-    { id: 3, name: 'NUM30-02', generation: '30', group: '02', major: 'CS', degrees: 'Bachelor', faculty: 'Faculty of CS', shift: '8:00 - 11:00', status: 'archived' }
+    { id: 1, name: 'NUM33-09', generation: '33', group: '09', major: 'IT', degrees: 'Bachelor', faculty: 'Faculty of IT', shift: '7:00 - 10:00', status: 'active' },
+    { id: 2, name: 'NUM32-01', generation: '32', group: '01', major: 'IT', degrees: 'Bachelor', faculty: 'Faculty of IT', shift: '10:30 - 1:30', status: 'active' },
+    { id: 3, name: 'NUM31-05', generation: '31', group: '05', major: 'CS', degrees: 'Bachelor', faculty: 'Faculty of CS', shift: '8:00 - 11:00', status: 'archived' },
+    { id: 4, name: 'NUM33-10', generation: '33', group: '10', major: 'AI', degrees: 'Master', faculty: 'Faculty of AI', shift: '10:30 - 1:30', status: 'archived' },
+    { id: 5, name: 'NUM30-03', generation: '30', group: '03', major: 'IT', degrees: 'Bachelor', faculty: 'Faculty of IT', shift: '5:30 - 8:30', status: 'archived' },
+    { id: 6, name: 'NUM32-02', generation: '32', group: '02', major: 'CS', degrees: 'Bachelor', faculty: 'Faculty of CS', shift: '7:00 - 10:00', status: 'archived' }
+
 ];
 
 const generationOptions = ['30', '31', '32', '33', '34', '35'];
 const majorOptions = ['IT', 'CS', 'IS', 'SE', 'AI', 'DS', 'ML', 'DA'];
 const degreesOptions = ['Associate', 'Bachelor', 'Master', 'PhD'];
 const facultyOptions = ['Faculty of IT', 'Faculty of CS', 'Faculty of IS', 'Faculty of AI', 'Faculty of DS', 'Faculty of ML', 'Faculty of DA', 'Faculty of SE'];
-const shiftOptions = ['7:00 - 10:00', '8:00 - 11:00', '9:00 - 12:00', '13:00 - 16:00', '15:00 - 18:00', '17:00 - 20:00', '18:00 - 21:00', '19:00 - 22:00'];
+const shiftOptions = ['7:00 - 10:00', '8:00 - 11:00', '9:00 - 12:00', '13:00 - 16:00', '15:00 - 18:00', '17:30 - 20:30', '18:00 - 21:00', '19:00 - 22:00'];
 
 const InstructorClassDetailsContent = () => {
     const router = useRouter();
