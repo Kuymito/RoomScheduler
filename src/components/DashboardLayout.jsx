@@ -1,3 +1,4 @@
+// src/components/DashboardLayout.jsx
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -20,7 +21,7 @@ export default function DashboardLayout({ children, activeItem, pageTitle }) {
     const [showLogoutAlert, setShowLogoutAlert] = useState(false);
     const [showNotificationPopup, setShowNotificationPopup] = useState(false);
     const [notifications, setNotifications] = useState([]);
-    const [isLoading, setIsLoading] = useState(false); // Added loading state
+    const [isLoading, setIsLoading] = useState(false); 
     const [navigatingTo, setNavigatingTo] = useState(null);
     const notificationPopupRef = useRef(null);
     const notificationIconRef = useRef(null);
@@ -43,7 +44,13 @@ export default function DashboardLayout({ children, activeItem, pageTitle }) {
     }, [isSidebarCollapsed]);
 
     const toggleSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
-    const handleUserIconClick = (event) => { event.stopPropagation(); setShowAdminPopup(!showAdminPopup); };
+    const handleUserIconClick = (event) => {
+        event.stopPropagation();
+        if (showNotificationPopup) {
+            setShowNotificationPopup(false);
+        }
+        setShowAdminPopup(prev => !prev);
+    };
     const handleLogoutClick = () => { setShowAdminPopup(false); setShowLogoutAlert(true); };
     const handleCloseLogoutAlert = () => setShowLogoutAlert(false);
 
@@ -51,7 +58,7 @@ export default function DashboardLayout({ children, activeItem, pageTitle }) {
         setShowLogoutAlert(false);
         setIsLoading(true);
         setTimeout(() => {
-            router.push('/auth/login');
+            router.push('/api/auth/login');
         }, 1500);
     };
 
@@ -68,14 +75,24 @@ export default function DashboardLayout({ children, activeItem, pageTitle }) {
 
     const handleToggleNotificationPopup = (event) => {
         event.stopPropagation();
-        setShowNotificationPopup(prev => !prev);
-        if (showAdminPopup) setShowAdminPopup(false); // Close other popup
+        if (showAdminPopup) {
+            setShowAdminPopup(false);
+        }
+        setShowNotificationPopup(prev => !prev); 
     };
     
     const mockAPICall = async (action, data) => {
         console.log(`MOCK API CALL: ${action}`, data || '');
         await new Promise(resolve => setTimeout(resolve, 300));
         return { success: true, message: `${action} successful.` };
+    };
+
+    const handleMarkSingleAsRead = (notificationId) => {
+        setNotifications(prevNotifications =>
+            prevNotifications.map(n =>
+                n.id === notificationId ? { ...n, isUnread: false } : n
+            )
+        );
     };
 
     const handleMarkAllRead = async () => {
@@ -93,11 +110,18 @@ export default function DashboardLayout({ children, activeItem, pageTitle }) {
         try {
             await mockAPICall("Approve notification", { notificationId });
             setNotifications(prevNotifications =>
-                prevNotifications.map(n =>
-                    n.id === notificationId
-                        ? { ...n, message: `Request ID ${notificationId} has been APPROVED.`, type: 'info', isUnread: false }
-                        : n
-                )
+                prevNotifications.map(n => {
+                    if (n.id === notificationId) {
+                        const { requestorName, room, time } = n.details;
+                        return {
+                            ...n,
+                            message: `You approved the request from ${requestorName} for Room ${room} at ${time}.`,
+                            type: 'info_approved',
+                            isUnread: false
+                        };
+                    }
+                    return n;
+                })
             );
         } catch (error) {
             console.error(`Failed to approve ${notificationId}:`, error);
@@ -108,11 +132,18 @@ export default function DashboardLayout({ children, activeItem, pageTitle }) {
         try {
             await mockAPICall("Deny notification", { notificationId });
             setNotifications(prevNotifications =>
-                prevNotifications.map(n =>
-                    n.id === notificationId
-                        ? { ...n, message: `Request ID ${notificationId} has been DENIED.`, type: 'info', isUnread: false }
-                        : n
-                )
+                prevNotifications.map(n => {
+                     if (n.id === notificationId) {
+                        const { requestorName, room, time } = n.details;
+                        return {
+                            ...n,
+                            message: `You denied the request from ${requestorName} for Room ${room} at ${time}.`,
+                            type: 'info_denied',
+                            isUnread: false
+                        };
+                    }
+                    return n;
+                })
             );
         } catch (error) {
             console.error(`Failed to deny ${notificationId}:`, error);
@@ -155,7 +186,7 @@ export default function DashboardLayout({ children, activeItem, pageTitle }) {
 
     useEffect(() => {
         const mockNotificationsData = [
-            { id: 1, avatarUrl: 'https://randomuser.me/api/portraits/women/60.jpg', message: 'Dr. Linda Keo is requesting room A1 at 7:00 - 10:00am for class 31/31 IT-morning', timestamp: '10m', isUnread: true, type: 'roomRequest', details: { requestorName: 'Dr. Linda Keo' } },
+            { id: 1, avatarUrl: 'https://randomuser.me/api/portraits/women/60.jpg', message: 'Dr. Linda Keo is requesting room A1 at 7:00 - 10:00am for class 31/31 IT-morning', timestamp: '10m', isUnread: true, type: 'roomRequest', details: { requestorName: 'Dr. Linda Keo', room: 'A1', time: '7:00 - 10:00am', class: '31/31 IT-morning' } },
             { id: 2, avatarUrl: 'https://randomuser.me/api/portraits/men/45.jpg', message: 'You have Approved Mr. Chan Keo request for a room change. The update has been successfully recorded.', timestamp: '1h', isUnread: false, type: 'info', details: { requestorName: 'Mr. Chan Keo' } },
             { id: 3, avatarUrl: 'https://randomuser.me/api/portraits/women/33.jpg', message: 'You have Denied Mr. Tomoko Inoue request for a room change.', timestamp: '2h', isUnread: false, type: 'info', details: { requestorName: 'Mr. Tomoko Inoue' } },
             { id: 4, avatarUrl: 'https://randomuser.me/api/portraits/men/78.jpg', message: 'Mr. Eric Sok submitted a new maintenance request for Projector in B2.', timestamp: '5h', isUnread: true, type: 'maintenanceRequest', details: { requestorName: 'Mr. Eric Sok' } },
@@ -171,7 +202,7 @@ export default function DashboardLayout({ children, activeItem, pageTitle }) {
     
     if (isLoading) {
         return (
-            <div className="min-h-screen w-screen flex flex-col items-center justify-center bg-blue-100 text-center p-6">
+            <div className="min-h-screen w-screen flex flex-col items-center justify-center bg-[#E0E4F3] text-center p-6">
                 <img 
                 src="https://numregister.com/assets/img/logo/num.png" 
                 alt="University Logo" 
@@ -254,6 +285,7 @@ export default function DashboardLayout({ children, activeItem, pageTitle }) {
                     onMarkAllRead={handleMarkAllRead}
                     onApprove={handleApproveNotification}
                     onDeny={handleDenyNotification}
+                    onMarkAsRead={handleMarkSingleAsRead}
                     anchorRef={notificationIconRef} 
                 />
             </div>

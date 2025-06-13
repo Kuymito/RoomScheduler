@@ -90,7 +90,7 @@ const ResetPasswordFormControl = () => {
     const handleBackToLogin = () => {
         setIsNavigating(true);
         setTimeout(() => {
-            router.push('/auth/login');
+            router.push('/api/auth/login');
         }, 1500);
     };
 
@@ -126,6 +126,11 @@ const ResetPasswordFormControl = () => {
 
     return (
         <div className="w-full max-w-xs sm:max-w-sm md:max-w-md">
+            <div className="mb-16 block md:hidden">
+                <img src="https://numregister.com/assets/img/logo/num.png" alt="University Logo" className="mx-auto mb-5 w-16 sm:w-20 md:w-24 lg:w-28" />
+                <h1 className={`${moul.className} font-bold mb-2 text-center sm:text-[25px]`}>សាកលវិទ្យាល័យជាតិគ្រប់គ្រង</h1>
+                <h2 className="sm:text-[21px] font-medium mb-6 text-center">National University of Management</h2>
+            </div>
             <h2 className="text-3xl sm:text-[24px] text-gray-900 mb-2 font-bold">Create new password</h2>
             <p className="text-sm text-gray-500 mb-8 leading-normal">Your new password must be different from previously used passwords.</p>
             <form onSubmit={handleSubmit} className="space-y-6">
@@ -156,8 +161,8 @@ const ResetPasswordFormControl = () => {
 // --- Main Page Component ---
 const ResetPasswordPage = () => {
     return (
-        <div className="min-h-screen w-screen flex flex-col lg:flex-row font-sans">
-            <div className="lg:w-3/5 w-full bg-[#3165F8] text-white flex items-center justify-center p-6 sm:p-8 md:p-12 lg:p-16 relative overflow-hidden">
+        <div className="min-h-screen w-screen flex font-sans">
+            <div className="hidden md:flex md:w-3/5 bg-[#3165F8] text-white items-center justify-center p-6 sm:p-8 md:p-12 lg:p-16 relative overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-br opacity-75"></div>
                 <div className="relative z-10 max-w-sm sm:max-w-md lg:max-w-lg">
                     <img src="https://numregister.com/assets/img/logo/num.png" alt="University Logo" className="mx-auto mb-10 w-16 sm:w-20 md:w-24 lg:w-28" />
@@ -174,7 +179,7 @@ const ResetPasswordPage = () => {
                     </p>
                 </div>
             </div>
-            <div className="lg:w-2/5 w-full bg-[#E0E4F3] flex items-center justify-center p-6 sm:p-8 md:p-12 lg:p-16">
+            <div className="w-full md:w-2/5 bg-[#E0E4F3] flex items-center justify-center p-6 sm:p-8 md:p-12 lg:p-16">
                 <ResetPasswordFormControl />
             </div>
         </div>

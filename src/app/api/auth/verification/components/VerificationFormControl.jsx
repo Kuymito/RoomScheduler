@@ -14,18 +14,20 @@ const VerificationFormControl = () => {
     const router = useRouter();
     const inputRefs = [useRef(null), useRef(null), useRef(null), useRef(null)];
 
+    // Set initial focus only once on component mount
     useEffect(() => {
-        // Auto-focus the first input on component mount
         inputRefs[0].current?.focus();
+    }, []);
 
-        // Timer countdown logic
+    // Handle the timer countdown
+    useEffect(() => {
         if (timer > 0) {
             const interval = setInterval(() => {
                 setTimer((prevTimer) => prevTimer - 1);
             }, 1000);
             return () => clearInterval(interval);
         }
-    }, [timer]); // Reruns when timer changes
+    }, [timer]);
 
     const handleChange = (e, index) => {
         const { value } = e.target;
@@ -57,7 +59,7 @@ const VerificationFormControl = () => {
             setTimeout(() => {
                 console.log(`Verified OTP: ${verificationCode}`);
                 // On success, navigate to the reset password page
-                router.push('/auth/reset'); // Assumes this is the route for your reset page
+                router.push('/api/auth/reset'); // Assumes this is the route for your reset page
             }, 2000);
         }
     };
@@ -105,6 +107,11 @@ const VerificationFormControl = () => {
 
     return (
         <div className="w-full max-w-xs sm:max-w-sm md:max-w-md">
+            <div className="mb-16 block md:hidden">
+                <img src="https://numregister.com/assets/img/logo/num.png" alt="University Logo" className="mx-auto mb-5 w-16 sm:w-20 md:w-24 lg:w-28" />
+                <h1 className={`${moul.className} font-bold mb-2 text-center sm:text-[25px]`}>សាកលវិទ្យាល័យជាតិគ្រប់គ្រង</h1>
+                <h2 className="sm:text-[21px] font-medium mb-6 text-center">National University of Management</h2>
+            </div>
             <h2 className="text-3xl sm:text-[24px] text-black mb-4 font-bold">
                 Verification
             </h2>
@@ -157,9 +164,9 @@ const VerificationFormControl = () => {
 
 const VerificationPage = () => {
     return (
-        <div className="min-h-screen w-screen flex flex-col lg:flex-row font-sans">
-            {/* Left Column */}
-            <div className="lg:w-3/5 w-full bg-[#3165F8] text-white flex items-center justify-center p-6 sm:p-8 md:p-12 lg:p-16 relative overflow-hidden">
+        <div className="min-h-screen w-screen flex flex-col md:flex-row font-sans">
+            {/* Left Column (Info Section) */}
+            <div className="hidden md:flex md:w-3/5 bg-[#3165F8] text-white items-center justify-center p-6 sm:p-8 md:p-12 lg:p-16 relative overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-br opacity-75"></div>
                 <div className="relative z-10 max-w-sm sm:max-w-md lg:max-w-lg">
                     <img src="https://numregister.com/assets/img/logo/num.png" alt="University Logo" className="mx-auto mb-10 w-16 sm:w-20 md:w-24 lg:w-28" />
@@ -177,8 +184,8 @@ const VerificationPage = () => {
                 </div>
             </div>
 
-            {/* Right Column */}
-            <div className="lg:w-2/5 w-full bg-[#E0E4F3] flex items-center justify-center p-6 sm:p-8 md:p-12 lg:p-16">
+            {/* Right Column (Form Section) */}
+            <div className="w-full h-full md:w-2/5 bg-[#E0E4F3] flex items-center justify-center p-6 sm:p-8 md:p-12 lg:p-16">
                 <VerificationFormControl />
             </div>
         </div>
