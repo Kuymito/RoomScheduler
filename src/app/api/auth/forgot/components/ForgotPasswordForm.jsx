@@ -31,14 +31,14 @@ const ForgotPasswordForm = () => {
         // Simulate API call and then redirect to the verification page
         setTimeout(() => {
             // No need to set isLoading to false, as the page will redirect
-            router.push('/auth/verification'); // Navigate to the verification page
+            router.push('/api/auth/verification'); // Navigate to the verification page
         }, 2000);
     };
 
     const handleBackToLogin = () => {
         setIsNavigating(true);
         setTimeout(() => {
-            router.push('/auth/login');
+            router.push('/api/auth/login');
         }, 1500);
     };
 
@@ -67,6 +67,11 @@ const ForgotPasswordForm = () => {
     // The component now only shows the initial email form
     return (
         <div className="w-full max-w-xs sm:max-w-sm md:max-w-md flex flex-col items-center">
+            <div className="mb-16 block md:hidden">
+                <img src="https://numregister.com/assets/img/logo/num.png" alt="University Logo" className="mx-auto mb-5 w-16 sm:w-20 md:w-24 lg:w-28" />
+                <h1 className={`${moul.className} font-bold mb-2 text-center sm:text-[25px]`}>សាកលវិទ្យាល័យជាតិគ្រប់គ្រង</h1>
+                <h2 className="sm:text-[21px] font-medium mb-6 text-center">National University of Management</h2>
+            </div>
             <h2 className="text-2xl sm:text-[24px] mb-4 font-bold text-gray-900 text-left w-full sm:w-5/6">
                 Forgot Password
             </h2>
@@ -107,9 +112,9 @@ const ForgotPasswordForm = () => {
 
 const ForgotPasswordPage = () => {
   return (
-    <div className="min-h-screen w-screen flex flex-col lg:flex-row font-sans">
-      {/* Left Column - Always Visible */}
-      <div className="lg:w-3/5 w-full bg-[#3165F8] text-white flex items-center justify-center p-6 sm:p-8 md:p-12 lg:p-16 relative overflow-hidden">
+    <div className="min-h-screen w-screen flex font-sans">
+      {/* Left Column (Info Section) - Hidden on mobile */}
+      <div className="hidden md:flex md:w-3/5 bg-[#3165F8] text-white items-center justify-center p-6 sm:p-8 md:p-12 lg:p-16 relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br opacity-75"></div>
         <div className="relative z-10 max-w-sm sm:max-w-md lg:max-w-lg">
           <img src="https://numregister.com/assets/img/logo/num.png" alt="University Logo" className="mx-auto mb-10 w-16 sm:w-20 md:w-24 lg:w-28" />
@@ -127,8 +132,8 @@ const ForgotPasswordPage = () => {
         </div>
       </div>
 
-      {/* Right Column - Content is dynamic */}
-      <div className="lg:w-2/5 w-full bg-[#E0E4F3] flex items-center justify-center p-6 sm:p-8 md:p-12 lg:p-16 min-h-[50vh] lg:min-h-screen">
+      {/* Right Column (Form Section) */}
+      <div className="w-full md:w-2/5 bg-[#E0E4F3] flex items-center justify-center p-6 sm:p-8 md:p-12 lg:p-16 min-h-screen">
         <ForgotPasswordForm />
       </div>
     </div>

@@ -60,7 +60,7 @@ export default function InstructorDashboardLayout({ children, activeItem, pageTi
         setShowLogoutAlert(false);
         setIsLoading(true);
         setTimeout(() => {
-            router.push('/auth/login');
+            router.push('/api/auth/login');
         }, 1500);
     };
 

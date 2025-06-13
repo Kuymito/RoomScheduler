@@ -4,7 +4,7 @@ const nextConfig = {
         return [
             {
                 source: '/',
-                destination: '/auth/login',
+                destination: '/api/auth/login',
                 permanent: true,
             },
         ]

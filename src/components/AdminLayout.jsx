@@ -54,7 +54,7 @@ export default function AdminLayout({ children, activeItem, pageTitle }) {
         setShowLogoutAlert(false);
         setIsLoading(true);
         setTimeout(() => {
-            router.push('/auth/login');
+            router.push('/api/auth/login');
         }, 1500);
     };
     
