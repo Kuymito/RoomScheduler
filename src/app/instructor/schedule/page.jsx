@@ -24,19 +24,19 @@ const SCHEDULE_ITEM_BG_COLOR = 'bg-green-50 dark:bg-green-900/40';
 // Mock data that would be fetched from an API
 const fetchedScheduleData = {
     'Monday': {
-        '07:00 - 10:00': { subject: '32/27 IT', year: 'Year 2', semester: 'Semester 1', timeDisplay: '07:00 - 10:00' },
-        '17:30 - 20:30': { subject: '32/34 MG', year: 'Year 2', semester: 'Semester 1', timeDisplay: '17:30 - 20:30' },
+        '07:00 - 10:00': { subject: '33/09 IT', year: 'Year 2', semester: 'Semester 1', timeDisplay: '07:00 - 10:00' },
+        '17:30 - 20:30': { subject: '33/10 AI', year: 'Year 2', semester: 'Semester 1', timeDisplay: '17:30 - 20:30' },
     },
     'Tuesday': {},
     'Wednesday': {
-        '10:30 - 13:30': { subject: '33/29 FA', year: 'Year 1', semester: 'Semester 1', timeDisplay: '10:30 - 13:30' },
+        '10:30 - 13:30': { subject: '32/01 IT', year: 'Year 1', semester: 'Semester 1', timeDisplay: '10:30 - 13:30' },
     },
     'Thursday': {
-        '14:00 - 17:00': { subject: '32/98 law', year: 'Year 2', semester: 'Semester 1', timeDisplay: '14:00 - 17:00' },
+        '14:00 - 17:00': { subject: '31/05 CS', year: 'Year 2', semester: 'Semester 1', timeDisplay: '14:00 - 17:00' },
     },
     'Friday': {
-        '07:00 - 10:00': { subject: '31/35 MG', year: 'Year 3', semester: 'Semester 1', timeDisplay: '07:00 - 10:00' },
-        '17:30 - 20:30': { subject: '30/11 IT', year: 'Year 4', semester: 'Semester 2', timeDisplay: '17:30 - 20:30' },
+        '07:00 - 10:00': { subject: '32/02 CS', year: 'Year 3', semester: 'Semester 1', timeDisplay: '07:00 - 10:00' },
+        '17:30 - 20:30': { subject: '30/03 IT', year: 'Year 4', semester: 'Semester 2', timeDisplay: '17:30 - 20:30' },
     },
     'Saturday': {},
     'Sunday': {},
