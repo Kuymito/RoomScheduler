@@ -1,9 +1,9 @@
-// src/app/admin/notification/AdminNotificationPopup.jsx
+// src/app/instructor/notification/InstructorNotificationPopup.jsx
 'use client';
 import React, { useState, useEffect } from 'react';
-import NotificationItem from './AdminNotification';
+import InstructorNotification from './InstructorNotification';
 
-const NotificationPopup = ({ show, notifications = [], onMarkAllRead, onApprove, onDeny, onMarkAsRead, anchorRef }) => {
+const InstructorNotificationPopup = ({ show, notifications = [], onMarkAllRead, onMarkAsRead, anchorRef }) => {
   const [isExiting, setIsExiting] = useState(false);
 
   useEffect(() => {
@@ -11,11 +11,6 @@ const NotificationPopup = ({ show, notifications = [], onMarkAllRead, onApprove,
       setIsExiting(false);
     }
   }, [show]);
-
-  const handleClose = () => {
-    setIsExiting(true);
-    setTimeout(onClose, 200);
-  };
 
   if (!show && !isExiting) return null;
 
@@ -59,11 +54,9 @@ const NotificationPopup = ({ show, notifications = [], onMarkAllRead, onApprove,
       <div className="flex flex-col flex-1 overflow-y-auto dark:bg-gray-800 border-t border-gray-200 dark:border-slate-600 rounded-b-lg">
         {notifications && notifications.length > 0 ? (
           notifications.map(notification => (
-            <NotificationItem
+            <InstructorNotification
               key={notification.id}
               notification={notification}
-              onApprove={onApprove}
-              onDeny={onDeny}
               onMarkAsRead={onMarkAsRead}
             />
           ))
@@ -77,4 +70,4 @@ const NotificationPopup = ({ show, notifications = [], onMarkAllRead, onApprove,
   );
 };
 
-export default NotificationPopup;
+export default InstructorNotificationPopup;

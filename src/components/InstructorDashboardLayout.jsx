@@ -1,3 +1,4 @@
+// src/components/InstructorDashboardLayout.jsx
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -6,7 +7,7 @@ import InstructorTopbar from '@/components/InstructorTopbar';
 import InstructorPopup from 'src/app/instructor/profile/components/InstructorPopup';
 import LogoutAlert from '@/components/LogoutAlert';
 import Footer from '@/components/Footer';
-import NotificationPopup from '@/app/admin/notification/AdminNotificationPopup';
+import InstructorNotificationPopup from '@/app/instructor/notification/InstructorNotificationPopup';
 import { usePathname, useRouter } from 'next/navigation';
 import { Moul } from 'next/font/google';
 
@@ -15,11 +16,11 @@ const moul = Moul({
     subsets: ['latin'],
 });
 
-export default function DashboardLayout({ children, activeItem, pageTitle }) {
+export default function InstructorDashboardLayout({ children, activeItem, pageTitle }) {
     const [showAdminPopup, setShowAdminPopup] = useState(false);
     const [showLogoutAlert, setShowLogoutAlert] = useState(false);
-    const [showNotificationPopup, setShowNotificationPopup] = useState(false);
-    const [notifications, setNotifications] = useState([]);
+    const [showInstructorNotificationPopup, setShowInstructorNotificationPopup] = useState(false);
+    const [instructorNotifications, setInstructorNotifications] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
     const [navigatingTo, setNavigatingTo] = useState(null);
     const notificationPopupRef = useRef(null);
@@ -43,7 +44,15 @@ export default function DashboardLayout({ children, activeItem, pageTitle }) {
     }, [isSidebarCollapsed]);
 
     const toggleSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
-    const handleUserIconClick = (event) => { event.stopPropagation(); setShowAdminPopup(!showAdminPopup); };
+
+    const handleUserIconClick = (event) => {
+        event.stopPropagation();
+        if (showInstructorNotificationPopup) {
+            setShowInstructorNotificationPopup(false);
+        }
+        setShowAdminPopup(prev => !prev);
+    };
+    
     const handleLogoutClick = () => { setShowAdminPopup(false); setShowLogoutAlert(true); };
     const handleCloseLogoutAlert = () => setShowLogoutAlert(false);
 
@@ -62,60 +71,25 @@ export default function DashboardLayout({ children, activeItem, pageTitle }) {
         }
     };
 
-    const handleToggleNotificationPopup = (event) => {
+    const handleToggleInstructorNotificationPopup = (event) => {
         event.stopPropagation();
-        setShowNotificationPopup(prev => !prev);
-        if (showAdminPopup) setShowAdminPopup(false); // Close other popup
+        if (showAdminPopup) {
+            setShowAdminPopup(false);
+        }
+        setShowInstructorNotificationPopup(prev => !prev);
     };
     
-    const mockAPICall = async (action, data) => {
-        console.log(`MOCK API CALL: ${action}`, data || '');
-        await new Promise(resolve => setTimeout(resolve, 300));
-        return { success: true, message: `${action} successful.` };
+    const handleMarkInstructorNotificationAsRead = (notificationId) => {
+        setInstructorNotifications(prev =>
+            prev.map(n => n.id === notificationId ? { ...n, isUnread: false } : n)
+        );
     };
 
-    const handleMarkAllRead = async () => {
-        try {
-            await mockAPICall("Mark all notifications as read");
-            setNotifications(prevNotifications =>
-                prevNotifications.map(n => ({ ...n, isUnread: false }))
-            );
-        } catch (error) {
-            console.error("Failed to mark all as read:", error);
-        }
+    const handleMarkAllInstructorNotificationsAsRead = () => {
+        setInstructorNotifications(prev => prev.map(n => ({ ...n, isUnread: false })));
     };
 
-    const handleApproveNotification = async (notificationId) => {
-        try {
-            await mockAPICall("Approve notification", { notificationId });
-            setNotifications(prevNotifications =>
-                prevNotifications.map(n =>
-                    n.id === notificationId
-                        ? { ...n, message: `Request ID ${notificationId} has been APPROVED.`, type: 'info', isUnread: false }
-                        : n
-                )
-            );
-        } catch (error) {
-            console.error(`Failed to approve ${notificationId}:`, error);
-        }
-    };
-
-    const handleDenyNotification = async (notificationId) => {
-        try {
-            await mockAPICall("Deny notification", { notificationId });
-            setNotifications(prevNotifications =>
-                prevNotifications.map(n =>
-                    n.id === notificationId
-                        ? { ...n, message: `Request ID ${notificationId} has been DENIED.`, type: 'info', isUnread: false }
-                        : n
-                )
-            );
-        } catch (error) {
-            console.error(`Failed to deny ${notificationId}:`, error);
-        }
-    };
-
-    const hasUnreadNotifications = notifications.some(n => n.isUnread);
+    const hasUnreadInstructorNotifications = instructorNotifications.some(n => n.isUnread);
 
     const handleProfileNav = (path) => {
         if (isProfileNavigating) {
@@ -139,24 +113,23 @@ export default function DashboardLayout({ children, activeItem, pageTitle }) {
                 userIconRef.current && !userIconRef.current.contains(event.target)) {
                 setShowAdminPopup(false);
             }
-            if (showNotificationPopup &&
+            if (showInstructorNotificationPopup &&
                 notificationPopupRef.current && !notificationPopupRef.current.contains(event.target) &&
                 notificationIconRef.current && !notificationIconRef.current.contains(event.target)) {
-                setShowNotificationPopup(false);
+                setShowInstructorNotificationPopup(false);
             }
         };
         document.addEventListener('click', handleClickOutside);
         return () => document.removeEventListener('click', handleClickOutside);
-    }, [showAdminPopup, showNotificationPopup]);
+    }, [showAdminPopup, showInstructorNotificationPopup]);
 
     useEffect(() => {
-        const mockNotificationsData = [
-            { id: 1, avatarUrl: 'https://randomuser.me/api/portraits/women/60.jpg', message: 'Dr. Linda Keo is requesting room A1 at 7:00 - 10:00am for class 31/31 IT-morning', timestamp: '10m', isUnread: true, type: 'roomRequest', details: { requestorName: 'Dr. Linda Keo' } },
-            { id: 2, avatarUrl: 'https://randomuser.me/api/portraits/men/45.jpg', message: 'You have Approved Mr. Chan Keo request for a room change. The update has been successfully recorded.', timestamp: '1h', isUnread: false, type: 'info', details: { requestorName: 'Mr. Chan Keo' } },
-            { id: 3, avatarUrl: 'https://randomuser.me/api/portraits/women/33.jpg', message: 'You have Denied Mr. Tomoko Inoue request for a room change.', timestamp: '2h', isUnread: false, type: 'info', details: { requestorName: 'Mr. Tomoko Inoue' } },
-            { id: 4, avatarUrl: 'https://randomuser.me/api/portraits/men/78.jpg', message: 'Mr. Eric Sok submitted a new maintenance request for Projector in B2.', timestamp: '5h', isUnread: true, type: 'maintenanceRequest', details: { requestorName: 'Mr. Eric Sok' } },
+        const mockInstructorNotifications = [
+            { id: 1, avatarUrl: '/images/kok.png', message: 'Your request for Room A1 has been approved by Admin.', timestamp: '5m', isUnread: true, type: 'request_approved', details: { adminName: 'Admin' } },
+            { id: 2, avatarUrl: '/images/kok.png', message: 'Your request for Room C2 has been denied due to a conflict.', timestamp: '1h', isUnread: true, type: 'request_denied', details: { adminName: 'Admin' } },
+            { id: 3, avatarUrl: '/images/kok.png', message: 'A new schedule has been published for your classes.', timestamp: '3h', isUnread: false, type: 'info', details: { adminName: 'Admin' } },
         ];
-        setNotifications(mockNotificationsData);
+        setInstructorNotifications(mockInstructorNotifications);
     }, []);
 
     useEffect(() => {
@@ -168,7 +141,7 @@ export default function DashboardLayout({ children, activeItem, pageTitle }) {
     
     if (isLoading) {
         return (
-            <div className="min-h-screen w-screen flex flex-col items-center justify-center bg-blue-100 text-center p-6">
+            <div className="min-h-screen w-screen flex flex-col items-center justify-center bg-[#E0E4F3] text-center p-6">
                 <img 
                 src="https://numregister.com/assets/img/logo/num.png" 
                 alt="University Logo" 
@@ -224,9 +197,9 @@ export default function DashboardLayout({ children, activeItem, pageTitle }) {
                         onUserIconClick={handleUserIconClick}
                         pageSubtitle={pageTitle}
                         userIconRef={userIconRef}
-                        onNotificationIconClick={handleToggleNotificationPopup}
+                        onNotificationIconClick={handleToggleInstructorNotificationPopup}
                         notificationIconRef={notificationIconRef}
-                        hasUnreadNotifications={hasUnreadNotifications}
+                        hasUnreadNotifications={hasUnreadInstructorNotifications}
                     />
                 </div>
                 <div className="flex flex-col flex-grow" style={{ paddingTop: TOPBAR_HEIGHT }}>
@@ -245,12 +218,11 @@ export default function DashboardLayout({ children, activeItem, pageTitle }) {
                 />
             </div>
             <div ref={notificationPopupRef}>
-                <NotificationPopup
-                    show={showNotificationPopup}
-                    notifications={notifications}
-                    onMarkAllRead={handleMarkAllRead}
-                    onApprove={handleApproveNotification}
-                    onDeny={handleDenyNotification}
+                <InstructorNotificationPopup
+                    show={showInstructorNotificationPopup}
+                    notifications={instructorNotifications}
+                    onMarkAllRead={handleMarkAllInstructorNotificationsAsRead}
+                    onMarkAsRead={handleMarkInstructorNotificationAsRead}
                     anchorRef={notificationIconRef} 
                 />
             </div>
