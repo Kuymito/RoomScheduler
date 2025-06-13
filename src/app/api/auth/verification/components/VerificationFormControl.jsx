@@ -14,18 +14,20 @@ const VerificationFormControl = () => {
     const router = useRouter();
     const inputRefs = [useRef(null), useRef(null), useRef(null), useRef(null)];
 
+    // Set initial focus only once on component mount
     useEffect(() => {
-        // Auto-focus the first input on component mount
         inputRefs[0].current?.focus();
+    }, []);
 
-        // Timer countdown logic
+    // Handle the timer countdown
+    useEffect(() => {
         if (timer > 0) {
             const interval = setInterval(() => {
                 setTimer((prevTimer) => prevTimer - 1);
             }, 1000);
             return () => clearInterval(interval);
         }
-    }, [timer]); // Reruns when timer changes
+    }, [timer]);
 
     const handleChange = (e, index) => {
         const { value } = e.target;
@@ -162,8 +164,8 @@ const VerificationFormControl = () => {
 
 const VerificationPage = () => {
     return (
-        <div className="min-h-screen w-screen flex font-sans">
-            {/* Left Column (Info Section) - Hidden on mobile */}
+        <div className="min-h-screen w-screen flex flex-col md:flex-row font-sans">
+            {/* Left Column (Info Section) */}
             <div className="hidden md:flex md:w-3/5 bg-[#3165F8] text-white items-center justify-center p-6 sm:p-8 md:p-12 lg:p-16 relative overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-br opacity-75"></div>
                 <div className="relative z-10 max-w-sm sm:max-w-md lg:max-w-lg">
@@ -183,7 +185,7 @@ const VerificationPage = () => {
             </div>
 
             {/* Right Column (Form Section) */}
-            <div className="w-full md:w-2/5 bg-[#E0E4F3] flex items-center justify-center p-6 sm:p-8 md:p-12 lg:p-16">
+            <div className="w-full h-full md:w-2/5 bg-[#E0E4F3] flex items-center justify-center p-6 sm:p-8 md:p-12 lg:p-16">
                 <VerificationFormControl />
             </div>
         </div>
