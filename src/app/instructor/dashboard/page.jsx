@@ -20,11 +20,11 @@ const fetchDashboardData = async () => {
 const fetchScheduleTableData = async () => {
   return new Promise(resolve => setTimeout(() => resolve([
     { id: 1, classNum: '33/09', major: 'IT', date: 'Monday', session: 'In Class', shift: '07:00 - 10:00', room: '1A' },
-    { id: 2, classNum: '32/01', major: 'IT', date: 'Monday', session: 'In Class', shift: '10:30 - 1:30', room: '2B' },
-    { id: 3, classNum: '31/05', major: 'CS', date: 'Wednesday', session: 'In Class', shift: '2:00 - 5:00', room: '6A' },
-    { id: 4, classNum: '33/10', major: 'AI', date: 'Thursday', session: 'Online', shift: '5:30 - 8:30', room: 'Unavailable' },
+    { id: 2, classNum: '32/01', major: 'IT', date: 'Wednesday', session: 'In Class', shift: '10:30 - 1:30', room: '2B' },
+    { id: 3, classNum: '31/05', major: 'CS', date: 'Thursday', session: 'In Class', shift: '2:00 - 5:00', room: '6A' },
+    { id: 4, classNum: '33/10', major: 'AI', date: 'Moday', session: 'Online', shift: '5:30 - 8:30', room: 'Unavailable' },
     { id: 5, classNum: '30/03', major: 'IT', date: 'Friday', session: 'Online', shift: '5:30 - 8:30', room: 'Unavailable' },
-    { id: 6, classNum: '32/02', major: 'CS', date: 'Saturday', session: 'Online', shift: '7:00 - 10:00', room: 'Unavailable' },
+    { id: 6, classNum: '32/02', major: 'CS', date: 'Friday', session: 'Online', shift: '7:00 - 10:00', room: 'Unavailable' },
   ]), 1500));
 };
 
