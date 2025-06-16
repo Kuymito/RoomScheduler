@@ -12,7 +12,7 @@ const TIME_SLOTS = ['07:00 - 10:00', '10:30 - 13:30', '14:00 - 17:00', '17:30 - 
 const DAY_HEADER_COLORS = {
     Monday: 'bg-yellow-50 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-200',
     Tuesday: 'bg-purple-50 text-purple-800 dark:bg-purple-900/50 dark:text-purple-200',
-    Wednesday: 'bg-green-50 text-green-800 dark:bg-green-900/50 dark:text-green-200',
+    Wednesday: 'bg-red-50 text-red-800 dark:bg-red-900/50 dark:text-red-200',
     Thursday: 'bg-green-50 text-green-800 dark:bg-green-900/50 dark:text-green-200',
     Friday: 'bg-blue-50 text-blue-800 dark:bg-blue-900/50 dark:text-blue-200',
     Saturday: 'bg-orange-50 text-orange-800 dark:bg-orange-900/50 dark:text-orange-200',

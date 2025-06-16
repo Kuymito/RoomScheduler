@@ -7,13 +7,6 @@ import RoomCardSkeleton from './components/RoomCardSkeleton';
 import ClassListSkeleton from './components/ClassListSkeleton';
 import { useRouter } from 'next/navigation'; 
 
-// --- Default Icon for items without an image ---
-const DefaultClassIcon = ({ className = "w-8 h-8" }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={`${className} text-gray-500 dark:text-gray-400`}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
-    </svg>
-);
-
 const degrees = ['Bachelor', 'Master', 'PhD'];
 const generations = ['Gen 2023', 'Gen 2024', 'Gen 2025', 'Gen 2026'];
 
@@ -39,7 +32,7 @@ const initialClasses = [
 ];
 
 const buildings = ['A', 'B', 'C', 'D', 'E'];
-const weekdays = ['Mon', 'Tue', 'Wed', 'Thur', 'Fri', 'Sat', 'Sun'];
+const weekdays = ['Mo', 'Tu', 'We', 'Thu', 'Fr', 'Sa', 'Su'];
 const timeSlots = ['7:00 - 10:00', '10:30 - 13:30', '14:00 - 17:00', '17:30 - 20:30'];
 const gridDimensions = { rows: 5, cols: 5 };
 
@@ -102,7 +95,6 @@ const ScheduleGridSkeleton = () => (
 
 const ScheduledClassCard = ({ classData, onDragStart, onDragEnd }) => (
     <div draggable onDragStart={onDragStart} onDragEnd={onDragEnd} className="w-full h-24 p-2 bg-blue-100 dark:bg-blue-800 border-2 border-blue-400 dark:border-blue-600 rounded-lg shadow-md flex flex-col justify-center items-center text-center cursor-grab active:cursor-grabbing transition-all duration-150">
-        <DefaultClassIcon className="w-6 h-6 mb-1 text-blue-600 dark:text-blue-200" />
         <p className="text-xs font-semibold text-blue-800 dark:text-blue-100 break-words">{classData.name}</p>
         <p className="text-xs text-blue-600 dark:text-blue-300 opacity-80">{classData.code}</p>
     </div>
@@ -362,7 +354,7 @@ const SchedulePageContent = () => {
                 <div className='flex-1 p-4 sm:p-6 bg-white dark:bg-gray-900 border dark:border-gray-700 shadow-xl rounded-xl flex flex-col overflow-y-auto'>
                     <div className="flex flex-row items-center justify-between mb-4 border-b dark:border-gray-600 pb-3">
                         <div className="flex rounded-lg border border-gray-300 dark:border-gray-600 overflow-hidden">
-                            {weekdays.map(day => <button key={day} onClick={() => setSelectedDay(day)} className={`px-3.5 py-1.5 text-sm font-medium transition-colors ${selectedDay === day ? 'bg-sky-600 text-white shadow' : 'border-r dark:border-r-gray-500 last:border-r-0'}`}>{day}</button>)}
+                            {weekdays.map(day => <button key={day} onClick={() => setSelectedDay(day)} className={`px-3.5 py-1.5 text-sm font-medium transition-colors ${selectedDay === day ? 'bg-blue-600 dark:bg-blue-600 hover:bg-blue-700 dark:hover:bg-blue-700 text-white shadow' : 'border-r hover:bg-gray-50 dark:hover:bg-gray-800 dark:border-r-gray-500 last:border-r-0'}`}>{day}</button>)}
                         </div>
                         <div className="flex items-center gap-2">
                             <label htmlFor="time-select" className="text-sm font-medium dark:text-gray-300">Time:</label>

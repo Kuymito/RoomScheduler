@@ -135,7 +135,7 @@ const ResetPasswordFormControl = () => {
             <p className="text-sm text-gray-500 mb-8 leading-normal">Your new password must be different from previously used passwords.</p>
             <form onSubmit={handleSubmit} className="space-y-6">
                 <div>
-                    <label htmlFor="password" className="block text-sm sm:text-base mb-1 font-bold text-gray-900">Password</label>
+                    <label htmlFor="password" className="block text-sm sm:text-base mb-1 font-base text-gray-900">Password</label>
                     <div className="relative">
                         <input type={showPassword ? 'text' : 'password'} id="password" value={password} onChange={handlePasswordChange} required className={`w-full p-3 pr-10 bg-white rounded-md text-gray-600 border ${passwordError ? 'border-red-500' : 'border-gray-300'} focus:border-blue-500 focus:outline-none focus:ring-1 ${passwordError ? 'focus:ring-red-500/50' : 'focus:ring-blue-500/50'}`} />
                         <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute inset-y-0 right-0 px-3 flex items-center">{showPassword ? <EyeOffIcon /> : <EyeIcon />}</button>
@@ -143,7 +143,7 @@ const ResetPasswordFormControl = () => {
                     {passwordError ? (<p className="mt-2 text-xs text-red-600">{passwordError}</p>) : (<p className="mt-2 text-xs text-gray-500">Must be at least 8 characters.</p>)}
                 </div>
                 <div>
-                    <label htmlFor="confirmPassword" className="block text-sm sm:text-base mb-1 font-bold text-gray-900">Confirm Password</label>
+                    <label htmlFor="confirmPassword" className="block text-sm sm:text-base mb-1 font-base text-gray-900">Confirm Password</label>
                     <div className="relative">
                         <input type={showConfirmPassword ? 'text' : 'password'} id="confirmPassword" value={confirmPassword} onChange={handleConfirmPasswordChange} required className={`w-full p-3 pr-10 bg-white rounded-md text-gray-600 border ${confirmPasswordError ? 'border-red-500' : 'border-gray-300'} focus:border-blue-500 focus:outline-none focus:ring-1 ${confirmPasswordError ? 'focus:ring-red-500/50' : 'focus:ring-blue-500/50'}`} />
                         <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute inset-y-0 right-0 px-3 flex items-center">{showConfirmPassword ? <EyeOffIcon /> : <EyeIcon />}</button>

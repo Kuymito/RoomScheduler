@@ -80,7 +80,7 @@ const ForgotPasswordForm = () => {
             </p>
             <form onSubmit={handleSendCode} className="w-full flex flex-col items-center" noValidate>
                 <div className="form-group mb-5 w-full sm:w-5/6">
-                    <label htmlFor="email" className="block text-sm sm:text-base mb-1 font-bold text-gray-900">
+                    <label htmlFor="email" className="block text-sm sm:text-base mb-1 font-base text-gray-900">
                         Email
                     </label>
                     <input
