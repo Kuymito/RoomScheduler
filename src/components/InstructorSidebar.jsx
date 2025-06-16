@@ -68,7 +68,7 @@ const NavItem = ({ href, icon: Icon, label, isActive, isCollapsed, onClick, isNa
       className={`nav-item flex items-center py-2.5 mb-1.5 rounded-[5px] cursor-pointer overflow-hidden transition-all duration-150 ease-in-out hover:bg-gray-100 dark:hover:bg-gray-800
         ${isActive ? 'hover:bg-sky-100 dark:hover:bg-blue-800' : ''}
         ${isCollapsed ? 'px-0 justify-center' : 'px-[60px]'}
-        ${isNavigating ? 'cursor-wait opacity-70' : ''}`}
+        ${isNavigating ? 'opacity-70' : ''}`}
     >
       <div className={`nav-icon-wrapper transition-all duration-300 ease-in-out flex-shrink-0 ${isCollapsed ? 'mr-0' : 'mr-[15px]'}`}>
         {isNavigating ? (
