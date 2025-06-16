@@ -1,54 +1,67 @@
+// src/app/instructor/notification/InstructorNotificationPopup.jsx
 'use client';
-import React from 'react';
-import InstructorNotificationItem from './InstructorNotificationItem';
+import React, { useState, useEffect } from 'react';
+import InstructorNotification from './InstructorNotification';
 
-const InstructorNotificationPopup = ({ show, notifications = [], onMarkAllRead, anchorRef }) => {
-  if (!show) return null;
+const InstructorNotificationPopup = ({ show, notifications = [], onMarkAllRead, onMarkAsRead, anchorRef }) => {
+  const [isExiting, setIsExiting] = useState(false);
 
-  // --- Popup Positioning ---
-  // Calculates the position of the popup to appear below the notification bell icon.
-  const popupStyle = anchorRef?.current
-    ? {
-        position: 'absolute',
-        top: `${anchorRef.current.getBoundingClientRect().bottom + window.scrollY + 10}px`,
-        right: `${window.innerWidth - anchorRef.current.getBoundingClientRect().right}px`,
-      }
-    : {
-        position: 'fixed',
-        right: '20px',
-        top: '80px',
-      };
+  useEffect(() => {
+    if (!show) {
+      setIsExiting(false);
+    }
+  }, [show]);
+
+  if (!show && !isExiting) return null;
+
+  let popupStyle = {
+    right: '20px',
+    top: '80px',
+  };
+
+  if (anchorRef && anchorRef.current) {
+    const rect = anchorRef.current.getBoundingClientRect();
+    popupStyle = {
+      position: 'absolute',
+      top: `${rect.bottom + window.scrollY + 10}px`,
+      right: `${window.innerWidth - rect.right}px`,
+    };
+  }
 
   return (
     <div
-      className="w-[480px] max-w-[95vw] bg-white dark:bg-gray-800 shadow-xl rounded-lg z-50 flex flex-col border border-gray-200 dark:border-gray-700"
-      style={popupStyle}
+      className={`fixed md:absolute w-full max-w-md bg-white dark:bg-gray-800 shadow-lg rounded-lg z-[1000] flex flex-col right-5 top-20 md:right-auto md:left-auto
+        ${show && !isExiting ? 'animate-fade-in-scale' : ''}
+        ${isExiting ? 'animate-fade-out-scale' : ''}
+      `}
+      style={anchorRef?.current ? popupStyle : {}}
     >
-      {/* Header */}
-      <div className="flex justify-between items-center p-4 border-b border-gray-200 dark:border-gray-700">
-        <h2 className="font-semibold text-lg text-gray-800 dark:text-gray-100">
+      <div className="relative flex justify-between items-center py-4 px-5">
+        <h2 className="font-roboto font-semibold text-xl text-gray-800 dark:text-gray-100">
           Notifications
         </h2>
-        <button
-          onClick={onMarkAllRead}
-          className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline"
-          title="Mark all notifications as read"
-        >
-          Mark all as read
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={onMarkAllRead}
+            className="font-inter font-medium text-xs text-blue-600 dark:text-blue-500 hover:underline"
+            title="Mark all notifications as read"
+          >
+            Mark all as read
+          </button>
+        </div>
       </div>
 
-      {/* Notification List */}
-      <div className="flex flex-col flex-1 overflow-y-auto max-h-[500px]">
+      <div className="flex flex-col flex-1 overflow-y-auto dark:bg-gray-800 border-t border-gray-200 dark:border-slate-600 rounded-b-lg">
         {notifications && notifications.length > 0 ? (
           notifications.map(notification => (
-            <InstructorNotificationItem
+            <InstructorNotification
               key={notification.id}
               notification={notification}
+              onMarkAsRead={onMarkAsRead}
             />
           ))
         ) : (
-          <div className="flex-1 flex items-center justify-center p-8 text-gray-500">
+          <div className="flex-1 flex items-center justify-center p-4 text-gray-500">
             No new notifications.
           </div>
         )}

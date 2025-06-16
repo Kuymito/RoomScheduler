@@ -13,7 +13,7 @@ const CloseIconSvg = (props) => (
   </svg>
 );
 
-const SuccessAlert = ({ show, onConfirm, onClose, title = "Update Successfully", messageLine1 = "Your item has been updated successfully.", messageLine2 = "You can view or edit it anytime.", confirmButtonText = "OK" }) => {
+const RequestSuccessComponent = ({ show, onConfirm, onClose, title = "Request Sent", messageLine1 = "Your request has been sent successfully.", messageLine2 = "You will be notified upon approval.", confirmButtonText = "OK" }) => {
   const [isExiting, setIsExiting] = useState(false);
 
   useEffect(() => {
@@ -71,4 +71,4 @@ const SuccessAlert = ({ show, onConfirm, onClose, title = "Update Successfully",
   );
 };
 
-export default SuccessAlert;
+export default RequestSuccessComponent;

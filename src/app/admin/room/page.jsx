@@ -1,11 +1,11 @@
-// Likely src/app/admin/room/page.jsx
+// src/app/admin/room/page.jsx
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
 import AdminLayout from '@/components/AdminLayout';
-import SuccessAlert from './components/UpdateSuccessComponent'; // Assuming this path is correct
+import SuccessAlert from './components/UpdateSuccessComponent';
+import RoomPageSkeleton from './components/RoomPageSkeleton';
 
-// This function mimics fetching data from an API by using a Promise and a timeout.
 const fetchRoomData = async () => {
     const initialRoomsData = {
         A1: { id: "A1", name: "Room A1", building: "Building A", floor: 5, capacity: 30, equipment: ["Projector", "Whiteboard", "AC"] },
@@ -28,85 +28,11 @@ const fetchRoomData = async () => {
         H1: { id: "H1", name: "Room H1", building: "Building B", floor: 1, capacity: 5, equipment: ["AC"] },
         H2: { id: "H2", name: "Room H2", building: "Building B", floor: 1, capacity: 4, equipment: ["Whiteboard"] },
     };
-    // Simulate a network delay of 1 second
-    return new Promise(resolve => setTimeout(() => resolve(initialRoomsData), 1000));
-};
 
-// --- Skeleton Loader for Room Page ---
-const RoomPageSkeleton = () => {
-  // A small, reusable component for a single room card skeleton
-  const SkeletonRoomCard = () => (
-    <div className="h-[90px] sm:h-[100px] bg-slate-200 dark:bg-slate-700 rounded-md animate-pulse"></div>
-  );
-
-  // A reusable component for a single row in the details panel
-  const SkeletonDetailRow = () => (
-    <div className="flex flex-row items-center w-full min-h-[56px] border-b border-slate-200 dark:border-slate-700/50">
-      <div className="p-4 w-[120px]">
-        <div className="h-4 bg-slate-300 dark:bg-slate-600 rounded w-3/4"></div>
-      </div>
-      <div className="px-3 flex-1">
-        <div className="h-4 bg-slate-300 dark:bg-slate-600 rounded w-1/2"></div>
-      </div>
-    </div>
-  );
-
-  return (
-    <div className='p-4 sm:p-6 min-h-full animate-pulse'>
-      {/* Page Header Skeleton */}
-      <div className="mb-4 w-full">
-        <div className="h-7 w-24 bg-slate-300 dark:bg-slate-600 rounded"></div>
-        <div className="h-px bg-slate-300 dark:bg-slate-700 mt-3" />
-      </div>
-      
-      <div className="flex flex-col lg:flex-row gap-6">
-        {/* Left Panel (Room List) Skeleton */}
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-3 sm:mb-4">
-            <div className="h-10 w-40 bg-slate-200 dark:bg-slate-700 rounded-md"></div>
-            <div className="flex-1 h-px bg-slate-300 dark:bg-slate-700" />
-          </div>
-          <div className="space-y-4">
-            {[...Array(2)].map((_, i) => ( // Create 2 floor sections
-              <div key={i} className="space-y-3">
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="h-5 w-16 bg-slate-300 dark:bg-slate-600 rounded"></div>
-                  <div className="flex-1 h-px bg-slate-300 dark:bg-slate-700" />
-                </div>
-                <div className="grid xl:grid-cols-5 lg:grid-cols-2 md:grid-cols-2 gap-3">
-                  {[...Array(5)].map((_, j) => ( // Create 5 room cards per floor
-                    <SkeletonRoomCard key={j} />
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Right Panel (Details) Skeleton */}
-        <div className="w-full lg:w-[320px] shrink-0">
-          <div className="flex items-center gap-2 mb-3 sm:mb-4">
-            <div className="h-6 w-20 bg-slate-300 dark:bg-slate-600 rounded"></div>
-            <div className="flex-1 h-px bg-slate-300 dark:bg-slate-700" />
-          </div>
-          <div className="flex flex-col items-start gap-6 w-full min-h-[420px] bg-white dark:bg-slate-800 p-4 rounded-lg shadow-lg">
-             <div className="w-full border border-slate-200 dark:border-slate-700/50 rounded-md flex-grow">
-                <SkeletonDetailRow />
-                <SkeletonDetailRow />
-                <SkeletonDetailRow />
-                <SkeletonDetailRow />
-                <SkeletonDetailRow />
-             </div>
-             <div className="w-full h-[50px] bg-slate-300 dark:bg-slate-600 rounded-md"></div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+    return new Promise(resolve => setTimeout(() => resolve(initialRoomsData), 2000));
 };
 
 const RoomViewContent = () => {
-    // --- Styles ---
     const textLabelRoom = "font-medium text-base leading-7 text-slate-700 dark:text-slate-300 tracking-[-0.01em]";
     const textValueRoomDisplay = "font-medium text-base leading-7 text-slate-900 dark:text-slate-100 tracking-[-0.01em]";
     const textLabelDefault = "font-medium text-sm leading-6 text-slate-700 dark:text-slate-300 tracking-[-0.01em]";
@@ -116,7 +42,6 @@ const RoomViewContent = () => {
     const equipmentInputContainerSize = "w-full sm:w-[132px] h-[72px]";
     const textareaStyle = "py-[10px] px-3 w-full h-full bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-[6px] font-normal text-sm leading-[22px] text-slate-900 dark:text-slate-50 placeholder:text-slate-400 dark:placeholder:text-slate-500 resize-none focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 scrollbar-thin scrollbar-thumb-slate-400 dark:scrollbar-thumb-slate-500 scrollbar-track-slate-100 dark:scrollbar-track-slate-800";
     
-    // --- State Variables ---
     const [selectedBuilding, setSelectedBuilding] = useState("Building A");
     const [selectedRoom, setSelectedRoom] = useState(null);
     const [roomDetails, setRoomDetails] = useState(null);
@@ -141,7 +66,6 @@ const RoomViewContent = () => {
         ],
     };
 
-    // --- Handler ---
     const handleRoomClick = async (roomId) => {
         setSelectedRoom(roomId);
         setIsEditing(false);
@@ -199,14 +123,14 @@ const RoomViewContent = () => {
             equipment: editableRoomDetails.equipment.split(',').map(e => e.trim()).filter(e => e),
         };
         try {
-            await new Promise(resolve => setTimeout(resolve, 500)); // Simulate API
+            await new Promise(resolve => setTimeout(resolve, 500)); 
             setRoomDetails(updatedRoomData);
             setAllRoomsData(prevAllRooms => ({
                 ...prevAllRooms,
                 [selectedRoom]: updatedRoomData,
             }));
             setIsEditing(false);
-            setShowSuccessAlert(true);
+            setShowSuccessAlert(true); // *** This is the crucial fix ***
         } catch (error) {
             console.error("Failed to save room details:", error);
         } finally {
@@ -216,7 +140,6 @@ const RoomViewContent = () => {
 
     const floors = buildings[selectedBuilding] || [];
     
-    // --- Hooks ---
     useEffect(() => {
         const loadInitialData = async () => {
             try {
@@ -224,16 +147,14 @@ const RoomViewContent = () => {
                 setAllRoomsData(data);
             } catch (error) {
                 console.error("Failed to fetch class data:", error);
-                // You could set an error state here to show an error message
             } finally {
-                setIsLoading(false); // Set loading to false after data is fetched or if an error occurs
+                setIsLoading(false);
             }
         };
 
         loadInitialData();
     }, []);
 
-    // --- Render Logic ---
     if (isLoading) {
         return <RoomPageSkeleton />;
     }
@@ -243,6 +164,7 @@ const RoomViewContent = () => {
             {showSuccessAlert && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60">
                     <SuccessAlert
+                        show={showSuccessAlert}
                         title="Room Updated"
                         messageLine1={`Room ${roomDetails?.name || ''} has been updated successfully.`}
                         messageLine2="You can continue managing rooms."
@@ -288,23 +210,21 @@ const RoomViewContent = () => {
                                             {rooms.map((roomId) => (
                                                 <div
                                                     key={roomId}
-                                                    className={`h-[90px] sm:h-[100px] border rounded-md flex flex-col cursor-pointer transition-all duration-150 shadow-sm hover:shadow-md bg-white dark:bg-slate-800 // BASE BACKGROUNDS
+                                                    className={`h-[90px] sm:h-[100px] border rounded-md flex flex-col cursor-pointer transition-all duration-150 shadow-sm hover:shadow-md bg-white dark:bg-slate-800
                                                         ${selectedRoom === roomId && !isEditing
-                                                            ? "border-blue-500 ring-2 ring-blue-500 dark:border-blue-500" // SELECTED: border and ring
-                                                            : "border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600" // NOT SELECTED: default & hover border
+                                                            ? "border-blue-500 ring-2 ring-blue-500 dark:border-blue-500"
+                                                            : "border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600"
                                                         }`}
                                                     onClick={() => handleRoomClick(roomId)}
                                                 >
-                                                    {/* Card Header: Background is static, text color changes on selection */}
                                                     <div className={`h-[30px] rounded-t-md flex items-center justify-center px-2 relative border-b border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700`}>
                                                         <div className={`absolute left-2 top-1/2 -translate-y-1/2 w-2 h-2 ${allRoomsData[roomId]?.id === selectedRoom && !isEditing ? 'bg-blue-500' : 'bg-green-500'} rounded-full`}></div>
                                                         <span className={`ml-3 text-xs sm:text-sm font-medium ${selectedRoom === roomId && !isEditing ? 'text-blue-700 dark:text-blue-300' : 'text-slate-700 dark:text-slate-300'}`}>
                                                             {allRoomsData[roomId]?.name || roomId}
                                                         </span>
                                                     </div>
-                                                    {/* Card Body: Background is static, text color changes on selection */}
                                                     <div className={`flex-1 rounded-b-md p-2 flex flex-col justify-center items-center bg-white dark:bg-slate-800`}>
-                                                        <span className={`text-xs text-slate-500 dark:text-slate-400 ${selectedRoom === roomId && !isEditing ? 'text-slate-600 dark:text-slate-300' : ''}`}> {/* Adjusted selected capacity text color for better contrast if needed */}
+                                                        <span className={`text-xs text-slate-500 dark:text-slate-400 ${selectedRoom === roomId && !isEditing ? 'text-slate-600 dark:text-slate-300' : ''}`}>
                                                             Capacity: {allRoomsData[roomId]?.capacity}
                                                         </span>
                                                     </div>
@@ -317,7 +237,6 @@ const RoomViewContent = () => {
                         </div>
                     </div>
 
-                    {/* Details Panel */}
                     <div className="w-full lg:w-[320px] shrink-0">
                         <div className="flex items-center gap-2 mb-3 sm:mb-4">
                             <h3 className="text-sm sm:text-base font-semibold text-slate-700 dark:text-slate-300">Details</h3>
@@ -330,70 +249,25 @@ const RoomViewContent = () => {
                                 <>
                                     <div className="flex flex-col items-start self-stretch w-full flex-grow overflow-y-auto scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-slate-600 scrollbar-track-slate-100 dark:scrollbar-track-slate-700 pr-1">
                                         <div className="w-full border border-slate-200 dark:border-slate-700 rounded-md bg-white dark:bg-slate-800">
-                                            {/* --- Room Row --- */}
                                             <div className="flex flex-row items-center self-stretch w-full min-h-[56px] border-b border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
-                                                <div className="flex flex-col justify-center items-start p-3 sm:p-4 w-[100px] sm:w-[120px]">
-                                                    <span className={textLabelRoom}>Room</span>
-                                                </div>
-                                                <div className="flex flex-col justify-center items-start px-2 sm:px-3 flex-1 py-2">
-                                                    {isEditing && editableRoomDetails ? (
-                                                        <div className={`flex flex-col items-start self-stretch ${inputContainerSizeDefault}`}>
-                                                            <input type="text" name="name" value={editableRoomDetails.name} onChange={handleInputChange} className={inputStyle} />
-                                                        </div>
-                                                    ) : (<span className={textValueRoomDisplay}>{roomDetails.name}</span>)}
-                                                </div>
+                                                <div className="flex flex-col justify-center items-start p-3 sm:p-4 w-[100px] sm:w-[120px]"><span className={textLabelRoom}>Room</span></div>
+                                                <div className="flex flex-col justify-center items-start px-2 sm:px-3 flex-1 py-2">{isEditing && editableRoomDetails ? (<div className={`flex flex-col items-start self-stretch ${inputContainerSizeDefault}`}><input type="text" name="name" value={editableRoomDetails.name} onChange={handleInputChange} className={inputStyle} /></div>) : (<span className={textValueRoomDisplay}>{roomDetails.name}</span>)}</div>
                                             </div>
-                                            {/* --- Building Row --- */}
                                             <div className="flex flex-row items-center self-stretch w-full min-h-[56px] border-b border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
-                                                <div className="flex flex-col justify-center items-start p-3 sm:p-4 w-[100px] sm:w-[120px]">
-                                                    <span className={textLabelDefault}>Building</span>
-                                                </div>
-                                                <div className="flex flex-col justify-center items-start px-2 sm:px-3 flex-1 py-2">
-                                                    {isEditing && editableRoomDetails ? (
-                                                        <div className={`flex flex-col items-start self-stretch ${inputContainerSizeDefault}`}>
-                                                            <input type="text" name="building" value={editableRoomDetails.building} onChange={handleInputChange} className={inputStyle} />
-                                                        </div>
-                                                    ) : (<span className={textValueDefaultDisplay}>{roomDetails.building}</span>)}
-                                                </div>
+                                                <div className="flex flex-col justify-center items-start p-3 sm:p-4 w-[100px] sm:w-[120px]"><span className={textLabelDefault}>Building</span></div>
+                                                <div className="flex flex-col justify-center items-start px-2 sm:px-3 flex-1 py-2">{isEditing && editableRoomDetails ? (<div className={`flex flex-col items-start self-stretch ${inputContainerSizeDefault}`}><input type="text" name="building" value={editableRoomDetails.building} onChange={handleInputChange} className={inputStyle} /></div>) : (<span className={textValueDefaultDisplay}>{roomDetails.building}</span>)}</div>
                                             </div>
-                                            {/* --- Floor Row --- */}
                                             <div className="flex flex-row items-center self-stretch w-full min-h-[56px] border-b border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
-                                                <div className="flex flex-col justify-center items-start p-3 sm:p-4 w-[100px] sm:w-[120px]">
-                                                    <span className={textLabelDefault}>Floor</span>
-                                                </div>
-                                                <div className="flex flex-col justify-center items-start px-2 sm:px-3 flex-1 py-2">
-                                                    {isEditing && editableRoomDetails ? (
-                                                        <div className={`flex flex-col items-start self-stretch ${inputContainerSizeDefault}`}>
-                                                            <input type="number" name="floor" value={editableRoomDetails.floor} onChange={handleInputChange} className={inputStyle} />
-                                                        </div>
-                                                    ) : (<span className={textValueDefaultDisplay}>{roomDetails.floor}</span>)}
-                                                </div>
+                                                <div className="flex flex-col justify-center items-start p-3 sm:p-4 w-[100px] sm:w-[120px]"><span className={textLabelDefault}>Floor</span></div>
+                                                <div className="flex flex-col justify-center items-start px-2 sm:px-3 flex-1 py-2">{isEditing && editableRoomDetails ? (<div className={`flex flex-col items-start self-stretch ${inputContainerSizeDefault}`}><input type="number" name="floor" value={editableRoomDetails.floor} onChange={handleInputChange} className={inputStyle} /></div>) : (<span className={textValueDefaultDisplay}>{roomDetails.floor}</span>)}</div>
                                             </div>
-                                            {/* --- Capacity Row --- */}
                                             <div className="flex flex-row items-center self-stretch w-full min-h-[56px] border-b border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
-                                                <div className="flex flex-col justify-center items-start p-3 sm:p-4 w-[100px] sm:w-[120px]">
-                                                    <span className={textLabelDefault}>Capacity</span>
-                                                </div>
-                                                <div className="flex flex-col justify-center items-start px-2 sm:px-3 flex-1 py-2">
-                                                    {isEditing && editableRoomDetails ? (
-                                                        <div className={`flex flex-col items-start self-stretch ${inputContainerSizeDefault}`}>
-                                                            <input type="number" name="capacity" value={editableRoomDetails.capacity} onChange={handleInputChange} className={inputStyle} />
-                                                        </div>
-                                                    ) : (<span className={textValueDefaultDisplay}>{roomDetails.capacity}</span>)}
-                                                </div>
+                                                <div className="flex flex-col justify-center items-start p-3 sm:p-4 w-[100px] sm:w-[120px]"><span className={textLabelDefault}>Capacity</span></div>
+                                                <div className="flex flex-col justify-center items-start px-2 sm:px-3 flex-1 py-2">{isEditing && editableRoomDetails ? (<div className={`flex flex-col items-start self-stretch ${inputContainerSizeDefault}`}><input type="number" name="capacity" value={editableRoomDetails.capacity} onChange={handleInputChange} className={inputStyle} /></div>) : (<span className={textValueDefaultDisplay}>{roomDetails.capacity}</span>)}</div>
                                             </div>
-                                            {/* --- Equipment Row --- */}
-                                            <div className="flex flex-row items-start self-stretch w-full min-h-[92px] hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors"> {/* No bottom border for the last row */}
-                                                <div className="flex flex-col justify-center items-start p-3 sm:p-4 w-[100px] sm:w-[120px] pt-5">
-                                                    <span className={textLabelDefault}>Equipment</span>
-                                                </div>
-                                                <div className="flex flex-col justify-center items-start px-2 sm:px-3 flex-1 py-2 pt-3">
-                                                    {isEditing && editableRoomDetails ? (
-                                                        <div className={`flex flex-col items-start self-stretch ${equipmentInputContainerSize}`}>
-                                                            <textarea name="equipment" value={editableRoomDetails.equipment} onChange={handleInputChange} className={textareaStyle} placeholder="Item1, Item2, ..."></textarea>
-                                                        </div>
-                                                    ) : (<span className={`${textValueDefaultDisplay} pt-1`}>{roomDetails.equipment.join(", ")}</span>)}
-                                                </div>
+                                            <div className="flex flex-row items-start self-stretch w-full min-h-[92px] hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+                                                <div className="flex flex-col justify-center items-start p-3 sm:p-4 w-[100px] sm:w-[120px] pt-5"><span className={textLabelDefault}>Equipment</span></div>
+                                                <div className="flex flex-col justify-center items-start px-2 sm:px-3 flex-1 py-2 pt-3">{isEditing && editableRoomDetails ? (<div className={`flex flex-col items-start self-stretch ${equipmentInputContainerSize}`}><textarea name="equipment" value={editableRoomDetails.equipment} onChange={handleInputChange} className={textareaStyle} placeholder="Item1, Item2, ..."></textarea></div>) : (<span className={`${textValueDefaultDisplay} pt-1`}>{roomDetails.equipment.join(", ")}</span>)}</div>
                                             </div>
                                         </div>
                                     </div>

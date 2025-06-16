@@ -1,8 +1,6 @@
 // dashboard/components/RoomAvailabilityChart.jsx
 import { Bar } from 'react-chartjs-2';
-import {
-  Chart as ChartJS,CategoryScale, LinearScale,BarElement, Title,Tooltip,Legend,
-} from 'chart.js';
+import { Chart as ChartJS,CategoryScale, LinearScale,BarElement, Title,Tooltip,Legend, } from 'chart.js';
 import { useEffect, useState } from 'react';
 
 ChartJS.register(
@@ -20,18 +18,8 @@ const defaultChartValues = [15, 30, 25, 45, 20, 35, 50];
 export default function RoomAvailabilityChart({ chartData, selectedTimeSlot, setSelectedTimeSlot }) {
   const timeSlots = ['07:00 - 10:00', '10:00 - 13:00', '13:00 - 16:00', '16:00 - 19:00'];
   const [isDarkMode, setIsDarkMode] = useState(false);
-
-  useEffect(() => {
-    const darkModeMatcher = window.matchMedia('(prefers-color-scheme: dark)');
-    setIsDarkMode(darkModeMatcher.matches);
-    const handleChange = (e) => setIsDarkMode(e.matches);
-    darkModeMatcher.addEventListener('change', handleChange);
-    return () => darkModeMatcher.removeEventListener('change', handleChange);
-  }, []);
-
   const currentLabels = chartData?.labels || defaultChartLabels;
   const currentDataValues = chartData?.data || defaultChartValues;
-
   const data = {
     labels: currentLabels,
     datasets: [
@@ -90,6 +78,14 @@ export default function RoomAvailabilityChart({ chartData, selectedTimeSlot, set
     },
   };
 
+  useEffect(() => {
+    const darkModeMatcher = window.matchMedia('(prefers-color-scheme: dark)');
+    setIsDarkMode(darkModeMatcher.matches);
+    const handleChange = (e) => setIsDarkMode(e.matches);
+    darkModeMatcher.addEventListener('change', handleChange);
+    return () => darkModeMatcher.removeEventListener('change', handleChange);
+  }, []);
+
   return (
     <div> 
       <div className="flex justify-between pb-10 items-center"> 
@@ -97,7 +93,6 @@ export default function RoomAvailabilityChart({ chartData, selectedTimeSlot, set
         <select
           value={selectedTimeSlot}
           onChange={(e) => setSelectedTimeSlot(e.target.value)}
-          className="p-2 border border-gray-300 rounded-md text-sm dark:bg-gray-800 dark:text-gray-200 dark:border-gray-600"
           className="p-2 border border-gray-300 rounded-md text-sm dark:bg-gray-800 dark:text-gray-200 dark:border-gray-600"
         >
           {timeSlots.map(slot => (

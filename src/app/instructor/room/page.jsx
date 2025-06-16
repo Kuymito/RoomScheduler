@@ -2,63 +2,9 @@
 
 import { useState, useEffect } from "react";
 import InstructorLayout from "@/components/InstructorLayout";
-import SuccessAlert from "./components/UpdateSuccessComponent";
+import SuccessAlert from "./components/RequestSuccessComponent";
 import RequestChangeForm from "./components/RequestChangeForm";
-
-const RoomCardSkeleton = () => (
-    <div className="h-[90px] sm:h-[100px] bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-md animate-pulse">
-        <div className="h-[30px] bg-slate-100 dark:bg-slate-700 rounded-t-md border-b border-slate-200 dark:border-slate-600"></div>
-        <div className="p-2 flex flex-col justify-center items-center gap-2">
-            <div className="h-4 w-16 bg-slate-200 dark:bg-slate-600 rounded-full"></div>
-            <div className="h-4 w-20 bg-slate-200 dark:bg-slate-600 rounded-full"></div>
-        </div>
-    </div>
-);
-
-const RoomSelectionSkeleton = ({ floors = 3, roomsPerFloor = 4 }) => (
-    <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 mb-3 sm:mb-4">
-            <div className="h-10 w-36 bg-slate-200 dark:bg-slate-700 rounded-md animate-pulse"></div>
-            <hr className="flex-1 border-t border-slate-300 dark:border-slate-700" />
-        </div>
-        <div className="space-y-4">
-            {Array.from({ length: floors }).map((_, i) => (
-                <div key={i} className="space-y-3">
-                    <div className="flex items-center gap-2 mb-2">
-                        <div className="h-5 w-16 bg-slate-200 dark:bg-slate-700 rounded-full animate-pulse"></div>
-                        <hr className="flex-1 border-t border-slate-300 dark:border-slate-700" />
-                    </div>
-                    <div className="grid grid-cols-[repeat(auto-fill,minmax(160px,1fr))] sm:grid-cols-[repeat(auto-fill,minmax(180px,1fr))] gap-3 sm:gap-4">
-                        {Array.from({ length: roomsPerFloor }).map((_, j) => (
-                            <RoomCardSkeleton key={j} />
-                        ))}
-                    </div>
-                </div>
-            ))}
-        </div>
-    </div>
-);
-
-const RoomDetailsSkeleton = () => (
-    <div className="flex flex-col items-start gap-6 w-full animate-pulse">
-        <div className="flex flex-col items-start self-stretch w-full flex-grow">
-            <div className="w-full border border-slate-200 dark:border-slate-700 rounded-md">
-                {/* 5 detail rows */}
-                {Array.from({ length: 5 }).map((_, i) => (
-                    <div key={i} className={`flex flex-row items-center self-stretch w-full min-h-[56px] ${i < 4 ? 'border-b border-slate-200 dark:border-slate-700' : ''}`}>
-                        <div className="p-3 sm:p-4 w-[100px] sm:w-[120px]">
-                            <div className="h-5 w-16 bg-slate-200 dark:bg-slate-700 rounded-full"></div>
-                        </div>
-                        <div className="px-2 sm:px-3 flex-1 py-2">
-                            <div className="h-5 w-24 bg-slate-200 dark:bg-slate-700 rounded-full"></div>
-                        </div>
-                    </div>
-                ))}
-            </div>
-        </div>
-        <div className="h-[48px] sm:h-[50px] w-full bg-slate-300 dark:bg-slate-700 rounded-md"></div>
-    </div>
-);
+import InstructorRoomPageSkeleton from "./components/InstructorRoomPageSkeleton";
 
 // --- MOCK DATABASE ---
 const mockInstructorClasses = {
@@ -132,7 +78,7 @@ const InstructorRoomViewContent = () => {
   const currentInstructor = { id: "instructor01", name: "Dr. Ada Lovelace" };
 
   const buildings = {
-      "Building A": [{ floor: 5, rooms: ["A1", "A2", "A3"] }, { floor: 4, rooms: ["B1", "B2"] }],
+      "Building A": [{ floor: 5, rooms: ["A1", "A2", "A3"] }, { floor: 4, rooms: ["B1", "B2"] }, { floor: 3, rooms: ["C1", "C2"] }, { floor: 2, rooms: ["D1", "D2"] }, { floor: 1, rooms: ["E1", "E2"] }],
       "Building B": [{ floor: 3, rooms: ["F1", "F2"] }, { floor: 2, rooms: ["G1", "G2"] }, { floor: 1, rooms: ["H1", "H2"] }],
   };
 
@@ -140,7 +86,7 @@ const InstructorRoomViewContent = () => {
       const timer = setTimeout(() => {
           setAllRoomsData(initialRoomsData);
           setInitialLoading(false);
-      }, 1000);
+      }, 1500); 
       return () => clearTimeout(timer);
   }, []);
 
@@ -213,11 +159,16 @@ const InstructorRoomViewContent = () => {
   const textLabelDefault = "font-medium text-sm leading-6 text-slate-700 dark:text-slate-300 tracking-[-0.01em]";
   const textValueDefaultDisplay = "font-medium text-sm leading-6 text-slate-900 dark:text-slate-100 tracking-[-0.01em]";
 
+  if (initialLoading) {
+      return <InstructorRoomPageSkeleton />;
+  }
+
   return (
     <>
       {showSuccessAlert && ( 
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 ">
           <SuccessAlert
+            show={showSuccessAlert}
             title="Request was sent Successfully "
             messageLine1={`Room ${
               roomDetails?.name || ""
@@ -234,7 +185,7 @@ const InstructorRoomViewContent = () => {
           onClose={() => setIsFormOpen(false)}
           onSave={handleSaveRequest}
           roomDetails={roomDetails}
-          instructorClasses={instructorClasses} // Pass the fetched classes
+          instructorClasses={instructorClasses}
           selectedDay={selectedDay}
           selectedTime={selectedTime}
       />
@@ -245,7 +196,6 @@ const InstructorRoomViewContent = () => {
         </div>
 
         <div className="flex flex-col gap-4 mb-4">
-          {/* Weekly Schedule and Time Slot UI */}
           <div className="flex flex-col sm:flex-row items-center justify-between border-b dark:border-gray-600 pb-3 gap-4">
               <div className="flex rounded-lg border border-gray-300 dark:border-gray-600 overflow-hidden w-full sm:w-auto">
                   {weekdays.map(day => (
@@ -262,7 +212,6 @@ const InstructorRoomViewContent = () => {
               </div>
           </div>
 
-          {/* Building Selector */}
           <div className="flex items-center gap-2">
                 <select value={selectedBuilding} onChange={handleBuildingChange} className="text-sm font-semibold text-slate-700 bg-white border border-slate-300 dark:text-slate-200 dark:bg-slate-800 dark:border-slate-600 rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500">
                     {Object.keys(buildings).map((building) => ( <option key={building} value={building}>{building}</option>))}
@@ -272,7 +221,6 @@ const InstructorRoomViewContent = () => {
         </div>
 
         <div className="flex flex-col lg:flex-row gap-6">
-          {initialLoading ? <RoomSelectionSkeleton /> : (
             <div className="flex-1 min-w-0">
                 <div className="space-y-4">
                     {floors.map(({ floor, rooms }) => (
@@ -289,7 +237,6 @@ const InstructorRoomViewContent = () => {
                                     const isAvailable = status === 'Available';
                                     const isSelected = selectedRoom === roomId;
                                     return (
-                                        // --- FIXED: Restored full JSX for the room card ---
                                         <div key={roomId} onClick={() => handleRoomClick(roomId)} className={`h-[90px] sm:h-[100px] border rounded-md flex flex-col transition-all duration-150 shadow-sm ${isAvailable ? 'cursor-pointer hover:shadow-md bg-white dark:bg-slate-800' : 'cursor-not-allowed bg-slate-50 dark:bg-slate-800/50 opacity-70'} ${isSelected ? "border-blue-500 ring-2 ring-blue-500 dark:border-blue-500" : isAvailable ? "border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600" : "border-slate-200 dark:border-slate-700"}`}>
                                             <div className={`h-[30px] rounded-t-md flex items-center justify-center px-2 relative border-b ${isSelected ? 'border-b-transparent' : 'border-slate-200 dark:border-slate-600'} ${isAvailable ? 'bg-slate-50 dark:bg-slate-700' : 'bg-slate-100 dark:bg-slate-700/60'}`}>
                                                 <div className={`absolute left-2 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full ${isAvailable ? 'bg-green-500' : 'bg-red-500'} ${isSelected ? 'bg-blue-500' : ''}`}></div>
@@ -311,7 +258,6 @@ const InstructorRoomViewContent = () => {
                     ))}
                 </div>
             </div>
-          )}
           {/* Details Panel */}
           <div className="w-full lg:w-[320px] shrink-0">
             <div className="flex items-center gap-2 mb-3 sm:mb-4">
@@ -319,41 +265,41 @@ const InstructorRoomViewContent = () => {
               <hr className="flex-1 border-t border-slate-300 dark:border-slate-700" />
             </div>
             <div className="flex flex-col items-start gap-6 w-full min-h-[420px] bg-white dark:bg-slate-800 p-4 rounded-lg shadow-lg">
-                {initialLoading || loading ? (
-                    <RoomDetailsSkeleton />
+                {loading ? ( 
+                    <InstructorRoomPageSkeleton.RoomDetailsSkeleton />
                 ) : roomDetails ? (
                     <>
                         <div className="flex flex-col items-start self-stretch w-full flex-grow overflow-y-auto scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-slate-600 scrollbar-track-slate-100 dark:scrollbar-track-slate-700 pr-1">
                             <div className="w-full border border-slate-200 dark:border-slate-700 rounded-md bg-white dark:bg-slate-800">
-                                {/* --- Room Row --- */}
+                                {/* Room Row */}
                                 <div className="flex flex-row items-center self-stretch w-full min-h-[56px] border-b border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
                                     <div className="flex flex-col justify-center items-start p-3 sm:p-4 w-[100px] sm:w-[120px]"><span className={textLabelRoom}>Room</span></div>
                                     <div className="flex flex-col justify-center items-start px-2 sm:px-3 flex-1 py-2">
                                         <span className={textValueRoomDisplay}>{roomDetails.name}</span>
                                     </div>
                                 </div>
-                                {/* --- Building Row --- */}
+                                {/* Building Row */}
                                 <div className="flex flex-row items-center self-stretch w-full min-h-[56px] border-b border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
                                     <div className="flex flex-col justify-center items-start p-3 sm:p-4 w-[100px] sm:w-[120px]"><span className={textLabelDefault}>Building</span></div>
                                     <div className="flex flex-col justify-center items-start px-2 sm:px-3 flex-1 py-2">
                                         <span className={textValueDefaultDisplay}>{roomDetails.building}</span>
                                     </div>
                                 </div>
-                                {/* --- Floor Row --- */}
+                                {/* Floor Row */}
                                 <div className="flex flex-row items-center self-stretch w-full min-h-[56px] border-b border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
                                     <div className="flex flex-col justify-center items-start p-3 sm:p-4 w-[100px] sm:w-[120px]"><span className={textLabelDefault}>Floor</span></div>
                                     <div className="flex flex-col justify-center items-start px-2 sm:px-3 flex-1 py-2">
                                         <span className={textValueDefaultDisplay}>{roomDetails.floor}</span>
                                     </div>
                                 </div>
-                                {/* --- Capacity Row --- */}
+                                {/* Capacity Row */}
                                 <div className="flex flex-row items-center self-stretch w-full min-h-[56px] border-b border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
                                     <div className="flex flex-col justify-center items-start p-3 sm:p-4 w-[100px] sm:w-[120px]"><span className={textLabelDefault}>Capacity</span></div>
                                     <div className="flex flex-col justify-center items-start px-2 sm:px-3 flex-1 py-2">
                                         <span className={textValueDefaultDisplay}>{roomDetails.capacity}</span>
                                     </div>
                                 </div>
-                                {/* --- Equipment Row --- */}
+                                {/* Equipment Row */}
                                 <div className="flex flex-row items-start self-stretch w-full min-h-[92px] hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
                                     <div className="flex flex-col justify-center items-start p-3 sm:p-4 w-[100px] sm:w-[120px] pt-5"><span className={textLabelDefault}>Equipment</span></div>
                                     <div className="flex flex-col justify-center items-start px-2 sm:px-3 flex-1 py-2 pt-3">

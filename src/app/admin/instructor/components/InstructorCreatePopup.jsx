@@ -181,7 +181,7 @@ const InstructorCreatePopup = ({ isOpen, onClose, onSave }) => {
                         />
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3   mb-16">
+                    <div className="grid grid-cols-2 gap-3 mb-16">
                         <div>
                             <label htmlFor="firstName" className="block mb-2 text-xs font-medium text-gray-900 dark:text-white">First Name</label>
                             <input

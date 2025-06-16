@@ -1,9 +1,13 @@
+// dashboard/page.jsx
 "use client";
-import { useEffect, useState } from 'react';
-import DashboardLayout from '@/components/DashboardLayout'; 
+
+import { useEffect, useState, useRef } from 'react';
+import DashboardLayout from '@/components/DashboardLayout';
 import DashboardHeader from './components/DashboardHeader'; 
 import StatCard from './components/StatCard';
 import RoomAvailabilityChart from './components/RoomAvailabilityChart';
+import DashboardSkeleton from './components/DashboardSkeleton';
+
 const fetchDashboardData = async () => {
   return new Promise(resolve => setTimeout(() => resolve({
     classAssign: 65,
@@ -41,59 +45,65 @@ const fetchChartData = async (timeSlot) => {
 };
 
 const DashboardPage = () => {
+  // --- State Variables ---
   const [dashboardStats, setDashboardStats] = useState(null);
   const [chartData, setChartData] = useState(null);
-  const [loading, setLoading] = useState(true);
   const [selectedTimeSlot, setSelectedTimeSlot] = useState('07:00 - 10:00');
-
+  const [isPageLoading, setIsPageLoading] = useState(true); 
+  const [isChartLoading, setIsChartLoading] = useState(false);
+  const isInitialMount = useRef(true);
+  
+  // --- Hooks ---
   useEffect(() => {
     const loadInitialData = async () => {
-      setLoading(true); 
       try {
-        const stats = await fetchDashboardData();
+        // Fetch initial stats and initial chart data at the same time
+        const [stats, initialChartData] = await Promise.all([
+          fetchDashboardData(),
+          fetchChartData(selectedTimeSlot) 
+        ]);
         setDashboardStats(stats);
+        setChartData(initialChartData);
       } catch (error) {
-        console.error("Failed to fetch dashboard stats:", error);
-      }s
+        console.error("Failed to fetch initial dashboard data:", error);
+      } finally {
+        // Once all initial data is loaded, turn off the page loader.
+        setIsPageLoading(false);
+      }
     };
     loadInitialData();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Runs only once on component mount
 
   useEffect(() => {
-    if (!selectedTimeSlot || !dashboardStats) {
-        if (dashboardStats && chartData) { 
-             setLoading(false);
-        }
-        return;
+    // Prevent this from running on the initial render, as the first useEffect already loaded the chart.
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
     }
 
     const loadChart = async () => {
-      setLoading(true); 
+      setIsChartLoading(true); // Start the chart-specific loader
       try {
         const data = await fetchChartData(selectedTimeSlot);
         setChartData(data);
       } catch (error) {
         console.error("Failed to fetch chart data:", error);
       } finally {
-        if (dashboardStats) { 
-          setLoading(false);
-        }
+        setIsChartLoading(false); // Stop the chart-specific loader
       }
     };
     
     loadChart();
+  }, [selectedTimeSlot]);
 
-  }, [selectedTimeSlot, dashboardStats]); 
-  if (loading || !dashboardStats || !chartData) { 
-    return (
-        <div className="flex justify-center items-center h-screen dark:text-gray-200">
-            <svg className="animate-spin h-10 w-10 text-blue-600 dark:text-blue-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-            <span className="ml-3 text-gray-700 dark:text-gray-300">Loading dashboard...</span>
-        </div>
-    );
+  // --- Render Logic ---
+  if (isPageLoading) { 
+    return <DashboardSkeleton />;
+  }
+  
+  if (!dashboardStats) {
+      return <div>Error loading dashboard data. Please try again.</div>;
   }
 
   const { classAssign, expired, unassignedClass, onlineClass, currentDate, academicYear } = dashboardStats;
@@ -114,13 +124,25 @@ const DashboardPage = () => {
         <StatCard title="Online Class" value={onlineClass} />
       </div>
 
-      <div className="mt-6 grid grid-cols-1 gap-6"> 
-        <div className="lg:col-span-1 bg-white dark:bg-gray-900 p-4 sm:p-6 rounded-lg shadow">
-          <RoomAvailabilityChart
-            chartData={chartData} 
-            selectedTimeSlot={selectedTimeSlot}
-            setSelectedTimeSlot={setSelectedTimeSlot}
-          />
+      <div className="mt-6 grid grid-cols-1 gap-6">
+        {/* --- KEY CHANGE 4: Chart container with its own loading state --- */}
+        <div className="relative lg:col-span-1 bg-white dark:bg-gray-900 p-4 sm:p-6 rounded-lg shadow">
+          {isChartLoading && (
+            <div className="absolute inset-0 bg-white/70 dark:bg-gray-900/70 flex justify-center items-center z-10 rounded-lg">
+              <svg className="animate-spin h-8 w-8 text-blue-600 dark:text-blue-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+            </div>
+          )}
+          {/* Only render the chart if data is available */}
+          {chartData && (
+              <RoomAvailabilityChart
+                chartData={chartData} 
+                selectedTimeSlot={selectedTimeSlot}
+                setSelectedTimeSlot={setSelectedTimeSlot}
+              />
+          )}
         </div>
       </div>
     </>

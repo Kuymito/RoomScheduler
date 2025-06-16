@@ -3,7 +3,6 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-
 import { Moul } from 'next/font/google';
 
 const moul = Moul({ weight: '400', subsets: ['latin'] });
@@ -18,41 +17,45 @@ const RightSection = () => {
     const [error, setError] = useState('');
     const router = useRouter();
 
+    const DUMMY_ACCOUNTS = {
+        admin: { email: 'admin@gmail.com', password: '123' },
+        instructor: { email: 'instructor@gmail.com', password: '123' },
+    };
+
     const togglePasswordVisibility = () => {
         setPasswordVisible(!passwordVisible);
     };
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        const correctEmail = "admin@gmail.com";
-        const correctPassword = "123";
+        setError('');
 
         if (!email || !password) {
             setError("Please enter both email and password.");
             return;
         }
 
-        if (email !== correctEmail || password !== correctPassword) {
-            setError("Incorrect email or password.");
-            return;
-        }
-
-        setError('');
         setIsLoading(true);
 
         setTimeout(() => {
-            router.push('/admin/dashboard');
+            if (email === DUMMY_ACCOUNTS.admin.email && password === DUMMY_ACCOUNTS.admin.password) {
+                router.push('/admin/dashboard');
+            } else if (email === DUMMY_ACCOUNTS.instructor.email && password === DUMMY_ACCOUNTS.instructor.password) {
+                router.push('/instructor/dashboard');
+            } else {
+                setError("Incorrect email or password.");
+                setIsLoading(false);
+            }
         }, 1500);
     };
 
     const handleForgotPasswordClick = () => {
         setIsForgotLoading(true);
         setTimeout(() => {
-            router.push('/auth/forgot');
+            router.push('/api/auth/forgot');
         }, 1500);
     };
 
-    // If loading, show the spinner and message within this component's boundaries
     if (isLoading || isForgotLoading) {
         return (
             <div className="w-full max-w-xs sm:max-w-sm md:max-w-md flex flex-col items-center justify-center text-center">
@@ -74,10 +77,14 @@ const RightSection = () => {
         );
     }
 
-    // Otherwise, show the form
     return (
         <div className="w-full max-w-xs sm:max-w-sm md:max-w-md flex flex-col items-center">
             <div className="w-full sm:w-5/6 mb-6">
+                <div className="mb-16 block md:hidden">
+                    <img src="https://numregister.com/assets/img/logo/num.png" alt="University Logo" className="mx-auto mb-5 w-16 sm:w-20 md:w-24 lg:w-28" />
+                    <h1 className={`${moul.className} font-bold mb-2 text-center sm:text-[25px]`}>សាកលវិទ្យាល័យជាតិគ្រប់គ្រង</h1>
+                    <h2 className="sm:text-[21px] font-medium mb-6 text-center">National University of Management</h2>
+                </div>
                 <h2 className="text-2xl sm:text-[24px] font-bold text-gray-800 mb-2 text-left">Welcome back!</h2>
                 <p className="text-sm sm:text-base text-gray-600 text-left">Please sign in to continue.</p>
             </div>
@@ -92,7 +99,7 @@ const RightSection = () => {
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         className={`shadow-sm border rounded-lg w-full py-2 px-3 text-gray-700 focus:outline-none focus:ring-2 ${error ? 'border-red-500 ring-red-500' : 'border-gray-300 focus:ring-blue-500'}`}
-                        placeholder="admin@gmail.com"
+                        placeholder="example@gmail.com"
                     />
                 </div>
 
@@ -112,7 +119,6 @@ const RightSection = () => {
                             className="absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer"
                             onClick={togglePasswordVisibility}
                         >
-                            {/* SVG icons for password visibility */}
                             {passwordVisible ? (
                                 <svg className="h-5 w-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.879 16.121A3 3 0 1012 12M21 12c-1.785 4.398-5.672 7-9 7-1.488 0-2.92-.254-4.252-.733L5 18.5V21h2l-2-2m-2-2l2-2" /></svg>
                             ) : (
@@ -143,12 +149,11 @@ const RightSection = () => {
     );
 };
 
-// Main component now acts as a layout
 const LoginForm = () => {
     return (
-        <div className="min-h-screen w-screen flex flex-col lg:flex-row font-sans">
-            {/* Left Column - Always Visible */}
-            <div className="lg:w-3/5 w-full bg-[#3165F8] text-white flex items-center justify-center p-6 sm:p-8 md:p-12 lg:p-16 relative overflow-hidden">
+        <div className="min-h-screen w-screen flex font-sans">
+            {/* Left Column (Info Section) - Hidden on mobile */}
+            <div className="hidden md:flex md:w-3/5 bg-[#3165F8] text-white items-center justify-center p-6 sm:p-8 md:p-12 lg:p-16 relative overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-br opacity-75"></div>
                 <div className="relative z-10 max-w-sm sm:max-w-md lg:max-w-lg">
                     <img src="https://numregister.com/assets/img/logo/num.png" alt="University Logo" className="mx-auto mb-10 w-16 sm:w-20 md:w-24 lg:w-28" />
@@ -166,8 +171,8 @@ const LoginForm = () => {
                 </div>
             </div>
 
-            {/* Right Column - Content is dynamic */}
-            <div className="lg:w-2/5 w-full bg-[#E0E4F3] flex items-center justify-center p-6 sm:p-8 md:p-12 lg:p-16">
+            {/* Right Column (Form Section) */}
+            <div className="w-full md:w-2/5 bg-[#E0E4F3] flex items-center justify-center p-6 sm:p-8 md:p-12 lg:p-16">
                 <RightSection />
             </div>
         </div>

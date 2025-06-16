@@ -21,7 +21,7 @@ const InstructorClassDetailSkeleton = () => {
                     <SkeletonFormField />
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <SkeletonFormField />
+                    <SkeletonFormField />cd 
                     <SkeletonFormField />
                     <SkeletonFormField />
                 </div>
