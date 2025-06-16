@@ -57,7 +57,7 @@ export default function InstructorLayout({ children, activeItem, pageTitle }) {
         setIsLoading(true);
         setTimeout(() => {
             router.push('/api/auth/login');
-        }, 1500);
+        }, 1000);
     };
     
     const handleNavItemClick = (item) => {
