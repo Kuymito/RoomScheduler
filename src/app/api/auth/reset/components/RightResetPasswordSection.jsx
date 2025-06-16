@@ -26,7 +26,7 @@ const CheckCircleIcon = () => (
 );
 
 // --- Form Control Component ---
-const ResetPasswordFormControl = () => {
+const RightResetPasswordSection = () => {
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
@@ -135,7 +135,7 @@ const ResetPasswordFormControl = () => {
             <p className="text-sm text-gray-500 mb-8 leading-normal">Your new password must be different from previously used passwords.</p>
             <form onSubmit={handleSubmit} className="space-y-6">
                 <div>
-                    <label htmlFor="password" className="block text-sm sm:text-base mb-1 font-bold text-gray-900">Password</label>
+                    <label htmlFor="password" className="block text-sm sm:text-base mb-1 font-base text-gray-900">Password</label>
                     <div className="relative">
                         <input type={showPassword ? 'text' : 'password'} id="password" value={password} onChange={handlePasswordChange} required className={`w-full p-3 pr-10 bg-white rounded-md text-gray-600 border ${passwordError ? 'border-red-500' : 'border-gray-300'} focus:border-blue-500 focus:outline-none focus:ring-1 ${passwordError ? 'focus:ring-red-500/50' : 'focus:ring-blue-500/50'}`} />
                         <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute inset-y-0 right-0 px-3 flex items-center">{showPassword ? <EyeOffIcon /> : <EyeIcon />}</button>
@@ -143,7 +143,7 @@ const ResetPasswordFormControl = () => {
                     {passwordError ? (<p className="mt-2 text-xs text-red-600">{passwordError}</p>) : (<p className="mt-2 text-xs text-gray-500">Must be at least 8 characters.</p>)}
                 </div>
                 <div>
-                    <label htmlFor="confirmPassword" className="block text-sm sm:text-base mb-1 font-bold text-gray-900">Confirm Password</label>
+                    <label htmlFor="confirmPassword" className="block text-sm sm:text-base mb-1 font-base text-gray-900">Confirm Password</label>
                     <div className="relative">
                         <input type={showConfirmPassword ? 'text' : 'password'} id="confirmPassword" value={confirmPassword} onChange={handleConfirmPasswordChange} required className={`w-full p-3 pr-10 bg-white rounded-md text-gray-600 border ${confirmPasswordError ? 'border-red-500' : 'border-gray-300'} focus:border-blue-500 focus:outline-none focus:ring-1 ${confirmPasswordError ? 'focus:ring-red-500/50' : 'focus:ring-blue-500/50'}`} />
                         <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute inset-y-0 right-0 px-3 flex items-center">{showConfirmPassword ? <EyeOffIcon /> : <EyeIcon />}</button>
@@ -158,32 +158,4 @@ const ResetPasswordFormControl = () => {
     );
 };
 
-// --- Main Page Component ---
-const ResetPasswordPage = () => {
-    return (
-        <div className="min-h-screen w-screen flex font-sans">
-            <div className="hidden md:flex md:w-3/5 bg-[#3165F8] text-white items-center justify-center p-6 sm:p-8 md:p-12 lg:p-16 relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-br opacity-75"></div>
-                <div className="relative z-10 max-w-sm sm:max-w-md lg:max-w-lg">
-                    <img src="https://numregister.com/assets/img/logo/num.png" alt="University Logo" className="mx-auto mb-10 w-16 sm:w-20 md:w-24 lg:w-28" />
-                    <h1 className={`${moul.className} font-bold mb-2 text-center sm:text-[25px]`}>សាកលវិទ្យាល័យជាតិគ្រប់គ្រង</h1>
-                    <h2 className="sm:text-[21px] font-medium mb-6 text-center">National University of Management</h2>
-                    <h3 className="font-medium mb-3 relative sm:text-[21px]">Welcome student login form.</h3>
-                    <p className="sm:text-[17px] sm:leading-[1.8]">
-                        First, as the Rector of the National University of Management (NUM), I would like to sincerely
-                        welcome you to our institution here in the Capital City of Phnom Penh, Cambodia. For those who
-                        have become our partners and friends, I extend a heartfelt appreciation for your cooperation and
-                        support in advancing higher education in our developing nation. The development of NUM as a quality
-                        education institution began at its commencement in 1983. NUM continues to be one of the leading public
-                        universities in Cambodia.
-                    </p>
-                </div>
-            </div>
-            <div className="w-full md:w-2/5 bg-[#E0E4F3] flex items-center justify-center p-6 sm:p-8 md:p-12 lg:p-16">
-                <ResetPasswordFormControl />
-            </div>
-        </div>
-    );
-};
-
-export default ResetPasswordPage;
+export default RightResetPasswordSection;

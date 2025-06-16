@@ -2,8 +2,9 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import React from 'react'; 
+import React from 'react'; // Import React
 
+// --- Icon Components ---
 const DashboardIcon = ({ className }) => (
   <svg className={className} width="15" height="16" viewBox="0 0 15 16" fill="none" xmlns="http://www.w3.org/2000/svg">
     <path d="M13.75 5.52422V2.68672C13.75 1.80547 13.35 1.44922 12.3563 1.44922H9.83125C8.8375 1.44922 8.4375 1.80547 8.4375 2.68672V5.51797C8.4375 6.40547 8.8375 6.75547 9.83125 6.75547H12.3563C13.35 6.76172 13.75 6.40547 13.75 5.52422Z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round"/>
@@ -53,20 +54,28 @@ const ScheduleIcon = ({ className }) => (
   </svg>
 );
 
-const NavItem = ({ href, icon: Icon, label, isActive, isCollapsed, onClick }) => {
-  // The 'return' statement contains JSX markup.
-  return (
-    <Link
-      href={href}
+const SpinnerIcon = ({ className }) => (
+    <svg className={`animate-spin ${className}`} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+    </svg>
+);
+
+const NavItem = ({ href, icon: Icon, label, isActive, isCollapsed, onClick, isNavigating }) => (
+  <Link href={href} passHref legacyBehavior>
+    <a
       onClick={onClick}
-      // 'className' is JSX for the HTML 'class' attribute.
       className={`nav-item flex items-center py-2.5 mb-1.5 rounded-[5px] cursor-pointer overflow-hidden transition-all duration-150 ease-in-out hover:bg-gray-100 dark:hover:bg-gray-800
         ${isActive ? 'hover:bg-sky-100 dark:hover:bg-blue-800' : ''}
-        ${isCollapsed ? 'px-0 justify-center' : 'px-[60px]'}`}
+        ${isCollapsed ? 'px-0 justify-center' : 'px-[60px]'}
+        ${isNavigating ? 'opacity-70' : ''}`}
     >
-      {/* JavaScript expressions like this are embedded directly in JSX */}
       <div className={`nav-icon-wrapper transition-all duration-300 ease-in-out flex-shrink-0 ${isCollapsed ? 'mr-0' : 'mr-[15px]'}`}>
-        <Icon className={`h-[15px] w-[15px] ${isActive ? 'text-num-blue' : 'text-[#737373] dark:text-gray-300'}`} />
+        {isNavigating ? (
+            <SpinnerIcon className={`h-[15px] w-[15px] ${isActive ? 'text-num-blue' : 'text-[#737373] dark:text-gray-300'}`} />
+        ) : (
+            <Icon className={`h-[15px] w-[15px] ${isActive ? 'text-num-blue' : 'text-[#737373] dark:text-gray-300'}`} />
+        )}
       </div>
       <div
         className={`nav-text text-xs whitespace-nowrap transition-all duration-150 ease-in-out
@@ -75,11 +84,11 @@ const NavItem = ({ href, icon: Icon, label, isActive, isCollapsed, onClick }) =>
       >
         {label}
       </div>
-    </Link>
-  );
-};
+    </a>
+  </Link>
+);
 
-const InstructorSidebar = ({ isCollapsed, activeItem, onNavItemClick }) => {
+const InstructorSidebar = ({ isCollapsed, activeItem, onNavItemClick, navigatingTo }) => {
   const navItemsData = [
     {
       id: 'dashboard',
@@ -163,11 +172,12 @@ const InstructorSidebar = ({ isCollapsed, activeItem, onNavItemClick }) => {
           <NavItem
             key={item.id}
             href={item.href}
-            icon={item.icon} // Pass the component itself
+            icon={item.icon}
             label={item.label}
             isActive={activeItem === item.id}
             isCollapsed={isCollapsed}
-            onClick={() => onNavItemClick(item.id)}
+            onClick={() => onNavItemClick(item)}
+            isNavigating={navigatingTo === item.id}
           />
         ))}
       </nav>

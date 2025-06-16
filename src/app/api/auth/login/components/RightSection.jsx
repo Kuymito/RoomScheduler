@@ -2,7 +2,6 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { Moul } from 'next/font/google';
 
 const moul = Moul({ weight: '400', subsets: ['latin'] });
@@ -46,14 +45,14 @@ const RightSection = () => {
                 setError("Incorrect email or password.");
                 setIsLoading(false);
             }
-        }, 1500);
+        }, 1000);
     };
 
     const handleForgotPasswordClick = () => {
         setIsForgotLoading(true);
         setTimeout(() => {
             router.push('/api/auth/forgot');
-        }, 1500);
+        }, 1000);
     };
 
     if (isLoading || isForgotLoading) {
@@ -91,7 +90,7 @@ const RightSection = () => {
 
             <form onSubmit={handleSubmit} className="w-full sm:w-5/6">
                 <div className="mb-4">
-                    <label htmlFor="email" className="block text-sm sm:text-base mb-1 font-bold text-gray-900">Email</label>
+                    <label htmlFor="email" className="block text-sm sm:text-base mb-1 font-base text-gray-900">Email</label>
                     <input
                         type="email"
                         id="email"
@@ -104,7 +103,7 @@ const RightSection = () => {
                 </div>
 
                 <div className="mb-6">
-                    <label htmlFor="password" className="block text-sm sm:text-base mb-1 font-bold text-gray-900">Password</label>
+                    <label htmlFor="password" className="block text-sm sm:text-base mb-1 font-base text-gray-900">Password</label>
                     <div className="relative">
                         <input
                             type={passwordVisible ? "text" : "password"}
@@ -149,34 +148,4 @@ const RightSection = () => {
     );
 };
 
-const LoginForm = () => {
-    return (
-        <div className="min-h-screen w-screen flex font-sans">
-            {/* Left Column (Info Section) - Hidden on mobile */}
-            <div className="hidden md:flex md:w-3/5 bg-[#3165F8] text-white items-center justify-center p-6 sm:p-8 md:p-12 lg:p-16 relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-br opacity-75"></div>
-                <div className="relative z-10 max-w-sm sm:max-w-md lg:max-w-lg">
-                    <img src="https://numregister.com/assets/img/logo/num.png" alt="University Logo" className="mx-auto mb-10 w-16 sm:w-20 md:w-24 lg:w-28" />
-                    <h1 className={`${moul.className} font-bold mb-2 text-center sm:text-[25px]`}>សាកលវិទ្យាល័យជាតិគ្រប់គ្រង</h1>
-                    <h2 className="sm:text-[21px] font-medium mb-6 text-center">National University of Management</h2>
-                    <h3 className="font-medium mb-3 relative sm:text-[21px]">Welcome student login form.</h3>
-                    <p className="sm:text-[17px] sm:leading-[1.8]">
-                        First, as the Rector of the National University of Management (NUM), I would like to sincerely
-                        welcome you to our institution here in the Capital City of Phnom Penh, Cambodia. For those who
-                        have become our partners and friends, I extend a heartfelt appreciation for your cooperation and
-                        support in advancing higher education in our developing nation. The development of NUM as a quality
-                        education institution began at its commencement in 1983. NUM continues to be one of the leading public
-                        universities in Cambodia.
-                    </p>
-                </div>
-            </div>
-
-            {/* Right Column (Form Section) */}
-            <div className="w-full md:w-2/5 bg-[#E0E4F3] flex items-center justify-center p-6 sm:p-8 md:p-12 lg:p-16">
-                <RightSection />
-            </div>
-        </div>
-    );
-};
-
-export default LoginForm;
+export default RightSection;

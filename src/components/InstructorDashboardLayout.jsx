@@ -4,17 +4,25 @@
 import { useState, useEffect, useRef } from 'react';
 import InstructorSidebar from '@/components/InstructorSidebar';
 import InstructorTopbar from '@/components/InstructorTopbar';
-import AdminPopup from 'src/app/admin/profile/components/AdminPopup';
+import InstructorPopup from 'src/app/instructor/profile/components/InstructorPopup';
 import LogoutAlert from '@/components/LogoutAlert';
 import Footer from '@/components/Footer';
-import NotificationPopup from '@/app/admin/notification/AdminNotificationPopup';
+import InstructorNotificationPopup from '@/app/instructor/notification/InstructorNotificationPopup';
 import { usePathname, useRouter } from 'next/navigation';
+import { Moul } from 'next/font/google';
+
+const moul = Moul({
+    weight: '400',
+    subsets: ['latin'],
+});
 
 export default function InstructorDashboardLayout({ children, activeItem, pageTitle }) {
     const [showAdminPopup, setShowAdminPopup] = useState(false);
     const [showLogoutAlert, setShowLogoutAlert] = useState(false);
-    const [showNotificationPopup, setShowNotificationPopup] = useState(false);
-    const [notifications, setNotifications] = useState([]);
+    const [showInstructorNotificationPopup, setShowInstructorNotificationPopup] = useState(false);
+    const [instructorNotifications, setInstructorNotifications] = useState([]);
+    const [isLoading, setIsLoading] = useState(false);
+    const [navigatingTo, setNavigatingTo] = useState(null);
     const notificationPopupRef = useRef(null);
     const notificationIconRef = useRef(null);
     const adminPopupRef = useRef(null);
@@ -36,51 +44,57 @@ export default function InstructorDashboardLayout({ children, activeItem, pageTi
     }, [isSidebarCollapsed]);
 
     const toggleSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
-    const handleUserIconClick = (event) => { event.stopPropagation(); setShowAdminPopup(!showAdminPopup); };
+
+    const handleUserIconClick = (event) => {
+        event.stopPropagation();
+        if (showInstructorNotificationPopup) {
+            setShowInstructorNotificationPopup(false);
+        }
+        setShowAdminPopup(prev => !prev);
+    };
+    
     const handleLogoutClick = () => { setShowAdminPopup(false); setShowLogoutAlert(true); };
     const handleCloseLogoutAlert = () => setShowLogoutAlert(false);
+
     const handleConfirmLogout = () => { 
-        alert('Logged out'); 
-        setShowLogoutAlert(false); 
+        setShowLogoutAlert(false);
+        setIsLoading(true);
+        setTimeout(() => {
+            router.push('/api/auth/login');
+        }, 1000);
     };
 
     const handleNavItemClick = (item) => {
-        console.log("Navigating to:", item);
-    };
-
-    const handleToggleNotificationPopup = (event) => {
-        event.stopPropagation();
-        setShowNotificationPopup(prev => !prev);
-        if (showAdminPopup) setShowAdminPopup(false);
-    };
-    
-    const mockAPICall = async (action, data) => {
-        console.log(`MOCK API CALL: ${action}`, data || '');
-        await new Promise(resolve => setTimeout(resolve, 300));
-        return { success: true, message: `${action} successful.` };
-    };
-
-    const handleMarkAllRead = async () => {
-        try {
-            await mockAPICall("Mark all notifications as read");
-            setNotifications(prev => prev.map(n => ({ ...n, isUnread: false })));
-        } catch (error) {
-            console.error("Failed to mark all as read:", error);
+        if (pathname !== item.href) {
+            setNavigatingTo(item.id);
+            router.push(item.href);
         }
     };
 
-    const handleNotificationClick = (notificationId) => {
-        setNotifications(prev =>
-            prev.map(n =>
-                n.id === notificationId ? { ...n, isUnread: false } : n
-            )
+    const handleToggleInstructorNotificationPopup = (event) => {
+        event.stopPropagation();
+        if (showAdminPopup) {
+            setShowAdminPopup(false);
+        }
+        setShowInstructorNotificationPopup(prev => !prev);
+    };
+    
+    const handleMarkInstructorNotificationAsRead = (notificationId) => {
+        setInstructorNotifications(prev =>
+            prev.map(n => n.id === notificationId ? { ...n, isUnread: false } : n)
         );
     };
 
-    const hasUnreadNotifications = notifications.some(n => n.isUnread);
+    const handleMarkAllInstructorNotificationsAsRead = () => {
+        setInstructorNotifications(prev => prev.map(n => ({ ...n, isUnread: false })));
+    };
+
+    const hasUnreadInstructorNotifications = instructorNotifications.some(n => n.isUnread);
 
     const handleProfileNav = (path) => {
-        if (isProfileNavigating) return;
+        if (isProfileNavigating) {
+            return;
+        }
         if (pathname === path) {
             setShowAdminPopup(false);
             return;
@@ -99,30 +113,58 @@ export default function InstructorDashboardLayout({ children, activeItem, pageTi
                 userIconRef.current && !userIconRef.current.contains(event.target)) {
                 setShowAdminPopup(false);
             }
-            if (showNotificationPopup &&
+            if (showInstructorNotificationPopup &&
                 notificationPopupRef.current && !notificationPopupRef.current.contains(event.target) &&
                 notificationIconRef.current && !notificationIconRef.current.contains(event.target)) {
-                setShowNotificationPopup(false);
+                setShowInstructorNotificationPopup(false);
             }
         };
         document.addEventListener('click', handleClickOutside);
         return () => document.removeEventListener('click', handleClickOutside);
-    }, [showAdminPopup, showNotificationPopup]);
+    }, [showAdminPopup, showInstructorNotificationPopup]);
 
     useEffect(() => {
-        const mockNotificationsData = [
-            { id: 1, avatarUrl: 'https://numregister.com/assets/img/logo/num.png', message: 'Your Request for room A1 for class 31/31 IT-morning to study at 7:00 - 10:00 on 15 May 2025 was Approve at 12:00 on 13 May 2025.', timestamp: '15h', isUnread: true, status: 'approved' },
-            { id: 2, avatarUrl: 'https://numregister.com/assets/img/logo/num.png', message: 'Your Request for room C2 for class 33/27 SE-evening to study at 17:30 - 20:30 on 12 May 2025 was deny at 09:00 on 13 May 2025.', timestamp: '18h', isUnread: false, status: 'denied' },
-            { id: 4, avatarUrl: 'https://numregister.com/assets/img/logo/num.png', message: 'A new class "Advanced Algorithms" has been assigned to your schedule for Wednesday.', timestamp: '2d', isUnread: false, status: 'info' },
+        const mockInstructorNotifications = [
+            { id: 1, avatarUrl: '/images/kok.png', message: 'Your request for Room A1 has been approved by Admin.', timestamp: '5m', isUnread: true, type: 'request_approved', details: { adminName: 'Admin' } },
+            { id: 2, avatarUrl: '/images/kok.png', message: 'Your request for Room C2 has been denied due to a conflict.', timestamp: '1h', isUnread: true, type: 'request_denied', details: { adminName: 'Admin' } },
+            { id: 3, avatarUrl: '/images/kok.png', message: 'A new schedule has been published for your classes.', timestamp: '3h', isUnread: false, type: 'info', details: { adminName: 'Admin' } },
         ];
-        setNotifications(mockNotificationsData);
+        setInstructorNotifications(mockInstructorNotifications);
     }, []);
 
     useEffect(() => {
         if (isProfileNavigating) {
             setIsProfileNavigating(false);
         }
+        setNavigatingTo(null);
     }, [pathname]);
+    
+    if (isLoading) {
+        return (
+            <div className="min-h-screen w-screen flex flex-col items-center justify-center bg-[#E0E4F3] text-center p-6">
+                <img 
+                src="https://numregister.com/assets/img/logo/num.png" 
+                alt="University Logo" 
+                className="mx-auto mb-6 w-24 sm:w-28 md:w-32" 
+                />
+                <h1 className={`${moul.className} text-2xl sm:text-3xl font-bold mb-3 text-blue-800`}>
+                សាកលវិទ្យាល័យជាតិគ្រប់គ្រង
+                </h1>
+                <h2 className="text-xl sm:text-2xl font-medium mb-8 text-blue-700">
+                National University of Management
+                </h2>
+                <p className="text-lg sm:text-xl text-gray-700 font-semibold mb-4">
+                Logging out, please wait...
+                </p>
+                <div 
+                className="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-blue-600"
+                role="status"
+                >
+                <span className="sr-only">Loading...</span>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="flex w-full min-h-screen bg-[#E2E1EF] dark:bg-gray-800">
@@ -130,14 +172,24 @@ export default function InstructorDashboardLayout({ children, activeItem, pageTi
                 isCollapsed={isSidebarCollapsed}
                 activeItem={activeItem}
                 onNavItemClick={handleNavItemClick}
+                navigatingTo={navigatingTo}
             />
             <div
                 className="flex flex-col flex-grow transition-all duration-300 ease-in-out"
-                style={{ marginLeft: sidebarWidth, width: `calc(100% - ${sidebarWidth})`, height: '100vh', overflowY: 'auto' }}
+                style={{
+                    marginLeft: sidebarWidth,
+                    width: `calc(100% - ${sidebarWidth})`,
+                    height: '100vh',
+                    overflowY: 'auto',
+                }}
             >
                 <div
                     className="fixed top-0 bg-white dark:bg-gray-900 shadow-custom-medium p-5 flex justify-between items-center z-30 transition-all duration-300 ease-in-out"
-                    style={{ left: sidebarWidth, width: `calc(100% - ${sidebarWidth})`, height: TOPBAR_HEIGHT }}
+                    style={{
+                        left: sidebarWidth,
+                        width: `calc(100% - ${sidebarWidth})`,
+                        height: TOPBAR_HEIGHT,
+                    }}
                 >
                     <InstructorTopbar
                         onToggleSidebar={toggleSidebar}
@@ -145,9 +197,9 @@ export default function InstructorDashboardLayout({ children, activeItem, pageTi
                         onUserIconClick={handleUserIconClick}
                         pageSubtitle={pageTitle}
                         userIconRef={userIconRef}
-                        onNotificationIconClick={handleToggleNotificationPopup}
+                        onNotificationIconClick={handleToggleInstructorNotificationPopup}
                         notificationIconRef={notificationIconRef}
-                        hasUnreadNotifications={hasUnreadNotifications}
+                        hasUnreadNotifications={hasUnreadInstructorNotifications}
                     />
                 </div>
                 <div className="flex flex-col flex-grow" style={{ paddingTop: TOPBAR_HEIGHT }}>
@@ -158,14 +210,19 @@ export default function InstructorDashboardLayout({ children, activeItem, pageTi
                 </div>
             </div>
             <div ref={adminPopupRef}>
-                <AdminPopup show={showAdminPopup} onLogoutClick={handleLogoutClick} isNavigating={isProfileNavigating} onNavigate={handleProfileNav} />
+                <InstructorPopup 
+                    show={showAdminPopup} 
+                    onLogoutClick={handleLogoutClick}
+                    isNavigating={isProfileNavigating}
+                    onNavigate={handleProfileNav}
+                />
             </div>
             <div ref={notificationPopupRef}>
-                <NotificationPopup
-                    show={showNotificationPopup}
-                    notifications={notifications}
-                    onMarkAllRead={handleMarkAllRead}
-                    onNotificationClick={handleNotificationClick}
+                <InstructorNotificationPopup
+                    show={showInstructorNotificationPopup}
+                    notifications={instructorNotifications}
+                    onMarkAllRead={handleMarkAllInstructorNotificationsAsRead}
+                    onMarkAsRead={handleMarkInstructorNotificationAsRead}
                     anchorRef={notificationIconRef} 
                 />
             </div>
