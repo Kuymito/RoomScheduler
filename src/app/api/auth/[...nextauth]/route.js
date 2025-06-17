@@ -45,20 +45,28 @@ export const authOptions = {
               return null;
             }
             
-            // --- MORE ROBUST NAME HANDLING ---
-            let userName = credentials.email; // Default to email
+            // --- UPDATED NAME HANDLING ---
+            let userName;
+            
+            // Priority 1: Use firstName and lastName if available
             if (decodedPayload.firstName) {
                 userName = decodedPayload.firstName;
                 if (decodedPayload.lastName) {
                     userName += ` ${decodedPayload.lastName}`;
                 }
-            } else if (decodedPayload.name) {
+            } 
+            // Priority 2: Use the 'name' field if available and not empty
+            else if (decodedPayload.name) {
                 userName = decodedPayload.name;
+            } 
+            // Priority 3: Fallback to the email, but strip the domain part
+            else {
+                userName = credentials.email.split('@')[0];
             }
 
             return {
               id: decodedPayload.sub,
-              name: userName, // Use the constructed name
+              name: userName, // Use the constructed or cleaned-up name
               email: decodedPayload.sub,
               role: userRole,
               accessToken: accessToken,

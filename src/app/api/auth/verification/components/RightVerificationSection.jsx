@@ -3,14 +3,17 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Moul } from 'next/font/google';
+import { authService } from '@/services/auth.service';
 
 const moul = Moul({ weight: '400', subsets: ['latin'] });
 
 // This component now holds all the logic for the verification form
 const RightVerificationSection = () => {
     const [otp, setOtp] = useState(['', '', '', '']);
-    const [timer, setTimer] = useState(59);
+    // Updated timer to 5 minutes (300 seconds)
+    const [timer, setTimer] = useState(300); 
     const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState('');
     const router = useRouter();
     const inputRefs = [useRef(null), useRef(null), useRef(null), useRef(null)];
 
@@ -31,6 +34,7 @@ const RightVerificationSection = () => {
 
     const handleChange = (e, index) => {
         const { value } = e.target;
+        setError(''); // Clear error on change
         // Allow only single digits
         if (/^[0-9]$/.test(value) || value === "") {
             const newOtp = [...otp];
@@ -50,31 +54,53 @@ const RightVerificationSection = () => {
         }
     };
 
-    const handleSubmit = (event) => {
+    const handleSubmit = async (event) => {
         event.preventDefault();
+        setError('');
         const verificationCode = otp.join('');
-        if (verificationCode.length === 4) {
-            setIsLoading(true);
-            // Simulate API verification
-            setTimeout(() => {
-                console.log(`Verified OTP: ${verificationCode}`);
-                // On success, navigate to the reset password page
-                router.push('/api/auth/reset'); // Assumes this is the route for your reset page
-            }, 2000);
+        if (verificationCode.length !== 4) {
+            setError('Please enter the complete 4-digit code.');
+            return;
+        }
+
+        const email = sessionStorage.getItem('emailForVerification');
+        if (!email) {
+            setError('Email not found. Please start the process again.');
+            return;
+        }
+
+        setIsLoading(true);
+        try {
+            await authService.verifyOtp(email, verificationCode);
+            // If successful, redirect to the reset password page.
+            // The email is still in session storage for the next step.
+            router.push('/api/auth/reset');
+        } catch (err) {
+            setError(err.message || "An error occurred.");
+            setIsLoading(false);
         }
     };
 
-    const handleResendCode = () => {
+    const handleResendCode = async () => {
         if (timer === 0) {
+            const email = sessionStorage.getItem('emailForVerification');
+            if (!email) {
+                setError('Email not found. Cannot resend code.');
+                return;
+            }
             setIsLoading(true);
-             // Simulate resending code
-            setTimeout(() => {
-                setTimer(59);
+            try {
+                await authService.forgotPassword(email);
+                // Reset timer to 5 minutes
+                setTimer(300);
                 setOtp(['', '', '', '']);
+                setError('');
                 inputRefs[0].current?.focus();
+            } catch (err) {
+                setError(err.message || 'Failed to resend code.');
+            } finally {
                 setIsLoading(false);
-                 alert('A new verification code has been sent.');
-            }, 1500)
+            }
         }
     };
 
@@ -130,10 +156,12 @@ const RightVerificationSection = () => {
                             onKeyDown={(e) => handleKeyDown(e, index)}
                             maxLength="1"
                             required
-                            className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 text-black text-center border border-gray-300 rounded-md text-xl sm:text-2xl font-medium focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500/50"
+                            className={`w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 text-black text-center border rounded-md text-xl sm:text-2xl font-medium focus:outline-none focus:ring-1 ${error ? 'border-red-500 focus:border-red-500 focus:ring-red-500/50' : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500/50'}`}
                         />
                     ))}
                 </div>
+                
+                {error && <p className="text-red-500 text-xs text-center italic mt-2">{error}</p>}
 
                 <div className="flex justify-center text-red-600 font-semibold">
                     {timer > 0 ? formatTime(timer) : "Time's up!"}

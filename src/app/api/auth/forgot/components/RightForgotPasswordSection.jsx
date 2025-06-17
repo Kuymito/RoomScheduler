@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Moul } from 'next/font/google';
+import { authService } from '@/services/auth.service';
 
 const moul = Moul({ weight: '400', subsets: ['latin'] });
 
@@ -11,28 +12,29 @@ const RightForgotPasswordSection = () => {
     const [email, setEmail] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [isNavigating, setIsNavigating] = useState(false);
-    const [emailError, setEmailError] = useState('');
+    const [error, setError] = useState('');
     const router = useRouter();
 
-    const handleSendCode = (event) => {
+    const handleSendCode = async (event) => {
         event.preventDefault();
-        setEmailError('');
+        setError('');
 
         if (!email) {
-            setIsLoading(true);
-            setTimeout(() => {
-                setIsLoading(false);
-                setEmailError('Email address is required.');
-            }, 1000);
+            setError('Email address is required.');
             return;
         }
 
         setIsLoading(true);
-        // Simulate API call and then redirect to the verification page
-        setTimeout(() => {
-            // No need to set isLoading to false, as the page will redirect
-            router.push('/api/auth/verification'); // Navigate to the verification page
-        }, 2000);
+        try {
+            await authService.forgotPassword(email);
+            // Store email to be used on the verification page
+            sessionStorage.setItem('emailForVerification', email);
+            router.push('/api/auth/verification');
+        } catch (err) {
+            setError(err.message || 'Failed to send verification code.');
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     const handleBackToLogin = () => {
@@ -42,7 +44,6 @@ const RightForgotPasswordSection = () => {
         }, 1500);
     };
 
-    // Show a loading screen for any loading action
     if (isLoading || isNavigating) {
         return (
             <div className="w-full max-w-xs sm:max-w-sm md:max-w-md flex flex-col items-center justify-center text-center">
@@ -52,7 +53,7 @@ const RightForgotPasswordSection = () => {
                     className="mx-auto mb-6 w-20"
                 />
                 <p className="text-lg sm:text-xl text-gray-700 font-semibold mb-4">
-                    {isNavigating ? "Returning to Login..." : "Redirecting to Verification..."}
+                    {isNavigating ? "Returning to Login..." : "Sending Verification Code..."}
                 </p>
                 <div
                     className="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-blue-600"
@@ -64,7 +65,6 @@ const RightForgotPasswordSection = () => {
         );
     }
 
-    // The component now only shows the initial email form
     return (
         <div className="w-full max-w-xs sm:max-w-sm md:max-w-md flex flex-col items-center">
             <div className="mb-16 block md:hidden">
@@ -89,9 +89,9 @@ const RightForgotPasswordSection = () => {
                         name="email"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        className={`w-full p-3 bg-white rounded-md text-base border ${emailError ? 'border-red-500 ring-red-500' : 'border-gray-300'} focus:border-blue-500 focus:outline-none focus:ring-2 ${emailError ? 'focus:ring-red-500/50' : 'focus:ring-blue-500/25'}`}
+                        className={`w-full p-3 bg-white rounded-md text-base border ${error ? 'border-red-500 ring-red-500' : 'border-gray-300'} focus:border-blue-500 focus:outline-none focus:ring-2 ${error ? 'focus:ring-red-500/50' : 'focus:ring-blue-500/25'}`}
                     />
-                    {emailError && <p className="text-red-500 text-xs italic mt-2">{emailError}</p>}
+                    {error && <p className="text-red-500 text-xs italic mt-2">{error}</p>}
                 </div>
                 <p className="mb-5 w-full sm:w-5/6 text-right">
                     <button type="button" onClick={handleBackToLogin} className="text-blue-500 hover:underline">
