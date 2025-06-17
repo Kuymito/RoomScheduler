@@ -3,10 +3,6 @@ import AdminLayout from '@/components/AdminLayout';
 import InstructorPageSkeleton from './components/InstructorPageSkeleton';
 import InstructorClientView from './components/InstructorClientView'; // We will create this next
 
-/**
- * Mock data fetching function. In a real app, this would fetch from your database.
- * Since this is a Server Component, this function runs on the server, not in the browser.
- */
 const fetchInstructorData = async () => {
     const initialInstructorData = [
         { id: 1, name: 'Sok Mean', firstName: 'Sok', lastName: 'Mean', email: 'sok.mean@example.com', phone: '012345678', majorStudied: 'Computer Science', qualifications: 'PhD', status: 'active', profileImage: 'https://i.pravatar.cc/150?img=68' },
@@ -24,10 +20,6 @@ const fetchInstructorData = async () => {
     return initialInstructorData;
 };
 
-
-/**
- * The main page component is now an async Server Component.
- */
 export default async function AdminInstructorsPage() {
     // Data is fetched on the server before the page is sent to the client.
     const initialInstructors = await fetchInstructorData();

@@ -2,10 +2,8 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Moul } from 'next/font/google';
+import { moul } from '@/components/fonts';
 import { authService } from '@/services/auth.service';
-
-const moul = Moul({ weight: '400', subsets: ['latin'] });
 
 // This component now holds all the logic for the verification form
 const RightVerificationSection = () => {

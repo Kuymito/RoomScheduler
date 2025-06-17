@@ -4,9 +4,7 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { signIn } from 'next-auth/react';
-import { Moul } from 'next/font/google';
-
-const moul = Moul({ weight: '400', subsets: ['latin'] });
+import { moul } from '@/components/fonts';
 
 const RightSection = () => {
     const [email, setEmail] = useState('');

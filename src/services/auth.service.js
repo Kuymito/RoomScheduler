@@ -4,10 +4,11 @@ import axios from 'axios';
 // The API_URL now points to the local API directory.
 // Requests will go to /api/auth/login, /api/otp/generate, etc.
 const API_URL = "/api";
+const API_URL_LOGIN = "https://jaybird-new-previously.ngrok-free.app/api/v1";
 
 const login = async (email, password) => {
   try {
-    const response = await axios.post(`${API_URL}/auth/login`, {
+    const response = await axios.post(`${API_URL_LOGIN}/auth/login`, {
       email,
       password,
     });

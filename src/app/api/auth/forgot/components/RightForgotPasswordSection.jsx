@@ -2,10 +2,8 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Moul } from 'next/font/google';
+import { moul } from '@/components/fonts';
 import { authService } from '@/services/auth.service';
-
-const moul = Moul({ weight: '400', subsets: ['latin'] });
 
 // This component contains the form and its logic
 const RightForgotPasswordSection = () => {
@@ -31,7 +29,7 @@ const RightForgotPasswordSection = () => {
             sessionStorage.setItem('emailForVerification', email);
             router.push('/api/auth/verification');
         } catch (err) {
-            setError(err.message || 'Failed to send verification code.');
+            setError('Failed to send verification code. Please try again.');
         } finally {
             setIsLoading(false);
         }

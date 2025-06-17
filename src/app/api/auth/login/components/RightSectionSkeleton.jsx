@@ -1,7 +1,20 @@
-import React from 'react';
+'use client';
+
+import React, { Suspense } from 'react';
+import dynamic from 'next/dynamic';
 import Image from 'next/image';
 import { moul } from '@/components/fonts';
-import RightSection from './RightSection';
+
+// Import the skeleton component to use as a fallback
+import RightSectionSkeleton from './RightSectionSkeleton';
+
+// Dynamically import the RightSection component.
+// This tells Next.js to load this component's JavaScript in a separate file.
+// `ssr: false` is used because RightSection uses client-side hooks like useState.
+const DynamicRightSection = dynamic(() => import('./RightSection'), {
+  ssr: false,
+  // You can specify a loading component here, but Suspense is the modern way.
+});
 
 const LoginForm = () => {
     return (
@@ -11,11 +24,11 @@ const LoginForm = () => {
                 <div className="absolute inset-0 bg-gradient-to-br opacity-75"></div>
                 <div className="relative z-10 max-w-xs sm:max-w-sm lg:max-w-md">
                     <Image
-                        src="/images/LOGO-NUM-1.png" // Use the local image from the `public` folder
+                        src="/images/LOGO-NUM-1.png"
                         alt="University Logo"
-                        width={112} 
+                        width={112}
                         height={112}
-                        priority={true} // Prioritize loading this image as it's above the fold
+                        priority={true}
                         className="mx-auto mb-10 w-16 sm:w-20 md:w-24 lg:w-28"
                     />
                     <h1 className={`${moul.className} font-bold mb-2 text-center sm:text-[25px]`}>សាកលវិទ្យាល័យជាតិគ្រប់គ្រង</h1>
@@ -34,7 +47,12 @@ const LoginForm = () => {
 
             {/* Right Column (Form Section) */}
             <div className="w-full md:w-2/5 bg-[#E0E4F3] flex items-center justify-center p-6 sm:p-8 md:p-12 lg:p-16">
-                <RightSection />
+                {/* Suspense will show the 'fallback' component (our skeleton) 
+                  until the DynamicRightSection component is loaded and ready to be displayed.
+                */}
+                <Suspense fallback={<RightSectionSkeleton />}>
+                    <DynamicRightSection />
+                </Suspense>
             </div>
         </div>
     );

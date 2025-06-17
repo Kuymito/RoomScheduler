@@ -2,9 +2,7 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Moul } from 'next/font/google';
-
-const moul = Moul({ weight: '400', subsets: ['latin'] });
+import { moul } from '@/components/fonts';
 
 // --- SVG Icons ---
 const EyeIcon = () => (
