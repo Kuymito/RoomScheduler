@@ -9,6 +9,7 @@ import LogoutAlert from '@/components/LogoutAlert';
 import Footer from '@/components/Footer';
 import NotificationPopup from '@/app/admin/notification/AdminNotificationPopup';
 import { Moul } from 'next/font/google';
+import { signOut } from 'next-auth/react';
 
 const moul = Moul({
     weight: '400',
@@ -54,9 +55,7 @@ export default function AdminLayout({ children, activeItem, pageTitle }) {
     const handleConfirmLogout = () => {
         setShowLogoutAlert(false);
         setIsLoading(true);
-        setTimeout(() => {
-            router.push('/api/auth/login');
-        }, 1000);
+        signOut({ callbackUrl: '/api/auth/login' });
     };
     
     const handleToggleNotificationPopup = (event) => {
