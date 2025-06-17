@@ -10,6 +10,7 @@ import Footer from '@/components/Footer';
 import InstructorNotificationPopup from '@/app/instructor/notification/InstructorNotificationPopup';
 import { usePathname, useRouter } from 'next/navigation';
 import { Moul } from 'next/font/google';
+import { signOut } from 'next-auth/react';
 
 const moul = Moul({
     weight: '400',
@@ -59,9 +60,7 @@ export default function InstructorDashboardLayout({ children, activeItem, pageTi
     const handleConfirmLogout = () => { 
         setShowLogoutAlert(false);
         setIsLoading(true);
-        setTimeout(() => {
-            router.push('/api/auth/login');
-        }, 1000);
+        signOut({ callbackUrl: '/api/auth/login' });
     };
 
     const handleNavItemClick = (item) => {

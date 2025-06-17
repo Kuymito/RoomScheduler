@@ -80,7 +80,7 @@ const Sidebar = ({ isCollapsed, activeItem, onNavItemClick, navigatingTo }) => {
                     ) : (
                         <>
                             <div className="profile-name text-center font-semibold text-base text-black dark:text-white mb-1 whitespace-nowrap">
-                                {'Admin'}
+                                { user?.name || 'Admin'}
                             </div>
                             <div className="profile-email text-center text-[10px] text-num-gray dark:text-gray-200 whitespace-nowrap">
                                 {user?.email || 'admin@example.com'}

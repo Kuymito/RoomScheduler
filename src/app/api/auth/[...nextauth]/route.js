@@ -5,7 +5,6 @@ import { authService } from '@/services/auth.service';
 
 function decodeJwt(token) {
   try {
-    // Using Buffer is the standard and more reliable way in Node.js
     return JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString());
   } catch (error) {
     console.error("Failed to decode JWT:", error);
@@ -46,9 +45,20 @@ export const authOptions = {
               return null;
             }
             
+            // --- MORE ROBUST NAME HANDLING ---
+            let userName = credentials.email; // Default to email
+            if (decodedPayload.firstName) {
+                userName = decodedPayload.firstName;
+                if (decodedPayload.lastName) {
+                    userName += ` ${decodedPayload.lastName}`;
+                }
+            } else if (decodedPayload.name) {
+                userName = decodedPayload.name;
+            }
+
             return {
               id: decodedPayload.sub,
-              name: decodedPayload.name || credentials.email,
+              name: userName, // Use the constructed name
               email: decodedPayload.sub,
               role: userRole,
               accessToken: accessToken,
@@ -79,10 +89,13 @@ export const authOptions = {
     async session({ session, token }) {
       if (token) {
         session.accessToken = token.accessToken;
-        session.user.id = token.id;
-        session.user.role = token.role;
-        session.user.name = token.name;
-        session.user.email = token.email;
+        session.user = {
+            ...session.user,
+            id: token.id,
+            role: token.role,
+            name: token.name,
+            email: token.email
+        };
       }
       return session;
     },
