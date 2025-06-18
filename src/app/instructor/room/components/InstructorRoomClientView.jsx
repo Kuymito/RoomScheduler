@@ -127,7 +127,7 @@ export default function InstructorRoomClientView({ initialAllRoomsData, initialI
 
         <div className="flex flex-col gap-4 mb-4">
           <div className="flex flex-col sm:flex-row items-center justify-between border-b dark:border-gray-600 pb-3 gap-4">
-              <div className="flex rounded-lg border border-gray-300 dark:border-gray-600 overflow-hidden w-full sm:w-auto">
+              <div className="flex rounded-lg border border-gray-300 dark:text-gray-200 overflow-hidden w-full sm:w-auto">
                   {weekdays.map(day => (
                       <button key={day} onClick={() => handleDayChange(day)} className={`px-3.5 py-1.5 text-sm font-medium transition-colors w-full ${selectedDay === day ? 'bg-sky-600 text-white shadow' : 'border-r dark:border-r-gray-500 last:border-r-0 hover:bg-gray-100 dark:hover:bg-gray-700'}`}>
                           {day}

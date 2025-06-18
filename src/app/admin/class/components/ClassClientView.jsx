@@ -123,7 +123,7 @@ export default function ClassClientView({ initialClasses }) {
             </div>
             
             <div className="relative overflow-x-auto border border-gray-200 dark:border-gray-600 rounded-lg">
-                <table className="w-full rounded-lg text-xs text-left rtl:text-right text-gray-500">
+                <table className="w-full min-w-full rounded-lg text-xs text-left rtl:text-right text-gray-500"> {/* Added min-w-full here */}
                     <thead className="text-xs text-gray-700 border-b border-gray-200 bg-gray-50 dark:text-gray-400 dark:border-gray-600 dark:bg-gray-700">
                         <tr>
                             <th scope="col" className="px-6 py-2.5 md:table-cell hidden">Action</th>

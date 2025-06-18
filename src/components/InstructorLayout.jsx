@@ -126,9 +126,9 @@ export default function InstructorLayout({ children, activeItem, pageTitle }) {
 
     useEffect(() => {
         const mockInstructorNotifications = [
-            { id: 1, avatarUrl: '/images/kok.png', message: 'Your request for Room A1 has been approved by Admin.', timestamp: '5m', isUnread: true, type: 'request_approved', details: { adminName: 'Admin' } },
-            { id: 2, avatarUrl: '/images/kok.png', message: 'Your request for Room C2 has been denied due to a conflict.', timestamp: '1h', isUnread: true, type: 'request_denied', details: { adminName: 'Admin' } },
-            { id: 3, avatarUrl: '/images/kok.png', message: 'A new schedule has been published for your classes.', timestamp: '3h', isUnread: false, type: 'info', details: { adminName: 'Admin' } },
+            { id: 1, avatarUrl: '/images/LOGO-NUM-1.png', message: 'Your request for Room A1 has been approved by Admin.', timestamp: '5m', isUnread: true, type: 'request_approved', details: { adminName: 'Admin' } },
+            { id: 2, avatarUrl: '/images/LOGO-NUM-1.png', message: 'Your request for Room C2 has been denied due to a conflict.', timestamp: '1h', isUnread: true, type: 'request_denied', details: { adminName: 'Admin' } },
+            { id: 3, avatarUrl: '/images/LOGO-NUM-1.png', message: 'A new schedule has been published for your classes.', timestamp: '3h', isUnread: false, type: 'info', details: { adminName: 'Admin' } },
         ];
         setInstructorNotifications(mockInstructorNotifications);
     }, []);

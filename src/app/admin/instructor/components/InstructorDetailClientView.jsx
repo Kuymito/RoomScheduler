@@ -237,8 +237,9 @@ export default function InstructorDetailClientView({ initialInstructor }) {
 
                 {/* Info Forms */}
                 <div className="info-details-wrapper flex-grow flex flex-col gap-8 min-w-[300px]">
-                    {/* General Info Card */}
-                    <div className="info-card p-3 sm:p-4 bg-white border border-num-gray-light dark:bg-gray-800 dark:border-gray-700 shadow-custom-light rounded-lg">
+                    {/* General Info Card old*/}
+
+                    {/* <div className="info-card p-3 sm:p-4 bg-white border border-num-gray-light dark:bg-gray-800 dark:border-gray-700 shadow-custom-light rounded-lg">
                         <div className="section-title font-semibold text-sm text-num-dark-text dark:text-white mb-3">General Information</div>
                         <div className="form-row flex gap-3 mb-2 flex-wrap">{renderTextField("First Name", "firstName", currentData.firstName, isEditingGeneral)}{renderTextField("Last Name", "lastName", currentData.lastName, isEditingGeneral)}</div>
                         <div className="form-row flex gap-3 mb-2 flex-wrap">{renderTextField("Email", "email", currentData.email, isEditingGeneral, { type: 'email' })}{renderTextField("Phone Number", "phone", currentData.phone, isEditingGeneral, { type: 'tel' })}</div>
@@ -246,6 +247,27 @@ export default function InstructorDetailClientView({ initialInstructor }) {
                         <div className="form-row flex gap-3 mb-2 flex-wrap">{renderSelectField("Department", "department", currentData.department, departmentOptions, isEditingGeneral)}{renderTextField("Address", "address", currentData.address, isEditingGeneral)}</div>
                         <div className="form-actions flex justify-end items-center gap-3 mt-4">
                             {isEditingGeneral ? ( <> <button onClick={() => handleCancelClick('general')} className="back-button bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 shadow-custom-light rounded-md text-gray-800 dark:text-white border-none py-2 px-3 font-semibold text-xs cursor-pointer" disabled={loading}>Cancel</button><button onClick={() => handleSaveClick('general')} className="save-button bg-blue-600 hover:bg-blue-700 shadow-custom-light rounded-md text-white border-none py-2 px-3 font-semibold text-xs cursor-pointer" disabled={loading}>{loading ? "Saving..." : "Save Changes"}</button> </> ) : ( <> <button onClick={() => router.back()} className="back-button bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 shadow-custom-light rounded-md text-gray-800 dark:text-white border-none py-2 px-3 font-semibold text-xs cursor-pointer" disabled={loading}> Back </button> <button onClick={() => handleEditClick('general')} className="save-button bg-blue-600 hover:bg-blue-700 shadow-custom-light rounded-md text-white border-none py-2 px-3 font-semibold text-xs cursor-pointer" disabled={loading}>Edit Profile</button> </> )}
+                        </div>
+                    </div> */}
+
+                    {/* General Info Card new*/}
+                    <div className="info-card p-3 sm:p-4 bg-white border border-num-gray-light dark:bg-gray-800 dark:border-gray-700 shadow-custom-light rounded-lg">
+                        <div className="section-title font-semibold text-sm text-num-dark-text dark:text-white mb-3">General Information</div>
+                        <div className="form-row flex gap-3 mb-2 flex-wrap">{renderTextField("First Name", "firstName", currentData.firstName, isEditingGeneral)}{renderTextField("Last Name", "lastName", currentData.lastName, isEditingGeneral)}</div>
+                        <div className="form-row flex gap-3 mb-2 flex-wrap">{renderTextField("Email", "email", currentData.email, isEditingGeneral, { type: 'email' })}{renderTextField("Phone Number", "phone", currentData.phone, isEditingGeneral, { type: 'tel' })}</div>
+                        <div className="form-row flex gap-3 mb-2 flex-wrap">{renderSelectField("Major", "major", currentData.major, majorOptions, isEditingGeneral)}{renderSelectField("Degree", "degree", currentData.degree, degreeOptions, isEditingGeneral)}</div>
+                        <div className="form-row flex gap-3 mb-2 flex-wrap">{renderSelectField("Department", "department", currentData.department, departmentOptions, isEditingGeneral)}{renderTextField("Address", "address", currentData.address, isEditingGeneral)}</div>
+                        <div className="form-actions flex justify-end items-center gap-3 mt-4">
+                            {isEditingGeneral ? ( 
+                                <> 
+                                    <button onClick={() => handleCancelClick('general')} className="back-button bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 shadow-custom-light rounded-md text-gray-800 dark:text-white border-none py-2 px-3 font-semibold text-xs cursor-pointer" disabled={loading}>Cancel</button>
+                                    <button onClick={() => handleSaveClick('general')} className="save-button bg-blue-600 hover:bg-blue-700 shadow-custom-light rounded-md text-white border-none py-2 px-3 font-semibold text-xs cursor-pointer" disabled={loading}>{loading ? "Saving..." : "Save Changes"}</button> 
+                                </> 
+                            ) : ( 
+                                <> 
+                                    <button onClick={() => handleEditClick('general')} className="save-button bg-blue-600 hover:bg-blue-700 shadow-custom-light rounded-md text-white border-none py-2 px-3 font-semibold text-xs cursor-pointer" disabled={loading}>Edit Profile</button> 
+                                </> 
+                            )}
                         </div>
                     </div>
 
