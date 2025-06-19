@@ -7,8 +7,9 @@ import ScheduleGridSkeleton from './components/ScheduleGridSkeleton';
 // --- Data Structures & Fetching (Moved to server-side) ---
 
 
-// =====>> Updated Generation
-const degrees = ['Bachelor', 'Master', 'PhD'];
+// =====>> Updated Generation & Degrees
+
+const degrees = ['Bachelor', 'Master', 'PhD / Doctor'];
 const generations = ['Gen 30', 'Gen 31', 'Gen 32', 'Gen 33'];
 const buildings = ['A', 'B', 'C', 'D', 'E'];
 const weekdays = ['Mo', 'Tu', 'We', 'Thu', 'Fr', 'Sa', 'Su'];
@@ -24,10 +25,10 @@ const fetchSchedulePageData = async () => {
         { id: 'class_104', name: 'World History', code: 'HIS-100', degree: 'Master', generation: 'Gen 32' },
         { id: 'class_105', name: 'English Composition', code: 'ENG-101', degree: 'Master', generation: 'Gen 33' },
         { id: 'class_106', name: 'Linear Algebra', code: 'MTH-210', degree: 'Master', generation: 'Gen 32' },
-        { id: 'class_107', name: 'Data Structures', code: 'CS-250', degree: 'PhD', generation: 'Gen 33' },
-        { id: 'class_108', name: 'Microeconomics', code: 'ECN-200', degree: 'PhD', generation: 'Gen 32' },
-        { id: 'class_109', name: 'Art History', code: 'ART-150', degree: 'PhD', generation: 'Gen 30' },
-        { id: 'class_110', name: 'Computer Networks', code: 'CS-350', degree: 'PhD', generation: 'Gen 31' },
+        { id: 'class_107', name: 'Data Structures', code: 'CS-250', degree: 'PhD / Doctor', generation: 'Gen 33' },
+        { id: 'class_108', name: 'Microeconomics', code: 'ECN-200', degree: 'PhD / Doctor', generation: 'Gen 32' },
+        { id: 'class_109', name: 'Art History', code: 'ART-150', degree: 'PhD / Doctor', generation: 'Gen 30' },
+        { id: 'class_110', name: 'Computer Networks', code: 'CS-350', degree: 'PhD / Doctor', generation: 'Gen 31' },
     ];
 
     const initialRooms = [];
