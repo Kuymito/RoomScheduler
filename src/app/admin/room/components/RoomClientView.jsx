@@ -14,9 +14,12 @@ export default function RoomClientView({ initialAllRoomsData }) {
     const textValueRoomDisplay = "font-medium text-base leading-7 text-slate-900 dark:text-slate-100 tracking-[-0.01em]";
     const textLabelDefault = "font-medium text-sm leading-6 text-slate-700 dark:text-slate-300 tracking-[-0.01em]";
     const textValueDefaultDisplay = "font-medium text-sm leading-6 text-slate-900 dark:text-slate-100 tracking-[-0.01em]";
-    const inputContainerSizeDefault = "w-full sm:w-[132px] h-[40px]";
+    const inputContainerSizeDefault = "w-full sm:w-[132px] h-[40px]"; // Responsive width for smaller screens
+    const equipmentInputContainerSize = "w-full sm:w-[132px] h-[72px]"; // Larger height for textarea
+
     const inputStyle = "py-[9px] px-3 w-full h-full bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-[6px] font-normal text-sm leading-[22px] text-slate-900 dark:text-slate-50 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500";
-    const equipmentInputContainerSize = "w-full sm:w-[132px] h-[72px]";
+    const readOnlyInputStyle = "bg-gray-100 dark:bg-gray-800 border-gray-300 dark:border-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed"; // Style for read-only fields
+
     const textareaStyle = "py-[10px] px-3 w-full h-full bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-[6px] font-normal text-sm leading-[22px] text-slate-900 dark:text-slate-50 placeholder:text-slate-400 dark:placeholder:text-slate-500 resize-none focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 scrollbar-thin scrollbar-thumb-slate-400 dark:scrollbar-thumb-slate-500 scrollbar-track-slate-100 dark:scrollbar-track-slate-800";
 
     // --- State Variables ---
@@ -62,14 +65,14 @@ export default function RoomClientView({ initialAllRoomsData }) {
             { floor: 4, rooms: ["F13", "F14", "F15", "F16"] }, // Floor 4, 4 rooms
             { floor: 3, rooms: ["F9", "F10", "F11", "F12"] },   // Floor 3, 4 rooms
             { floor: 2, rooms: ["F5", "F6", "F7", "F8"] },   // Floor 2, 4 rooms
-            { floor: 1, rooms: ["F1", "F2", "F3", "F4"] },   // Floor 1, 4 rooms
+            { floor: 1, rooms: ["F1", "F1", "F3", "F4"] },   // Floor 1, 4 rooms
         ],
     };
 
     // --- Event Handlers ---
     const handleRoomClick = async (roomId) => {
         setSelectedRoom(roomId);
-        setIsEditing(false);
+        setIsEditing(false); // Exit editing mode when a new room is selected
         setLoading(true);
         try {
             // Simulate a quick fetch/lookup for details
@@ -89,17 +92,20 @@ export default function RoomClientView({ initialAllRoomsData }) {
         setSelectedBuilding(event.target.value);
         setSelectedRoom(null);
         setRoomDetails(null);
-        setIsEditing(false);
+        setIsEditing(false); // Exit editing mode
     };
 
     const handleEditToggle = () => {
         if (isEditing) {
+            // If currently editing, save changes
             handleSaveChanges();
         } else {
+            // If not editing, enter editing mode and prepare editable data
             if (roomDetails) {
                 setIsEditing(true);
                 setEditableRoomDetails({
                     ...roomDetails,
+                    // Convert array of equipment to a comma-separated string for easier editing in textarea
                     equipment: roomDetails.equipment.join(", "),
                 });
             }
@@ -110,6 +116,7 @@ export default function RoomClientView({ initialAllRoomsData }) {
         const { name, value } = event.target;
         setEditableRoomDetails((prevDetails) => ({
             ...prevDetails,
+            // Convert 'floor' and 'capacity' to numbers, or keep as empty string if input is empty
             [name]: name === 'floor' || name === 'capacity' ? (value === '' ? '' : parseInt(value, 10)) : value,
         }));
     };
@@ -117,36 +124,86 @@ export default function RoomClientView({ initialAllRoomsData }) {
     const handleSaveChanges = async () => {
         if (!editableRoomDetails) return;
         setLoading(true);
+        // Prepare data for saving: convert equipment string back to array
         const updatedRoomData = {
             ...editableRoomDetails,
-            id: selectedRoom,
-            floor: parseInt(editableRoomDetails.floor, 10) || 0,
-            capacity: parseInt(editableRoomDetails.capacity, 10) || 0,
-            equipment: editableRoomDetails.equipment.split(',').map(e => e.trim()).filter(e => e),
+            id: selectedRoom, // Ensure the ID is carried over
+            floor: parseInt(editableRoomDetails.floor, 10) || 0, // Ensure floor is a number
+            capacity: parseInt(editableRoomDetails.capacity, 10) || 0, // Ensure capacity is a number
+            equipment: editableRoomDetails.equipment.split(',').map(e => e.trim()).filter(e => e), // Split and clean equipment string
         };
+        console.log("Simulating API call to update room:", updatedRoomData);
         try {
             await new Promise(resolve => setTimeout(resolve, 500));
-            setRoomDetails(updatedRoomData);
+            setRoomDetails(updatedRoomData); // Update displayed details
+            // Update the main allRoomsData state to reflect changes across the app
             setAllRoomsData(prevAllRooms => ({
                 ...prevAllRooms,
                 [selectedRoom]: updatedRoomData,
             }));
-            setIsEditing(false);
-            setShowSuccessAlert(true);
+            setIsEditing(false); // Exit editing mode
+            setShowSuccessAlert(true); // Show success message
         } catch (error) {
             console.error("Failed to save room details:", error);
-            setLoading(false); // Ensure loading is reset on error
         } finally {
-            // Not resetting loading here as setShowSuccessAlert might trigger re-render
-            // and this is fine; we handle loading state explicitly before async operation.
+            setLoading(false); // Ensure loading is reset here regardless of success or failure
         }
     };
 
+    // Get the floor data for the currently selected building
     const floors = buildings[selectedBuilding] || [];
 
-    // --- Render Logic ---
+    /**
+     * Determines the appropriate Tailwind CSS grid column classes for a given building and floor.
+     * This ensures the room cards are laid out correctly based on the building's specific design.
+     * @param {string} building - The name of the building (e.g., "Building A").
+     * @param {number} floorNumber - The floor number.
+     * @returns {string} Tailwind CSS grid classes.
+     */
+    const getGridColumnClasses = (building, floorNumber) => {
+        switch (building) {
+            case "Building A":
+                return "xl:grid-cols-5 lg:grid-cols-3 md:grid-cols-2 grid-cols-[repeat(auto-fit,minmax(160px,1fr))]";
+            case "Building B":
+                if (floorNumber === 2) {
+                    return "grid-cols-5";
+                }
+                return "xl:grid-cols-5 lg:grid-cols-3 md:grid-cols-2 grid-cols-[repeat(auto-fit,minmax(160px,1fr))]";
+            case "Building C":
+            case "Building F":
+                return "xl:grid-cols-4 lg:grid-cols-2 md:grid-cols-2 grid-cols-[repeat(auto-fit,minmax(160px,1fr))]";
+            case "Building D":
+                return "grid-cols-1";
+            case "Building E":
+                if (floorNumber === 1) {
+                    return "xl:grid-cols-6 lg:grid-cols-3 md:grid-cols-2 grid-cols-[repeat(auto-fit,minmax(160px,1fr))]";
+                }
+                return "xl:grid-cols-5 lg:grid-cols-3 md:grid-cols-2 grid-cols-[repeat(auto-fit,minmax(160px,1fr))]";
+            default:
+                return "grid-cols-[repeat(auto-fit,minmax(160px,1fr))]";
+        }
+    };
+
+    /**
+     * Determines if a specific room should span multiple columns in the grid.
+     * This is used for rooms like "Meeting Room" or "Library Room" which are larger.
+     * @param {string} building - The name of the building.
+     * @param {string} roomName - The name of the room.
+     * @returns {string} Tailwind CSS `col-span-*` class or an empty string.
+     */
+    const getRoomColSpan = (building, roomName) => {
+        if (building === "Building B" && roomName === "Meeting Room") {
+            return "col-span-4";
+        }
+        if (building === "Building D" && roomName.includes("Library Room")) {
+            return "col-span-full";
+        }
+        return "";
+    };
+
     return (
         <>
+            {/* Success Alert Modal */}
             {showSuccessAlert && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60">
                     <SuccessAlert
@@ -189,259 +246,37 @@ export default function RoomClientView({ initialAllRoomsData }) {
                                             <h4 className="text-xs sm:text-sm font-medium text-slate-600 dark:text-slate-400 whitespace-nowrap">Floor {floor}</h4>
                                             <hr className="flex-1 border-t border-slate-300 dark:border-slate-700" />
                                         </div>
-                                        {/* Conditional rendering for Building A floors (5 columns per row) */}
-                                        {selectedBuilding === "Building A" ? (
-                                            <div className="grid xl:grid-cols-5 lg:grid-cols-3 md:grid-cols-2 grid-cols-[repeat(auto-fit,minmax(160px,1fr))] gap-3">
-                                                {rooms.map((roomId) => {
-                                                    const room = allRoomsData[roomId];
-                                                    if (!room) return null;
-                                                    const isSelected = selectedRoom === roomId;
-                                                    const isUnavailable = room.status === "unavailable";
-                                                    
-                                                    // For Building A, all rooms are regular sized now
-                                                    // const colSpanClass = roomId === "MeetingA" ? "col-span-full" : ""; 
-
-                                                    return (
-                                                        <div
-                                                            key={roomId}
-                                                            className={`h-[90px] sm:h-[100px] border rounded-md flex flex-col transition-all duration-150 shadow-sm
-                                                                ${isUnavailable ? 'cursor-not-allowed bg-slate-50 dark:bg-slate-800/50 opacity-70' : 'cursor-pointer hover:shadow-md bg-white dark:bg-slate-800'}
-                                                                ${isSelected ? "border-blue-500 ring-2 ring-blue-500 dark:border-blue-500" : isUnavailable ? "border-slate-200 dark:border-slate-700" : "border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600"}
-                                                            `}
-                                                            onClick={() => !isUnavailable && handleRoomClick(roomId)}
-                                                        >
-                                                            <div className={`h-[30px] rounded-t-md flex items-center justify-center px-2 relative border-b ${isSelected ? 'border-b-transparent' : 'border-slate-200 dark:border-slate-600'} ${isUnavailable ? 'bg-slate-100 dark:bg-slate-700/60' : 'bg-slate-50 dark:bg-slate-700'}`}>
-                                                                <div className={`absolute left-2 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full ${isSelected ? 'bg-blue-500' : isUnavailable ? 'bg-red-500' : 'bg-green-500'}`}></div>
-                                                                <span className={`ml-3 text-xs sm:text-sm font-medium ${isSelected ? 'text-blue-700 dark:text-blue-300' : isUnavailable ? 'text-slate-500 dark:text-slate-400' : 'text-slate-700 dark:text-slate-300'}`}>{room.name || roomId}</span>
-                                                            </div>
-                                                            <div className={`flex-1 rounded-b-md p-2 flex flex-col justify-center items-center ${isUnavailable ? 'bg-slate-50 dark:bg-slate-800/50' : 'bg-white dark:bg-slate-800'}`}>
-                                                                <span className={`text-xs ${isUnavailable ? 'text-red-600 dark:text-red-400' : 'text-slate-500 dark:text-slate-400'} ${isSelected ? 'text-slate-600 dark:text-slate-300' : ''}`}>
-                                                                    {isUnavailable ? 'Unavailable' : `Capacity: ${room.capacity}`}
-                                                                </span>
-                                                            </div>
+                                        {/* Dynamic grid columns based on building type */}
+                                        <div className={`grid gap-3 sm:gap-4 ${getGridColumnClasses(selectedBuilding, floor)}`}>
+                                            {rooms.map((roomId) => {
+                                                const room = allRoomsData[roomId];
+                                                if (!room) return null;
+                                                const isSelected = selectedRoom === roomId;
+                                                const isUnavailable = room.status === "unavailable";
+                                                
+                                                return (
+                                                    <div
+                                                        key={roomId}
+                                                        className={`h-[90px] sm:h-[100px] border rounded-md flex flex-col transition-all duration-150 shadow-sm
+                                                            ${getRoomColSpan(selectedBuilding, room.name)}
+                                                            ${isUnavailable ? 'cursor-not-allowed bg-slate-50 dark:bg-slate-800/50 opacity-70' : 'cursor-pointer hover:shadow-md bg-white dark:bg-slate-800'}
+                                                            ${isSelected ? "border-blue-500 ring-2 ring-blue-500 dark:border-blue-500" : isUnavailable ? "border-slate-200 dark:border-slate-700" : "border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600"}
+                                                        `}
+                                                        onClick={() => !isUnavailable && handleRoomClick(roomId)}
+                                                    >
+                                                        <div className={`h-[30px] rounded-t-md flex items-center justify-center px-2 relative border-b ${isSelected ? 'border-b-transparent' : 'border-slate-200 dark:border-slate-600'} ${isUnavailable ? 'bg-slate-100 dark:bg-slate-700/60' : 'bg-slate-50 dark:bg-slate-700'}`}>
+                                                            <div className={`absolute left-2 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full ${isSelected ? 'bg-blue-500' : isUnavailable ? 'bg-red-500' : 'bg-green-500'}`}></div>
+                                                            <span className={`ml-3 text-xs sm:text-sm font-medium ${isSelected ? 'text-blue-700 dark:text-blue-300' : isUnavailable ? 'text-slate-500 dark:text-slate-400' : 'text-slate-700 dark:text-slate-300'}`}>{room.name || roomId}</span>
                                                         </div>
-                                                    );
-                                                })}
-                                            </div>
-                                        ) : selectedBuilding === "Building B" && floor === 2 ? (
-                                            <div className="grid grid-cols-5 gap-3"> {/* Explicitly 5 columns */}
-                                                {rooms.map((roomId) => {
-                                                    const room = allRoomsData[roomId];
-                                                    if (!room) return null;
-                                                    const isSelected = selectedRoom === roomId;
-                                                    const isUnavailable = room.status === "unavailable";
-                                                    const colSpanClass = roomId === "Meeting" ? "col-span-4" : "col-span-1"; // Meeting spans 4 columns
-
-                                                    return (
-                                                        <div
-                                                            key={roomId}
-                                                            className={`h-[90px] sm:h-[100px] border rounded-md flex flex-col transition-all duration-150 shadow-sm
-                                                                ${isUnavailable ? 'cursor-not-allowed bg-slate-50 dark:bg-slate-800/50 opacity-70' : 'cursor-pointer hover:shadow-md bg-white dark:bg-slate-800'}
-                                                                ${isSelected ? "border-blue-500 ring-2 ring-blue-500 dark:border-blue-500" : isUnavailable ? "border-slate-200 dark:border-slate-700" : "border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600"}
-                                                                ${colSpanClass}
-                                                            `}
-                                                            onClick={() => !isUnavailable && handleRoomClick(roomId)}
-                                                        >
-                                                            <div className={`h-[30px] rounded-t-md flex items-center justify-center px-2 relative border-b ${isSelected ? 'border-b-transparent' : 'border-slate-200 dark:border-slate-600'} ${isUnavailable ? 'bg-slate-100 dark:bg-slate-700/60' : 'bg-slate-50 dark:bg-slate-700'}`}>
-                                                                <div className={`absolute left-2 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full ${isSelected ? 'bg-blue-500' : isUnavailable ? 'bg-red-500' : 'bg-green-500'}`}></div>
-                                                                <span className={`ml-3 text-xs sm:text-sm font-medium ${isSelected ? 'text-blue-700 dark:text-blue-300' : isUnavailable ? 'text-slate-500 dark:text-slate-400' : 'text-slate-700 dark:text-slate-300'}`}>{room.name || roomId}</span>
-                                                            </div>
-                                                            <div className={`flex-1 rounded-b-md p-2 flex flex-col justify-center items-center ${isUnavailable ? 'bg-slate-50 dark:bg-slate-800/50' : 'bg-white dark:bg-slate-800'}`}>
-                                                                <span className={`text-xs ${isUnavailable ? 'text-red-600 dark:text-red-400' : 'text-slate-500 dark:text-slate-400'} ${isSelected && !isUnavailable ? 'text-slate-600 dark:text-slate-300' : ''}`}>
-                                                                    {isUnavailable ? 'Unavailable' : `Capacity: ${room.capacity}`}
-                                                                </span>
-                                                            </div>
+                                                        <div className={`flex-1 rounded-b-md p-2 flex flex-col justify-center items-center ${isUnavailable ? 'bg-slate-50 dark:bg-slate-800/50' : 'bg-white dark:bg-slate-800'}`}>
+                                                            <span className={`text-xs ${isUnavailable ? 'text-red-600 dark:text-red-400' : 'text-slate-500 dark:text-slate-400'} ${isSelected ? 'text-slate-600 dark:text-slate-300' : ''}`}>
+                                                                {isUnavailable ? 'Unavailable' : `Capacity: ${room.capacity}`}
+                                                            </span>
                                                         </div>
-                                                    );
-                                                })}
-                                            </div>
-                                        ) : selectedBuilding === "Building C" ? (
-                                            // Building C: 4 columns per row
-                                            <div className="grid xl:grid-cols-4 lg:grid-cols-2 md:grid-cols-2 grid-cols-[repeat(auto-fit,minmax(160px,1fr))] gap-3">
-                                                {rooms.map((roomId) => {
-                                                    const room = allRoomsData[roomId];
-                                                    if (!room) return null;
-                                                    const isSelected = selectedRoom === roomId;
-                                                    const isUnavailable = room.status === "unavailable";
-
-                                                    return (
-                                                        <div
-                                                            key={roomId}
-                                                            className={`h-[90px] sm:h-[100px] border rounded-md flex flex-col transition-all duration-150 shadow-sm
-                                                                ${isUnavailable ? 'cursor-not-allowed bg-slate-50 dark:bg-slate-800/50 opacity-70' : 'cursor-pointer hover:shadow-md bg-white dark:bg-slate-800'}
-                                                                ${isSelected ? "border-blue-500 ring-2 ring-blue-500 dark:border-blue-500" : isUnavailable ? "border-slate-200 dark:border-slate-700" : "border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600"}
-                                                            `}
-                                                            onClick={() => !isUnavailable && handleRoomClick(roomId)}
-                                                        >
-                                                            <div className={`h-[30px] rounded-t-md flex items-center justify-center px-2 relative border-b ${isSelected ? 'border-b-transparent' : 'border-slate-200 dark:border-slate-600'} ${isUnavailable ? 'bg-slate-100 dark:bg-slate-700/60' : 'bg-slate-50 dark:bg-slate-700'}`}>
-                                                                <div className={`absolute left-2 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full ${isSelected ? 'bg-blue-500' : isUnavailable ? 'bg-red-500' : 'bg-green-500'}`}></div>
-                                                                <span className={`ml-3 text-xs sm:text-sm font-medium ${isSelected ? 'text-blue-700 dark:text-blue-300' : isUnavailable ? 'text-slate-500 dark:text-slate-400' : 'text-slate-700 dark:text-slate-300'}`}>{room.name || roomId}</span>
-                                                            </div>
-                                                            <div className={`flex-1 rounded-b-md p-2 flex flex-col justify-center items-center ${isUnavailable ? 'bg-slate-50 dark:bg-slate-800/50' : 'bg-white dark:bg-slate-800'}`}>
-                                                                <span className={`text-xs ${isUnavailable ? 'text-red-600 dark:text-red-400' : 'text-slate-500 dark:text-slate-400'} ${isSelected ? 'text-slate-600 dark:text-slate-300' : ''}`}>
-                                                                    {isUnavailable ? 'Unavailable' : `Capacity: ${room.capacity}`}
-                                                                </span>
-                                                            </div>
-                                                        </div>
-                                                    );
-                                                })}
-                                            </div>
-                                        ) : selectedBuilding === "Building D" ? (
-                                            // Building D: 1 room per floor, spanning full width
-                                            <div className="grid grid-cols-1 gap-3">
-                                                {rooms.map((roomId) => {
-                                                    const room = allRoomsData[roomId];
-                                                    if (!room) return null;
-                                                    const isSelected = selectedRoom === roomId;
-                                                    const isUnavailable = room.status === "unavailable";
-
-                                                    return (
-                                                        <div
-                                                            key={roomId}
-                                                            className={`h-[90px] sm:h-[100px] border rounded-md flex flex-col transition-all duration-150 shadow-sm col-span-full
-                                                                ${isUnavailable ? 'cursor-not-allowed bg-slate-50 dark:bg-slate-800/50 opacity-70' : 'cursor-pointer hover:shadow-md bg-white dark:bg-slate-800'}
-                                                                ${isSelected ? "border-blue-500 ring-2 ring-blue-500 dark:border-blue-500" : isUnavailable ? "border-slate-200 dark:border-slate-700" : "border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600"}
-                                                            `}
-                                                            onClick={() => !isUnavailable && handleRoomClick(roomId)}
-                                                        >
-                                                            <div className={`h-[30px] rounded-t-md flex items-center justify-center px-2 relative border-b ${isSelected ? 'border-b-transparent' : 'border-slate-200 dark:border-slate-600'} ${isUnavailable ? 'bg-slate-100 dark:bg-slate-700/60' : 'bg-slate-50 dark:bg-slate-700'}`}>
-                                                                <div className={`absolute left-2 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full ${isSelected ? 'bg-blue-500' : isUnavailable ? 'bg-red-500' : 'bg-green-500'}`}></div>
-                                                                <span className={`ml-3 text-xs sm:text-sm font-medium ${isSelected ? 'text-blue-700 dark:text-blue-300' : isUnavailable ? 'text-slate-500 dark:text-slate-400' : 'text-slate-700 dark:text-slate-300'}`}>{room.name || roomId}</span>
-                                                            </div>
-                                                            <div className={`flex-1 rounded-b-md p-2 flex flex-col justify-center items-center ${isUnavailable ? 'bg-slate-50 dark:bg-slate-800/50' : 'bg-white dark:bg-slate-800'}`}>
-                                                                <span className={`text-xs ${isUnavailable ? 'text-red-600 dark:text-red-400' : 'text-slate-500 dark:text-slate-400'} ${isSelected ? 'text-slate-600 dark:text-slate-300' : ''}`}>
-                                                                    {isUnavailable ? 'Unavailable' : `Capacity: ${room.capacity}`}
-                                                                </span>
-                                                            </div>
-                                                        </div>
-                                                    );
-                                                })}
-                                            </div>
-                                        ) : selectedBuilding === "Building E" && floor === 1 ? (
-                                            // Building E, Floor 1: 6 columns
-                                            <div className="grid xl:grid-cols-6 lg:grid-cols-3 md:grid-cols-2 grid-cols-[repeat(auto-fit,minmax(160px,1fr))] gap-3">
-                                                {rooms.map((roomId) => {
-                                                    const room = allRoomsData[roomId];
-                                                    if (!room) return null;
-                                                    const isSelected = selectedRoom === roomId;
-                                                    const isUnavailable = room.status === "unavailable";
-
-                                                    return (
-                                                        <div
-                                                            key={roomId}
-                                                            className={`h-[90px] sm:h-[100px] border rounded-md flex flex-col transition-all duration-150 shadow-sm
-                                                                ${isUnavailable ? 'cursor-not-allowed bg-slate-50 dark:bg-slate-800/50 opacity-70' : 'cursor-pointer hover:shadow-md bg-white dark:bg-slate-800'}
-                                                                ${isSelected ? "border-blue-500 ring-2 ring-blue-500 dark:border-blue-500" : isUnavailable ? "border-slate-200 dark:border-slate-700" : "border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600"}
-                                                            `}
-                                                            onClick={() => !isUnavailable && handleRoomClick(roomId)}
-                                                        >
-                                                            <div className={`h-[30px] rounded-t-md flex items-center justify-center px-2 relative border-b ${isSelected ? 'border-b-transparent' : 'border-slate-200 dark:border-slate-600'} ${isUnavailable ? 'bg-slate-100 dark:bg-slate-700/60' : 'bg-slate-50 dark:bg-slate-700'}`}>
-                                                                <div className={`absolute left-2 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full ${isSelected ? 'bg-blue-500' : isUnavailable ? 'bg-red-500' : 'bg-green-500'}`}></div>
-                                                                <span className={`ml-3 text-xs sm:text-sm font-medium ${isSelected ? 'text-blue-700 dark:text-blue-300' : isUnavailable ? 'text-slate-500 dark:text-slate-400' : 'text-slate-700 dark:text-slate-300'}`}>{room.name || roomId}</span>
-                                                            </div>
-                                                            <div className={`flex-1 rounded-b-md p-2 flex flex-col justify-center items-center ${isUnavailable ? 'bg-slate-50 dark:bg-slate-800/50' : 'bg-white dark:bg-slate-800'}`}>
-                                                                <span className={`text-xs ${isUnavailable ? 'text-red-600 dark:text-red-400' : 'text-slate-500 dark:text-slate-400'} ${isSelected ? 'text-slate-600 dark:text-slate-300' : ''}`}>
-                                                                    {isUnavailable ? 'Unavailable' : `Capacity: ${room.capacity}`}
-                                                                </span>
-                                                            </div>
-                                                        </div>
-                                                    );
-                                                })}
-                                            </div>
-                                        ) : selectedBuilding === "Building E" && floor !== 1 ? (
-                                            // Building E, Floors 2-5: 5 columns
-                                            <div className="grid xl:grid-cols-5 lg:grid-cols-2 md:grid-cols-2 grid-cols-[repeat(auto-fit,minmax(160px,1fr))] gap-3">
-                                                {rooms.map((roomId) => {
-                                                    const room = allRoomsData[roomId];
-                                                    if (!room) return null;
-                                                    const isSelected = selectedRoom === roomId;
-                                                    const isUnavailable = room.status === "unavailable";
-
-                                                    return (
-                                                        <div
-                                                            key={roomId}
-                                                            className={`h-[90px] sm:h-[100px] border rounded-md flex flex-col transition-all duration-150 shadow-sm
-                                                                ${isUnavailable ? 'cursor-not-allowed bg-slate-50 dark:bg-slate-800/50 opacity-70' : 'cursor-pointer hover:shadow-md bg-white dark:bg-slate-800'}
-                                                                ${isSelected ? "border-blue-500 ring-2 ring-blue-500 dark:border-blue-500" : isUnavailable ? "border-slate-200 dark:border-slate-700" : "border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600"}
-                                                            `}
-                                                            onClick={() => !isUnavailable && handleRoomClick(roomId)}
-                                                        >
-                                                            <div className={`h-[30px] rounded-t-md flex items-center justify-center px-2 relative border-b ${isSelected ? 'border-b-transparent' : 'border-slate-200 dark:border-slate-600'} ${isUnavailable ? 'bg-slate-100 dark:bg-slate-700/60' : 'bg-slate-50 dark:bg-slate-700'}`}>
-                                                                <div className={`absolute left-2 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full ${isSelected ? 'bg-blue-500' : isUnavailable ? 'bg-red-500' : 'bg-green-500'}`}></div>
-                                                                <span className={`ml-3 text-xs sm:text-sm font-medium ${isSelected ? 'text-blue-700 dark:text-blue-300' : isUnavailable ? 'text-slate-500 dark:text-slate-400' : 'text-slate-700 dark:text-slate-300'}`}>{room.name || roomId}</span>
-                                                            </div>
-                                                            <div className={`flex-1 rounded-b-md p-2 flex flex-col justify-center items-center ${isUnavailable ? 'bg-slate-50 dark:bg-slate-800/50' : 'bg-white dark:bg-slate-800'}`}>
-                                                                <span className={`text-xs ${isUnavailable ? 'text-red-600 dark:text-red-400' : 'text-slate-500 dark:text-slate-400'} ${isSelected ? 'text-slate-600 dark:text-slate-300' : ''}`}>
-                                                                    {isUnavailable ? 'Unavailable' : `Capacity: ${room.capacity}`}
-                                                                </span>
-                                                            </div>
-                                                        </div>
-                                                    );
-                                                })}
-                                            </div>
-                                        ) : selectedBuilding === "Building F" ? (
-                                            // Building F: 4 columns per row
-                                            <div className="grid xl:grid-cols-4 lg:grid-cols-2 md:grid-cols-2 grid-cols-[repeat(auto-fit,minmax(160px,1fr))] gap-3">
-                                                {rooms.map((roomId) => {
-                                                    const room = allRoomsData[roomId];
-                                                    if (!room) return null;
-                                                    const isSelected = selectedRoom === roomId;
-                                                    const isUnavailable = room.status === "unavailable";
-
-                                                    return (
-                                                        <div
-                                                            key={roomId}
-                                                            className={`h-[90px] sm:h-[100px] border rounded-md flex flex-col transition-all duration-150 shadow-sm
-                                                                ${isUnavailable ? 'cursor-not-allowed bg-slate-50 dark:bg-slate-800/50 opacity-70' : 'cursor-pointer hover:shadow-md bg-white dark:bg-slate-800'}
-                                                                ${isSelected ? "border-blue-500 ring-2 ring-blue-500 dark:border-blue-500" : isUnavailable ? "border-slate-200 dark:border-slate-700" : "border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600"}
-                                                            `}
-                                                            onClick={() => !isUnavailable && handleRoomClick(roomId)}
-                                                        >
-                                                            <div className={`h-[30px] rounded-t-md flex items-center justify-center px-2 relative border-b ${isSelected ? 'border-b-transparent' : 'border-slate-200 dark:border-slate-600'} ${isUnavailable ? 'bg-slate-100 dark:bg-slate-700/60' : 'bg-slate-50 dark:bg-slate-700'}`}>
-                                                                <div className={`absolute left-2 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full ${isSelected ? 'bg-blue-500' : isUnavailable ? 'bg-red-500' : 'bg-green-500'}`}></div>
-                                                                <span className={`ml-3 text-xs sm:text-sm font-medium ${isSelected ? 'text-blue-700 dark:text-blue-300' : isUnavailable ? 'text-slate-500 dark:text-slate-400' : 'text-slate-700 dark:text-slate-300'}`}>{room.name || roomId}</span>
-                                                            </div>
-                                                            <div className={`flex-1 rounded-b-md p-2 flex flex-col justify-center items-center ${isUnavailable ? 'bg-slate-50 dark:bg-slate-800/50' : 'bg-white dark:bg-slate-800'}`}>
-                                                                <span className={`text-xs ${isUnavailable ? 'text-red-600 dark:text-red-400' : 'text-slate-500 dark:text-slate-400'} ${isSelected ? 'text-slate-600 dark:text-slate-300' : ''}`}>
-                                                                    {isUnavailable ? 'Unavailable' : `Capacity: ${room.capacity}`}
-                                                                </span>
-                                                            </div>
-                                                        </div>
-                                                    );
-                                                })}
-                                            </div>
-                                        ) : (
-                                            // Default for other buildings not explicitly handled
-                                            <div className="grid xl:grid-cols-5 lg:grid-cols-2 md:grid-cols-2 grid-cols-[repeat(auto-fit,minmax(160px,1fr))] gap-3">
-                                                {rooms.map((roomId) => {
-                                                    const room = allRoomsData[roomId];
-                                                    if (!room) return null;
-                                                    const isSelected = selectedRoom === roomId;
-                                                    const isUnavailable = room.status === "unavailable";
-
-                                                    return (
-                                                        <div
-                                                            key={roomId}
-                                                            className={`h-[90px] sm:h-[100px] border rounded-md flex flex-col transition-all duration-150 shadow-sm
-                                                                ${isUnavailable ? 'cursor-not-allowed bg-slate-50 dark:bg-slate-800/50 opacity-70' : 'cursor-pointer hover:shadow-md bg-white dark:bg-slate-800'}
-                                                                ${isSelected ? "border-blue-500 ring-2 ring-blue-500 dark:border-blue-500" : isUnavailable ? "border-slate-200 dark:border-slate-700" : "border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600"}
-                                                            `}
-                                                            onClick={() => !isUnavailable && handleRoomClick(roomId)}
-                                                        >
-                                                            <div className={`h-[30px] rounded-t-md flex items-center justify-center px-2 relative border-b ${isSelected ? 'border-b-transparent' : 'border-slate-200 dark:border-slate-600'} ${isUnavailable ? 'bg-slate-100 dark:bg-slate-700/60' : 'bg-slate-50 dark:bg-slate-700'}`}>
-                                                                <div className={`absolute left-2 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full ${isSelected ? 'bg-blue-500' : isUnavailable ? 'bg-red-500' : 'bg-green-500'}`}></div>
-                                                                <span className={`ml-3 text-xs sm:text-sm font-medium ${isSelected ? 'text-blue-700 dark:text-blue-300' : isUnavailable ? 'text-slate-500 dark:text-slate-400' : 'text-slate-700 dark:text-slate-300'}`}>{room.name || roomId}</span>
-                                                            </div>
-                                                            <div className={`flex-1 rounded-b-md p-2 flex flex-col justify-center items-center ${isUnavailable ? 'bg-slate-50 dark:bg-slate-800/50' : 'bg-white dark:bg-slate-800'}`}>
-                                                                <span className={`text-xs ${isUnavailable ? 'text-red-600 dark:text-red-400' : 'text-slate-500 dark:text-slate-400'} ${isSelected ? 'text-slate-600 dark:text-slate-300' : ''}`}>
-                                                                    {isUnavailable ? 'Unavailable' : `Capacity: ${room.capacity}`}
-                                                                </span>
-                                                            </div>
-                                                        </div>
-                                                    );
-                                                })}
-                                            </div>
-                                        )}
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
                                     </div>
                                 </div>
                             ))}
@@ -460,25 +295,58 @@ export default function RoomClientView({ initialAllRoomsData }) {
                             ) : roomDetails ? (
                                 <>
                                     <div className="w-full border border-slate-200 dark:border-slate-700 rounded-md bg-white dark:bg-slate-800">
+                                        {/* Room Name */}
                                         <div className="flex flex-row items-center self-stretch w-full min-h-[56px] border-b border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
                                             <div className="flex flex-col justify-center items-start p-3 sm:p-4 w-[100px] sm:w-[120px]"><span className={textLabelRoom}>Room</span></div>
-                                            <div className="flex flex-col justify-center items-start px-2 sm:px-3 flex-1 py-2">{isEditing && editableRoomDetails ? (<div className={`flex flex-col items-start self-stretch ${inputContainerSizeDefault}`}><input type="text" name="name" value={editableRoomDetails.name} onChange={handleInputChange} className={inputStyle} /></div>) : (<span className={textValueRoomDisplay}>{roomDetails.name}</span>)}</div>
+                                            <div className="flex flex-col justify-center items-start px-2 sm:px-3 flex-1 py-2">
+                                                {isEditing && editableRoomDetails ? (
+                                                    <div className={`flex flex-col items-start self-stretch ${inputContainerSizeDefault}`}>
+                                                        <input type="text" name="name" value={editableRoomDetails.name} onChange={handleInputChange} className={inputStyle} />
+                                                    </div>
+                                                ) : (
+                                                    <span className={textValueRoomDisplay}>{roomDetails.name}</span>
+                                                )}
+                                            </div>
                                         </div>
+                                        {/* Building - Always Read-Only, display as text */}
                                         <div className="flex flex-row items-center self-stretch w-full min-h-[56px] border-b border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
                                             <div className="flex flex-col justify-center items-start p-3 sm:p-4 w-[100px] sm:w-[120px]"><span className={textLabelDefault}>Building</span></div>
-                                            <div className="flex flex-col justify-center items-start px-2 sm:px-3 flex-1 py-2">{isEditing && editableRoomDetails ? (<div className={`flex flex-col items-start self-stretch ${inputContainerSizeDefault}`}><input type="text" name="building" value={editableRoomDetails.building} onChange={handleInputChange} className={inputStyle} /></div>) : (<span className={textValueDefaultDisplay}>{roomDetails.building}</span>)}</div>
+                                            <div className="flex flex-col justify-center items-start px-2 sm:px-3 flex-1 py-2">
+                                                <span className={textValueDefaultDisplay}>{roomDetails.building}</span>
+                                            </div>
                                         </div>
+                                        {/* Floor - Always Read-Only, display as text */}
                                         <div className="flex flex-row items-center self-stretch w-full min-h-[56px] border-b border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
                                             <div className="flex flex-col justify-center items-start p-3 sm:p-4 w-[100px] sm:w-[120px]"><span className={textLabelDefault}>Floor</span></div>
-                                            <div className="flex flex-col justify-center items-start px-2 sm:px-3 flex-1 py-2">{isEditing && editableRoomDetails ? (<div className={`flex flex-col items-start self-stretch ${inputContainerSizeDefault}`}><input type="number" name="floor" value={editableRoomDetails.floor} onChange={handleInputChange} className={inputStyle} /></div>) : (<span className={textValueDefaultDisplay}>{roomDetails.floor}</span>)}</div>
+                                            <div className="flex flex-col justify-center items-start px-2 sm:px-3 flex-1 py-2">
+                                                <span className={textValueDefaultDisplay}>{roomDetails.floor}</span>
+                                            </div>
                                         </div>
+                                        {/* Capacity */}
                                         <div className="flex flex-row items-center self-stretch w-full min-h-[56px] border-b border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
                                             <div className="flex flex-col justify-center items-start p-3 sm:p-4 w-[100px] sm:w-[120px]"><span className={textLabelDefault}>Capacity</span></div>
-                                            <div className="flex flex-col justify-center items-start px-2 sm:px-3 flex-1 py-2">{isEditing && editableRoomDetails ? (<div className={`flex flex-col items-start self-stretch ${inputContainerSizeDefault}`}><input type="number" name="capacity" value={editableRoomDetails.capacity} onChange={handleInputChange} className={inputStyle} /></div>) : (<span className={textValueDefaultDisplay}>{roomDetails.capacity}</span>)}</div>
+                                            <div className="flex flex-col justify-center items-start px-2 sm:px-3 flex-1 py-2">
+                                                {isEditing && editableRoomDetails ? (
+                                                    <div className={`flex flex-col items-start self-stretch ${inputContainerSizeDefault}`}>
+                                                        <input type="number" name="capacity" value={editableRoomDetails.capacity} onChange={handleInputChange} className={inputStyle} />
+                                                    </div>
+                                                ) : (
+                                                    <span className={textValueDefaultDisplay}>{roomDetails.capacity}</span>
+                                                )}
+                                            </div>
                                         </div>
+                                        {/* Equipment */}
                                         <div className="flex flex-row items-start self-stretch w-full min-h-[92px] hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
                                             <div className="flex flex-col justify-center items-start p-3 sm:p-4 w-[100px] sm:w-[120px] pt-5"><span className={textLabelDefault}>Equipment</span></div>
-                                            <div className="flex flex-col justify-center items-start px-2 sm:px-3 flex-1 py-2 pt-3">{isEditing && editableRoomDetails ? (<div className={`flex flex-col items-start self-stretch ${equipmentInputContainerSize}`}><textarea name="equipment" value={editableRoomDetails.equipment} onChange={handleInputChange} className={textareaStyle} placeholder="Item1, Item2, ..."></textarea></div>) : (<span className={`${textValueDefaultDisplay} pt-1`}>{roomDetails.equipment.join(", ")}</span>)}</div>
+                                            <div className="flex flex-col justify-center items-start px-2 sm:px-3 flex-1 py-2 pt-3">
+                                                {isEditing && editableRoomDetails ? (
+                                                    <div className={`flex flex-col items-start self-stretch ${equipmentInputContainerSize}`}>
+                                                        <textarea name="equipment" value={editableRoomDetails.equipment} onChange={handleInputChange} className={textareaStyle} placeholder="Item1, Item2, ..."></textarea>
+                                                    </div>
+                                                ) : (
+                                                    <span className={`${textValueDefaultDisplay} pt-1`}>{roomDetails.equipment.join(", ")}</span>
+                                                )}
+                                            </div>
                                         </div>
                                     </div>
                                     <button
@@ -501,4 +369,4 @@ export default function RoomClientView({ initialAllRoomsData }) {
             </div>
         </>
     );
-};
+}
