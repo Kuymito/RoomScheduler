@@ -16,7 +16,7 @@ const defaultChartLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const defaultChartValues = [15, 30, 25, 45, 20, 35, 50]; 
 
 export default function RoomAvailabilityChart({ chartData, selectedTimeSlot, setSelectedTimeSlot }) {
-  const timeSlots = ['07:00 - 10:00', '10:00 - 13:00', '13:00 - 16:00', '16:00 - 19:00'];
+  const timeSlots = ['7:00 - 10:00', '10:30 - 13:30', '14:00 - 17:00', '17:30 - 20:30'];
   const [isDarkMode, setIsDarkMode] = useState(false);
   const currentLabels = chartData?.labels || defaultChartLabels;
   const currentDataValues = chartData?.data || defaultChartValues;
