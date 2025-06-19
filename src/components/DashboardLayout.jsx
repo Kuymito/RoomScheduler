@@ -186,10 +186,15 @@ export default function DashboardLayout({ children, activeItem, pageTitle }) {
 
     useEffect(() => {
         const mockNotificationsData = [
-            { id: 1, avatarUrl: 'https://randomuser.me/api/portraits/women/60.jpg', message: 'Dr. Linda Keo is requesting room A1 at 7:00 - 10:00am for class 31/31 IT-morning', timestamp: '10m', isUnread: true, type: 'roomRequest', details: { requestorName: 'Dr. Linda Keo', room: 'A1', time: '7:00 - 10:00am', class: '31/31 IT-morning' } },
-            { id: 2, avatarUrl: 'https://randomuser.me/api/portraits/men/45.jpg', message: 'You have Approved Mr. Chan Keo request for a room change. The update has been successfully recorded.', timestamp: '1h', isUnread: false, type: 'info', details: { requestorName: 'Mr. Chan Keo' } },
-            { id: 3, avatarUrl: 'https://randomuser.me/api/portraits/women/33.jpg', message: 'You have Denied Mr. Tomoko Inoue request for a room change.', timestamp: '2h', isUnread: false, type: 'info', details: { requestorName: 'Mr. Tomoko Inoue' } },
-            { id: 4, avatarUrl: 'https://randomuser.me/api/portraits/men/78.jpg', message: 'Mr. Eric Sok submitted a new maintenance request for Projector in B2.', timestamp: '5h', isUnread: true, type: 'maintenanceRequest', details: { requestorName: 'Mr. Eric Sok' } },
+            // { id: 1, avatarUrl: 'https://randomuser.me/api/portraits/women/60.jpg', message: 'Dr. Linda Keo is requesting room A1 at 7:00 - 10:00am for class 31/31 IT-morning', timestamp: '10m', isUnread: true, type: 'roomRequest', details: { requestorName: 'Dr. Linda Keo', room: 'A1', time: '7:00 - 10:00am', class: '31/31 IT-morning' } },
+            // { id: 2, avatarUrl: 'https://randomuser.me/api/portraits/men/45.jpg', message: 'You have Approved Mr. Chan Keo request for a room change. The update has been successfully recorded.', timestamp: '1h', isUnread: false, type: 'info', details: { requestorName: 'Mr. Chan Keo' } },
+            // { id: 3, avatarUrl: 'https://randomuser.me/api/portraits/women/33.jpg', message: 'You have Denied Mr. Tomoko Inoue request for a room change.', timestamp: '2h', isUnread: false, type: 'info', details: { requestorName: 'Mr. Tomoko Inoue' } },
+            // { id: 4, avatarUrl: 'https://randomuser.me/api/portraits/men/78.jpg', message: 'Mr. Eric Sok submitted a new maintenance request for Projector in B2.', timestamp: '5h', isUnread: true, type: 'maintenanceRequest', details: { requestorName: 'Mr. Eric Sok' } },
+            
+            { id: 1, avatarUrl: 'https://fde.num.edu.kh/wp-content/uploads/2023/09/Dr-Heng-Dyna.png', message: 'Dr. Dyna Heng is requesting room A1 at 7:00 - 10:00am for class 31/31 IT-morning', timestamp: '10m', isUnread: true, type: 'roomRequest', details: { requestorName: 'Dr. Linda Keo', room: 'A1', time: '7:00 - 10:00am', class: '31/31 IT-morning' } },
+            { id: 2, avatarUrl: 'https://fde.num.edu.kh/wp-content/uploads/2023/11/chayphang-1-e1699343731920.jpg', message: 'You have Approved Professor Dr. Chay Phang request for a room change. The update has been successfully recorded.', timestamp: '1h', isUnread: false, type: 'info', details: { requestorName: 'Mr. Chan Keo' } },
+            { id: 3, avatarUrl: 'https://fde.num.edu.kh/wp-content/uploads/2023/11/Screenshot-2023-11-05-000054-e1699117307204.png', message: 'You have Denied Mr. Sok Moniroith request for a room change.', timestamp: '2h', isUnread: false, type: 'info', details: { requestorName: 'Mr. Tomoko Inoue' } },
+            { id: 4, avatarUrl: 'https://fde.num.edu.kh/wp-content/uploads/2023/11/Screenshot-2023-11-04-235814-e1699117155286.png', message: 'Mr. Ngin Pidor submitted a new maintenance request for Projector in B2.', timestamp: '5h', isUnread: true, type: 'maintenanceRequest', details: { requestorName: 'Mr. Eric Sok' } },
         ];
         setNotifications(mockNotificationsData);
     }, []);
