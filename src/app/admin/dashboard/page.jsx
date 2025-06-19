@@ -23,9 +23,9 @@ const fetchChartData = async (timeSlot) => {
   let dataPoints;
   switch (timeSlot) {
     case '07:00 - 10:00': dataPoints = [23, 60, 32, 55, 13, 45, 48]; break;
-    case '10:00 - 13:00': dataPoints = [45, 22, 50, 30, 65, 25, 40]; break;
-    case '13:00 - 16:00': dataPoints = [30, 55, 18, 48, 33, 60, 22]; break;
-    case '16:00 - 19:00': dataPoints = [15, 35, 40, 20, 50, 30, 55]; break;
+    case '10:30 - 13:30': dataPoints = [45, 22, 50, 30, 65, 25, 40]; break;
+    case '14:00 - 17:00': dataPoints = [30, 55, 18, 48, 33, 60, 22]; break;
+    case '17:30 - 20:30': dataPoints = [15, 35, 40, 20, 50, 30, 55]; break;
     default: dataPoints = [10, 20, 30, 40, 50, 60, 70];
   }
   return new Promise(resolve => setTimeout(() => resolve({

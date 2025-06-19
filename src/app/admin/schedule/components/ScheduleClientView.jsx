@@ -63,10 +63,10 @@ export default function ScheduleClientView({ initialClasses, initialSchedules, c
     const [swapConfirmation, setSwapConfirmation] = useState({ isOpen: false, details: null });
 
     const generationColorMap = {
-        'Gen 2023': 'bg-sky-500',
-        'Gen 2024': 'bg-emerald-500',
-        'Gen 2025': 'bg-amber-500',
-        'Gen 2026': 'bg-indigo-500',
+        'Gen 30': 'bg-sky-500',
+        'Gen 31': 'bg-emerald-500',
+        'Gen 32': 'bg-amber-500',
+        'Gen 33': 'bg-indigo-500',
     };
 
     // --- Toast Handler ---

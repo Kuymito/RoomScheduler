@@ -32,16 +32,46 @@ export default function RoomClientView({ initialAllRoomsData }) {
     // --- Data Structures ---
     const buildings = {
         "Building A": [
-            { floor: 5, rooms: ["A1", "A2", "A3", "A4", "A5"] },
-            { floor: 4, rooms: ["B1", "B2"] },
-            { floor: 3, rooms: ["C1", "C2"] },
-            { floor: 2, rooms: ["D1", "D2"] },
-            { floor: 1, rooms: ["E1", "E2"] },
+            { floor: 5, rooms: ["A21", "A22", "A23", "A24", "A25"] },
+            { floor: 4, rooms: ["A16", "A17", "A18", "A19", "A20"] },
+            { floor: 3, rooms: ["A11", "A12", "A13", "A14", "A15"] },
+            { floor: 2, rooms: ["A6", "A7", "A8", "A9", "A10"] },
+            { floor: 1, rooms: ["A1", "A2", "A3", "A4", "A5"] },
         ],
         "Building B": [
-            { floor: 3, rooms: ["F1", "F2"] },
-            { floor: 2, rooms: ["G1", "G2"] },
-            { floor: 1, rooms: ["H1", "H2"] },
+            { floor: 5, rooms: ["B21", "B22", "B23", "B24", "B25"] },
+            { floor: 4, rooms: ["B16", "B17", "B18", "B19", "B20"] },
+            { floor: 3, rooms: ["B11", "B12", "B13", "B14", "B15"] },
+            { floor: 2, rooms: ["B6", "B7", "B8", "B9", "B10"] },
+            { floor: 1, rooms: ["B1", "B2", "B3", "B4", "B5"] },
+        ],
+        "Building C": [
+            { floor: 5, rooms: ["C21", "C22", "C23", "C24", "C25"] },
+            { floor: 4, rooms: ["C16", "C17", "C18", "C19", "C20"] },
+            { floor: 3, rooms: ["C11", "C12", "C13", "C14", "C15"] },
+            { floor: 2, rooms: ["C6", "C7", "C8", "C9", "C10"] },
+            { floor: 1, rooms: ["C1", "C2", "C3", "C4", "C5"] },
+        ],
+        "Building D": [
+            { floor: 5, rooms: ["D21", "D22", "D23", "D24", "D25"] },
+            { floor: 4, rooms: ["D16", "D17", "D18", "D19", "D20"] },
+            { floor: 3, rooms: ["D11", "D12", "D13", "D14", "D15"] },
+            { floor: 2, rooms: ["D6", "D7", "D8", "D9", "D10"] },
+            { floor: 1, rooms: ["D1", "D2", "D3", "D4", "D5"] },
+        ],
+        "Building E": [
+            { floor: 5, rooms: ["E21", "E22", "E23", "E24", "E25"] },
+            { floor: 4, rooms: ["E16", "E17", "E18", "E19", "E20"] },
+            { floor: 3, rooms: ["E11", "E12", "E13", "E14", "E15"] },
+            { floor: 2, rooms: ["E6", "E7", "E8", "E9", "E10"] },
+            { floor: 1, rooms: ["E1", "E2", "E3", "E4", "E5"] },
+        ],
+        "Building F": [
+            { floor: 5, rooms: ["F21", "F22", "F23", "F24", "F25"] },
+            { floor: 4, rooms: ["F16", "F17", "F18", "F19", "F20"] },
+            { floor: 3, rooms: ["F11", "F12", "F13", "F14", "F15"] },
+            { floor: 2, rooms: ["F6", "F7", "F8", "F9", "F10"] },
+            { floor: 1, rooms: ["F1", "F2", "F3", "F4", "F5"] },
         ],
     };
 
