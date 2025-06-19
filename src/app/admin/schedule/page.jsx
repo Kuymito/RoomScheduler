@@ -1,424 +1,199 @@
-'use client';
-
-import React, { useState, useMemo, useEffect } from 'react';
-import AdminLayout from '@/components/AdminLayout'; // Assuming you use this layout
-import ConfirmationModal from './components/ConfirmationModal';
-import RoomCardSkeleton from './components/RoomCardSkeleton';
+import { Suspense } from 'react';
+import AdminLayout from '@/components/AdminLayout';
+import ScheduleClientView from './components/ScheduleClientView';
 import ClassListSkeleton from './components/ClassListSkeleton';
-import { useRouter } from 'next/navigation'; 
+import ScheduleGridSkeleton from './components/ScheduleGridSkeleton';
 
-// --- Default Icon for items without an image ---
-const DefaultClassIcon = ({ className = "w-8 h-8" }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={`${className} text-gray-500 dark:text-gray-400`}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
-    </svg>
-);
+// --- Data Structures & Fetching (Moved to server-side) ---
 
 const degrees = ['Bachelor', 'Master', 'PhD'];
 const generations = ['Gen 2023', 'Gen 2024', 'Gen 2025', 'Gen 2026'];
-
-// NEW: Color mapping for generations
-const generationColorMap = {
-    'Gen 2023': 'bg-sky-500',
-    'Gen 2024': 'bg-emerald-500',
-    'Gen 2025': 'bg-amber-500',
-    'Gen 2026': 'bg-indigo-500',
-};
-
-const initialClasses = [
-    { id: 'class_101', name: 'Intro to Physics', code: 'PHY-101', degree: 'Bachelor', generation: 'Gen 2025' },
-    { id: 'class_102', name: 'Calculus I', code: 'MTH-110', degree: 'Bachelor', generation: 'Gen 2026' },
-    { id: 'class_103', name: 'Organic Chemistry', code: 'CHM-220', degree: 'Bachelor', generation: 'Gen 2024' },
-    { id: 'class_104', name: 'World History', code: 'HIS-100', degree: 'Master', generation: 'Gen 2023' },
-    { id: 'class_105', name: 'English Composition', code: 'ENG-101', degree: 'Master', generation: 'Gen 2025' },
-    { id: 'class_106', name: 'Linear Algebra', code: 'MTH-210', degree: 'Master', generation: 'Gen 2025' },
-    { id: 'class_107', name: 'Data Structures', code: 'CS-250', degree: 'PhD', generation: 'Gen 2024' },
-    { id: 'class_108', name: 'Microeconomics', code: 'ECN-200', degree: 'PhD', generation: 'Gen 2026' },
-    { id: 'class_109', name: 'Art History', code: 'ART-150', degree: 'PhD', generation: 'Gen 2023' },
-    { id: 'class_110', name: 'Computer Networks', code: 'CS-350', degree: 'PhD', generation: 'Gen 2023' },
-];
-
-const buildings = ['A', 'B', 'C', 'D', 'E'];
-const weekdays = ['Mon', 'Tue', 'Wed', 'Thur', 'Fri', 'Sat', 'Sun'];
+const buildings = ['A', 'B', 'C', 'D', 'E', 'F'];
+const weekdays = ['Mo', 'Tu', 'We', 'Thu', 'Fr', 'Sa', 'Su'];
 const timeSlots = ['7:00 - 10:00', '10:30 - 13:30', '14:00 - 17:00', '17:30 - 20:30'];
-const gridDimensions = { rows: 5, cols: 5 };
+const gridDimensions = { rows: 5, cols: 5 }; // Still keep it as a constant for now if other parts rely on it
 
-const initialRooms = [];
-let roomCounter = 1;
-for (const building of buildings) {
-    roomCounter = 1;
-    for (let floor = 1; floor <= gridDimensions.rows; floor++) {
-        for (let col = 1; col <= gridDimensions.cols; col++) {
-            initialRooms.push({ id: `${building}-${roomCounter}`, name: `${building}${roomCounter}`, building, floor, capacity: (floor + col) % 2 === 0 ? 30 : 45 });
-            roomCounter++;
-        }
-    }
-}
+const fetchSchedulePageData = async () => {
+    // In a real app, these would be database queries.
+    const initialClasses = [
+        { id: 'class_101', name: 'Intro to Physics', code: 'PHY-101', degree: 'Bachelor', generation: 'Gen 2025', shift: '7:00 - 10:00' },
+        { id: 'class_102', name: 'Calculus I', code: 'MTH-110', degree: 'Bachelor', generation: 'Gen 2026', shift: '10:30 - 13:30' },
+        { id: 'class_103', name: 'Organic Chemistry', code: 'CHM-220', degree: 'Bachelor', generation: 'Gen 2024', shift: '14:00 - 17:00' },
+        { id: 'class_104', name: 'World History', code: 'HIS-100', degree: 'Master', generation: 'Gen 2023', shift: '17:30 - 20:30' },
+        { id: 'class_105', name: 'English Composition', code: 'ENG-101', degree: 'Master', generation: 'Gen 2025', shift: '7:00 - 10:00' },
+        { id: 'class_106', name: 'Linear Algebra', code: 'MTH-210', degree: 'Master', generation: 'Gen 2025', shift: '10:30 - 13:30' },
+        { id: 'class_107', name: 'Data Structures', code: 'CS-250', degree: 'PhD', generation: 'Gen 2024', shift: '14:00 - 17:00' },
+        { id: 'class_108', name: 'Microeconomics', code: 'ECN-200', degree: 'PhD', generation: 'Gen 2026', shift: '17:30 - 20:30' },
+        { id: 'class_109', name: 'Art History', code: 'ART-150', degree: 'PhD', generation: 'Gen 2023', shift: '7:00 - 10:00' },
+        { id: 'class_110', name: 'Computer Networks', code: 'CS-350', degree: 'PhD', generation: 'Gen 2023', shift: '10:30 - 13:30' },
+        { id: 'class_111', name: 'Thermodynamics', code: 'PHY-201', degree: 'Bachelor', generation: 'Gen 2025', shift: '14:00 - 17:00' },
+        { id: 'class_112', name: 'Discrete Math', code: 'MTH-220', degree: 'Bachelor', generation: 'Gen 2026', shift: '17:30 - 20:30' },
+        { id: 'class_113', name: 'Biochemistry', code: 'CHM-330', degree: 'Bachelor', generation: 'Gen 2024', shift: '7:00 - 10:00' },
+        { id: 'class_114', name: 'European History', code: 'HIS-200', degree: 'Master', generation: 'Gen 2023', shift: '10:30 - 13:30' },
+        { id: 'class_115', name: 'Creative Writing', code: 'ENG-201', degree: 'Master', generation: 'Gen 2025', shift: '14:00 - 17:00' },
+        { id: 'class_116', name: 'Abstract Algebra', code: 'MTH-310', degree: 'Master', generation: 'Gen 2025', shift: '17:30 - 20:30' },
+        { id: 'class_117', name: 'Algorithms', code: 'CS-351', degree: 'PhD', generation: 'Gen 2024', shift: '7:00 - 10:00' },
+        { id: 'class_118', name: 'Macroeconomics', code: 'ECN-300', degree: 'PhD', generation: 'Gen 2026', shift: '10:30 - 13:30' },
+        { id: 'class_119', name: 'Modern Art', code: 'ART-250', degree: 'PhD', generation: 'Gen 2023', shift: '14:00 - 17:00' },
+        { id: 'class_120', name: 'Operating Systems', code: 'CS-450', degree: 'PhD', generation: 'Gen 2023', shift: '17:30 - 20:30' },
+    ];
 
-const createInitialSchedules = () => {
-    const schedules = {};
+    // Hardcoded initial rooms data matching the room page layout for buildings A to F
+    const initialRoomsData = {
+        A1: { id: "A1", name: "Room A1", building: "Building A", floor: 1, capacity: 30, equipment: ["Projector", "Whiteboard", "AC"], status: "unavailable" },
+        A2: { id: "A2", name: "Room A2", building: "Building A", floor: 1, capacity: 20, equipment: ["Whiteboard", "AC"], status: "unavailable" },
+        A3: { id: "A3", name: "Room A3", building: "Building A", floor: 1, capacity: 25, equipment: ["Projector", "AC"], status: "unavailable" },
+        A4: { id: "A4", name: "Room A4", building: "Building A", floor: 1, capacity: 18, equipment: ["Whiteboard"], status: "unavailable" },
+        A5: { id: "A5", name: "Room A5", building: "Building A", floor: 1, capacity: 22, equipment: ["Projector", "AC"], status: "unavailable" },
+        A6: { id: "A6", name: "Room A6", building: "Building A", floor: 1, capacity: 18, equipment: ["Whiteboard"], status: "unavailable" },
+        A7: { id: "A7", name: "Room A7", building: "Building A", floor: 1, capacity: 20, equipment: ["Projector", "AC"], status: "unavailable" },
+        A8: { id: "A8", name: "Room A8", building: "Building A", floor: 1, capacity: 16, equipment: ["Whiteboard"], status: "unavailable" },
+        A9: { id: "A9", name: "Room A9", building: "Building A", floor: 1, capacity: 18, equipment: ["Projector", "AC"], status: "unavailable" },
+        MeetingA: { id: "MeetingA", name: "Meeting Room A", building: "Building A", floor: 1, capacity: 100, equipment: ["Projector", "Whiteboard", "Conference System", "Video Conferencing"], status: "unavailable" },
+
+        A10: { id: "A10", name: "Room A10", building: "Building A", floor: 2, capacity: 20, equipment: ["Whiteboard"], status: "available" },
+        A11: { id: "A11", name: "Room A11", building: "Building A", floor: 2, capacity: 22, equipment: ["Projector", "AC"], status: "available" },
+        A12: { id: "A12", name: "Room A12", building: "Building A", floor: 2, capacity: 18, equipment: ["Whiteboard"], status: "available" },
+        A13: { id: "A13", name: "Room A13", building: "Building A", floor: 2, capacity: 20, equipment: ["Projector", "AC"], status: "available" },
+        A14: { id: "A14", name: "Room A14", building: "Building A", floor: 2, capacity: 16, equipment: ["Whiteboard"], status: "available" },
+        A15: { id: "A15", name: "Room A15", building: "Building A", floor: 2, capacity: 18, equipment: ["Projector", "AC"], status: "available" },
+        A16: { id: "A16", name: "Room A16", building: "Building A", floor: 2, capacity: 20, equipment: ["Whiteboard"], status: "available" },
+        A17: { id: "A17", name: "Room A17", building: "Building A", floor: 2, capacity: 22, equipment: ["Projector", "AC"], status: "available" },
+        A18: { id: "A18", name: "Room A18", building: "Building A", floor: 2, capacity: 18, equipment: ["Whiteboard"], status: "available" },
+
+        A19: { id: "A19", name: "Room A19", building: "Building A", floor: 3, capacity: 20, equipment: ["Projector", "AC"], status: "available" },
+        A20: { id: "A20", name: "Room A20", building: "Building A", floor: 3, capacity: 16, equipment: ["Whiteboard"], status: "available" },
+        A21: { id: "A21", name: "Room A21", building: "Building A", floor: 3, capacity: 18, equipment: ["Projector", "AC"], status: "available" },
+        A22: { id: "A22", name: "Room A22", building: "Building A", floor: 3, capacity: 20, equipment: ["Whiteboard"], status: "available" },
+        A23: { id: "A23", name: "Room A23", building: "Building A", floor: 3, capacity: 22, equipment: ["Projector", "AC"], status: "available" },
+        A24: { id: "A24", name: "Room A24", building: "Building A", floor: 3, capacity: 18, equipment: ["Whiteboard"], status: "available" },
+        A25: { id: "A25", name: "Room A25", building: "Building A", floor: 3, capacity: 20, equipment: ["Projector", "AC"], status: "available" },
+
+        B1: { id: "B1", name: "Room B1", building: "Building B", floor: 1, capacity: 15, equipment: ["Projector", "AC"], status: "available" },
+        B2: { id: "B2", name: "Room B2", building: "Building B", floor: 1, capacity: 20, equipment: ["Whiteboard"], status: "available" },
+        B3: { id: "B3", name: "Room B3", building: "Building B", floor: 1, capacity: 18, equipment: ["Projector", "AC"], status: "available" },
+        B4: { id: "B4", name: "Room B4", building: "Building B", floor: 1, capacity: 22, equipment: ["Whiteboard"], status: "available" },
+        B5: { id: "B5", name: "Room B5", building: "Building B", floor: 1, capacity: 20, equipment: ["Projector", "AC"], status: "available" },
+        B6: { id: "B6", name: "Room B6", building: "Building B", floor: 2, capacity: 18, equipment: ["Whiteboard"], status: "available" },
+        Meeting: { id: "Meeting", name: "Meeting Room", building: "Building B", floor: 2, capacity: 82, equipment: ["Projector", "Whiteboard", "AC", "Conference System"], status: "available" },
+
+        C1: { id: "C1", name: "Room C1", building: "Building C", floor: 1, capacity: 10, equipment: ["AC"], status: "unavailable" },
+        C2: { id: "C2", name: "Room C2", building: "Building C", floor: 1, capacity: 12, equipment: ["Whiteboard", "AC"], status: "unavailable" },
+        C3: { id: "C3", name: "Room C3", building: "Building C", floor: 1, capacity: 8, equipment: ["Projector"], status: "unavailable" },
+        C4: { id: "C4", name: "Room C4", building: "Building C", floor: 1, capacity: 10, equipment: ["Whiteboard"], status: "unavailable" },
+        C5: { id: "C5", name: "Room C5", building: "Building C", floor: 2, capacity: 5, equipment: ["AC"], status: "available" },
+        C6: { id: "C6", name: "Room C6", building: "Building C", floor: 2, capacity: 6, equipment: ["Projector", "Whiteboard"], status: "available" },
+        C7: { id: "C7", name: "Room C7", building: "Building C", floor: 2, capacity: 12, equipment: ["Projector", "Whiteboard"], status: "available" },
+        C8: { id: "C8", name: "Room C8", building: "Building C", floor: 2, capacity: 10, equipment: ["AC"], status: "available" },
+        C9: { id: "C9", name: "Room C9", building: "Building C", floor: 3, capacity: 8, equipment: ["Whiteboard"], status: "available" },
+        C10: { id: "C10", name: "Room C10", building: "Building C", floor: 3, capacity: 6, equipment: ["Projector"], status: "available" },
+        C11: { id: "C11", name: "Room C11", building: "Building C", floor: 3, capacity: 5, equipment: ["AC"], status: "available" },
+        C12: { id: "C12", name: "Room C12", building: "Building C", floor: 3, capacity: 4, equipment: ["Whiteboard"], status: "available" },
+
+        LibraryD1: { id: "LibraryD1", name: "Library Room D1", building: "Building D", floor: 1, capacity: 60, equipment: ["Bookshelves", "Computers", "Tables", "Study Desks"], status: "unavailable" },
+        LibraryD2: { id: "LibraryD2", name: "Library Room D2", building: "Building D", floor: 2, capacity: 60, equipment: ["Bookshelves", "Computers", "Tables", "Study Desks"], status: "available" },
+        LibraryD3: { id: "LibraryD3", name: "Library Room D3", building: "Building D", floor: 3, capacity: 60, equipment: ["Bookshelves", "Computers", "Tables", "Study Desks"], status: "available" },
+
+        E1: { id: "E1", name: "Room E1", building: "Building E", floor: 1, capacity: 5, equipment: ["AC"], status: "unavailable" },
+        E2: { id: "E2", name: "Room E2", building: "Building E", floor: 1, capacity: 6, equipment: ["Projector", "Whiteboard"], status: "unavailable" },
+        E3: { id: "E3", name: "Room E3", building: "Building E", floor: 1, capacity: 8, equipment: ["Whiteboard"], status: "available" },
+        E4: { id: "E4", name: "Room E4", building: "Building E", floor: 1, capacity: 10, equipment: ["AC", "Projector"], status: "unavailable" },
+        E5: { id: "E5", name: "Room E5", building: "Building E", floor: 1, capacity: 12, equipment: ["AC"], status: "unavailable" },
+        E6: { id: "E6", name: "Room E6", building: "Building E", floor: 1, capacity: 9, equipment: ["Whiteboard", "Projector"], status: "unavailable" },
+
+        E7: { id: "E7", name: "Room E7", building: "Building E", floor: 2, capacity: 7, equipment: ["Projector"], status: "available" },
+        E8: { id: "E8", name: "Room E8", building: "Building E", floor: 2, capacity: 11, equipment: ["AC"], status: "available" },
+        E9: { id: "E9", name: "Room E9", building: "Building E", floor: 2, capacity: 13, equipment: ["Whiteboard", "AC"], status: "available" },
+        E10: { id: "E10", name: "Room E10", building: "Building E", floor: 2, capacity: 15, equipment: ["Projector", "Whiteboard"], status: "available" },
+        E11: { id: "E11", name: "Room E11", building: "Building E", floor: 2, capacity: 6, equipment: ["AC"], status: "available" },
+
+        E12: { id: "E12", name: "Room E12", building: "Building E", floor: 3, capacity: 8, equipment: ["Whiteboard"], status: "available" },
+        E13: { id: "E13", name: "Room E13", building: "Building E", floor: 3, capacity: 5, equipment: ["Projector"], status: "available" },
+        E14: { id: "E14", name: "Room E14", building: "Building E", floor: 3, capacity: 9, equipment: ["AC"], status: "available" },
+        E15: { id: "E15", name: "Room E15", building: "Building E", floor: 3, capacity: 10, equipment: ["Whiteboard", "AC"], status: "available" },
+        E16: { id: "E16", name: "Room E16", building: "Building E", floor: 3, capacity: 7, equipment: ["Projector"], status: "available" },
+
+        E17: { id: "E17", name: "Room E17", building: "Building E", floor: 4, capacity: 14, equipment: ["AC", "Whiteboard"], status: "available" },
+        E18: { id: "E18", name: "Room E18", building: "Building E", floor: 4, capacity: 11, equipment: ["Projector"], status: "available" },
+        E19: { id: "E19", name: "Room E19", building: "Building E", floor: 4, capacity: 4, equipment: ["Whiteboard"], status: "available" },
+        E20: { id: "E20", name: "Room E20", building: "Building E", floor: 4, capacity: 6, equipment: ["AC"], status: "available" },
+        E21: { id: "E21", name: "Room E21", building: "Building E", floor: 4, capacity: 8, equipment: ["Projector", "Whiteboard"], status: "available" },
+
+        E22: { id: "E22", name: "Room E22", building: "Building E", floor: 5, capacity: 10, equipment: ["AC"], status: "available" },
+        E23: { id: "E23", name: "Room E23", building: "Building E", floor: 5, capacity: 12, equipment: ["Whiteboard"], status: "available" },
+        E24: { id: "E24", name: "Room E24", building: "Building E", floor: 5, capacity: 15, equipment: ["Projector", "AC"], status: "available" },
+        E25: { id: "E25", name: "Room E25", building: "Building E", floor: 5, capacity: 13, equipment: ["AC", "Whiteboard"], status: "available" },
+        E26: { id: "E26", name: "Room E26", building: "Building E", floor: 5, capacity: 9, equipment: ["Whiteboard"], status: "available" },
+
+        F1: { id: "F1", name: "Room F1", building: "Building F", floor: 1, capacity: 12, equipment: ["Projector", "Whiteboard"], status: "available" },
+        F2: { id: "F2", name: "Room F2", building: "Building F", floor: 1, capacity: 10, equipment: ["AC"], status: "available" },
+        F3: { id: "F3", name: "Room F3", building: "Building F", floor: 1, capacity: 8, equipment: ["Whiteboard"], status: "available" },
+        F4: { id: "F4", name: "Room F4", building: "Building F", floor: 1, capacity: 6, equipment: ["Projector"], status: "available" },
+
+        F5: { id: "F5", name: "Room F5", building: "Building F", floor: 2, capacity: 5, equipment: ["AC"], status: "available" },
+        F6: { id: "F6", name: "Room F6", building: "Building F", floor: 2, capacity: 4, equipment: ["Whiteboard"], status: "available" },
+        F7: { id: "F7", name: "Room F7", building: "Building F", floor: 2, capacity: 15, equipment: ["Projector", "AC", "Whiteboard"], status: "available" },
+        F8: { id: "F8", name: "Room F8", building: "Building F", floor: 2, capacity: 7, equipment: ["AC"], status: "available" },
+
+        F9: { id: "F9", name: "Room F9", building: "Building F", floor: 3, capacity: 9, equipment: ["Whiteboard", "AC"], status: "available" },
+        F10: { id: "F10", name: "Room F10", building: "Building F", floor: 3, capacity: 11, equipment: ["Projector"], status: "available" },
+        F11: { id: "F11", name: "Room F11", building: "Building F", floor: 3, capacity: 6, equipment: ["AC"], status: "available" },
+        F12: { id: "F12", name: "Room F12", building: "Building F", floor: 3, capacity: 8, equipment: ["Whiteboard"], status: "available" },
+
+        F13: { id: "F13", name: "Room F13", building: "Building F", floor: 4, capacity: 10, equipment: ["Projector", "AC"], status: "available" },
+        F14: { id: "F14", name: "Room F14", building: "Building F", floor: 4, capacity: 7, equipment: ["Whiteboard"], status: "available" },
+        F15: { id: "F15", name: "Room F15", building: "Building F", floor: 4, capacity: 14, equipment: ["AC"], status: "available" },
+        F16: { id: "F16", name: "Room F16", building: "Building F", floor: 4, capacity: 9, equipment: ["Projector", "Whiteboard"], status: "available" },
+
+        F17: { id: "F17", name: "Room F17", building: "Building F", floor: 5, capacity: 5, equipment: ["AC"], status: "available" },
+        F18: { id: "F18", name: "Room F18", building: "Building F", floor: 5, capacity: 6, equipment: ["Whiteboard"], status: "available" },
+        F19: { id: "F19", name: "Room F19", building: "Building F", floor: 5, capacity: 11, equipment: ["Projector"], status: "available" },
+        F20: { id: "F20", name: "Room F20", building: "Building F", floor: 5, capacity: 13, equipment: ["AC", "Whiteboard"], status: "available" },
+    };
+
+    const initialRoomsArray = Object.values(initialRoomsData);
+
+    const initialSchedules = {};
     weekdays.forEach(day => {
-        schedules[day] = {};
+        initialSchedules[day] = {};
         timeSlots.forEach(time => {
-            schedules[day][time] = {};
-            buildings.forEach(building => {
-                const buildingRooms = initialRooms.filter(r => r.building === building);
-                const floors = Array.from({ length: gridDimensions.rows }, (_, i) => gridDimensions.rows - i);
-                schedules[day][time][building] = floors.map(floorNum => buildingRooms.filter(r => r.floor === floorNum).map(room => ({ room, class: null })));
+            initialSchedules[day][time] = {};
+            buildings.forEach(buildingCode => {
+                const fullBuildingName = `Building ${buildingCode}`;
+                const roomsInBuilding = initialRoomsArray.filter(room => room.building === fullBuildingName);
+
+                const floorsInBuilding = [...new Set(roomsInBuilding.map(room => room.floor))].sort((a, b) => b - a);
+
+                initialSchedules[day][time][fullBuildingName] = floorsInBuilding.map(floorNum => {
+                    return roomsInBuilding.filter(room => room.floor === floorNum).map(room => ({ room, class: null }));
+                });
             });
         });
     });
-    return schedules;
+
+    await new Promise(resolve => setTimeout(resolve, 500));
+
+    return { initialClasses, initialRooms: initialRoomsArray, initialSchedules, constants: { degrees, generations, buildings: buildings.map(b => `Building ${b}`), weekdays, timeSlots, gridDimensions } };
 };
 
-const ScheduleGridSkeleton = () => (
-     <div className='flex-1 p-4 sm:p-6 bg-white dark:bg-gray-900 border dark:border-gray-700 shadow-xl rounded-xl flex flex-col overflow-y-auto'>
-         {/* Header Skeleton */}
-         <div className="flex flex-row items-center justify-between mb-4 border-b dark:border-gray-600 pb-3 animate-pulse">
-             <div className="h-7 w-48 bg-gray-300 dark:bg-gray-700 rounded"></div>
-             <div className="flex gap-2">{Array.from({ length: 7 }).map((_, i) => <div key={i} className="h-9 w-12 bg-gray-300 dark:bg-gray-700 rounded-full"></div>)}</div>
-         </div>
-         {/* Controls Skeleton */}
-         <div className="flex flex-col sm:flex-row justify-between items-center mb-4 gap-4 animate-pulse">
-             <div className="h-6 w-56 bg-gray-300 dark:bg-gray-700 rounded"></div>
-             <div className="flex items-center gap-4">
-                 <div className="h-10 w-48 bg-gray-300 dark:bg-gray-700 rounded-md"></div>
-                 <div className="h-10 w-32 bg-gray-300 dark:bg-gray-700 rounded-md"></div>
-             </div>
-         </div>
-         {/* Grid Skeleton */}
-         <div className="flex-grow flex flex-col gap-y-4">
-             {Array.from({ length: gridDimensions.rows }).map((_, floorIndex) => (
-                 <div key={floorIndex}>
-                     <div className="flex items-center gap-2 mb-2 animate-pulse"><div className="h-5 w-16 bg-gray-300 dark:bg-gray-700 rounded"></div><div className="h-px flex-1 bg-gray-300 dark:bg-gray-700"></div></div>
-                     <div className="grid gap-3" style={{ gridTemplateColumns: `repeat(${gridDimensions.cols}, 1fr)`}}>
-                         {Array.from({ length: gridDimensions.cols }).map((_, roomIndex) => <RoomCardSkeleton key={roomIndex} />)}
-                     </div>
-                 </div>
-             ))}
-         </div>
-     </div>
-);
-
-const ScheduledClassCard = ({ classData, onDragStart, onDragEnd }) => (
-    <div draggable onDragStart={onDragStart} onDragEnd={onDragEnd} className="w-full h-24 p-2 bg-blue-100 dark:bg-blue-800 border-2 border-blue-400 dark:border-blue-600 rounded-lg shadow-md flex flex-col justify-center items-center text-center cursor-grab active:cursor-grabbing transition-all duration-150">
-        <DefaultClassIcon className="w-6 h-6 mb-1 text-blue-600 dark:text-blue-200" />
-        <p className="text-xs font-semibold text-blue-800 dark:text-blue-100 break-words">{classData.name}</p>
-        <p className="text-xs text-blue-600 dark:text-blue-300 opacity-80">{classData.code}</p>
-    </div>
-);
-
-const RoomCard = ({ cellData, isDragOver, isWarning, dragHandlers }) => {
-    const router = useRouter();
-    const { room, class: classData } = cellData;
-    const isOccupied = !!classData;
-
-    const getBorderColor = () => {
-        if (isWarning) return 'border-red-500 dark:border-red-400 shadow-lg scale-105';
-        if (isDragOver) return 'border-emerald-400 dark:border-emerald-500 scale-105 shadow-lg';
-        return 'border-gray-300 dark:border-gray-700 shadow-sm';
-    };
-
-    // This function will be called when the header is clicked
-    const handleHeaderClick = () => {
-        router.push(`/admin/schedule/${room.id}`);
-    };
+export default async function AdminSchedulePage() {
+    const { initialClasses, initialRooms, initialSchedules, constants } = await fetchSchedulePageData();
 
     return (
-        <div className={`rounded-lg border-2 flex flex-col transition-all duration-150 overflow-hidden ${getBorderColor()}`}>
-            {/* --- MODIFIED HEADER DIV --- */}
-            <div
-                onClick={handleHeaderClick}
-                className={`px-2 py-1 flex justify-between items-center border-b-2 transition-colors cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 ${isWarning ? 'bg-red-100 dark:bg-red-800/50' : 'bg-gray-50 dark:bg-gray-800'}`}
-            >
-                <div className={`w-2 h-2 rounded-full ring-1 ring-white/50 ${isOccupied ? 'bg-red-500' : 'bg-green-500'}`} title={isOccupied ? 'Occupied' : 'Available'}></div>
-                {/* The <a> tag is now a <span> as it no longer needs link behavior */}
-                <span className="text-xs font-bold text-gray-700 dark:text-gray-300">{room.name}</span>
-            </div>
-            <div onDragOver={dragHandlers.onDragOver} onDragEnter={dragHandlers.onDragEnter} onDragLeave={dragHandlers.onDragLeave} onDrop={dragHandlers.onDrop} className={`flex-grow p-2 flex justify-center items-center text-center transition-colors min-h-[100px] ${isDragOver ? 'bg-emerald-100 dark:bg-emerald-800/50' : 'bg-white dark:bg-gray-900'}`}>
-                {isOccupied ? (<ScheduledClassCard classData={classData} onDragStart={dragHandlers.onDragStart} onDragEnd={dragHandlers.onDragEnd} />) : (<span className="text-xs text-gray-400 dark:text-gray-600 italic select-none pointer-events-none">Room {room.name}</span>)}
-            </div>
-        </div>
-    );
-};
-
-const SchedulePageContent = () => {
-    // --- State Management ---
-    const [schedules, setSchedules] = useState(null); // Initial state is null
-    const [isLoading, setIsLoading] = useState(true); // NEW loading state
-    const [selectedDay, setSelectedDay] = useState(weekdays[0]);
-    const [selectedTime, setSelectedTime] = useState(timeSlots[0]);
-    const [selectedBuilding, setSelectedBuilding] = useState(buildings[0]);
-    const [draggedItem, setDraggedItem] = useState(null);
-    const [dragOverCell, setDragOverCell] = useState(null);
-    const [warningCellId, setWarningCellId] = useState(null);
-    const [toastMessage, setToastMessage] = useState('');
-    const [selectedDegree, setSelectedDegree] = useState('All');
-    const [selectedGeneration, setSelectedGeneration] = useState('All');
-    const [searchTerm, setSearchTerm] = useState(''); // NEW: Search term state
-    const [swapConfirmation, setSwapConfirmation] = useState({ isOpen: false, details: null });
-
-    // --- Data Loading Simulation ---
-    useEffect(() => {
-        // Simulate fetching data from an API
-        setTimeout(() => {
-            setSchedules(createInitialSchedules());
-            setIsLoading(false);
-        }, 1500); // 1.5 second delay
-    }, []); // Empty dependency array means this runs once on mount
-
-    // --- Toast Handler ---
-    const showToast = (message) => {
-        setToastMessage(message);
-        setTimeout(() => setToastMessage(''), 3000);
-    };
-
-    // --- Derived State ---
-    const availableClasses = useMemo(() => {
-        if (isLoading) return []; // Return empty while loading
-
-        const assignedClassIds = new Set();
-        Object.values(schedules).forEach(daySchedule => {
-            Object.values(daySchedule).forEach(timeSchedule => {
-                Object.values(timeSchedule).forEach(buildingSchedule => {
-                    buildingSchedule.forEach(floor => {
-                        floor.forEach(cell => {
-                            if (cell.class) {
-                                assignedClassIds.add(cell.class.id);
-                            }
-                        });
-                    });
-                });
-            });
-        });
-
-        return initialClasses.filter(c => {
-            const isAssigned = assignedClassIds.has(c.id);
-            const degreeMatch = selectedDegree === 'All' || c.degree === selectedDegree;
-            const generationMatch = selectedGeneration === 'All' || c.generation === selectedGeneration;
-            const searchTermMatch = searchTerm === '' ||
-                c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                c.code.toLowerCase().includes(searchTerm.toLowerCase());
-
-            return !isAssigned && degreeMatch && generationMatch && searchTermMatch;
-        });
-    }, [schedules, isLoading, selectedDegree, selectedGeneration, searchTerm]);
-
-    const currentGrid = useMemo(() => {
-        if (isLoading) return []; // Return empty while loading
-        return schedules[selectedDay]?.[selectedTime]?.[selectedBuilding] ?? [];
-    }, [schedules, selectedDay, selectedTime, selectedBuilding, isLoading]);
-
-    // --- Drag Handlers ---
-    const handleDragStartFromList = (e, classData) => setDraggedItem({ item: classData, type: 'new' });
-    const handleDragStartFromGrid = (e, classData, f, r) => setDraggedItem({ item: classData, type: 'scheduled', origin: { day: selectedDay, time: selectedTime, building: selectedBuilding, floorIndex: f, roomIndex: r } });
-    const handleDragEnd = (e) => {
-        if (draggedItem?.type === 'scheduled' && e.dataTransfer.dropEffect === 'none') {
-            const { day, time, building, floorIndex, roomIndex } = draggedItem.origin;
-            setSchedules(p => { const n = JSON.parse(JSON.stringify(p)); n[day][time][building][floorIndex][roomIndex].class = null; return n; });
-        }
-        setDraggedItem(null); setDragOverCell(null); setWarningCellId(null);
-    };
-    const handleGridCellDragOver = (e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; };
-    const handleGridCellDragEnter = (e, f, r) => {
-        e.preventDefault(); setDragOverCell({ floorIndex: f, roomIndex: r });
-        if (draggedItem?.type === 'new' && currentGrid[f][r].class) setWarningCellId(currentGrid[f][r].room.id);
-    };
-    const handleGridCellDragLeave = (e) => { if (!e.currentTarget.contains(e.relatedTarget)) { setDragOverCell(null); setWarningCellId(null); } };
-    const handleGridCellDrop = (e, f, r) => {
-        e.preventDefault();
-        if (!draggedItem) return;
-
-        const targetCell = schedules[selectedDay][selectedTime][selectedBuilding][f][r];
-
-        if (draggedItem.type === 'new') {
-            if (targetCell.class) {
-                showToast("This room is already occupied.");
-            } else {
-                setSchedules(p => {
-                    const n = JSON.parse(JSON.stringify(p));
-                    n[selectedDay][selectedTime][selectedBuilding][f][r].class = draggedItem.item;
-                    return n;
-                });
-            }
-        } else { // 'scheduled'
-            const { day: oD, time: oT, building: oB, floorIndex: oF, roomIndex: oR } = draggedItem.origin;
-            const originCell = schedules[oD][oT][oB][oF][oR];
-
-            if (oD === selectedDay && oT === selectedTime && oB === selectedBuilding && oF === f && oR === r) {
-                return;
-            }
-
-            // --- MODIFIED: Trigger confirmation for swap ---
-            if (targetCell.class) {
-                setSwapConfirmation({
-                    isOpen: true,
-                    details: {
-                        from: {
-                            classData: originCell.class,
-                            day: oD, time: oT, building: oB, floorIndex: oF, roomIndex: oR,
-                            roomName: originCell.room.name
-                        },
-                        to: {
-                            classData: targetCell.class,
-                            day: selectedDay, time: selectedTime, building: selectedBuilding, floorIndex: f, roomIndex: r,
-                            roomName: targetCell.room.name
-                        },
-                    }
-                });
-            } else {
-                // If the target cell is empty, just move the class
-                setSchedules(p => {
-                    const n = JSON.parse(JSON.stringify(p));
-                    n[selectedDay][selectedTime][selectedBuilding][f][r].class = originCell.class;
-                    n[oD][oT][oB][oF][oR].class = null;
-                    return n;
-                });
-            }
-        }
-        setDragOverCell(null);
-        setWarningCellId(null);
-    };
-
-    // --- NEW: Swap Confirmation Handlers ---
-    const handleConfirmSwap = () => {
-        const { from, to } = swapConfirmation.details;
-        setSchedules(p => {
-            const n = JSON.parse(JSON.stringify(p));
-            const originCell = n[from.day][from.time][from.building][from.floorIndex][from.roomIndex];
-            const targetCell = n[to.day][to.time][to.building][to.floorIndex][to.roomIndex];
-            [originCell.class, targetCell.class] = [targetCell.class, originCell.class]; // The actual swap
-            return n;
-        });
-        setSwapConfirmation({ isOpen: false, details: null }); // Close the modal
-    };
-
-    const handleCancelSwap = () => {
-        setSwapConfirmation({ isOpen: false, details: null }); // Just close the modal
-    };
-
-    if (isLoading) {
-        return (
-            <div className='p-6 flex flex-col lg:flex-row gap-6 h-[calc(100vh-100px)]'>
-                <ClassListSkeleton />
-                <ScheduleGridSkeleton />
-            </div>
-        );
-    }
-
-    return (
-        <>
-            <ConfirmationModal
-                isOpen={swapConfirmation.isOpen}
-                onCancel={handleCancelSwap}
-                onConfirm={handleConfirmSwap}
-                swapDetails={swapConfirmation.details}
-            />
-            {toastMessage && (<div className="fixed top-20 right-6 bg-red-500 text-white py-2 px-4 rounded-lg shadow-lg z-50 animate-pulse"><p className="font-semibold">{toastMessage}</p></div>)}
-            <div className='p-6 dark:text-white flex flex-col lg:flex-row gap-6 h-[calc(100vh-100px)]'>
-                {/* Left Panel */}
-                <div className='w-full lg:w-[260px] xl:w-[300px] flex-shrink-0 p-4 bg-white dark:bg-gray-900 border dark:border-gray-700 shadow-lg rounded-xl flex flex-col'>
-                    <div className="flex items-center gap-2 mb-2">
-                        <h3 className="text-lg font-semibold text-num-dark-text dark:text-gray-100 border-bpb-2">Classes</h3>
-                        <hr className="flex-1 border-t border-slate-300 dark:border-slate-700" />
-                    </div>
-                    {/* NEW: Search Input */}
-                    <div className="mb-2">
-                        <input
-                            type="text"
-                            placeholder="Search"
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-full p-2 text-sm border border-gray-300 rounded-md dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200 focus:ring-sky-500 focus:border-sky-500"
-                        />
-                    </div>
-                    <div className="flex items-center flex-row gap-2 mb-2 ">
-                        <div className="w-1/2">
-                            <select id="degree-select" value={selectedDegree} onChange={(e) => setSelectedDegree(e.target.value)} className="w-full mt-1 p-2 text-sm border border-gray-300 rounded-md dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200 focus:ring-sky-500 focus:border-sky-500">
-                                <option value="All">Degrees</option>
-                                {degrees.map(d => <option key={d} value={d}>{d}</option>)}
-                            </select>
-                        </div>
-                        <div className="w-1/2">
-                            <select id="generation-select" value={selectedGeneration} onChange={(e) => setSelectedGeneration(e.target.value)} className="w-full mt-1 p-2 text-sm border border-gray-300 rounded-md dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200 focus:ring-sky-500 focus:border-sky-500">
-                                <option value="All">Generations</option>
-                                {generations.map(g => <option key={g} value={g}>{g}</option>)}
-                            </select>
-                        </div>
-                    </div>
-                    <div className="space-y-3 flex-grow overflow-y-auto pr-2">
-                        {availableClasses.map((classData) => (
-                            <div key={classData.id} draggable onDragStart={(e) => handleDragStartFromList(e, classData)} onDragEnd={handleDragEnd} className="p-2 bg-gray-50 dark:bg-gray-800 dark:hover:bg-gray-700 border dark:border-gray-700 rounded-lg shadow-sm hover:shadow-md cursor-grab active:cursor-grabbing transition-all flex group">
-                                <div className={`w-1.5 h-auto rounded-lg ${generationColorMap[classData.generation] || 'bg-slate-400'} mr-3`}></div>
-                                <div>
-                                    <p className="text-sm font-medium text-gray-800 dark:text-gray-200">{classData.name}</p><p className="text-xs text-gray-500 dark:text-gray-400">{classData.code}</p>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
+        <AdminLayout activeItem="schedule" pageTitle="Schedule Management">
+            <Suspense fallback={
+                <div className='p-6 flex flex-col lg:flex-row gap-6 h-[calc(100vh-100px)]'>
+                    <ClassListSkeleton />
+                    <ScheduleGridSkeleton />
                 </div>
-
-                {/* Right Panel */}
-                <div className='flex-1 p-4 sm:p-6 bg-white dark:bg-gray-900 border dark:border-gray-700 shadow-xl rounded-xl flex flex-col overflow-y-auto'>
-                    <div className="flex flex-row items-center justify-between mb-4 border-b dark:border-gray-600 pb-3">
-                        <div className="flex rounded-lg border border-gray-300 dark:border-gray-600 overflow-hidden">
-                            {weekdays.map(day => <button key={day} onClick={() => setSelectedDay(day)} className={`px-3.5 py-1.5 text-sm font-medium transition-colors ${selectedDay === day ? 'bg-sky-600 text-white shadow' : 'border-r dark:border-r-gray-500 last:border-r-0'}`}>{day}</button>)}
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <label htmlFor="time-select" className="text-sm font-medium dark:text-gray-300">Time:</label>
-                            <select id="time-select" value={selectedTime} onChange={(e) => setSelectedTime(e.target.value)} className="p-2 text-sm border border-gray-300 rounded-md dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200 focus:ring-sky-500 focus:border-sky-500">
-                            {timeSlots.map(t => <option key={t} value={t}>{t}</option>)}
-                            </select>
-                        </div>
-                    </div>
-
-                    <div className="flex flex-col sm:flex-row justify-between items-center gap-2">
-                        <div className="flex items-center gap-2">
-                            <div className="flex items-center">
-                                <label htmlFor="building-select" className="text-sm font-medium text-slate-600 dark:text-slate-400">Building:</label>
-                                <select id="building-select" value={selectedBuilding} onChange={(e) => setSelectedBuilding(e.target.value)} className="p-2 text-sm rounded-md dark:bg-gray-800 dark:text-gray-200">{buildings.map(b => <option key={b} value={b}>{b}</option>)}
-                                </select>
-                            </div>
-                        </div>
-                        <hr className="flex-1 border-t border-slate-300 dark:border-slate-700" />
-                    </div>
-
-                    {/* Grid */}
-                    <div className="flex-grow flex flex-col gap-y-4">
-                        {currentGrid.map((floor, floorIndex) => (
-                            <div key={floorIndex}>
-                                <div className="flex items-center gap-2 mb-2"><h4 className="text-xs sm:text-sm font-medium text-slate-600 dark:text-slate-400 whitespace-nowrap">Floor {floor[0]?.room.floor}</h4><hr className="flex-1 border-t border-slate-300 dark:border-slate-700" /></div>
-                                <div className="grid gap-3" style={{ gridTemplateColumns: `repeat(${gridDimensions.cols}, 1fr)`}}>
-                                    {floor.map((cellData, roomIndex) => (
-                                        <RoomCard
-                                            key={cellData.room.id}
-                                            cellData={cellData}
-                                            isDragOver={dragOverCell?.floorIndex === floorIndex && dragOverCell?.roomIndex === roomIndex}
-                                            isWarning={warningCellId === cellData.room.id}
-                                            dragHandlers={{
-                                                onDragOver: handleGridCellDragOver,
-                                                onDragEnter: (e) => handleGridCellDragEnter(e, floorIndex, roomIndex),
-                                                onDragLeave: handleGridCellDragLeave,
-                                                onDrop: (e) => handleGridCellDrop(e, floorIndex, roomIndex),
-                                                onDragStart: (e) => handleDragStartFromGrid(e, cellData.class, floorIndex, roomIndex),
-                                                onDragEnd: handleDragEnd,
-                                            }}
-                                        />
-                                    ))}
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            </div>
-        </>
+            }>
+                <ScheduleClientView
+                    initialClasses={initialClasses}
+                    initialRooms={initialRooms}
+                    initialSchedules={initialSchedules}
+                    constants={constants}
+                />
+            </Suspense>
+        </AdminLayout>
     );
-};
-
-export default function AdminSchedulePage() {
-  return (
-    <AdminLayout activeItem="schedule" pageTitle="Schedule Management">
-      <SchedulePageContent />
-    </AdminLayout>
-  );
 }

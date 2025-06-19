@@ -1,302 +1,146 @@
-// src/app/admin/room/page.jsx
-'use client';
-
-import { useState, useEffect, useRef } from 'react';
+import { Suspense } from 'react';
 import AdminLayout from '@/components/AdminLayout';
-import SuccessAlert from './components/UpdateSuccessComponent';
 import RoomPageSkeleton from './components/RoomPageSkeleton';
+import RoomClientView from './components/RoomClientView'; // We will create this next
 
 const fetchRoomData = async () => {
     const initialRoomsData = {
-        A1: { id: "A1", name: "Room A1", building: "Building A", floor: 5, capacity: 30, equipment: ["Projector", "Whiteboard", "AC"] },
-        A2: { id: "A2", name: "Room A2", building: "Building A", floor: 5, capacity: 20, equipment: ["Whiteboard", "AC"] },
-        A3: { id: "A3", name: "Room A3", building: "Building A", floor: 5, capacity: 25, equipment: ["Projector", "AC"] },
-        A4: { id: "A4", name: "Room A4", building: "Building A", floor: 5, capacity: 18, equipment: ["Whiteboard"] },
-        A5: { id: "A5", name: "Room A5", building: "Building A", floor: 5, capacity: 22, equipment: ["Projector", "AC"] },
-        B1: { id: "B1", name: "Room B1", building: "Building A", floor: 4, capacity: 15, equipment: ["Projector", "AC"] },
-        B2: { id: "B2", name: "Room B2", building: "Building A", floor: 4, capacity: 20, equipment: ["Whiteboard"] },
-        C1: { id: "C1", name: "Room C1", building: "Building A", floor: 3, capacity: 10, equipment: ["AC"] },
-        C2: { id: "C2", name: "Room C2", building: "Building A", floor: 3, capacity: 12, equipment: ["Whiteboard", "AC"] },
-        D1: { id: "D1", name: "Room D1", building: "Building A", floor: 2, capacity: 8, equipment: ["Projector"] },
-        D2: { id: "D2", name: "Room D2", building: "Building A", floor: 2, capacity: 10, equipment: ["Whiteboard"] },
-        E1: { id: "E1", name: "Room E1", building: "Building A", floor: 1, capacity: 5, equipment: ["AC"] },
-        E2: { id: "E2", name: "Room E2", building: "Building A", floor: 1, capacity: 6, equipment: ["Projector", "Whiteboard"] },
-        F1: { id: "F1", name: "Room F1", building: "Building B", floor: 3, capacity: 12, equipment: ["Projector", "Whiteboard"] },
-        F2: { id: "F2", name: "Room F2", building: "Building B", floor: 3, capacity: 10, equipment: ["AC"] },
-        G1: { id: "G1", name: "Room G1", building: "Building B", floor: 2, capacity: 8, equipment: ["Whiteboard"] },
-        G2: { id: "G2", name: "Room G2", building: "Building B", floor: 2, capacity: 6, equipment: ["Projector"] },
-        H1: { id: "H1", name: "Room H1", building: "Building B", floor: 1, capacity: 5, equipment: ["AC"] },
-        H2: { id: "H2", name: "Room H2", building: "Building B", floor: 1, capacity: 4, equipment: ["Whiteboard"] },
+        // Building A: Total 26 rooms, 10 rooms on Floor 1 (unavailable, includes MeetingA), 9 rooms on Floor 2 (available), 7 rooms on Floor 3 (available)
+        A1: { id: "A1", name: "A1", building: "Building A", floor: 1, capacity: 30, equipment: ["Projector", "Whiteboard", "AC"], status: "unavailable" },
+        A2: { id: "A2", name: "A2", building: "Building A", floor: 1, capacity: 20, equipment: ["Whiteboard", "AC"], status: "unavailable" },
+        A3: { id: "A3", name: "A3", building: "Building A", floor: 1, capacity: 25, equipment: ["Projector", "AC"], status: "unavailable" },
+        A4: { id: "A4", name: "A4", building: "Building A", floor: 1, capacity: 18, equipment: ["Whiteboard"], status: "unavailable" },
+        A5: { id: "A5", name: "A5", building: "Building A", floor: 1, capacity: 22, equipment: ["Projector", "AC"], status: "unavailable" },
+        A6: { id: "A6", name: "A6", building: "Building A", floor: 1, capacity: 18, equipment: ["Whiteboard"], status: "unavailable" },
+        A7: { id: "A7", name: "A7", building: "Building A", floor: 1, capacity: 20, equipment: ["Projector", "AC"], status: "unavailable" },
+        A8: { id: "A8", name: "A8", building: "Building A", floor: 1, capacity: 16, equipment: ["Whiteboard"], status: "unavailable" },
+        A9: { id: "A9", name: "A9", building: "Building A", floor: 1, capacity: 18, equipment: ["Projector", "AC"], status: "unavailable" },
+        MeetingA: { id: "MeetingA", name: "Meeting A", building: "Building A", floor: 1, capacity: 100, equipment: ["Projector", "Whiteboard", "Conference System", "Video Conferencing"], status: "unavailable" }, // 10th on Floor 1
+
+        A10: { id: "A10", name: "A10", building: "Building A", floor: 2, capacity: 20, equipment: ["Whiteboard"], status: "available" },
+        A11: { id: "A11", name: "A11", building: "Building A", floor: 2, capacity: 22, equipment: ["Projector", "AC"], status: "available" },
+        A12: { id: "A12", name: "A12", building: "Building A", floor: 2, capacity: 18, equipment: ["Whiteboard"], status: "available" },
+        A13: { id: "A13", name: "A13", building: "Building A", floor: 2, capacity: 20, equipment: ["Projector", "AC"], status: "available" },
+        A14: { id: "A14", name: "A14", building: "Building A", floor: 2, capacity: 16, equipment: ["Whiteboard"], status: "available" },
+        A15: { id: "A15", name: "A15", building: "Building A", floor: 2, capacity: 18, equipment: ["Projector", "AC"], status: "available" },
+        A16: { id: "A16", name: "A16", building: "Building A", floor: 2, capacity: 20, equipment: ["Whiteboard"], status: "available" },
+        A17: { id: "A17", name: "A17", building: "Building A", floor: 2, capacity: 22, equipment: ["Projector", "AC"], status: "available" },
+        A18: { id: "A18", name: "A18", building: "Building A", floor: 2, capacity: 18, equipment: ["Whiteboard"], status: "available" }, // Total 9 rooms on Floor 2
+
+        A19: { id: "A19", name: "A19", building: "Building A", floor: 3, capacity: 20, equipment: ["Projector", "AC"], status: "available" },
+        A20: { id: "A20", name: "A20", building: "Building A", floor: 3, capacity: 16, equipment: ["Whiteboard"], status: "available" },
+        A21: { id: "A21", name: "A21", building: "Building A", floor: 3, capacity: 18, equipment: ["Projector", "AC"], status: "available" },
+        A22: { id: "A22", name: "A22", building: "Building A", floor: 3, capacity: 20, equipment: ["Whiteboard"], status: "available" },
+        A23: { id: "A23", name: "A23", building: "Building A", floor: 3, capacity: 22, equipment: ["Projector", "AC"], status: "available" },
+        A24: { id: "A24", name: "A24", building: "Building A", floor: 3, capacity: 18, equipment: ["Whiteboard"], status: "available" },
+        A25: { id: "A25", name: "A25", building: "Building A", floor: 3, capacity: 20, equipment: ["Projecter", "AC"], status: "available" },
+        A26: { id: "A26", name: "A26", building: "Building A", floor: 3, capacity: 16, equipment: ["Whiteboard"], status: "available" }, // Total 9 rooms on Floor 3
+
+        // Building B: 2 floors, 5 rooms on Floor 1, (B1-B5), 2 rooms on Floor 2 (B6, Meeting)
+        B1: { id: "B1", name: "B1", building: "Building B", floor: 1, capacity: 15, equipment: ["Projector", "AC"], status: "available" },
+        B2: { id: "B2", name: "B2", building: "Building B", floor: 1, capacity: 20, equipment: ["Whiteboard"], status: "available" },
+        B3: { id: "B3", name: "B3", building: "Building B", floor: 1, capacity: 18, equipment: ["Projector", "AC"], status: "available" },
+        B4: { id: "B4", name: "B4", building: "Building B", floor: 1, capacity: 22, equipment: ["Whiteboard"], status: "available" },
+        B5: { id: "B5", name: "B5", building: "Building B", floor: 1, capacity: 20, equipment: ["Projector", "AC"], status: "available" },
+        B6: { id: "B6", name: "B6", building: "Building B", floor: 2, capacity: 18, equipment: ["Whiteboard"], status: "available" },
+        Meeting: { id: "Meeting", name: "Meeting Room", building: "Building B", floor: 2, capacity: 82, equipment: ["Projector", "Whiteboard", "AC", "Conference System"], status: "available" },
+        
+        // Building C: 3 floors, 4 rooms per floor (total 12 rooms)
+        C1: { id: "C1", name: "C1", building: "Building C", floor: 1, capacity: 10, equipment: ["AC"], status: "unavailable" },
+        C2: { id: "C2", name: "C2", building: "Building C", floor: 1, capacity: 12, equipment: ["Whiteboard", "AC"], status: "unavailable" },
+        C3: { id: "C3", name: "C3", building: "Building C", floor: 1, capacity: 8, equipment: ["Projector"], status: "unavailable" },
+        C4: { id: "C4", name: "C4", building: "Building C", floor: 1, capacity: 10, equipment: ["Whiteboard"], status: "unavailable" },
+        C5: { id: "C5", name: "C5", building: "Building C", floor: 2, capacity: 5, equipment: ["AC"], status: "available" },
+        C6: { id: "C6", name: "C6", building: "Building C", floor: 2, capacity: 6, equipment: ["Projector", "Whiteboard"], status: "available" },
+        C7: { id: "C7", name: "C7", building: "Building C", floor: 2, capacity: 12, equipment: ["Projector", "Whiteboard"], status: "available" },
+        C8: { id: "C8", name: "C8", building: "Building C", floor: 2, capacity: 10, equipment: ["AC"], status: "available" },
+        C9: { id: "C9", name: "C9", building: "Building C", floor: 3, capacity: 8, equipment: ["Whiteboard"], status: "available" },
+        C10: { id: "C10", name: "C10", building: "Building C", floor: 3, capacity: 6, equipment: ["Projector"], status: "available" },
+        C11: { id: "C11", name: "C11", building: "Building C", floor: 3, capacity: 5, equipment: ["AC"], status: "available" },
+        C12: { id: "C12", name: "C12", building: "Building C", floor: 3, capacity: 4, equipment: ["Whiteboard"], status: "available" },
+        
+        // Building D: 3 floors, 1 library per floor. Floor 1 library unavailable.
+        LibraryD1: { id: "LibraryD1", name: "Library D1", building: "Building D", floor: 1, capacity: 60, equipment: ["Bookshelves", "Computers", "Tables", "Study Desks"], status: "unavailable" },
+        LibraryD2: { id: "LibraryD2", name: "Library D2", building: "Building D", floor: 2, capacity: 60, equipment: ["Bookshelves", "Computers", "Tables", "Study Desks"], status: "available" },
+        LibraryD3: { id: "LibraryD3", name: "Library D3", building: "Building D", floor: 3, capacity: 60, equipment: ["Bookshelves", "Computers", "Tables", "Study Desks"], status: "available" },
+
+        // Building E: 5 floors. Floor 1 has 6 rooms (E1-E6, E3 available, others unavailable). Floors 2-5 have 5 rooms each (available).
+        E1: { id: "E1", name: "E1", building: "Building E", floor: 1, capacity: 5, equipment: ["AC"], status: "unavailable" },
+        E2: { id: "E2", name: "E2", building: "Building E", floor: 1, capacity: 6, equipment: ["Projector", "Whiteboard"], status: "unavailable" },
+        E3: { id: "E3", name: "E3", building: "Building E", floor: 1, capacity: 8, equipment: ["Whiteboard"], status: "available" },
+        E4: { id: "E4", name: "E4", building: "Building E", floor: 1, capacity: 10, equipment: ["AC", "Projector"], status: "unavailable" },
+        E5: { id: "E5", name: "E5", building: "Building E", floor: 1, capacity: 12, equipment: ["AC"], status: "unavailable" },
+        E6: { id: "E6", name: "E6", building: "Building E", floor: 1, capacity: 9, equipment: ["Whiteboard", "Projector"], status: "unavailable" },
+
+        E7: { id: "E7", name: "E7", building: "Building E", floor: 2, capacity: 7, equipment: ["Projector"], status: "available" },
+        E8: { id: "E8", name: "E8", building: "Building E", floor: 2, capacity: 11, equipment: ["AC"], status: "available" },
+        E9: { id: "E9", name: "E9", building: "Building E", floor: 2, capacity: 13, equipment: ["Whiteboard", "AC"], status: "available" },
+        E10: { id: "E10", name: "E10", building: "Building E", floor: 2, capacity: 15, equipment: ["Projector", "Whiteboard"], status: "available" },
+        E11: { id: "E11", name: "E11", building: "Building E", floor: 2, capacity: 6, equipment: ["AC"], status: "available" },
+
+        E12: { id: "E12", name: "E12", building: "Building E", floor: 3, capacity: 8, equipment: ["Whiteboard"], status: "available" },
+        E13: { id: "E13", name: "E13", building: "Building E", floor: 3, capacity: 5, equipment: ["Projector"], status: "available" },
+        E14: { id: "E14", name: "E14", building: "Building E", floor: 3, capacity: 9, equipment: ["AC"], status: "available" },
+        E15: { id: "E15", name: "E15", building: "Building E", floor: 3, capacity: 10, equipment: ["Whiteboard", "AC"], status: "available" },
+        E16: { id: "E16", name: "E16", building: "Building E", floor: 3, capacity: 7, equipment: ["Projector"], status: "available" },
+
+        E17: { id: "E17", name: "E17", building: "Building E", floor: 4, capacity: 14, equipment: ["AC", "Whiteboard"], status: "available" },
+        E18: { id: "E18", name: "E18", building: "Building E", floor: 4, capacity: 11, equipment: ["Projector"], status: "available" },
+        E19: { id: "E19", name: "E19", building: "Building E", floor: 4, capacity: 4, equipment: ["Whiteboard"], status: "available" },
+        E20: { id: "E20", name: "E20", building: "Building E", floor: 4, capacity: 6, equipment: ["AC"], status: "available" },
+        E21: { id: "E21", name: "E21", building: "Building E", floor: 4, capacity: 8, equipment: ["Projector", "Whiteboard"], status: "available" },
+
+        E22: { id: "E22", name: "E22", building: "Building E", floor: 5, capacity: 10, equipment: ["AC"], status: "available" },
+        E23: { id: "E23", name: "E23", building: "Building E", floor: 5, capacity: 12, equipment: ["Whiteboard"], status: "available" },
+        E24: { id: "E24", name: "E24", building: "Building E", floor: 5, capacity: 15, equipment: ["Projector", "AC"], status: "available" },
+        E25: { id: "E25", name: "E25", building: "Building E", floor: 5, capacity: 13, equipment: ["AC", "Whiteboard"], status: "available" },
+        E26: { id: "E26", name: "E26", building: "Building E", floor: 5, capacity: 9, equipment: ["Whiteboard"], status: "available" }, // Total 5 rooms on Floor 5
+        
+        // Building F: 5 floors, 4 rooms per floor (total 20 rooms)
+        F1: { id: "F1", name: "F1", building: "Building F", floor: 1, capacity: 12, equipment: ["Projector", "Whiteboard"], status: "available" },
+        F2: { id: "F2", name: "F2", building: "Building F", floor: 1, capacity: 10, equipment: ["AC"], status: "available" },
+        F3: { id: "F3", name: "F3", building: "Building F", floor: 1, capacity: 8, equipment: ["Whiteboard"], status: "available" },
+        F4: { id: "F4", name: "F4", building: "Building F", floor: 1, capacity: 6, equipment: ["Projector"], status: "available" },
+
+        F5: { id: "F5", name: "F5", building: "Building F", floor: 2, capacity: 5, equipment: ["AC"], status: "available" },
+        F6: { id: "F6", name: "F6", building: "Building F", floor: 2, capacity: 4, equipment: ["Whiteboard"], status: "available" },
+        F7: { id: "F7", name: "F7", building: "Building F", floor: 2, capacity: 15, equipment: ["Projector", "AC", "Whiteboard"], status: "available" },
+        F8: { id: "F8", name: "F8", building: "Building F", floor: 2, capacity: 7, equipment: ["AC"], status: "available" },
+
+        F9: { id: "F9", name: "F9", building: "Building F", floor: 3, capacity: 9, equipment: ["Whiteboard", "AC"], status: "available" },
+        F10: { id: "F10", name: "F10", building: "Building F", floor: 3, capacity: 11, equipment: ["Projector"], status: "available" },
+        F11: { id: "F11", name: "F11", building: "Building F", floor: 3, capacity: 6, equipment: ["AC"], status: "available" },
+        F12: { id: "F12", name: "F12", building: "Building F", floor: 3, capacity: 8, equipment: ["Whiteboard"], status: "available" },
+
+        F13: { id: "F13", name: "F13", building: "Building F", floor: 4, capacity: 10, equipment: ["Projector", "AC"], status: "available" },
+        F14: { id: "F14", name: "F14", building: "Building F", floor: 4, capacity: 7, equipment: ["Whiteboard"], status: "available" },
+        F15: { id: "F15", name: "F15", building: "Building F", floor: 4, capacity: 14, equipment: ["AC"], status: "available" },
+        F16: { id: "F16", name: "F16", building: "Building F", floor: 4, capacity: 9, equipment: ["Projector", "Whiteboard"], status: "available" },
+
+        F17: { id: "F17", name: "F17", building: "Building F", floor: 5, capacity: 5, equipment: ["AC"], status: "available" },
+        F18: { id: "F18", name: "F18", building: "Building F", floor: 5, capacity: 6, equipment: ["Whiteboard"], status: "available" },
+        F19: { id: "F19", name: "F19", building: "Building F", floor: 5, capacity: 11, equipment: ["Projector"], status: "available" },
+        F20: { id: "F20", name: "F20", building: "Building F", floor: 5, capacity: 13, equipment: ["AC", "Whiteboard"], status: "available" },
     };
 
-    return new Promise(resolve => setTimeout(() => resolve(initialRoomsData), 2000));
+    // Simulate network delay for fetching data
+    await new Promise(resolve => setTimeout(resolve, 500));
+    return initialRoomsData;
 };
 
-const RoomViewContent = () => {
-    const textLabelRoom = "font-medium text-base leading-7 text-slate-700 dark:text-slate-300 tracking-[-0.01em]";
-    const textValueRoomDisplay = "font-medium text-base leading-7 text-slate-900 dark:text-slate-100 tracking-[-0.01em]";
-    const textLabelDefault = "font-medium text-sm leading-6 text-slate-700 dark:text-slate-300 tracking-[-0.01em]";
-    const textValueDefaultDisplay = "font-medium text-sm leading-6 text-slate-900 dark:text-slate-100 tracking-[-0.01em]";
-    const inputContainerSizeDefault = "w-full sm:w-[132px] h-[40px]";
-    const inputStyle = "py-[9px] px-3 w-full h-full bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-[6px] font-normal text-sm leading-[22px] text-slate-900 dark:text-slate-50 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500";
-    const equipmentInputContainerSize = "w-full sm:w-[132px] h-[72px]";
-    const textareaStyle = "py-[10px] px-3 w-full h-full bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-[6px] font-normal text-sm leading-[22px] text-slate-900 dark:text-slate-50 placeholder:text-slate-400 dark:placeholder:text-slate-500 resize-none focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 scrollbar-thin scrollbar-thumb-slate-400 dark:scrollbar-thumb-slate-500 scrollbar-track-slate-100 dark:scrollbar-track-slate-800";
-    
-    const [selectedBuilding, setSelectedBuilding] = useState("Building A");
-    const [selectedRoom, setSelectedRoom] = useState(null);
-    const [roomDetails, setRoomDetails] = useState(null);
-    const [loading, setLoading] = useState(false);
-    const [isEditing, setIsEditing] = useState(false);
-    const [editableRoomDetails, setEditableRoomDetails] = useState(null);
-    const [showSuccessAlert, setShowSuccessAlert] = useState(false);
-    const [isLoading, setIsLoading] = useState(true);
-    const [allRoomsData, setAllRoomsData] = useState([]);
-    const buildings = {
-        "Building A": [
-            { floor: 5, rooms: ["A1", "A2", "A3", "A4", "A5"] },
-            { floor: 4, rooms: ["B1", "B2"] },
-            { floor: 3, rooms: ["C1", "C2"] },
-            { floor: 2, rooms: ["D1", "D2"] },
-            { floor: 1, rooms: ["E1", "E2"] },
-        ],
-        "Building B": [
-            { floor: 3, rooms: ["F1", "F2"] },
-            { floor: 2, rooms: ["G1", "G2"] },
-            { floor: 1, rooms: ["H1", "H2"] },
-        ],
-    };
-
-    const handleRoomClick = async (roomId) => {
-        setSelectedRoom(roomId);
-        setIsEditing(false);
-        setLoading(true);
-        try {
-            await new Promise((resolve) => setTimeout(resolve, 100));
-            const data = allRoomsData[roomId];
-            if (!data) throw new Error("Room not found");
-            setRoomDetails(data);
-        } catch (error) {
-            console.error("Error fetching room details:", error);
-            setRoomDetails(null);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleBuildingChange = (event) => {
-        setSelectedBuilding(event.target.value);
-        setSelectedRoom(null);
-        setRoomDetails(null);
-        setIsEditing(false);
-    };
-
-    const handleEditToggle = () => {
-        if (isEditing) {
-            handleSaveChanges();
-        } else {
-            if (roomDetails) {
-                setIsEditing(true);
-                setEditableRoomDetails({
-                    ...roomDetails,
-                    equipment: roomDetails.equipment.join(", "),
-                });
-            }
-        }
-    };
-
-    const handleInputChange = (event) => {
-        const { name, value } = event.target;
-        setEditableRoomDetails((prevDetails) => ({
-            ...prevDetails,
-            [name]: name === 'floor' || name === 'capacity' ? (value === '' ? '' : parseInt(value, 10)) : value,
-        }));
-    };
-
-    const handleSaveChanges = async () => {
-        if (!editableRoomDetails) return;
-        setLoading(true);
-        const updatedRoomData = {
-            ...editableRoomDetails,
-            id: selectedRoom,
-            floor: parseInt(editableRoomDetails.floor, 10) || 0,
-            capacity: parseInt(editableRoomDetails.capacity, 10) || 0,
-            equipment: editableRoomDetails.equipment.split(',').map(e => e.trim()).filter(e => e),
-        };
-        try {
-            await new Promise(resolve => setTimeout(resolve, 500)); 
-            setRoomDetails(updatedRoomData);
-            setAllRoomsData(prevAllRooms => ({
-                ...prevAllRooms,
-                [selectedRoom]: updatedRoomData,
-            }));
-            setIsEditing(false);
-            setShowSuccessAlert(true); // *** This is the crucial fix ***
-        } catch (error) {
-            console.error("Failed to save room details:", error);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const floors = buildings[selectedBuilding] || [];
-    
-    useEffect(() => {
-        const loadInitialData = async () => {
-            try {
-                const data = await fetchRoomData();
-                setAllRoomsData(data);
-            } catch (error) {
-                console.error("Failed to fetch class data:", error);
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
-        loadInitialData();
-    }, []);
-
-    if (isLoading) {
-        return <RoomPageSkeleton />;
-    }
+export default async function AdminRoomPage() {
+    // Data is fetched on the server before the page is sent to the client.
+    const allRoomsData = await fetchRoomData();
 
     return (
-        <>
-            {showSuccessAlert && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60">
-                    <SuccessAlert
-                        show={showSuccessAlert}
-                        title="Room Updated"
-                        messageLine1={`Room ${roomDetails?.name || ''} has been updated successfully.`}
-                        messageLine2="You can continue managing rooms."
-                        confirmButtonText="OK"
-                        onConfirm={() => setShowSuccessAlert(false)}
-                        onClose={() => setShowSuccessAlert(false)}
-                    />
-                </div>
-            )}
-
-            <div className='p-4 sm:p-6 min-h-full'>
-            <div className="mb-4 w-full">
-            <h2 className="text-xl font-semibold text-slate-800 dark:text-white">Room</h2>
-            <hr className="border-t border-slate-300 dark:border-slate-700 mt-3" />
-            </div>
-                <div className="flex flex-col lg:flex-row gap-6">
-                    <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-3 sm:mb-4">
-                            <select
-                                value={selectedBuilding}
-                                onChange={handleBuildingChange}
-                                className="text-sm font-semibold text-slate-700 bg-white border border-slate-300 dark:text-slate-200 dark:bg-slate-800 dark:border-slate-600 rounded-md px-3 py-2 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                            >
-                                {Object.keys(buildings).map((building) => (
-                                    <option key={building} value={building}>
-                                        {building}
-                                    </option>
-                                ))}
-                            </select>
-                            <hr className="flex-1 border-t border-slate-300 dark:border-slate-700" />
-                        </div>
-                        <div className="space-y-4">
-                            {floors.map(({ floor, rooms }) => (
-                                <div key={floor} className="space-y-3">
-                                    <div className="floor-section">
-                                        <div className="flex items-center gap-2 mb-2">
-                                            <h4 className="text-xs sm:text-sm font-medium text-slate-600 dark:text-slate-400 whitespace-nowrap">
-                                                Floor {floor}
-                                            </h4>
-                                            <hr className="flex-1 border-t border-slate-300 dark:border-slate-700" />
-                                        </div>
-                                        <div className="grid xl:grid-cols-5 lg:grid-cols-2 md:grid-cols-2 gap-3">
-                                            {rooms.map((roomId) => (
-                                                <div
-                                                    key={roomId}
-                                                    className={`h-[90px] sm:h-[100px] border rounded-md flex flex-col cursor-pointer transition-all duration-150 shadow-sm hover:shadow-md bg-white dark:bg-slate-800
-                                                        ${selectedRoom === roomId && !isEditing
-                                                            ? "border-blue-500 ring-2 ring-blue-500 dark:border-blue-500"
-                                                            : "border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600"
-                                                        }`}
-                                                    onClick={() => handleRoomClick(roomId)}
-                                                >
-                                                    <div className={`h-[30px] rounded-t-md flex items-center justify-center px-2 relative border-b border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700`}>
-                                                        <div className={`absolute left-2 top-1/2 -translate-y-1/2 w-2 h-2 ${allRoomsData[roomId]?.id === selectedRoom && !isEditing ? 'bg-blue-500' : 'bg-green-500'} rounded-full`}></div>
-                                                        <span className={`ml-3 text-xs sm:text-sm font-medium ${selectedRoom === roomId && !isEditing ? 'text-blue-700 dark:text-blue-300' : 'text-slate-700 dark:text-slate-300'}`}>
-                                                            {allRoomsData[roomId]?.name || roomId}
-                                                        </span>
-                                                    </div>
-                                                    <div className={`flex-1 rounded-b-md p-2 flex flex-col justify-center items-center bg-white dark:bg-slate-800`}>
-                                                        <span className={`text-xs text-slate-500 dark:text-slate-400 ${selectedRoom === roomId && !isEditing ? 'text-slate-600 dark:text-slate-300' : ''}`}>
-                                                            Capacity: {allRoomsData[roomId]?.capacity}
-                                                        </span>
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-
-                    <div className="w-full lg:w-[320px] shrink-0">
-                        <div className="flex items-center gap-2 mb-3 sm:mb-4">
-                            <h3 className="text-sm sm:text-base font-semibold text-slate-700 dark:text-slate-300">Details</h3>
-                            <hr className="flex-1 border-t border-slate-300 dark:border-slate-700" />
-                        </div>
-                        <div className="flex flex-col items-start gap-6 w-full min-h-[420px] bg-white dark:bg-slate-800 p-4 rounded-lg shadow-lg">
-                            {loading && !isEditing && !roomDetails ? (
-                                <div className="text-center text-slate-500 dark:text-slate-400 w-full flex-grow flex items-center justify-center">Loading room details...</div>
-                            ) : roomDetails ? (
-                                <>
-                                    <div className="flex flex-col items-start self-stretch w-full flex-grow overflow-y-auto scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-slate-600 scrollbar-track-slate-100 dark:scrollbar-track-slate-700 pr-1">
-                                        <div className="w-full border border-slate-200 dark:border-slate-700 rounded-md bg-white dark:bg-slate-800">
-                                            <div className="flex flex-row items-center self-stretch w-full min-h-[56px] border-b border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
-                                                <div className="flex flex-col justify-center items-start p-3 sm:p-4 w-[100px] sm:w-[120px]"><span className={textLabelRoom}>Room</span></div>
-                                                <div className="flex flex-col justify-center items-start px-2 sm:px-3 flex-1 py-2">{isEditing && editableRoomDetails ? (<div className={`flex flex-col items-start self-stretch ${inputContainerSizeDefault}`}><input type="text" name="name" value={editableRoomDetails.name} onChange={handleInputChange} className={inputStyle} /></div>) : (<span className={textValueRoomDisplay}>{roomDetails.name}</span>)}</div>
-                                            </div>
-                                            <div className="flex flex-row items-center self-stretch w-full min-h-[56px] border-b border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
-                                                <div className="flex flex-col justify-center items-start p-3 sm:p-4 w-[100px] sm:w-[120px]"><span className={textLabelDefault}>Building</span></div>
-                                                <div className="flex flex-col justify-center items-start px-2 sm:px-3 flex-1 py-2">{isEditing && editableRoomDetails ? (<div className={`flex flex-col items-start self-stretch ${inputContainerSizeDefault}`}><input type="text" name="building" value={editableRoomDetails.building} onChange={handleInputChange} className={inputStyle} /></div>) : (<span className={textValueDefaultDisplay}>{roomDetails.building}</span>)}</div>
-                                            </div>
-                                            <div className="flex flex-row items-center self-stretch w-full min-h-[56px] border-b border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
-                                                <div className="flex flex-col justify-center items-start p-3 sm:p-4 w-[100px] sm:w-[120px]"><span className={textLabelDefault}>Floor</span></div>
-                                                <div className="flex flex-col justify-center items-start px-2 sm:px-3 flex-1 py-2">{isEditing && editableRoomDetails ? (<div className={`flex flex-col items-start self-stretch ${inputContainerSizeDefault}`}><input type="number" name="floor" value={editableRoomDetails.floor} onChange={handleInputChange} className={inputStyle} /></div>) : (<span className={textValueDefaultDisplay}>{roomDetails.floor}</span>)}</div>
-                                            </div>
-                                            <div className="flex flex-row items-center self-stretch w-full min-h-[56px] border-b border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
-                                                <div className="flex flex-col justify-center items-start p-3 sm:p-4 w-[100px] sm:w-[120px]"><span className={textLabelDefault}>Capacity</span></div>
-                                                <div className="flex flex-col justify-center items-start px-2 sm:px-3 flex-1 py-2">{isEditing && editableRoomDetails ? (<div className={`flex flex-col items-start self-stretch ${inputContainerSizeDefault}`}><input type="number" name="capacity" value={editableRoomDetails.capacity} onChange={handleInputChange} className={inputStyle} /></div>) : (<span className={textValueDefaultDisplay}>{roomDetails.capacity}</span>)}</div>
-                                            </div>
-                                            <div className="flex flex-row items-start self-stretch w-full min-h-[92px] hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
-                                                <div className="flex flex-col justify-center items-start p-3 sm:p-4 w-[100px] sm:w-[120px] pt-5"><span className={textLabelDefault}>Equipment</span></div>
-                                                <div className="flex flex-col justify-center items-start px-2 sm:px-3 flex-1 py-2 pt-3">{isEditing && editableRoomDetails ? (<div className={`flex flex-col items-start self-stretch ${equipmentInputContainerSize}`}><textarea name="equipment" value={editableRoomDetails.equipment} onChange={handleInputChange} className={textareaStyle} placeholder="Item1, Item2, ..."></textarea></div>) : (<span className={`${textValueDefaultDisplay} pt-1`}>{roomDetails.equipment.join(", ")}</span>)}</div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <button
-                                        className="flex flex-row justify-center items-center pyx-3 px-5 sm:px-6 gap-2 w-full h-[48px] sm:h-[50px] bg-blue-600 hover:bg-blue-700 shadow-md hover:shadow-lg rounded-md text-white font-semibold text-sm sm:text-base self-stretch disabled:opacity-60 transition-all duration-150"
-                                        onClick={handleEditToggle}
-                                        disabled={loading && isEditing}
-                                    >
-                                        {loading && isEditing ? "Saving..." : isEditing ? "Save Changes" : "Edit Room"}
-                                    </button>
-                                </>
-                            ) : (
-                                <div className="text-center text-slate-500 dark:text-slate-400 w-full flex-grow flex items-center justify-center">Select a room to view details.</div>
-                            )}
-                            {!roomDetails && !loading && ( 
-                                <div className="w-full h-[50px] self-stretch"></div>
-                            )}
-                        </div>
-                    </div>
-            </div>
-            </div>
-        </>
-    );
-};
-
-export default function AdminRoomPage() {
-    return (
-        <AdminLayout activeItem="room" pageTitle="Room Management">
-            <RoomViewContent />
+        <AdminLayout activeItem="room" pageTitle="Management">
+            <Suspense fallback={<RoomPageSkeleton />}>
+                {/* The Client Component is rendered here, receiving the server-fetched data as a prop.
+                  The browser gets the pre-rendered HTML for the list of rooms, making the initial
+                  load appear instant. Then, the client-side JavaScript will load to make it interactive.
+                */}
+                <RoomClientView initialAllRoomsData={allRoomsData} />
+            </Suspense>
         </AdminLayout>
     );
 }
