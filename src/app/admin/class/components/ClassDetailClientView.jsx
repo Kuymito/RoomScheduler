@@ -76,7 +76,7 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
     const degreesOptions = ['Associate', 'Bachelor', 'Master', 'PhD'];
     const facultyOptions = ['Faculty of IT', 'Faculty of CS', 'Faculty of IS', 'Faculty of AI', 'Faculty of DS', 'Faculty of ML', 'Faculty of DA', 'Faculty of SE'];
     const semesterOptions = ['Semester 1', 'Semester 2', 'Semester 3', 'Semester 4', 'Semester 5', 'Semester 6'];
-    const shiftOptions = ['7:00 - 10:00', '8:00 - 11:00', '9:00 - 12:00', '13:00 - 16:00', '15:00 - 18:00', '17:00 - 20:00', '18:00 - 21:00', '19:00 - 22:00'];
+    const shiftOptions = ['7:00 - 10:00', '10:30 - 13:30', '14:00 - 17:00', '17:30 - 20:30'];
     const statusOptions = ['Active', 'Archived'];
 
     const currentData = isEditing ? editableClassDetails : classDetails;
