@@ -32,46 +32,37 @@ export default function RoomClientView({ initialAllRoomsData }) {
     // --- Data Structures ---
     const buildings = {
         "Building A": [
-            { floor: 5, rooms: ["A21", "A22", "A23", "A24", "A25"] },
-            { floor: 4, rooms: ["A16", "A17", "A18", "A19", "A20"] },
-            { floor: 3, rooms: ["A11", "A12", "A13", "A14", "A15"] },
-            { floor: 2, rooms: ["A6", "A7", "A8", "A9", "A10"] },
-            { floor: 1, rooms: ["A1", "A2", "A3", "A4", "A5"] },
+            { floor: 3, rooms: ["A19", "A20", "A21", "A22", "A23", "A24", "A25"] }, // Rooms A19-A25 (7 rooms)
+            { floor: 2, rooms: ["A10", "A11", "A12", "A13", "A14", "A15", "A16", "A17", "A18"] }, // Rooms A10-A18 (9 rooms)
+            { floor: 1, rooms: ["A1", "A2", "A3", "A4", "A5", "A6", "A7", "A8", "A9", "MeetingA"] }, // Rooms A1-A9, MeetingA (10 rooms)
         ],
         "Building B": [
-            { floor: 5, rooms: ["B21", "B22", "B23", "B24", "B25"] },
-            { floor: 4, rooms: ["B16", "B17", "B18", "B19", "B20"] },
-            { floor: 3, rooms: ["B11", "B12", "B13", "B14", "B15"] },
-            { floor: 2, rooms: ["B6", "B7", "B8", "B9", "B10"] },
+            { floor: 2, rooms: ["B6", "Meeting"] }, // Merged B7-B10 into "Meeting"
             { floor: 1, rooms: ["B1", "B2", "B3", "B4", "B5"] },
         ],
         "Building C": [
-            { floor: 5, rooms: ["C21", "C22", "C23", "C24", "C25"] },
-            { floor: 4, rooms: ["C16", "C17", "C18", "C19", "C20"] },
-            { floor: 3, rooms: ["C11", "C12", "C13", "C14", "C15"] },
-            { floor: 2, rooms: ["C6", "C7", "C8", "C9", "C10"] },
-            { floor: 1, rooms: ["C1", "C2", "C3", "C4", "C5"] },
+            { floor: 3, rooms: ["C9", "C10", "C11", "C12"] },   // Floor 3, 4 rooms
+            { floor: 2, rooms: ["C5", "C6", "C7", "C8"] },   // Floor 2, 4 rooms
+            { floor: 1, rooms: ["C1", "C2", "C3", "C4"] },   // Floor 1, 4 rooms
         ],
         "Building D": [
-            { floor: 5, rooms: ["D21", "D22", "D23", "D24", "D25"] },
-            { floor: 4, rooms: ["D16", "D17", "D18", "D19", "D20"] },
-            { floor: 3, rooms: ["D11", "D12", "D13", "D14", "D15"] },
-            { floor: 2, rooms: ["D6", "D7", "D8", "D9", "D10"] },
-            { floor: 1, rooms: ["D1", "D2", "D3", "D4", "D5"] },
+            { floor: 3, rooms: ["LibraryD3"] }, // Floor 3, 1 library room
+            { floor: 2, rooms: ["LibraryD2"] },   // Floor 2, 1 library room
+            { floor: 1, rooms: ["LibraryD1"] },   // Floor 1, 1 library room
         ],
         "Building E": [
-            { floor: 5, rooms: ["E21", "E22", "E23", "E24", "E25"] },
-            { floor: 4, rooms: ["E16", "E17", "E18", "E19", "E20"] },
-            { floor: 3, rooms: ["E11", "E12", "E13", "E14", "E15"] },
-            { floor: 2, rooms: ["E6", "E7", "E8", "E9", "E10"] },
-            { floor: 1, rooms: ["E1", "E2", "E3", "E4", "E5"] },
+            { floor: 5, rooms: ["E22", "E23", "E24", "E25", "E26"] }, // Floor 5, 5 rooms
+            { floor: 4, rooms: ["E17", "E18", "E19", "E20", "E21"] }, // Floor 4, 5 rooms
+            { floor: 3, rooms: ["E12", "E13", "E14", "E15", "E16"] }, // Floor 3, 5 rooms
+            { floor: 2, rooms: ["E7", "E8", "E9", "E10", "E11"] },   // Floor 2, 5 rooms
+            { floor: 1, rooms: ["E1", "E2", "E3", "E4", "E5", "E6"] }, // Floor 1, 6 rooms
         ],
         "Building F": [
-            { floor: 5, rooms: ["F21", "F22", "F23", "F24", "F25"] },
-            { floor: 4, rooms: ["F16", "F17", "F18", "F19", "F20"] },
-            { floor: 3, rooms: ["F11", "F12", "F13", "F14", "F15"] },
-            { floor: 2, rooms: ["F6", "F7", "F8", "F9", "F10"] },
-            { floor: 1, rooms: ["F1", "F2", "F3", "F4", "F5"] },
+            { floor: 5, rooms: ["F17", "F18", "F19", "F20"] }, // Floor 5, 4 rooms
+            { floor: 4, rooms: ["F13", "F14", "F15", "F16"] }, // Floor 4, 4 rooms
+            { floor: 3, rooms: ["F9", "F10", "F11", "F12"] },   // Floor 3, 4 rooms
+            { floor: 2, rooms: ["F5", "F6", "F7", "F8"] },   // Floor 2, 4 rooms
+            { floor: 1, rooms: ["F1", "F2", "F3", "F4"] },   // Floor 1, 4 rooms
         ],
     };
 
@@ -82,7 +73,7 @@ export default function RoomClientView({ initialAllRoomsData }) {
         setLoading(true);
         try {
             // Simulate a quick fetch/lookup for details
-            await new Promise((resolve) => setTimeout(resolve, 100)); 
+            await new Promise((resolve) => setTimeout(resolve, 100));
             const data = allRoomsData[roomId];
             if (!data) throw new Error("Room not found");
             setRoomDetails(data);
@@ -134,7 +125,7 @@ export default function RoomClientView({ initialAllRoomsData }) {
             equipment: editableRoomDetails.equipment.split(',').map(e => e.trim()).filter(e => e),
         };
         try {
-            await new Promise(resolve => setTimeout(resolve, 500)); 
+            await new Promise(resolve => setTimeout(resolve, 500));
             setRoomDetails(updatedRoomData);
             setAllRoomsData(prevAllRooms => ({
                 ...prevAllRooms,
@@ -144,8 +135,10 @@ export default function RoomClientView({ initialAllRoomsData }) {
             setShowSuccessAlert(true);
         } catch (error) {
             console.error("Failed to save room details:", error);
+            setLoading(false); // Ensure loading is reset on error
         } finally {
-            setLoading(false);
+            // Not resetting loading here as setShowSuccessAlert might trigger re-render
+            // and this is fine; we handle loading state explicitly before async operation.
         }
     };
 
@@ -196,23 +189,259 @@ export default function RoomClientView({ initialAllRoomsData }) {
                                             <h4 className="text-xs sm:text-sm font-medium text-slate-600 dark:text-slate-400 whitespace-nowrap">Floor {floor}</h4>
                                             <hr className="flex-1 border-t border-slate-300 dark:border-slate-700" />
                                         </div>
-                                        <div className="grid xl:grid-cols-5 lg:grid-cols-2 md:grid-cols-2 gap-3">
-                                            {rooms.map((roomId) => (
-                                                <div
-                                                    key={roomId}
-                                                    className={`h-[90px] sm:h-[100px] border rounded-md flex flex-col cursor-pointer transition-all duration-150 shadow-sm hover:shadow-md bg-white dark:bg-slate-800 ${selectedRoom === roomId && !isEditing ? "border-blue-500 ring-2 ring-blue-500 dark:border-blue-500" : "border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600"}`}
-                                                    onClick={() => handleRoomClick(roomId)}
-                                                >
-                                                    <div className="h-[30px] rounded-t-md flex items-center justify-center px-2 relative border-b border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700">
-                                                        <div className={`absolute left-2 top-1/2 -translate-y-1/2 w-2 h-2 ${allRoomsData[roomId]?.id === selectedRoom && !isEditing ? 'bg-blue-500' : 'bg-green-500'} rounded-full`}></div>
-                                                        <span className={`ml-3 text-xs sm:text-sm font-medium ${selectedRoom === roomId && !isEditing ? 'text-blue-700 dark:text-blue-300' : 'text-slate-700 dark:text-slate-300'}`}>{allRoomsData[roomId]?.name || roomId}</span>
-                                                    </div>
-                                                    <div className="flex-1 rounded-b-md p-2 flex flex-col justify-center items-center bg-white dark:bg-slate-800">
-                                                        <span className={`text-xs text-slate-500 dark:text-slate-400 ${selectedRoom === roomId && !isEditing ? 'text-slate-600 dark:text-slate-300' : ''}`}>Capacity: {allRoomsData[roomId]?.capacity}</span>
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
+                                        {/* Conditional rendering for Building A floors (5 columns per row) */}
+                                        {selectedBuilding === "Building A" ? (
+                                            <div className="grid xl:grid-cols-5 lg:grid-cols-3 md:grid-cols-2 grid-cols-[repeat(auto-fit,minmax(160px,1fr))] gap-3">
+                                                {rooms.map((roomId) => {
+                                                    const room = allRoomsData[roomId];
+                                                    if (!room) return null;
+                                                    const isSelected = selectedRoom === roomId;
+                                                    const isUnavailable = room.status === "unavailable";
+                                                    
+                                                    // For Building A, all rooms are regular sized now
+                                                    // const colSpanClass = roomId === "MeetingA" ? "col-span-full" : ""; 
+
+                                                    return (
+                                                        <div
+                                                            key={roomId}
+                                                            className={`h-[90px] sm:h-[100px] border rounded-md flex flex-col transition-all duration-150 shadow-sm
+                                                                ${isUnavailable ? 'cursor-not-allowed bg-slate-50 dark:bg-slate-800/50 opacity-70' : 'cursor-pointer hover:shadow-md bg-white dark:bg-slate-800'}
+                                                                ${isSelected ? "border-blue-500 ring-2 ring-blue-500 dark:border-blue-500" : isUnavailable ? "border-slate-200 dark:border-slate-700" : "border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600"}
+                                                            `}
+                                                            onClick={() => !isUnavailable && handleRoomClick(roomId)}
+                                                        >
+                                                            <div className={`h-[30px] rounded-t-md flex items-center justify-center px-2 relative border-b ${isSelected ? 'border-b-transparent' : 'border-slate-200 dark:border-slate-600'} ${isUnavailable ? 'bg-slate-100 dark:bg-slate-700/60' : 'bg-slate-50 dark:bg-slate-700'}`}>
+                                                                <div className={`absolute left-2 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full ${isSelected ? 'bg-blue-500' : isUnavailable ? 'bg-red-500' : 'bg-green-500'}`}></div>
+                                                                <span className={`ml-3 text-xs sm:text-sm font-medium ${isSelected ? 'text-blue-700 dark:text-blue-300' : isUnavailable ? 'text-slate-500 dark:text-slate-400' : 'text-slate-700 dark:text-slate-300'}`}>{room.name || roomId}</span>
+                                                            </div>
+                                                            <div className={`flex-1 rounded-b-md p-2 flex flex-col justify-center items-center ${isUnavailable ? 'bg-slate-50 dark:bg-slate-800/50' : 'bg-white dark:bg-slate-800'}`}>
+                                                                <span className={`text-xs ${isUnavailable ? 'text-red-600 dark:text-red-400' : 'text-slate-500 dark:text-slate-400'} ${isSelected ? 'text-slate-600 dark:text-slate-300' : ''}`}>
+                                                                    {isUnavailable ? 'Unavailable' : `Capacity: ${room.capacity}`}
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        ) : selectedBuilding === "Building B" && floor === 2 ? (
+                                            <div className="grid grid-cols-5 gap-3"> {/* Explicitly 5 columns */}
+                                                {rooms.map((roomId) => {
+                                                    const room = allRoomsData[roomId];
+                                                    if (!room) return null;
+                                                    const isSelected = selectedRoom === roomId;
+                                                    const isUnavailable = room.status === "unavailable";
+                                                    const colSpanClass = roomId === "Meeting" ? "col-span-4" : "col-span-1"; // Meeting spans 4 columns
+
+                                                    return (
+                                                        <div
+                                                            key={roomId}
+                                                            className={`h-[90px] sm:h-[100px] border rounded-md flex flex-col transition-all duration-150 shadow-sm
+                                                                ${isUnavailable ? 'cursor-not-allowed bg-slate-50 dark:bg-slate-800/50 opacity-70' : 'cursor-pointer hover:shadow-md bg-white dark:bg-slate-800'}
+                                                                ${isSelected ? "border-blue-500 ring-2 ring-blue-500 dark:border-blue-500" : isUnavailable ? "border-slate-200 dark:border-slate-700" : "border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600"}
+                                                                ${colSpanClass}
+                                                            `}
+                                                            onClick={() => !isUnavailable && handleRoomClick(roomId)}
+                                                        >
+                                                            <div className={`h-[30px] rounded-t-md flex items-center justify-center px-2 relative border-b ${isSelected ? 'border-b-transparent' : 'border-slate-200 dark:border-slate-600'} ${isUnavailable ? 'bg-slate-100 dark:bg-slate-700/60' : 'bg-slate-50 dark:bg-slate-700'}`}>
+                                                                <div className={`absolute left-2 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full ${isSelected ? 'bg-blue-500' : isUnavailable ? 'bg-red-500' : 'bg-green-500'}`}></div>
+                                                                <span className={`ml-3 text-xs sm:text-sm font-medium ${isSelected ? 'text-blue-700 dark:text-blue-300' : isUnavailable ? 'text-slate-500 dark:text-slate-400' : 'text-slate-700 dark:text-slate-300'}`}>{room.name || roomId}</span>
+                                                            </div>
+                                                            <div className={`flex-1 rounded-b-md p-2 flex flex-col justify-center items-center ${isUnavailable ? 'bg-slate-50 dark:bg-slate-800/50' : 'bg-white dark:bg-slate-800'}`}>
+                                                                <span className={`text-xs ${isUnavailable ? 'text-red-600 dark:text-red-400' : 'text-slate-500 dark:text-slate-400'} ${isSelected && !isUnavailable ? 'text-slate-600 dark:text-slate-300' : ''}`}>
+                                                                    {isUnavailable ? 'Unavailable' : `Capacity: ${room.capacity}`}
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        ) : selectedBuilding === "Building C" ? (
+                                            // Building C: 4 columns per row
+                                            <div className="grid xl:grid-cols-4 lg:grid-cols-2 md:grid-cols-2 grid-cols-[repeat(auto-fit,minmax(160px,1fr))] gap-3">
+                                                {rooms.map((roomId) => {
+                                                    const room = allRoomsData[roomId];
+                                                    if (!room) return null;
+                                                    const isSelected = selectedRoom === roomId;
+                                                    const isUnavailable = room.status === "unavailable";
+
+                                                    return (
+                                                        <div
+                                                            key={roomId}
+                                                            className={`h-[90px] sm:h-[100px] border rounded-md flex flex-col transition-all duration-150 shadow-sm
+                                                                ${isUnavailable ? 'cursor-not-allowed bg-slate-50 dark:bg-slate-800/50 opacity-70' : 'cursor-pointer hover:shadow-md bg-white dark:bg-slate-800'}
+                                                                ${isSelected ? "border-blue-500 ring-2 ring-blue-500 dark:border-blue-500" : isUnavailable ? "border-slate-200 dark:border-slate-700" : "border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600"}
+                                                            `}
+                                                            onClick={() => !isUnavailable && handleRoomClick(roomId)}
+                                                        >
+                                                            <div className={`h-[30px] rounded-t-md flex items-center justify-center px-2 relative border-b ${isSelected ? 'border-b-transparent' : 'border-slate-200 dark:border-slate-600'} ${isUnavailable ? 'bg-slate-100 dark:bg-slate-700/60' : 'bg-slate-50 dark:bg-slate-700'}`}>
+                                                                <div className={`absolute left-2 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full ${isSelected ? 'bg-blue-500' : isUnavailable ? 'bg-red-500' : 'bg-green-500'}`}></div>
+                                                                <span className={`ml-3 text-xs sm:text-sm font-medium ${isSelected ? 'text-blue-700 dark:text-blue-300' : isUnavailable ? 'text-slate-500 dark:text-slate-400' : 'text-slate-700 dark:text-slate-300'}`}>{room.name || roomId}</span>
+                                                            </div>
+                                                            <div className={`flex-1 rounded-b-md p-2 flex flex-col justify-center items-center ${isUnavailable ? 'bg-slate-50 dark:bg-slate-800/50' : 'bg-white dark:bg-slate-800'}`}>
+                                                                <span className={`text-xs ${isUnavailable ? 'text-red-600 dark:text-red-400' : 'text-slate-500 dark:text-slate-400'} ${isSelected ? 'text-slate-600 dark:text-slate-300' : ''}`}>
+                                                                    {isUnavailable ? 'Unavailable' : `Capacity: ${room.capacity}`}
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        ) : selectedBuilding === "Building D" ? (
+                                            // Building D: 1 room per floor, spanning full width
+                                            <div className="grid grid-cols-1 gap-3">
+                                                {rooms.map((roomId) => {
+                                                    const room = allRoomsData[roomId];
+                                                    if (!room) return null;
+                                                    const isSelected = selectedRoom === roomId;
+                                                    const isUnavailable = room.status === "unavailable";
+
+                                                    return (
+                                                        <div
+                                                            key={roomId}
+                                                            className={`h-[90px] sm:h-[100px] border rounded-md flex flex-col transition-all duration-150 shadow-sm col-span-full
+                                                                ${isUnavailable ? 'cursor-not-allowed bg-slate-50 dark:bg-slate-800/50 opacity-70' : 'cursor-pointer hover:shadow-md bg-white dark:bg-slate-800'}
+                                                                ${isSelected ? "border-blue-500 ring-2 ring-blue-500 dark:border-blue-500" : isUnavailable ? "border-slate-200 dark:border-slate-700" : "border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600"}
+                                                            `}
+                                                            onClick={() => !isUnavailable && handleRoomClick(roomId)}
+                                                        >
+                                                            <div className={`h-[30px] rounded-t-md flex items-center justify-center px-2 relative border-b ${isSelected ? 'border-b-transparent' : 'border-slate-200 dark:border-slate-600'} ${isUnavailable ? 'bg-slate-100 dark:bg-slate-700/60' : 'bg-slate-50 dark:bg-slate-700'}`}>
+                                                                <div className={`absolute left-2 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full ${isSelected ? 'bg-blue-500' : isUnavailable ? 'bg-red-500' : 'bg-green-500'}`}></div>
+                                                                <span className={`ml-3 text-xs sm:text-sm font-medium ${isSelected ? 'text-blue-700 dark:text-blue-300' : isUnavailable ? 'text-slate-500 dark:text-slate-400' : 'text-slate-700 dark:text-slate-300'}`}>{room.name || roomId}</span>
+                                                            </div>
+                                                            <div className={`flex-1 rounded-b-md p-2 flex flex-col justify-center items-center ${isUnavailable ? 'bg-slate-50 dark:bg-slate-800/50' : 'bg-white dark:bg-slate-800'}`}>
+                                                                <span className={`text-xs ${isUnavailable ? 'text-red-600 dark:text-red-400' : 'text-slate-500 dark:text-slate-400'} ${isSelected ? 'text-slate-600 dark:text-slate-300' : ''}`}>
+                                                                    {isUnavailable ? 'Unavailable' : `Capacity: ${room.capacity}`}
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        ) : selectedBuilding === "Building E" && floor === 1 ? (
+                                            // Building E, Floor 1: 6 columns
+                                            <div className="grid xl:grid-cols-6 lg:grid-cols-3 md:grid-cols-2 grid-cols-[repeat(auto-fit,minmax(160px,1fr))] gap-3">
+                                                {rooms.map((roomId) => {
+                                                    const room = allRoomsData[roomId];
+                                                    if (!room) return null;
+                                                    const isSelected = selectedRoom === roomId;
+                                                    const isUnavailable = room.status === "unavailable";
+
+                                                    return (
+                                                        <div
+                                                            key={roomId}
+                                                            className={`h-[90px] sm:h-[100px] border rounded-md flex flex-col transition-all duration-150 shadow-sm
+                                                                ${isUnavailable ? 'cursor-not-allowed bg-slate-50 dark:bg-slate-800/50 opacity-70' : 'cursor-pointer hover:shadow-md bg-white dark:bg-slate-800'}
+                                                                ${isSelected ? "border-blue-500 ring-2 ring-blue-500 dark:border-blue-500" : isUnavailable ? "border-slate-200 dark:border-slate-700" : "border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600"}
+                                                            `}
+                                                            onClick={() => !isUnavailable && handleRoomClick(roomId)}
+                                                        >
+                                                            <div className={`h-[30px] rounded-t-md flex items-center justify-center px-2 relative border-b ${isSelected ? 'border-b-transparent' : 'border-slate-200 dark:border-slate-600'} ${isUnavailable ? 'bg-slate-100 dark:bg-slate-700/60' : 'bg-slate-50 dark:bg-slate-700'}`}>
+                                                                <div className={`absolute left-2 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full ${isSelected ? 'bg-blue-500' : isUnavailable ? 'bg-red-500' : 'bg-green-500'}`}></div>
+                                                                <span className={`ml-3 text-xs sm:text-sm font-medium ${isSelected ? 'text-blue-700 dark:text-blue-300' : isUnavailable ? 'text-slate-500 dark:text-slate-400' : 'text-slate-700 dark:text-slate-300'}`}>{room.name || roomId}</span>
+                                                            </div>
+                                                            <div className={`flex-1 rounded-b-md p-2 flex flex-col justify-center items-center ${isUnavailable ? 'bg-slate-50 dark:bg-slate-800/50' : 'bg-white dark:bg-slate-800'}`}>
+                                                                <span className={`text-xs ${isUnavailable ? 'text-red-600 dark:text-red-400' : 'text-slate-500 dark:text-slate-400'} ${isSelected ? 'text-slate-600 dark:text-slate-300' : ''}`}>
+                                                                    {isUnavailable ? 'Unavailable' : `Capacity: ${room.capacity}`}
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        ) : selectedBuilding === "Building E" && floor !== 1 ? (
+                                            // Building E, Floors 2-5: 5 columns
+                                            <div className="grid xl:grid-cols-5 lg:grid-cols-2 md:grid-cols-2 grid-cols-[repeat(auto-fit,minmax(160px,1fr))] gap-3">
+                                                {rooms.map((roomId) => {
+                                                    const room = allRoomsData[roomId];
+                                                    if (!room) return null;
+                                                    const isSelected = selectedRoom === roomId;
+                                                    const isUnavailable = room.status === "unavailable";
+
+                                                    return (
+                                                        <div
+                                                            key={roomId}
+                                                            className={`h-[90px] sm:h-[100px] border rounded-md flex flex-col transition-all duration-150 shadow-sm
+                                                                ${isUnavailable ? 'cursor-not-allowed bg-slate-50 dark:bg-slate-800/50 opacity-70' : 'cursor-pointer hover:shadow-md bg-white dark:bg-slate-800'}
+                                                                ${isSelected ? "border-blue-500 ring-2 ring-blue-500 dark:border-blue-500" : isUnavailable ? "border-slate-200 dark:border-slate-700" : "border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600"}
+                                                            `}
+                                                            onClick={() => !isUnavailable && handleRoomClick(roomId)}
+                                                        >
+                                                            <div className={`h-[30px] rounded-t-md flex items-center justify-center px-2 relative border-b ${isSelected ? 'border-b-transparent' : 'border-slate-200 dark:border-slate-600'} ${isUnavailable ? 'bg-slate-100 dark:bg-slate-700/60' : 'bg-slate-50 dark:bg-slate-700'}`}>
+                                                                <div className={`absolute left-2 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full ${isSelected ? 'bg-blue-500' : isUnavailable ? 'bg-red-500' : 'bg-green-500'}`}></div>
+                                                                <span className={`ml-3 text-xs sm:text-sm font-medium ${isSelected ? 'text-blue-700 dark:text-blue-300' : isUnavailable ? 'text-slate-500 dark:text-slate-400' : 'text-slate-700 dark:text-slate-300'}`}>{room.name || roomId}</span>
+                                                            </div>
+                                                            <div className={`flex-1 rounded-b-md p-2 flex flex-col justify-center items-center ${isUnavailable ? 'bg-slate-50 dark:bg-slate-800/50' : 'bg-white dark:bg-slate-800'}`}>
+                                                                <span className={`text-xs ${isUnavailable ? 'text-red-600 dark:text-red-400' : 'text-slate-500 dark:text-slate-400'} ${isSelected ? 'text-slate-600 dark:text-slate-300' : ''}`}>
+                                                                    {isUnavailable ? 'Unavailable' : `Capacity: ${room.capacity}`}
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        ) : selectedBuilding === "Building F" ? (
+                                            // Building F: 4 columns per row
+                                            <div className="grid xl:grid-cols-4 lg:grid-cols-2 md:grid-cols-2 grid-cols-[repeat(auto-fit,minmax(160px,1fr))] gap-3">
+                                                {rooms.map((roomId) => {
+                                                    const room = allRoomsData[roomId];
+                                                    if (!room) return null;
+                                                    const isSelected = selectedRoom === roomId;
+                                                    const isUnavailable = room.status === "unavailable";
+
+                                                    return (
+                                                        <div
+                                                            key={roomId}
+                                                            className={`h-[90px] sm:h-[100px] border rounded-md flex flex-col transition-all duration-150 shadow-sm
+                                                                ${isUnavailable ? 'cursor-not-allowed bg-slate-50 dark:bg-slate-800/50 opacity-70' : 'cursor-pointer hover:shadow-md bg-white dark:bg-slate-800'}
+                                                                ${isSelected ? "border-blue-500 ring-2 ring-blue-500 dark:border-blue-500" : isUnavailable ? "border-slate-200 dark:border-slate-700" : "border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600"}
+                                                            `}
+                                                            onClick={() => !isUnavailable && handleRoomClick(roomId)}
+                                                        >
+                                                            <div className={`h-[30px] rounded-t-md flex items-center justify-center px-2 relative border-b ${isSelected ? 'border-b-transparent' : 'border-slate-200 dark:border-slate-600'} ${isUnavailable ? 'bg-slate-100 dark:bg-slate-700/60' : 'bg-slate-50 dark:bg-slate-700'}`}>
+                                                                <div className={`absolute left-2 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full ${isSelected ? 'bg-blue-500' : isUnavailable ? 'bg-red-500' : 'bg-green-500'}`}></div>
+                                                                <span className={`ml-3 text-xs sm:text-sm font-medium ${isSelected ? 'text-blue-700 dark:text-blue-300' : isUnavailable ? 'text-slate-500 dark:text-slate-400' : 'text-slate-700 dark:text-slate-300'}`}>{room.name || roomId}</span>
+                                                            </div>
+                                                            <div className={`flex-1 rounded-b-md p-2 flex flex-col justify-center items-center ${isUnavailable ? 'bg-slate-50 dark:bg-slate-800/50' : 'bg-white dark:bg-slate-800'}`}>
+                                                                <span className={`text-xs ${isUnavailable ? 'text-red-600 dark:text-red-400' : 'text-slate-500 dark:text-slate-400'} ${isSelected ? 'text-slate-600 dark:text-slate-300' : ''}`}>
+                                                                    {isUnavailable ? 'Unavailable' : `Capacity: ${room.capacity}`}
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        ) : (
+                                            // Default for other buildings not explicitly handled
+                                            <div className="grid xl:grid-cols-5 lg:grid-cols-2 md:grid-cols-2 grid-cols-[repeat(auto-fit,minmax(160px,1fr))] gap-3">
+                                                {rooms.map((roomId) => {
+                                                    const room = allRoomsData[roomId];
+                                                    if (!room) return null;
+                                                    const isSelected = selectedRoom === roomId;
+                                                    const isUnavailable = room.status === "unavailable";
+
+                                                    return (
+                                                        <div
+                                                            key={roomId}
+                                                            className={`h-[90px] sm:h-[100px] border rounded-md flex flex-col transition-all duration-150 shadow-sm
+                                                                ${isUnavailable ? 'cursor-not-allowed bg-slate-50 dark:bg-slate-800/50 opacity-70' : 'cursor-pointer hover:shadow-md bg-white dark:bg-slate-800'}
+                                                                ${isSelected ? "border-blue-500 ring-2 ring-blue-500 dark:border-blue-500" : isUnavailable ? "border-slate-200 dark:border-slate-700" : "border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600"}
+                                                            `}
+                                                            onClick={() => !isUnavailable && handleRoomClick(roomId)}
+                                                        >
+                                                            <div className={`h-[30px] rounded-t-md flex items-center justify-center px-2 relative border-b ${isSelected ? 'border-b-transparent' : 'border-slate-200 dark:border-slate-600'} ${isUnavailable ? 'bg-slate-100 dark:bg-slate-700/60' : 'bg-slate-50 dark:bg-slate-700'}`}>
+                                                                <div className={`absolute left-2 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full ${isSelected ? 'bg-blue-500' : isUnavailable ? 'bg-red-500' : 'bg-green-500'}`}></div>
+                                                                <span className={`ml-3 text-xs sm:text-sm font-medium ${isSelected ? 'text-blue-700 dark:text-blue-300' : isUnavailable ? 'text-slate-500 dark:text-slate-400' : 'text-slate-700 dark:text-slate-300'}`}>{room.name || roomId}</span>
+                                                            </div>
+                                                            <div className={`flex-1 rounded-b-md p-2 flex flex-col justify-center items-center ${isUnavailable ? 'bg-slate-50 dark:bg-slate-800/50' : 'bg-white dark:bg-slate-800'}`}>
+                                                                <span className={`text-xs ${isUnavailable ? 'text-red-600 dark:text-red-400' : 'text-slate-500 dark:text-slate-400'} ${isSelected ? 'text-slate-600 dark:text-slate-300' : ''}`}>
+                                                                    {isUnavailable ? 'Unavailable' : `Capacity: ${room.capacity}`}
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             ))}
@@ -263,7 +492,7 @@ export default function RoomClientView({ initialAllRoomsData }) {
                             ) : (
                                 <div className="text-center text-slate-500 dark:text-slate-400 w-full flex-grow flex items-center justify-center">Select a room to view details.</div>
                             )}
-                            {!roomDetails && !loading && ( 
+                            {!roomDetails && !loading && (
                                 <div className="w-full h-[50px] self-stretch"></div>
                             )}
                         </div>
