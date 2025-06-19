@@ -95,7 +95,7 @@ export default function InstructorClassDetailClientView({ initialClassDetails, i
 
             <div className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700">
                 <h2 className="text-lg font-semibold text-gray-800 dark:text-white mb-6">Schedule Class</h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
+                {/* <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
                     {daysOfWeek.map(day => {
                         const scheduledItem = schedule[day];
                         const isNoClass = !scheduledItem;
@@ -137,7 +137,66 @@ export default function InstructorClassDetailClientView({ initialClassDetails, i
                             </div>
                         );
                     })}
+                </div> */}
+
+{/* ==>> chage style schedule class */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
+            {daysOfWeek.map((day) => {
+              const scheduledItem = schedule[day];
+              const isNoClass = !scheduledItem;
+
+              const studyMode = isNoClass
+                ? "No Class"
+                : scheduledItem.studyMode;
+
+              // Define styles using nested ternary operators
+              const headerBgStyle =
+                studyMode === "In-Class"
+                  ? "bg-green-100 dark:bg-green-900/50 "
+                  : studyMode === "Online"
+                  ? "bg-orange-100 dark:bg-orange-900/50"
+                  : "bg-purple-100 dark:bg-purple-900/50";
+
+              const cardBorderStyle =
+                studyMode === "In-Class"
+                  ? "border-green-300 dark:border-green-600"
+                  : studyMode === "Online"
+                  ? "border-orange-400 dark:border-orange-500"
+                  : "border-gray-200 dark:border-slate-700";
+
+              return (
+                <div key={day} className="flex flex-col gap-3">
+                  {/* === Header Card (Day Name + Study Mode Tag) === */}
+                  <div
+                    className={`p-3 rounded-lg  flex flex-col items-center gap-2 ${headerBgStyle}`}
+                  >
+                    <h4 className="font-semibold text-gray-800  dark:text-gray-200 text-base ">
+                      {day}
+                    </h4>                
+                    <StudyModeTag mode={studyMode} />
+                  </div>
+
+                  {/* === Content Card (Instructor Info or Empty) === */}
+                  <div
+                    className={`rounded-xl p-3 min-h-[160px] w-full border-2  dark:bg-slate-800 ${cardBorderStyle} flex flex-col justify-center items-center`}
+                  >
+                    {/* Only show the instructor card if a class is scheduled */}
+                    {!isNoClass && (
+                      <div className="w-full flex flex-col items-center text-center ">
+                        {/* Assuming ScheduledInstructorCard is your component for showing the instructor */}
+                        <ScheduledInstructorCard
+                          instructor={scheduledItem.instructor}
+                        />
+                      </div>
+                    )}
+                  </div>
                 </div>
+              );
+            })}
+          </div>
+
+
+
                 <div className="mt-8 pt-5 border-t border-gray-200 dark:border-slate-700 flex flex-wrap justify-between items-end gap-4">
                     <div>
                         <ul className="text-sm text-gray-600 dark:text-gray-300 space-y-1">
