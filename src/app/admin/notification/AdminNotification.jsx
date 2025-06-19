@@ -1,5 +1,3 @@
-// src/app/admin/notification/AdminNotification.jsx
-'use client';
 import React from 'react';
 
 // --- Helper Icons ---

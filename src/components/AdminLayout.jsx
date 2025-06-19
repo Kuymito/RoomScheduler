@@ -9,6 +9,7 @@ import LogoutAlert from '@/components/LogoutAlert';
 import Footer from '@/components/Footer';
 import NotificationPopup from '@/app/admin/notification/AdminNotificationPopup';
 import { Moul } from 'next/font/google';
+import { signOut } from 'next-auth/react';
 
 const moul = Moul({
     weight: '400',
@@ -22,6 +23,7 @@ export default function AdminLayout({ children, activeItem, pageTitle }) {
     const [showLogoutAlert, setShowLogoutAlert] = useState(false);
     const [showNotificationPopup, setShowNotificationPopup] = useState(false);
     const [notifications, setNotifications] = useState([]);
+    const [navigatingTo, setNavigatingTo] = useState(null);
     const notificationPopupRef = useRef(null);
     const notificationIconRef = useRef(null);
     const adminPopupRef = useRef(null);
@@ -53,9 +55,7 @@ export default function AdminLayout({ children, activeItem, pageTitle }) {
     const handleConfirmLogout = () => {
         setShowLogoutAlert(false);
         setIsLoading(true);
-        setTimeout(() => {
-            router.push('/api/auth/login');
-        }, 1500);
+        signOut({ callbackUrl: '/api/auth/login' });
     };
     
     const handleToggleNotificationPopup = (event) => {
@@ -138,8 +138,15 @@ export default function AdminLayout({ children, activeItem, pageTitle }) {
     };
     
     const handleNavItemClick = (item) => {
-        console.log("Navigating to:", item);
+        if (pathname !== item.href) {
+            setNavigatingTo(item.id);
+            router.push(item.href);
+        }
     };
+
+    useEffect(() => {
+        setNavigatingTo(null);
+    }, [pathname]);
 
     const sidebarWidth = isSidebarCollapsed ? '80px' : '265px';
 
@@ -192,7 +199,7 @@ export default function AdminLayout({ children, activeItem, pageTitle }) {
 
     return (
         <div className="flex w-full min-h-screen bg-[#E2E1EF] dark:bg-gray-800">
-            <Sidebar isCollapsed={isSidebarCollapsed} activeItem={activeItem} onNavItemClick={handleNavItemClick} />
+            <Sidebar isCollapsed={isSidebarCollapsed} activeItem={activeItem} onNavItemClick={handleNavItemClick} navigatingTo={navigatingTo} />
             <div className="flex flex-col flex-grow transition-all duration-300 ease-in-out" style={{ marginLeft: sidebarWidth, width: `calc(100% - ${sidebarWidth})`, height: '100vh', overflowY: 'auto' }}>
                 <div className="fixed top-0 bg-white dark:bg-gray-900 shadow-custom-medium p-5 flex justify-between items-center z-30 transition-all duration-300 ease-in-out" style={{ left: sidebarWidth, width: `calc(100% - ${sidebarWidth})`, height: TOPBAR_HEIGHT }}>
                     <Topbar onToggleSidebar={toggleSidebar} isSidebarCollapsed={isSidebarCollapsed} onUserIconClick={handleUserIconClick} pageSubtitle={pageTitle} userIconRef={userIconRef} onNotificationIconClick={handleToggleNotificationPopup} notificationIconRef={notificationIconRef} hasUnreadNotifications={hasUnreadNotifications} />

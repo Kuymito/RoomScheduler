@@ -70,7 +70,7 @@ const ProfileContent = () => {
         setError(null);
         setSuccessMessage(null);
         try {
-            await new Promise(resolve => setTimeout(resolve, 700));
+            await new Promise(resolve => setTimeout(resolve, 500));
             const dataToSave = isEditingGeneral ? editableProfileData : profileData;
             const updatedProfile = { ...dataToSave, avatarUrl: imagePreviewUrl };
             setProfileData(updatedProfile);
@@ -111,7 +111,7 @@ const ProfileContent = () => {
         }
 
         try {
-            await new Promise(resolve => setTimeout(resolve, 700));
+            await new Promise(resolve => setTimeout(resolve, 500));
             setProfileData(prev => ({ ...prev, password: newPassword }));
             setNewPassword('');
             setConfirmNewPassword('');
