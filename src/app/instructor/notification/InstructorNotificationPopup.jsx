@@ -19,11 +19,14 @@ const InstructorNotificationPopup = ({ show, notifications = [], onMarkAllRead, 
     top: '80px',
   };
 
+  // Adjust popup position based on the anchorRef (e.g., the notification icon)
   if (anchorRef && anchorRef.current) {
     const rect = anchorRef.current.getBoundingClientRect();
     popupStyle = {
       position: 'absolute',
+      // Position the popup 10px below the anchor element, relative to its bottom edge
       top: `${rect.bottom + window.scrollY + 10}px`,
+      // Position the popup aligned with the right edge of the anchor element
       right: `${window.innerWidth - rect.right}px`,
     };
   }
@@ -34,7 +37,7 @@ const InstructorNotificationPopup = ({ show, notifications = [], onMarkAllRead, 
         ${show && !isExiting ? 'animate-fade-in-scale' : ''}
         ${isExiting ? 'animate-fade-out-scale' : ''}
       `}
-      style={anchorRef?.current ? popupStyle : {}}
+      style={anchorRef?.current ? popupStyle : {}} // Apply dynamic style if anchorRef is available
     >
       <div className="relative flex justify-between items-center py-4 px-5">
         <h2 className="font-roboto font-semibold text-xl text-gray-800 dark:text-gray-100">
@@ -51,7 +54,8 @@ const InstructorNotificationPopup = ({ show, notifications = [], onMarkAllRead, 
         </div>
       </div>
 
-      <div className="flex flex-col flex-1 overflow-y-auto dark:bg-gray-800 border-t border-gray-200 dark:border-slate-600 rounded-b-lg">
+      {/* Changed overflow-y-auto to overflow-y-scroll to always reserve scrollbar space */}
+      <div className="flex flex-col flex-1 overflow-y-scroll dark:bg-gray-800 border-t border-gray-200 dark:border-slate-600 rounded-b-lg">
         {notifications && notifications.length > 0 ? (
           notifications.map(notification => (
             <InstructorNotification
