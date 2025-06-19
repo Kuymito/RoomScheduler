@@ -4,7 +4,7 @@ import React, { useState, useRef, useEffect } from 'react';
 
 const ClassCreatePopup = ({ isOpen, onClose, onSave }) => {
     /// --- State Variables ---
-    const generationOptions = ['30', '31', '32', '33', '34', '35'];
+    const generationOptions = ['30', '31', '32', '33'];
     const majorOptions = ['IT', 'CS', 'IS', 'SE', 'AI', 'DS', 'ML', 'DA'];
     const degreesOptions = ['Associate', 'Bachelor', 'Master', 'PhD'];
     const facultyOptions = ['Faculty of IT', 'Faculty of CS', 'Faculty of IS', 'Faculty of AI', 'Faculty of DS', 'Faculty of ML', 'Faculty of DA', 'Faculty of SE']; // Example faculties
