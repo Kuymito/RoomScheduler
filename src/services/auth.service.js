@@ -1,7 +1,7 @@
 // src/services/auth.service.js
 import axios from 'axios';
 
-const API_URL = "http://10.230.2.182:8080/api/v1";
+const API_URL = "https://jaybird-new-previously.ngrok-free.app/api/v1";
 
 const login = async (email, password) => {
   try {
