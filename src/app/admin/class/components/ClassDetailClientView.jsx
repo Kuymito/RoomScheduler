@@ -282,7 +282,7 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
     const downloadButtonBaseClasses = "w-full sm:w-auto px-6 py-2 text-white font-semibold rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-opacity-50 transition-colors duration-150 ease-in-out transform active:scale-95";
     const scheduleIsEmpty = Object.values(schedule).every(dayData => !dayData || !dayData.instructor);
     const saveButtonColorClasses = isSaving ? "bg-gray-400 opacity-60 cursor-not-allowed" : isDirty ? "bg-blue-600 hover:bg-blue-700 focus:ring-blue-500" : "bg-gray-400 opacity-80 cursor-not-allowed";
-    const downloadButtonColorClasses = isSaving ? "bg-gray-300 cursor-not-allowed" : scheduleIsEmpty ? "bg-gray-400 cursor-not-allowed" : "bg-blue-500 hover:bg-blue-600 focus:ring-blue-400";
+    const downloadButtonColorClasses = isSaving || isDirty || scheduleIsEmpty ? "bg-gray-400 opacity-60 cursor-not-allowed" : "bg-blue-500 hover:bg-blue-600 focus:ring-blue-400";
     
     return (
         <div className='p-6 dark:text-white'>

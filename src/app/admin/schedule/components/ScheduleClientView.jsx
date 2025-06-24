@@ -68,7 +68,7 @@ const RoomCard = ({ cellData, isDragOver, isWarning, dragHandlers, className }) 
                     <ScheduledClassCard classData={classData} onDragStart={dragHandlers.onDragStart} onDragEnd={dragHandlers.onDragEnd} />
                 ) : (
                     <span className={`text-xs italic select-none pointer-events-none ${isUnavailable ? 'text-red-600 dark:text-red-400' : 'text-gray-400 dark:text-gray-600'}`}>
-                        {isUnavailable ? 'Unavailable' : `Room ${room.name}`}
+                        {isUnavailable ? 'Unavailable' : `${room.name}`}
                     </span>
                 )}
             </div>
