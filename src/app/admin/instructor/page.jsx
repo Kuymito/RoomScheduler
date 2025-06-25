@@ -6,20 +6,7 @@ import InstructorCreatePopup from './components/InstructorCreatePopup';
 import { useRouter } from 'next/navigation';
 import InstructorPageSkeleton from './components/InstructorPageSkeleton';
 
-const fetchInstructorData = async () => {
-    const initialInstructorData = [
-        { id: 1, name: 'Sok Mean', firstName: 'Sok', lastName: 'Mean', email: 'sok.mean@example.com', phone: '012345678', majorStudied: 'Computer Science', qualifications: 'PhD', status: 'active', profileImage: 'https://i.pravatar.cc/150?img=68' },
-        { id: 2, name: 'Sok Chan', firstName: 'Sok', lastName: 'Chan', email: 'sok.chan@example.com', phone: '012345679', majorStudied: 'Information Technology', qualifications: 'Master', status: 'active', profileImage: 'https://i.pravatar.cc/150?img=52' },
-        { id: 3, name: 'Dara Kim', firstName: 'Dara', lastName: 'Kim', email: 'dara.kim@example.com', phone: '012345680', majorStudied: 'Information Systems', qualifications: 'Professor', status: 'active', profileImage: null }, // No image
-        { id: 4, name: 'Lina Heng', firstName: 'Lina', lastName: 'Heng', email: 'lina.heng@example.com', phone: '012345681', majorStudied: 'Artificial Intelligence', qualifications: 'PhD', status: 'archived', profileImage: 'https://i.pravatar.cc/150?img=25' },
-        { id: 5, name: 'Virak Chea', firstName: 'Virak', lastName: 'Chea', email: 'virak.chea@example.com', phone: '012345682', majorStudied: 'Data Science', qualifications: 'Master', status: 'active', profileImage: 'https://i.pravatar.cc/150?img=33' },
-        { id: 6, name: 'Sophea Nov', firstName: 'Sophea', lastName: 'Nov', email: 'sophea.nov@example.com', phone: '012345683', majorStudied: 'Machine Learning', qualifications: 'Lecturer', status: 'active', profileImage: null }, // No image
-        { id: 7, name: 'Chanthy Pen', firstName: 'Chanthy', lastName: 'Pen', email: 'chanthy.pen@example.com', phone: '012345684', majorStudied: 'Data Analytics', qualifications: 'Associate Professor', status: 'active', profileImage: 'https://i.pravatar.cc/150?img=17' },
-        { id: 8, name: 'Vicheka Sreng', firstName: 'Vicheka', lastName: 'Sreng', email: 'vicheka.sreng@example.com', phone: '012345685', majorStudied: 'Software Engineering', qualifications: 'PhD', status: 'archived', profileImage: 'https://i.pravatar.cc/150?img=41' },
-    ];
-
-    return new Promise(resolve => setTimeout(() => resolve(initialInstructorData), 1000));
-};
+const API_BASE_URL = 'https://jaybird-new-previously.ngrok-free.app/api/v1';
 
 const InstructorViewContent = () => {
     // --- State Variables ---
@@ -31,27 +18,118 @@ const InstructorViewContent = () => {
     const [statusFilter, setStatusFilter] = useState('active');
     const [sortColumn, setSortColumn] = useState(null);
     const [sortDirection, setSortDirection] = useState('asc');
+    const [departments, setDepartments] = useState([]);
     const [searchTexts, setSearchTexts] = useState({
         name: '',
         email: '',
         phone: '',
-        majorStudied: '', // Changed from 'department'
-        qualifications: '',
+        major: '',
+        degree: '',
     });
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPageOptions = [5, 10, 20, 50];
     const [itemsPerPage, setItemsPerPage] = useState(itemsPerPageOptions[0]);
+    const [error, setError] = useState(null);
 
-    //  --- Handlers ---
+    // Format API data to match table structure
+    const formatInstructorData = (apiData) => {
+        if (!apiData || !Array.isArray(apiData)) return [];
+        
+        return apiData.map(instructor => ({
+            id: instructor.instructorId,
+            instructorId: instructor.instructorId,
+            firstName: instructor.firstName,
+            lastName: instructor.lastName,
+            name: `${instructor.firstName} ${instructor.lastName}`,
+            email: instructor.email,
+            phone: instructor.phone,
+            degree: instructor.degree,
+            major: instructor.major,
+            majorStudied: instructor.major,
+            qualifications: instructor.degree,
+            profileImage: instructor.profile,
+            archived: instructor.archived,
+            status: instructor.archived ? 'archived' : 'active',
+            departmentName: instructor.departmentName,
+            address: instructor.address
+        }));
+    };
+
+    const fetchDepartments = async () => {
+        try {
+            const token = localStorage.getItem('jwtToken');
+            if (!token) return;
+    
+            const response = await fetch(`${API_BASE_URL}/department`, {
+                headers: {
+                    'accept': '*/*',
+                    'Authorization': `Bearer ${token}`,
+                    'ngrok-skip-browser-warning': 'true'
+                }
+            });
+    
+            if (response.ok) {
+                const data = await response.json();
+                setDepartments(data.payload || []);
+            } else {
+                console.error("Failed to fetch departments");
+            }
+        } catch (error) {
+            console.error("Error fetching departments:", error);
+        }
+    };
+
+    // Fetch instructors from API
+    const fetchInstructors = async () => {
+        setIsLoading(true);
+        setError(null);
+        try {
+            const token = localStorage.getItem('jwtToken');
+            if (!token) {
+                throw new Error('Authentication token not found');
+            }
+
+            const response = await fetch(`${API_BASE_URL}/instructors`, {
+                method: 'GET',
+                headers: {
+                    'accept': '*/*',
+                    'Authorization': `Bearer ${token}`,
+                    'ngrok-skip-browser-warning': 'true'
+                }
+            });
+
+            if (!response.ok) {
+                if (response.status === 401 || response.status === 403) {
+                    localStorage.removeItem('jwtToken');
+                    router.push('/login');
+                    return;
+                }
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+            setInstructorData(formatInstructorData(data.payload));
+        } catch (error) {
+            setError(error.message || "Failed to fetch instructors");
+            console.error("Error fetching instructors:", error);
+            setInstructorData([]);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    // --- Handlers ---
     const handleRowClick = (instructorId) => {
-        // Prevent another navigation if one is already in progress
-        if (navigatingRowId) return;
-
-        // Set the ID of the row we are navigating from
-        setNavigatingRowId(instructorId);
-
-        // Proceed with the navigation
+        if (navigatingRowId) return; // Prevent multiple clicks
+        setNavigatingRowId(instructorId); // Set loading state for this row
+        
+        // Navigate to instructor details page
         router.push(`/admin/instructor/${instructorId}`);
+        
+        // Reset navigating state after a short delay
+        setTimeout(() => {
+            setNavigatingRowId(null);
+        }, 500);
     };
 
     const handleCreateInstructorClick = () => {
@@ -62,20 +140,55 @@ const InstructorViewContent = () => {
         setShowCreateInstructorPopup(false);
     };
 
-    const handleSaveNewInstructor = (newInstructorData) => {
-        const newId = instructorData.length > 0 ? Math.max(...instructorData.map(item => item.id)) + 1 : 1;
-        const newInstructorWithStatus = {
-            id: newId,
+    const handleSaveNewInstructor = async (newInstructorData) => {
+        // Find the corresponding department from the 'major' field.
+        // This comparison is case-insensitive.
+        const department = departments.find(
+            (dept) => dept.name.toLowerCase() === newInstructorData.major?.toLowerCase()
+        );
+    
+        // If no matching department is found, show an error and stop.
+        if (!department) {
+            setError(`The major "${newInstructorData.major}" is not a valid department. Please use a valid department name.`);
+            return; // Stop the function execution
+        }
+    
+        // Construct the final payload with the dynamically found departmentId
+        const finalPayload = {
             ...newInstructorData,
-            status: 'active', // New instructors default to active
+            roleId: 2,
+            departmentId: department.departmentId // Use the ID from the found department
         };
-
-        setInstructorData(prevData => [...prevData, newInstructorWithStatus]);
-        setCurrentPage(1); // Reset page after adding a new instructor
+    
+        try {
+            setError(null); // Clear previous errors before a new attempt
+            const token = localStorage.getItem('jwtToken');
+            const response = await fetch(`${API_BASE_URL}/instructors`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`,
+                    'ngrok-skip-browser-warning': 'true'
+                },
+                body: JSON.stringify(finalPayload)
+            });
+    
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || 'Failed to create instructor');
+            }
+    
+            await fetchInstructors();
+            setCurrentPage(1);
+            setShowCreateInstructorPopup(false);
+        } catch (error) {
+            setError(error.message || "Failed to create instructor");
+            console.error("Error creating instructor:", error);
+        }
     };
 
     const handleSort = (column) => {
-        setCurrentPage(1); // Reset to first page when sorting changes
+        setCurrentPage(1);
         if (sortColumn === column) {
             setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
         } else {
@@ -85,120 +198,108 @@ const InstructorViewContent = () => {
     };
 
     const sortedInstructorData = useMemo(() => {
-        if (!sortColumn) {
-            return instructorData;
-        }
+        if (!sortColumn) return instructorData;
 
-        const sortableData = [...instructorData];
-
-        sortableData.sort((a, b) => {
+        return [...instructorData].sort((a, b) => {
             const aValue = String(a[sortColumn]).toLowerCase();
             const bValue = String(b[sortColumn]).toLowerCase();
-
-            if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
-            if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
-            return 0;
+            return sortDirection === 'asc' 
+                ? aValue.localeCompare(bValue) 
+                : bValue.localeCompare(aValue);
         });
-        return sortableData;
     }, [instructorData, sortColumn, sortDirection]);
 
     const getSortIndicator = (column) => {
-        if (sortColumn === column) {
-            return sortDirection === 'asc' ?
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-4 ml-1">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 15.75 7.5-7.5 7.5 7.5" />
+        if (sortColumn !== column) {
+            return (
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-4 ml-1 opacity-40">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 15 12 18.75 15.75 15m-7.5-6L12 5.25 15.75 9" />
                 </svg>
-                :
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-4 ml-1">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
-                </svg>;
+            );
         }
-        return (
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-4 ml-1 opacity-40">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 15 12 18.75 15.75 15m-7.5-6L12 5.25 15.75 9" />
+        return sortDirection === 'asc' ? (
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-4 ml-1">
+                <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 15.75 7.5-7.5 7.5 7.5" />
+            </svg>
+        ) : (
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-4 ml-1">
+                <path strokeLinecap="round" strokeLinejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
             </svg>
         );
     };
 
     const handleSearchChange = (column, value) => {
-        setSearchTexts(prev => ({
-            ...prev,
-            [column]: value,
-        }));
-        setCurrentPage(1); // Reset to first page on search
+        setSearchTexts(prev => ({ ...prev, [column]: value }));
+        setCurrentPage(1);
     };
 
     const filteredInstructorData = useMemo(() => {
-        let currentFilteredData = [...sortedInstructorData];
+        let result = [...sortedInstructorData];
 
         if (statusFilter !== 'all') {
-            currentFilteredData = currentFilteredData.filter(item => item.status === statusFilter);
+            const filterArchived = statusFilter === 'archived';
+            result = result.filter(item => item.archived === filterArchived);
         }
 
-        Object.keys(searchTexts).forEach(column => {
-            const searchTerm = String(searchTexts[column]).toLowerCase().trim();
+        Object.entries(searchTexts).forEach(([column, searchTerm]) => {
             if (searchTerm) {
-                currentFilteredData = currentFilteredData.filter(item =>
-                    String(item[column]).toLowerCase().includes(searchTerm)
-                );
+                const term = searchTerm.toLowerCase().trim();
+                result = result.filter(item => {
+                    if (column === 'name') {
+                        return `${item.firstName} ${item.lastName}`.toLowerCase().includes(term);
+                    }
+                    return String(item[column]).toLowerCase().includes(term);
+                });
             }
         });
-        return currentFilteredData;
+
+        return result;
     }, [sortedInstructorData, searchTexts, statusFilter]);
 
-
     const totalPages = Math.ceil(filteredInstructorData.length / itemsPerPage);
-
     const currentTableData = useMemo(() => {
         const startIndex = (currentPage - 1) * itemsPerPage;
-        const endIndex = startIndex + itemsPerPage;
-        return filteredInstructorData.slice(startIndex, endIndex);
+        return filteredInstructorData.slice(startIndex, startIndex + itemsPerPage);
     }, [filteredInstructorData, currentPage, itemsPerPage]);
 
-    const goToNextPage = () => {
-        setCurrentPage((prevPage) => Math.min(prevPage + 1, totalPages));
-    };
-
-    const goToPreviousPage = () => {
-        setCurrentPage((prevPage) => Math.max(prevPage - 1, 1));
-    };
-
-    const goToPage = (pageNumber) => {
-        setCurrentPage(pageNumber);
-    };
-
-    const handleItemsPerPageChange = (event) => {
-        const newItemsPerPage = parseInt(event.target.value, 10);
-        setItemsPerPage(newItemsPerPage);
-        setCurrentPage(1); // Reset to first page when items per page changes
-    };
-
-    const getPageNumbers = () => {
-        const pageNumbers = [];
-        const maxPagesToShow = 5;
-        let startPage = Math.max(1, currentPage - Math.floor(maxPagesToShow / 2));
-        let endPage = Math.min(totalPages, startPage + maxPagesToShow - 1);
-
-        if (endPage - startPage + 1 < maxPagesToShow) {
-            startPage = Math.max(1, endPage - maxPagesToShow + 1);
-        }
-
-        for (let i = startPage; i <= endPage; i++) {
-            pageNumbers.push(i);
-        }
-        return pageNumbers;
-    };
-
-    const toggleInstructorStatus = (id) => {
-        setInstructorData(prevData =>
-            prevData.map(item =>
-                item.id === id
-                    ? { ...item, status: item.status === 'active' ? 'archived' : 'active' }
-                    : item
+    const toggleInstructorStatus = async (instructorId) => {
+        try {
+          // 1. Prepare the exact JSON structure
+          const requestBody = {
+            is_archived: !instructorData.find(i => i.instructorId === instructorId)?.archived
+          };
+      
+          // 2. Make the API call
+          const response = await fetch(`${API_BASE_URL}/instructors/${instructorId}/archive`, {
+            method: 'PATCH',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${localStorage.getItem('jwtToken')}`
+            },
+            body: JSON.stringify(requestBody) // Must stringify the object
+          });
+      
+          // 3. Handle response
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || 'Failed to update status');
+          }
+      
+          // 4. Update UI state
+          const updatedData = await response.json();
+          setInstructorData(prev => 
+            prev.map(item => 
+              item.instructorId === instructorId 
+                ? { ...item, archived: updatedData.payload.archived }
+                : item
             )
-        );
-        setCurrentPage(1); // Reset page after status change
-    };
+          );
+      
+        } catch (error) {
+          console.error('Archive error:', error);
+          setError(error.message);
+        }
+      };
 
     // --- Icons Components ---
     const EditIcon = ({ className = "w-[14px] h-[14px]" }) => (
@@ -223,35 +324,36 @@ const InstructorViewContent = () => {
         </svg>
     );
 
-    // --- Hook ---
+    // Initial data fetch
     useEffect(() => {
-        const loadInitialData = async () => {
-            try {
-                const data = await fetchInstructorData();
-                setInstructorData(data);
-            } catch (error) {
-                console.error("Failed to fetch class data:", error);
-                // You could set an error state here to show an error message
-            } finally {
-                setIsLoading(false); // Set loading to false after data is fetched or if an error occurs
-            }
-        };
-
-        loadInitialData();
+        fetchInstructors();
+        fetchDepartments();
     }, []);
-    
+
     if (isLoading) {
         return <InstructorPageSkeleton />;
     }
 
     return (
         <div className="p-6 dark:text-white">
+            {error && (
+                <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4">
+                    <strong className="font-bold">Error: </strong>
+                    <span className="block sm:inline">{error}</span>
+                    <button onClick={() => setError(null)} className="absolute top-0 bottom-0 right-0 px-4 py-3">
+                        <svg className="fill-current h-6 w-6 text-red-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                            <path d="M14.348 14.849a1.2 1.2 0 0 1-1.697 0L10 11.819l-2.651 3.029a1.2 1.2 0 1 1-1.697-1.697l2.758-3.15-2.759-3.152a1.2 1.2 0 1 1 1.697-1.697L10 8.183l2.651-3.031a1.2 1.2 0 1 1 1.697 1.697l-2.758 3.152 2.758 3.15a1.2 1.2 0 0 1 0 1.698z"/>
+                        </svg>
+                    </button>
+                </div>
+            )}
+
             <div className="flex items-center justify-between">
-                <h1 className="text-lg font-bold">
-                    Instructor List
-                </h1>
+                <h1 className="text-lg font-bold">Instructor List</h1>
             </div>
+            
             <hr className="border-t border-slate-300 dark:border-slate-700 mt-4 mb-4" />
+            
             <div className="flex items-center justify-between mt-2 mb-4 gap-2">
                 <div className="flex items-center gap-2">
                     <input
@@ -309,11 +411,12 @@ const InstructorViewContent = () => {
                     Create
                 </button>
             </div>
+
             <div className="relative overflow-x-auto border border-gray-200 dark:border-gray-600 rounded-lg">
                 <table className="w-full rounded-lg text-sm text-left rtl:text-right text-gray-500">
                     <thead className="text-xs text-gray-700 border-b border-gray-200 bg-gray-50 dark:text-gray-400 dark:border-gray-600 dark:bg-gray-700">
                         <tr>
-                            <th scope="col" className="px-6 py-2.5"> Action </th>
+                            <th scope="col" className="px-6 py-2.5">Action</th>
                             <th scope="col" className="px-6 py-2.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600">
                                 <div className="flex items-center" onClick={() => handleSort('name')}>
                                     Name {getSortIndicator('name')}
@@ -330,13 +433,13 @@ const InstructorViewContent = () => {
                                 </div>
                             </th>
                             <th scope="col" className="px-6 py-2.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600">
-                                <div className="flex items-center" onClick={() => handleSort('majorStudied')}> {/* Changed to majorStudied */}
-                                    Major {getSortIndicator('majorStudied')}
+                                <div className="flex items-center" onClick={() => handleSort('major')}>
+                                    Major {getSortIndicator('major')}
                                 </div>
                             </th>
                             <th scope="col" className="px-6 py-2.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 sm:table-cell hidden">
-                                <div className="flex items-center" onClick={() => handleSort('qualifications')}>
-                                    Degree {getSortIndicator('qualifications')}
+                                <div className="flex items-center" onClick={() => handleSort('degree')}>
+                                    Degree {getSortIndicator('degree')}
                                 </div>
                             </th>
                             <th scope="col" className="px-6 py-2.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600">
@@ -350,29 +453,33 @@ const InstructorViewContent = () => {
                         {currentTableData.length > 0 ? (
                             currentTableData.map((data) => (
                                 <tr 
-                                    key={data.id} 
+                                    key={data.instructorId} 
                                     className={`bg-white border-b border-gray-200 dark:bg-gray-800 dark:border-gray-700
-                                        ${navigatingRowId === data.id 
-                                            ? 'opacity-60 bg-gray-100 dark:bg-gray-700' // Style for the loading row
-                                            : 'hover:bg-gray-50 dark:hover:bg-gray-600 cursor-pointer' // Normal hover style
+                                        ${navigatingRowId === data.instructorId 
+                                            ? 'opacity-60 bg-gray-100 dark:bg-gray-700'
+                                            : 'hover:bg-gray-50 dark:hover:bg-gray-600 cursor-pointer'
                                         }
                                     `}
-                                    onClick={() => !navigatingRowId && handleRowClick(data.id)}
+                                    onClick={() => !navigatingRowId && handleRowClick(data.instructorId)}
                                 >
                                     <th scope="row" className="px-6 py-2.5 font-medium text-gray-900 whitespace-nowrap dark:text-white">
                                         <div className="flex gap-2">
                                             <button 
                                                 onClick={(e) => {
                                                     e.stopPropagation();
-                                                    handleRowClick(data.id);
+                                                    handleRowClick(data.instructorId);
                                                 }}
-                                                className={`p-1 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300`} >
+                                                className={`p-1 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300`}
+                                            >
                                                 <EditIcon className="size-4" />
                                             </button>
                                             <button
-                                                onClick={() => toggleInstructorStatus(data.id)}
-                                                className={`p-1 ${data.status === 'active' ? 'text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300' : 'text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300'}`}
-                                                title={data.status === 'active' ? 'Archive Instructor' : 'Activate Instructor'}
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    toggleInstructorStatus(data.instructorId);
+                                                }}
+                                                className={`p-1 ${data.archived ? 'text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300' : 'text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300'}`}
+                                                title={data.archived ? 'Activate Instructor' : 'Archive Instructor'}
                                             >
                                                 <ArchiveIcon className="size-4" />
                                             </button>
@@ -392,17 +499,17 @@ const InstructorViewContent = () => {
                                             {data.name}
                                         </div>
                                     </td>
-                                    <td className="px-6 py-2 sm:table-cell hidden"> {data.email} </td>
-                                    <td className="px-6 py-2 lg:table-cell hidden"> {data.phone} </td>
-                                    <td className="px-6 py-2"> {data.majorStudied} </td> {/* Changed to majorStudied */}
-                                    <td className="px-6 py-2 sm:table-cell hidden"> {data.qualifications} </td>
+                                    <td className="px-6 py-2 sm:table-cell hidden">{data.email}</td>
+                                    <td className="px-6 py-2 lg:table-cell hidden">{data.phone}</td>
+                                    <td className="px-6 py-2">{data.major}</td>
+                                    <td className="px-6 py-2 sm:table-cell hidden">{data.degree}</td>
                                     <td className="px-6 py-2 capitalize">
                                         <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                                            data.status === 'active'
+                                            !data.archived
                                                 ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
                                                 : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
                                         }`}>
-                                            {data.status}
+                                            {data.archived ? 'archived' : 'active'}
                                         </span>
                                     </td>
                                 </tr>
@@ -415,59 +522,9 @@ const InstructorViewContent = () => {
                             </tr>
                         )}
                     </tbody>
-                    <tfoot className="text-xs text-gray-700 border-t border-gray-200 bg-gray-50 dark:text-gray-400 dark:border-gray-600 dark:bg-gray-700">
-                        <tr>
-                            <td className="px-6 py-2.5"></td>
-                            <td className="px-6 py-2.5">
-                                <input
-                                    type="text"
-                                    placeholder="Search name..."
-                                    value={searchTexts.name}
-                                    onChange={(e) => handleSearchChange('name', e.target.value)}
-                                    className="block w-full p-1.5 text-xs text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                                />
-                            </td>
-                            <td className="px-6 py-2.5 sm:table-cell hidden">
-                                <input
-                                    type="text"
-                                    placeholder="Search email..."
-                                    value={searchTexts.email}
-                                    onChange={(e) => handleSearchChange('email', e.target.value)}
-                                    className="block w-full p-1.5 text-xs text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                                />
-                            </td>
-                            <td className="px-6 py-2.5 lg:table-cell hidden">
-                                <input
-                                    type="text"
-                                    placeholder="Search phone..."
-                                    value={searchTexts.phone}
-                                    onChange={(e) => handleSearchChange('phone', e.target.value)}
-                                    className="block w-full p-1.5 text-xs text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                                />
-                            </td>
-                            <td className="px-6 py-2.5">
-                                <input
-                                    type="text"
-                                    placeholder="Search major..."
-                                    value={searchTexts.majorStudied} // Changed to majorStudied
-                                    onChange={(e) => handleSearchChange('majorStudied', e.target.value)}
-                                    className="block w-full p-1.5 text-xs text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                                />
-                            </td>
-                            <td className="px-6 py-2.5 sm:table-cell hidden">
-                                <input
-                                    type="text"
-                                    placeholder="Search qual..."
-                                    value={searchTexts.qualifications}
-                                    onChange={(e) => handleSearchChange('qualifications', e.target.value)}
-                                    className="block w-full p-1.5 text-xs text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                                />
-                            </td>
-                            <td className="px-6 py-2.5"></td>
-                        </tr>
-                    </tfoot>
                 </table>
             </div>
+
             <nav className="flex items-center flex-column flex-wrap md:flex-row justify-between pt-4" aria-label="Table navigation">
                 <span className="text-xs font-normal text-gray-500 dark:text-gray-400 mb-4 md:mb-0 block w-full md:w-auto">
                     Showing{' '}
@@ -488,42 +545,55 @@ const InstructorViewContent = () => {
                         id="items-per-page"
                         className="bg-gray-50 text-xs border border-gray-300 text-gray-900 text-sm rounded-full focus:ring-blue-500 focus:border-blue-500 px-2 py-1 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
                         value={itemsPerPage}
-                        onChange={handleItemsPerPageChange}
+                        onChange={(e) => {
+                            setItemsPerPage(Number(e.target.value));
+                            setCurrentPage(1);
+                        }}
                     >
                         {itemsPerPageOptions.map(option => (
-                            <option key={option} value={option}>
-                                {option}
-                            </option>
+                            <option key={option} value={option}>{option}</option>
                         ))}
                     </select>
                 </div>
                 <ul className="inline-flex -space-x-px rtl:space-x-reverse text-xs h-8">
                     <li>
                         <button
-                            onClick={goToPreviousPage}
+                            onClick={() => setCurrentPage(p => Math.max(p - 1, 1))}
                             disabled={currentPage === 1}
                             className="flex items-center justify-center px-3 h-8 ms-0 leading-tight text-gray-500 bg-white border border-gray-300 rounded-s-lg hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             Previous
                         </button>
                     </li>
-                    {getPageNumbers().map((pageNumber) => (
-                        <li key={pageNumber}>
-                            <button
-                                onClick={() => goToPage(pageNumber)}
-                                className={`flex items-center justify-center px-3 h-8 leading-tight border border-gray-300 ${
-                                    currentPage === pageNumber
-                                        ? 'text-blue-600 bg-blue-50 hover:bg-blue-100 hover:text-blue-700 dark:bg-gray-700 dark:text-white'
-                                        : 'text-gray-500 bg-white hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white'
-                                }`}
-                            >
-                                {pageNumber}
-                            </button>
-                        </li>
-                    ))}
+                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                        let pageNum;
+                        if (totalPages <= 5) {
+                            pageNum = i + 1;
+                        } else if (currentPage <= 3) {
+                            pageNum = i + 1;
+                        } else if (currentPage >= totalPages - 2) {
+                            pageNum = totalPages - 4 + i;
+                        } else {
+                            pageNum = currentPage - 2 + i;
+                        }
+                        return (
+                            <li key={pageNum}>
+                                <button
+                                    onClick={() => setCurrentPage(pageNum)}
+                                    className={`flex items-center justify-center px-3 h-8 leading-tight border border-gray-300 ${
+                                        currentPage === pageNum
+                                            ? 'text-blue-600 bg-blue-50 hover:bg-blue-100 hover:text-blue-700 dark:bg-gray-700 dark:text-white'
+                                            : 'text-gray-500 bg-white hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white'
+                                    }`}
+                                >
+                                    {pageNum}
+                                </button>
+                            </li>
+                        );
+                    })}
                     <li>
                         <button
-                            onClick={goToNextPage}
+                            onClick={() => setCurrentPage(p => Math.min(p + 1, totalPages))}
                             disabled={currentPage === totalPages}
                             className="flex items-center justify-center px-3 h-8 leading-tight text-gray-500 bg-white border border-gray-300 rounded-e-lg hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
                         >
@@ -533,11 +603,11 @@ const InstructorViewContent = () => {
                 </ul>
             </nav>
 
-            {/* Render the InstructorCreatePopup component */}
             <InstructorCreatePopup
                 isOpen={showCreateInstructorPopup}
                 onClose={handleCloseInstructorPopup}
                 onSave={handleSaveNewInstructor}
+                departments={departments} // Pass the departments list as a prop
             />
         </div>
     );

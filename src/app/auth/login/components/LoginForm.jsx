@@ -8,6 +8,9 @@ import { Moul } from 'next/font/google';
 
 const moul = Moul({ weight: '400', subsets: ['latin'] });
 
+// Define the API URL for your login endpoint
+const LOGIN_API_URL = process.env.NEXT_PUBLIC_API_URL ? `${process.env.NEXT_PUBLIC_API_URL}/auth/login` : 'https://jaybird-new-previously.ngrok-free.app/api/v1/auth/login';
+
 // This new component contains the form and its logic
 const RightSection = () => {
     const [email, setEmail] = useState('');
@@ -22,47 +25,75 @@ const RightSection = () => {
         setPasswordVisible(!passwordVisible);
     };
 
-    const handleSubmit = (e) => {
-        e.preventDefault();
-        const correctEmail = "admin@gmail.com";
-        const correctPassword = "123";
-
+    const handleSubmit = async (e) => {
+        // This should prevent the page from reloading. If it reloads, the form isn't correctly wired.
+        e.preventDefault(); 
+        console.log("1. Login button clicked, handleSubmit function started.");
+    
         if (!email || !password) {
             setError("Please enter both email and password.");
+            console.log("2. Function stopped: Email or password field is empty.");
             return;
         }
-
-        if (email !== correctEmail || password !== correctPassword) {
-            setError("Incorrect email or password.");
-            return;
-        }
-
-        setError('');
+    
+        console.log("3. Setting loading state to true.");
         setIsLoading(true);
-
-        setTimeout(() => {
-            router.push('/admin/dashboard');
-        }, 1500);
+        setError('');
+    
+        try {
+            console.log("4. Attempting to send request to API:", LOGIN_API_URL);
+            
+            const response = await fetch(LOGIN_API_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ email, password }),
+            });
+    
+            console.log("5. Received response from API with status:", response.status);
+    
+            const data = await response.json();
+            console.log("6. Parsed response JSON:", data);
+    
+            if (!response.ok) {
+                console.error("7. Response was not OK. Throwing error.");
+                throw new Error(data.message || 'An unknown error occurred.');
+            }
+            
+            if (data.token) {
+                console.log("8. Token found! Saving to storage and navigating.");
+                localStorage.setItem('jwtToken', data.token);
+                router.push('/admin/dashboard');
+            } else {
+                throw new Error('Login successful, but no token was received from the server.');
+            }
+    
+        } catch (err) {
+            console.error("9. An error occurred inside the try-catch block:", err);
+            setError(err.message);
+            setIsLoading(false); // Stop loading spinner on error
+        }
     };
 
     const handleForgotPasswordClick = () => {
         setIsForgotLoading(true);
+        // This is a simple navigation, but can be updated to call an OTP endpoint later
         setTimeout(() => {
             router.push('/auth/forgot');
         }, 1500);
     };
 
-    // If loading, show the spinner and message within this component's boundaries
     if (isLoading || isForgotLoading) {
         return (
             <div className="w-full max-w-xs sm:max-w-sm md:max-w-md flex flex-col items-center justify-center text-center">
-                 <img
+                <img
                     src="https://numregister.com/assets/img/logo/num.png"
                     alt="University Logo"
                     className="mx-auto mb-6 w-20"
                 />
                 <p className="text-lg sm:text-xl text-gray-700 font-semibold mb-4">
-                    {isForgotLoading ? "Redirecting, please wait..." : "Logging in, please wait..."}
+                    {isForgotLoading ? "Redirecting, please wait..." : "Authenticating, please wait..."}
                 </p>
                 <div
                     className="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-blue-600"
@@ -73,8 +104,7 @@ const RightSection = () => {
             </div>
         );
     }
-
-    // Otherwise, show the form
+    
     return (
         <div className="w-full max-w-xs sm:max-w-sm md:max-w-md flex flex-col items-center">
             <div className="w-full sm:w-5/6 mb-6">
@@ -92,7 +122,8 @@ const RightSection = () => {
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         className={`shadow-sm border rounded-lg w-full py-2 px-3 text-gray-700 focus:outline-none focus:ring-2 ${error ? 'border-red-500 ring-red-500' : 'border-gray-300 focus:ring-blue-500'}`}
-                        placeholder="admin@gmail.com"
+                        placeholder="admin@example.com"
+                        required
                     />
                 </div>
 
@@ -106,13 +137,13 @@ const RightSection = () => {
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                             className={`shadow-sm border rounded-lg w-full py-2 px-3 text-gray-700 focus:outline-none focus:ring-2 ${error ? 'border-red-500 ring-red-500' : 'border-gray-300 focus:ring-blue-500'}`}
-                            placeholder="at least 8 characters"
+                            placeholder="Your password"
+                            required
                         />
                         <span
                             className="absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer"
                             onClick={togglePasswordVisibility}
                         >
-                            {/* SVG icons for password visibility */}
                             {passwordVisible ? (
                                 <svg className="h-5 w-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.879 16.121A3 3 0 1012 12M21 12c-1.785 4.398-5.672 7-9 7-1.488 0-2.92-.254-4.252-.733L5 18.5V21h2l-2-2m-2-2l2-2" /></svg>
                             ) : (
@@ -126,7 +157,8 @@ const RightSection = () => {
                 <div className="flex flex-col items-center justify-between">
                     <button
                         type="submit"
-                        className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-3 rounded-lg transition duration-150 ease-in-out mb-3"
+                        disabled={isLoading}
+                        className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-3 rounded-lg transition duration-150 ease-in-out mb-3 disabled:bg-blue-400 disabled:cursor-not-allowed"
                     >
                         Login
                     </button>
@@ -143,11 +175,10 @@ const RightSection = () => {
     );
 };
 
-// Main component now acts as a layout
+
 const LoginForm = () => {
     return (
         <div className="min-h-screen w-screen flex flex-col lg:flex-row font-sans">
-            {/* Left Column - Always Visible */}
             <div className="lg:w-3/5 w-full bg-[#3165F8] text-white flex items-center justify-center p-6 sm:p-8 md:p-12 lg:p-16 relative overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-br opacity-75"></div>
                 <div className="relative z-10 max-w-sm sm:max-w-md lg:max-w-lg">
@@ -166,7 +197,6 @@ const LoginForm = () => {
                 </div>
             </div>
 
-            {/* Right Column - Content is dynamic */}
             <div className="lg:w-2/5 w-full bg-[#E0E4F3] flex items-center justify-center p-6 sm:p-8 md:p-12 lg:p-16">
                 <RightSection />
             </div>
