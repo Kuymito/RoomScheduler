@@ -1,20 +1,16 @@
 import { Suspense } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
-import DashboardHeader from './components/DashboardHeader';
-import StatCard from './components/StatCard';
 import DashboardSkeleton from './components/DashboardSkeleton';
-import RoomAvailabilityWrapper from './components/RoomAvailabilityWrapper';
+import DashboardClientContent from './components/DashboardClientContent'; // Import the new client component
 import { revalidatePath } from 'next/cache';
 
 // Mock data fetching functions (ideally move to a central file like `@/lib/data`)
-const fetchDashboardData = async () => {
+const fetchDashboardStats = async () => {
   return new Promise(resolve => setTimeout(() => resolve({
     classAssign: 65,
     expired: 15,
     unassignedClass: 16,
     onlineClass: 28,
-    currentDate: '19 May 2025',
-    academicYear: '2025 - 2026',
   }), 500));
 };
 
@@ -38,11 +34,9 @@ const fetchChartData = async (timeSlot) => {
 async function DashboardContent() {
   // Fetch initial data for the page and the chart in parallel on the server.
   const [dashboardStats, initialChartData] = await Promise.all([
-    fetchDashboardData(),
+    fetchDashboardStats(), // No longer fetching date/year here
     fetchChartData('07:00 - 10:00')
   ]);
-
-  const { classAssign, expired, unassignedClass, onlineClass, currentDate, academicYear } = dashboardStats;
 
   // Server Action to be called from the client component to get new chart data.
   async function updateChart(timeSlot) {
@@ -53,32 +47,12 @@ async function DashboardContent() {
   }
 
   return (
-    <>
-      <DashboardHeader
-        title="Welcome to Schedule Management"
-        description="Easily plan, track, and manage your school schedule all in one place."
-        currentDate={currentDate}
-        academicYear={academicYear}
-      />
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-6">
-        <StatCard title="Class Assign" value={classAssign} />
-        <StatCard title="Expired" value={expired} />
-        <StatCard title="Unassigned Class" value={unassignedClass} />
-        <StatCard title="Online Class" value={onlineClass} />
-      </div>
-
-      <div className="mt-6 grid grid-cols-1 gap-6">
-        {/*
-          The interactive chart is now in a separate client component.
-          We pass the initial data and the server action as props.
-        */}
-        <RoomAvailabilityWrapper
-          initialChartData={initialChartData}
-          updateChartAction={updateChart}
-        />
-      </div>
-    </>
+    // Pass the fetched stats and the server action to the client component
+    <DashboardClientContent
+      dashboardStats={dashboardStats}
+      initialChartData={initialChartData}
+      updateChartAction={updateChart}
+    />
   );
 }
 

@@ -1,3 +1,4 @@
+// src/app/api/auth/verification/components/RightVerificationSection.jsx
 "use client";
 
 import React, { useState, useRef, useEffect } from 'react';
@@ -74,7 +75,8 @@ const RightVerificationSection = () => {
             // The email is still in session storage for the next step.
             router.push('/api/auth/reset');
         } catch (err) {
-            setError(err.message || "An error occurred.");
+            console.error("OTP verification error:", err.message); // Log the actual error
+            setError("Invalid code. Please try again."); // Display user-friendly message
             setIsLoading(false);
         }
     };
@@ -95,7 +97,8 @@ const RightVerificationSection = () => {
                 setError('');
                 inputRefs[0].current?.focus();
             } catch (err) {
-                setError(err.message || 'Failed to resend code.');
+                console.error("Resend code error:", err.message); // Log the actual error
+                setError('Failed to resend code.'); // Display user-friendly message
             } finally {
                 setIsLoading(false);
             }

@@ -39,11 +39,14 @@ export default function ClassClientView({ initialClasses }) {
         }
     };
 
+    // Updated getSortIndicator to use SVG icons consistent with InstructorClientView
     const getSortIndicator = (column) => {
         if (sortColumn === column) {
-            return sortDirection === 'asc' ? '▲' : '▼';
+            return sortDirection === 'asc' ?
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-4 ml-1"><path strokeLinecap="round" strokeLinejoin="round" d="m4.5 15.75 7.5-7.5 7.5 7.5" /></svg> :
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-4 ml-1"><path strokeLinecap="round" strokeLinejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" /></svg>;
         }
-        return '';
+        return <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-4 ml-1 opacity-40"><path strokeLinecap="round" strokeLinelinejoin="round" d="M8.25 15 12 18.75 15.75 15m-7.5-6L12 5.25 15.75 9" /></svg>;
     };
     
     const handleSearchChange = (column, value) => {
@@ -94,13 +97,29 @@ export default function ClassClientView({ initialClasses }) {
         return filteredAndSortedData.slice(startIndex, startIndex + itemsPerPage);
     }, [filteredAndSortedData, currentPage, itemsPerPage]);
 
-    const goToNextPage = () => setCurrentPage(prev => Math.min(prev + 1, totalPages));
-    const goToPreviousPage = () => setCurrentPage(prev => Math.max(prev - 1, 1));
+    // --- Pagination Logic ---
+    const goToNextPage = () => setCurrentPage((prev) => Math.min(prev + 1, totalPages));
+    const goToPreviousPage = () => setCurrentPage((prev) => Math.max(prev - 1, 1));
     const handleItemsPerPageChange = (e) => {
         setItemsPerPage(Number(e.target.value));
         setCurrentPage(1);
     };
+    const getPageNumbers = () => {
+        const pageNumbers = [];
+        const maxPagesToShow = 5;
+        let startPage = Math.max(1, currentPage - Math.floor(maxPagesToShow / 2));
+        let endPage = Math.min(totalPages, startPage + maxPagesToShow - 1);
+        if (endPage - startPage + 1 < maxPagesToShow) {
+            startPage = Math.max(1, endPage - maxPagesToShow + 1);
+        }
+        for (let i = startPage; i <= endPage; i++) {
+            pageNumbers.push(i);
+        }
+        return pageNumbers;
+    };
 
+
+    // --- Render Logic ---
     return (
         <div className="p-6 dark:text-white">
             <div className="flex items-center justify-between">
@@ -127,15 +146,33 @@ export default function ClassClientView({ initialClasses }) {
                     <thead className="text-xs text-gray-700 border-b border-gray-200 bg-gray-50 dark:text-gray-400 dark:border-gray-600 dark:bg-gray-700">
                         <tr>
                             <th scope="col" className="px-6 py-2.5 md:table-cell hidden">Action</th>
-                            <th scope="col" className="px-6 py-2.5 cursor-pointer" onClick={() => handleSort('name')}>Name {getSortIndicator('name')}</th>
-                            <th scope="col" className="px-6 py-2.5 cursor-pointer lg:table-cell hidden" onClick={() => handleSort('generation')}>Gen {getSortIndicator('generation')}</th>
-                            <th scope="col" className="px-6 py-2.5 cursor-pointer lg:table-cell hidden" onClick={() => handleSort('group')}>Group {getSortIndicator('group')}</th>
-                            <th scope="col" className="px-6 py-2.5 cursor-pointer" onClick={() => handleSort('major')}>Major {getSortIndicator('major')}</th>
-                            <th scope="col" className="px-6 py-2.5 cursor-pointer" onClick={() => handleSort('degrees')}>Degree {getSortIndicator('degrees')}</th>
-                            <th scope="col" className="px-6 py-2.5 cursor-pointer 2xl:table-cell hidden" onClick={() => handleSort('faculty')}>Faculty {getSortIndicator('faculty')}</th>
-                            <th scope="col" className="px-6 py-2.5 cursor-pointer 2xl:table-cell hidden" onClick={() => handleSort('semester')}>Semester {getSortIndicator('semester')}</th>
-                            <th scope="col" className="px-6 py-2.5 cursor-pointer sm:table-cell hidden" onClick={() => handleSort('shift')}>Shift {getSortIndicator('shift')}</th>
-                            <th scope="col" className="px-6 py-2.5 cursor-pointer" onClick={() => handleSort('status')}>Status {getSortIndicator('status')}</th>
+                            <th scope="col" className="px-6 py-2.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600" onClick={() => handleSort('name')}>
+                                <div className="flex items-center">Name {getSortIndicator('name')}</div>
+                            </th>
+                            <th scope="col" className="px-6 py-2.5 cursor-pointer lg:table-cell hidden hover:bg-gray-100 dark:hover:bg-gray-600" onClick={() => handleSort('generation')}>
+                                <div className="flex items-center">Gen {getSortIndicator('generation')}</div>
+                            </th>
+                            <th scope="col" className="px-6 py-2.5 cursor-pointer lg:table-cell hidden hover:bg-gray-100 dark:hover:bg-gray-600" onClick={() => handleSort('group')}>
+                                <div className="flex items-center">Group {getSortIndicator('group')}</div>
+                            </th>
+                            <th scope="col" className="px-6 py-2.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600" onClick={() => handleSort('major')}>
+                                <div className="flex items-center">Major {getSortIndicator('major')}</div>
+                            </th>
+                            <th scope="col" className="px-6 py-2.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600" onClick={() => handleSort('degrees')}>
+                                <div className="flex items-center">Degree {getSortIndicator('degrees')}</div>
+                            </th>
+                            <th scope="col" className="px-6 py-2.5 cursor-pointer 2xl:table-cell hidden hover:bg-gray-100 dark:hover:bg-gray-600" onClick={() => handleSort('faculty')}>
+                                <div className="flex items-center">Faculty {getSortIndicator('faculty')}</div>
+                            </th>
+                            <th scope="col" className="px-6 py-2.5 cursor-pointer 2xl:table-cell hidden hover:bg-gray-100 dark:hover:bg-gray-600" onClick={() => handleSort('semester')}>
+                                <div className="flex items-center">Semester {getSortIndicator('semester')}</div>
+                            </th>
+                            <th scope="col" className="px-6 py-2.5 cursor-pointer sm:table-cell hidden hover:bg-gray-100 dark:hover:bg-gray-600" onClick={() => handleSort('shift')}>
+                                <div className="flex items-center">Shift {getSortIndicator('shift')}</div>
+                            </th>
+                            <th scope="col" className="px-6 py-2.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600" onClick={() => handleSort('status')}>
+                                <div className="flex items-center">Status {getSortIndicator('status')}</div>
+                            </th>
                         </tr>
                     </thead>
                     <tbody className="text-xs font-normal text-gray-700 dark:text-gray-400">

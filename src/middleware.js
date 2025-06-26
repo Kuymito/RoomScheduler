@@ -9,7 +9,7 @@ export default withAuth(
     // If the user is not logged in, `token` will be null.
     // The `withAuth` middleware already handles redirecting to the login page.
     if (!token) {
-      return NextResponse.redirect(new URL('/api/auth/login', req.url));
+      return NextResponse.redirect(new URL('/auth/login', req.url));
     }
 
     const userRole = token.role;

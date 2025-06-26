@@ -23,13 +23,17 @@ const roboto = Roboto({
 });
 
 export const metadata = {
-  title: 'Admin Profile',
-  description: 'Admin profile page for NUM',
+  title: 'Scheduler',
+  description: 'Scheduler Management System',
 };
 
 export default function RootLayout({ children }) {
   return (
     <html lang="en" className={`${inter.variable} ${poppins.variable} ${roboto.variable}`}>
+      <head>
+        <title>{metadata.title}</title>
+        <link rel="icon" href="https://numregister.com/assets/img/logo/num.png" />
+      </head>
       <ThemeProvider>
         <body className="flex min-h-screen">
           {children}

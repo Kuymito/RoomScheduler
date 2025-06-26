@@ -164,12 +164,24 @@ export default function InstructorClientView({ initialInstructors }) {
                     <thead className="text-xs text-gray-700 border-b border-gray-200 bg-gray-50 dark:text-gray-400 dark:border-gray-600 dark:bg-gray-700">
                         <tr>
                             <th scope="col" className="px-6 py-2.5"> Action </th>
-                            <th scope="col" className="px-6 py-2.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600"> <div className="flex items-center" onClick={() => handleSort('name')}> Name {getSortIndicator('name')} </div> </th>
-                            <th scope="col" className="px-6 py-2.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 sm:table-cell hidden"> <div className="flex items-center" onClick={() => handleSort('email')}> Email {getSortIndicator('email')} </div> </th>
-                            <th scope="col" className="px-6 py-2.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 lg:table-cell hidden"> <div className="flex items-center" onClick={() => handleSort('phone')}> Phone {getSortIndicator('phone')} </div> </th>
-                            <th scope="col" className="px-6 py-2.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600"> <div className="flex items-center" onClick={() => handleSort('majorStudied')}> Major {getSortIndicator('majorStudied')} </div> </th>
-                            <th scope="col" className="px-6 py-2.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 sm:table-cell hidden"> <div className="flex items-center" onClick={() => handleSort('qualifications')}> Degree {getSortIndicator('qualifications')} </div> </th>
-                            <th scope="col" className="px-6 py-2.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600"> <div className="flex items-center" onClick={() => handleSort('status')}> Status {getSortIndicator('status')} </div> </th>
+                            <th scope="col" className="px-6 py-2.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600">
+                                <div className="flex items-center" onClick={() => handleSort('name')}> Name {getSortIndicator('name')}</div> 
+                            </th>
+                            <th scope="col" className="px-6 py-2.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 sm:table-cell hidden">
+                                <div className="flex items-center" onClick={() => handleSort('email')}> Email {getSortIndicator('email')}</div>
+                            </th>
+                            <th scope="col" className="px-6 py-2.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 lg:table-cell hidden">
+                                <div className="flex items-center" onClick={() => handleSort('phone')}> Phone {getSortIndicator('phone')}</div>
+                            </th>
+                            <th scope="col" className="px-6 py-2.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600">
+                                <div className="flex items-center" onClick={() => handleSort('majorStudied')}> Major {getSortIndicator('majorStudied')}</div>
+                            </th>
+                            <th scope="col" className="px-6 py-2.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 sm:table-cell hidden">
+                                <div className="flex items-center" onClick={() => handleSort('qualifications')}> Degree {getSortIndicator('qualifications')}</div>
+                            </th>
+                            <th scope="col" className="px-6 py-2.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600">
+                                <div className="flex items-center" onClick={() => handleSort('status')}> Status {getSortIndicator('status')}</div>
+                            </th>
                         </tr>
                     </thead>
                     <tbody className="text-xs font-normal text-gray-700 dark:text-gray-400">

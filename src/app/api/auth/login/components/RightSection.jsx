@@ -109,8 +109,8 @@ const RightSection = () => {
                         name="email"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        className={`shadow-sm border rounded-lg w-full py-2 px-3 text-gray-700 focus:outline-none focus:ring-2 ${error ? 'border-red-500 ring-red-500' : 'border-gray-300 focus:ring-blue-500'}`}
-                        placeholder="example@gmail.com"
+                        className={`shadow-sm border rounded-lg w-full py-2 px-3 text-gray-700 focus:outline-none focus:ring-1 ${error ? 'border-red-500 ring-red-500' : 'border-gray-300 focus:ring-blue-500'}`}
+                        placeholder="Email"
                     />
                 </div>
 
@@ -124,7 +124,7 @@ const RightSection = () => {
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                             className={`shadow-sm border rounded-lg w-full py-2 px-3 text-gray-700 focus:outline-none focus:ring-2 ${error ? 'border-red-500 ring-red-500' : 'border-gray-300 focus:ring-blue-500'}`}
-                            placeholder="at least 8 characters"
+                            placeholder="Password"
                         />
                         <span
                             className="absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer"
@@ -149,12 +149,14 @@ const RightSection = () => {
                     >
                         Login
                     </button>
+                </div>
+                <div className="flex justify-end">
                     <button
                         type="button"
                         onClick={handleForgotPasswordClick}
-                        className="text-sm text-blue-600 hover:text-blue-800"
+                        className="text-sm text-blue-600 hover:text-blue-800 "
                     >
-                        Forgot Password
+                        <span className="underline">Forgot Password</span>
                     </button>
                 </div>
             </form>
