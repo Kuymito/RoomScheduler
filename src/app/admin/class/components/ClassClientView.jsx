@@ -179,7 +179,7 @@ export default function ClassClientView({ initialClasses }) {
                         {currentTableData.length > 0 ? currentTableData.map((data) => ( 
                             <tr key={data.id} className={`bg-white border-b border-gray-200 dark:bg-gray-800 dark:border-gray-700 ${(isPending && rowLoadingId === data.id) ? 'cursor-wait bg-gray-100 dark:bg-gray-700' : 'hover:bg-gray-50 dark:hover:bg-gray-600 cursor-pointer'}`} onClick={() => handleRowClick(data.id)}>
                                 {isPending && rowLoadingId === data.id ? (
-                                    <td colSpan={10} className="px-6 py-2.5 text-center"><div className="flex justify-center items-center h-6"><Spinner /></div></td>
+                                    <td colSpan={10} className="px-6 py-3 text-center"><div className="flex justify-center items-center h-6"><Spinner /></div></td>
                                 ) : (
                                     <>
                                         <td className="px-6 py-2.5 font-medium text-gray-900 whitespace-nowrap dark:text-white md:table-cell hidden">

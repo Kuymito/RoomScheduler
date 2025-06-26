@@ -49,7 +49,7 @@ const verifyOtp = async (email, otp) => {
 
 const resetPassword = async ({ token, password }) => {
     console.log(`Simulating password reset with token: ${token}`);
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    // Artificial delay removed
     return { message: "Password has been reset successfully." };
 };
 

@@ -6,12 +6,13 @@ import { revalidatePath } from 'next/cache';
 
 // Mock data fetching functions (ideally move to a central file like `@/lib/data`)
 const fetchDashboardStats = async () => {
-  return new Promise(resolve => setTimeout(() => resolve({
+  // Artificial delay removed
+  return {
     classAssign: 65,
     expired: 15,
     unassignedClass: 16,
     onlineClass: 28,
-  }), 500));
+  };
 };
 
 const fetchChartData = async (timeSlot) => {
@@ -24,10 +25,11 @@ const fetchChartData = async (timeSlot) => {
     case '16:00 - 19:00': dataPoints = [15, 35, 40, 20, 50, 30, 55]; break;
     default: dataPoints = [10, 20, 30, 40, 50, 60, 70];
   }
-  return new Promise(resolve => setTimeout(() => resolve({
+  // Artificial delay removed
+  return {
     labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
     data: dataPoints,
-  }), 500));
+  };
 };
 
 // This is the primary content component, rendered on the server.

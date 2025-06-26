@@ -117,7 +117,7 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
     
     const handleSaveDetails = async () => {
         setLoading(true);
-        await new Promise(resolve => setTimeout(resolve, 700));
+        // Artificial delay removed
         setClassDetails(editableClassDetails);
         setIsEditing(false);
         setLoading(false);
@@ -237,7 +237,7 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
         setIsSaving(true);
         setSaveStatus('saving');
         setSaveMessage('Saving schedule...');
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        // Artificial delay removed
         setSaveStatus('success');
         setSaveMessage('Schedule saved successfully!');
         setInitialScheduleForCheck(JSON.parse(JSON.stringify(schedule)));

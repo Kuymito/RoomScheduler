@@ -37,8 +37,7 @@ const initialInstructorsData = [
  */
 const fetchClassDetailData = async (id) => {
     console.log(`Fetching data for class ID: ${id} on the server.`);
-    // Simulate network delay
-    await new Promise(resolve => setTimeout(resolve, 500));
+    // Artificial delay removed
     
     const classDetails = initialClassData.find(cls => cls.id === id);
     // In a real app, you would also fetch the instructors and any existing schedule here.

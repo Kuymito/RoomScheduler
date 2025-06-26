@@ -75,8 +75,7 @@ export default function RoomClientView({ initialAllRoomsData }) {
         setIsEditing(false); // Exit editing mode when a new room is selected
         setLoading(true);
         try {
-            // Simulate a quick fetch/lookup for details
-            await new Promise((resolve) => setTimeout(resolve, 100));
+            // Artificial delay removed
             const data = allRoomsData[roomId];
             if (!data) throw new Error("Room not found");
             setRoomDetails(data);
@@ -134,7 +133,7 @@ export default function RoomClientView({ initialAllRoomsData }) {
         };
         console.log("Simulating API call to update room:", updatedRoomData);
         try {
-            await new Promise(resolve => setTimeout(resolve, 500));
+            // Artificial delay removed
             setRoomDetails(updatedRoomData); // Update displayed details
             // Update the main allRoomsData state to reflect changes across the app
             setAllRoomsData(prevAllRooms => ({

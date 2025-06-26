@@ -15,8 +15,7 @@ const fetchInstructorData = async () => {
         { id: 8, name: 'Vicheka Sreng', firstName: 'Vicheka', lastName: 'Sreng', email: 'vicheka.sreng@example.com', phone: '012345685', majorStudied: 'Software Engineering', qualifications: 'PhD', status: 'archived', profileImage: 'https://i.pravatar.cc/150?img=41' },
     ];
 
-    // Simulate network delay
-    await new Promise(resolve => setTimeout(resolve, 500));
+    // Artificial delay removed
     return initialInstructorData;
 };
 

@@ -45,7 +45,7 @@ export default function InstructorDetailClientView({ initialInstructor }) {
         setSuccessMessage(null);
         try {
             console.log("Saving general info:", editableInstructorDetails);
-            await new Promise(resolve => setTimeout(resolve, 700));
+            // Artificial delay removed
             const updatedDetails = { ...editableInstructorDetails, profileImage: imagePreviewUrl };
             setInstructorDetails(updatedDetails);
             setEditableInstructorDetails({ ...updatedDetails });
@@ -84,7 +84,7 @@ export default function InstructorDetailClientView({ initialInstructor }) {
 
         try {
             console.log("Saving new password...");
-            await new Promise(resolve => setTimeout(resolve, 700));
+            // Artificial delay removed
             const updatedDetails = { ...instructorDetails, password: newPassword };
             setInstructorDetails(updatedDetails);
             setEditableInstructorDetails({ ...updatedDetails });

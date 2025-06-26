@@ -87,8 +87,8 @@ const fetchSchedulePageData = async () => {
         C8: { id: "C8", name: "Room C8", building: "Building C", floor: 2, capacity: 10, equipment: ["AC"], status: "available" },
         C9: { id: "C9", name: "Room C9", building: "Building C", floor: 3, capacity: 8, equipment: ["Whiteboard"], status: "available" },
         C10: { id: "C10", name: "Room C10", building: "Building C", floor: 3, capacity: 6, equipment: ["Projector"], status: "available" },
-        C11: { id: "C11", name: "Room C11", building: "Building C", floor: 3, capacity: 5, equipment: ["AC"], status: "available" },
-        C12: { id: "C12", name: "Room C12", building: "Building C", floor: 3, capacity: 4, equipment: ["Whiteboard"], status: "available" },
+        C11: { id: "C11", name: "C11", building: "Building C", floor: 3, capacity: 5, equipment: ["AC"], status: "available" },
+        C12: { id: "C12", name: "C12", building: "Building C", floor: 3, capacity: 4, equipment: ["Whiteboard"], status: "available" },
 
         LibraryD1: { id: "LibraryD1", name: "Library Room D1", building: "Building D", floor: 1, capacity: 60, equipment: ["Bookshelves", "Computers", "Tables", "Study Desks"], status: "unavailable" },
         LibraryD2: { id: "LibraryD2", name: "Library Room D2", building: "Building D", floor: 2, capacity: 60, equipment: ["Bookshelves", "Computers", "Tables", "Study Desks"], status: "available" },
@@ -110,7 +110,7 @@ const fetchSchedulePageData = async () => {
         E12: { id: "E12", name: "Room E12", building: "Building E", floor: 3, capacity: 8, equipment: ["Whiteboard"], status: "available" },
         E13: { id: "E13", name: "Room E13", building: "Building E", floor: 3, capacity: 5, equipment: ["Projector"], status: "available" },
         E14: { id: "E14", name: "Room E14", building: "Building E", floor: 3, capacity: 9, equipment: ["AC"], status: "available" },
-        E15: { id: "E15", name: "Room E15", building: "Building E", floor: 3, capacity: 10, equipment: ["Whiteboard", "AC"], status: "available" },
+        E15: { id: "E15", name: "E15", building: "Building E", floor: 3, capacity: 10, equipment: ["Whiteboard", "AC"], status: "available" },
         E16: { id: "E16", name: "Room E16", building: "Building E", floor: 3, capacity: 7, equipment: ["Projector"], status: "available" },
 
         E17: { id: "E17", name: "Room E17", building: "Building E", floor: 4, capacity: 14, equipment: ["AC", "Whiteboard"], status: "available" },
@@ -171,8 +171,7 @@ const fetchSchedulePageData = async () => {
         });
     });
 
-    await new Promise(resolve => setTimeout(resolve, 500));
-
+    // Artificial delay removed
     return { initialClasses, initialRooms: initialRoomsArray, initialSchedules, constants: { degrees, generations, buildings: buildings.map(b => `Building ${b}`), weekdays, timeSlots, gridDimensions } };
 };
 

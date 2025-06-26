@@ -78,18 +78,15 @@ const RightResetPasswordSection = () => {
 
         if (isPasswordValid && isConfirmPasswordValid) {
             setIsLoading(true);
-            setTimeout(() => {
-                setIsLoading(false);
-                setIsSuccess(true);
-            }, 2000);
+            // Artificial delay removed
+            setIsLoading(false);
+            setIsSuccess(true);
         }
     };
 
     const handleBackToLogin = () => {
         setIsNavigating(true);
-        setTimeout(() => {
-            router.push('/api/auth/login');
-        }, 1500);
+        router.push('/api/auth/login');
     };
 
     if (isLoading || isNavigating) {

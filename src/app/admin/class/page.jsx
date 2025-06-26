@@ -20,8 +20,7 @@ const fetchClassData = async () => {
         { id: 9, name: 'NUM33-08', generation: '33', group: '08', major: 'DA', degrees: 'Bachelor', faculty: 'Faculty of DA', semester: 'Semester 3', shift: '19:00 - 22:00', status: 'archived' },
         { id: 10, name: 'NUM33-09', generation: '33', group: '09', major: 'SE', degrees: 'Bachelor', faculty: 'Faculty of SE & R', semester: '2024-2025 S3', shift: '8:00 - 11:00', status: 'active' }
     ];
-    // Simulate network delay
-    await new Promise(resolve => setTimeout(resolve, 500));
+    // Artificial delay removed
     return initialClassData;
 };
 

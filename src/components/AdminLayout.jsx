@@ -63,7 +63,7 @@ export default function AdminLayout({ children, activeItem, pageTitle }) {
     
     const mockAPICall = async (action, data) => {
         console.log(`MOCK API CALL: ${action}`, data || '');
-        await new Promise(resolve => setTimeout(resolve, 300));
+        // Artificial delay removed
         return { success: true, message: `${action} successful.` };
     };
 

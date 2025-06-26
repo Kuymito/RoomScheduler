@@ -37,9 +37,7 @@ const RightForgotPasswordSection = () => {
 
     const handleBackToLogin = () => {
         setIsNavigating(true);
-        setTimeout(() => {
-            router.push('/api/auth/login');
-        }, 1500);
+        router.push('/api/auth/login');
     };
 
     if (isLoading || isNavigating) {

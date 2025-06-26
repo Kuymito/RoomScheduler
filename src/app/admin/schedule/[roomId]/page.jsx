@@ -37,17 +37,16 @@ const ALL_ROOMS_SCHEDULES = {
 const fetchScheduleForRoom = (roomId) => {
     console.log(`Simulating API fetch for room: ${roomId}`);
     return new Promise(resolve => {
-        setTimeout(() => {
-            const roomData = ALL_ROOMS_SCHEDULES[roomId] || {};
-            const processedData = Object.entries(roomData).reduce((acc, [day, slots]) => {
-                acc[day] = Object.entries(slots).reduce((dayAcc, [timeSlot, item]) => {
-                    dayAcc[timeSlot] = { ...item, timeDisplay: timeSlot };
-                    return dayAcc;
-                }, {});
-                return acc;
+        // Artificial delay removed
+        const roomData = ALL_ROOMS_SCHEDULES[roomId] || {};
+        const processedData = Object.entries(roomData).reduce((acc, [day, slots]) => {
+            acc[day] = Object.entries(slots).reduce((dayAcc, [timeSlot, item]) => {
+                dayAcc[timeSlot] = { ...item, timeDisplay: timeSlot };
+                return dayAcc;
             }, {});
-            resolve(processedData);
-        }, 800);
+            return acc;
+        }, {});
+        resolve(processedData);
     });
 };
 

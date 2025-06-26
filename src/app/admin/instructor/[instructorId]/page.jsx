@@ -22,8 +22,7 @@ const initialInstructorData = [
  */
 const fetchInstructorDetails = async (id) => {
     console.log(`Fetching data for instructor ID: ${id} on the server.`);
-    // Simulate network delay
-    await new Promise(resolve => setTimeout(resolve, 500));
+    // Artificial delay removed
     const data = initialInstructorData.find(inst => inst.id === id);
     return data;
 };

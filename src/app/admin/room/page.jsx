@@ -123,8 +123,7 @@ const fetchRoomData = async () => {
         F20: { id: "F20", name: "F20", building: "Building F", floor: 5, capacity: 13, equipment: ["AC", "Whiteboard"], status: "available" },
     };
 
-    // Simulate network delay for fetching data
-    await new Promise(resolve => setTimeout(resolve, 500));
+    // Artificial delay removed
     return initialRoomsData;
 };
 
