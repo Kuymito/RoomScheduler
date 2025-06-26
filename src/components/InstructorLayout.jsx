@@ -8,13 +8,8 @@ import InstructorPopup from 'src/app/instructor/profile/components/InstructorPop
 import LogoutAlert from '@/components/LogoutAlert';
 import Footer from '@/components/Footer';
 import InstructorNotificationPopup from '@/app/instructor/notification/InstructorNotificationPopup';
-import { Moul } from 'next/font/google';
 import { signOut } from 'next-auth/react';
-
-const moul = Moul({
-    weight: '400',
-    subsets: ['latin'],
-});
+import { moul } from './fonts';
 
 const TOPBAR_HEIGHT = '90px';
 

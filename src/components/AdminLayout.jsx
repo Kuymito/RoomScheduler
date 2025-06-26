@@ -8,13 +8,8 @@ import AdminPopup from 'src/app/admin/profile/components/AdminPopup';
 import LogoutAlert from '@/components/LogoutAlert';
 import Footer from '@/components/Footer';
 import NotificationPopup from '@/app/admin/notification/AdminNotificationPopup';
-import { Moul } from 'next/font/google';
 import { signOut } from 'next-auth/react';
-
-const moul = Moul({
-    weight: '400',
-    subsets: ['latin'],
-});
+import { moul } from './fonts';
 
 const TOPBAR_HEIGHT = '90px';
 

@@ -9,13 +9,8 @@ import LogoutAlert from '@/components/LogoutAlert';
 import Footer from '@/components/Footer';
 import InstructorNotificationPopup from '@/app/instructor/notification/InstructorNotificationPopup';
 import { usePathname, useRouter } from 'next/navigation';
-import { Moul } from 'next/font/google';
 import { signOut } from 'next-auth/react';
-
-const moul = Moul({
-    weight: '400',
-    subsets: ['latin'],
-});
+import { moul } from './fonts';
 
 export default function InstructorDashboardLayout({ children, activeItem, pageTitle }) {
     const [showAdminPopup, setShowAdminPopup] = useState(false);
