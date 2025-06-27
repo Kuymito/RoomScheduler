@@ -49,7 +49,7 @@ const verifyOtp = async (email, otp) => {
 
 const resetPassword = async ({ email, otp, newPassword }) => {
     try {
-        const response = await axios.post(`${SERVER_API_URL}/auth/reset-password-with-otp`, {
+        const response = await axios.post(`${LOCAL_API_URL}/auth/reset-password-with-otp`, {
             email,
             otp,
             newPassword
