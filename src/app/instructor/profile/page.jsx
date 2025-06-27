@@ -1,46 +1,31 @@
-'use client';
+// profile/page.jsx
+'use client'; // This directive indicates it's a Client Component
 
 import { useState, useEffect, useRef } from 'react';
-import InstructorLayout from '@/components/InstructorLayout'; // Adjusted import path
-import Image from 'next/image';
-const EyeOpenIcon = ({ className = "h-5 w-5" }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
-        <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
-    </svg>
-);
-
-const EyeClosedIcon = ({ className = "h-5 w-5" }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 0 0 1.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.451 10.451 0 0 1 12 4.5c4.756 0 8.773 3.162 10.065 7.498a10.522 10.522 0 0 1-4.293 5.774M6.228 6.228 3 3m3.228 3.228
-         3.65 3.65m7.894 7.894L21 21m-3.228-3.228-3.65-3.65m0 0a3 3 0 1 0-4.243-4.243m4.242 4.242L9.88 9.88" />
-    </svg>
-);
-
-const FollowIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="h-4 w-4 mr-1">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-    </svg>
-);
+import InstructorLayout from '@/components/InstructorLayout'; // Adjusted import path if your InstructorLayout is elsewhere
+// Import the newly created sub-components
+import AvatarCard from './components/AvatarCard';
+import GeneralInfoCard from './components/GeneralInfoCard';
+import PasswordInfoCard from './components/PasswordInfoCard';
 
 const ProfileContent = () => {
+    // All state management for the profile page
     const [profileData, setProfileData] = useState({
         firstName: "Linda",
         lastName: "Keo",
         email: "KeoLinda@gmail.com",
         phoneNumber: "123456789",
         address: "Phnom Penh",
-        avatarUrl: "/images/reach.jpg", 
-        password: "password123",
+        avatarUrl: "/images/reach.jpg",
+        password: "password123", // Note: In a real app, passwords should not be stored in client-side state like this.
         degree: "M.A.",
         department: "Faculty of IT",
         major: "IT",
-        
     });
 
     const [editableProfileData, setEditableProfileData] = useState(null);
     const [imagePreviewUrl, setImagePreviewUrl] = useState(null);
-    const [isUploading, setIsUploading] = useState(false);
+    const [isUploading, setIsUploading] = useState(false); // State for actual image upload status
     const fileInputRef = useRef(null);
     const [isEditingGeneral, setIsEditingGeneral] = useState(false);
     const [isEditingPassword, setIsEditingPassword] = useState(false);
@@ -48,9 +33,9 @@ const ProfileContent = () => {
     const [confirmNewPassword, setConfirmNewPassword] = useState('');
     const [currentPassword, setCurrentPassword] = useState('');
     const [passwordMismatchError, setPasswordMismatchError] = useState(false);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState(null);
-    const [successMessage, setSuccessMessage] = useState(null);
+    const [loading, setLoading] = useState(false); // Global loading state for saving operations
+    const [error, setError] = useState(null); // Global error message
+    const [successMessage, setSuccessMessage] = useState(null); // Global success message
     const [emptyPasswordError, setEmptyPasswordError] = useState({
         new: false,
         confirm: false,
@@ -66,8 +51,10 @@ const ProfileContent = () => {
     const fetchProfileData = async () => {
         setLoading(true);
         try {
+            // Simulate API call
             await new Promise(resolve => setTimeout(resolve, 500));
-            setImagePreviewUrl(profileData.avatarUrl);
+            // In a real app, you would fetch profileData from an API here
+            setImagePreviewUrl(profileData.avatarUrl); // Set initial image preview
         } catch (err) {
             setError("Failed to load profile data.");
         } finally {
@@ -80,11 +67,12 @@ const ProfileContent = () => {
         setError(null);
         setSuccessMessage(null);
         try {
+            // Simulate API call to save general info
             await new Promise(resolve => setTimeout(resolve, 700));
             const dataToSave = isEditingGeneral ? editableProfileData : profileData;
             const updatedProfile = { ...dataToSave, avatarUrl: imagePreviewUrl };
-            setProfileData(updatedProfile);
-            setIsEditingGeneral(false);
+            setProfileData(updatedProfile); // Update main profile state
+            setIsEditingGeneral(false); // Exit editing mode
             setSuccessMessage("General information updated successfully!");
         } catch (err) {
             setError(`Error saving general info: ${err.message}`);
@@ -100,9 +88,9 @@ const ProfileContent = () => {
         setPasswordMismatchError(false);
         setEmptyPasswordError({ new: false, confirm: false, current: false });
 
-        const isCurrentPasswordEmpty = !currentPassword;
-        const isNewPasswordEmpty = !newPassword;
-        const isConfirmPasswordEmpty = !confirmNewPassword;
+        const isCurrentPasswordEmpty = !currentPassword.trim(); // Use trim() to account for whitespace
+        const isNewPasswordEmpty = !newPassword.trim();
+        const isConfirmPasswordEmpty = !confirmNewPassword.trim();
 
         if (isCurrentPasswordEmpty || isNewPasswordEmpty || isConfirmPasswordEmpty) {
             setError("All password fields are required.");
@@ -115,6 +103,9 @@ const ProfileContent = () => {
             return;
         }
 
+        // In a real app, you'd verify currentPassword against the backend here
+        // For this example, we'll assume it's valid if not empty.
+
         if (newPassword !== confirmNewPassword) {
             setError("New passwords do not match.");
             setPasswordMismatchError(true);
@@ -123,12 +114,14 @@ const ProfileContent = () => {
         }
 
         try {
+            // Simulate API call to change password
             await new Promise(resolve => setTimeout(resolve, 700));
-            setProfileData(prev => ({ ...prev, password: newPassword }));
+            setProfileData(prev => ({ ...prev, password: newPassword })); // Update password in state (for demonstration)
+            // Clear password fields after successful save
             setCurrentPassword('');
             setNewPassword('');
             setConfirmNewPassword('');
-            setIsEditingPassword(false);
+            setIsEditingPassword(false); // Exit editing mode
             setSuccessMessage("Password updated successfully!");
         } catch (err) {
             setError(`Error changing password: ${err.message}`);
@@ -137,25 +130,28 @@ const ProfileContent = () => {
         }
     };
 
+    // Handler to initiate editing for a section
     const handleEditClick = (section) => {
-        setError(null);
-        setSuccessMessage(null);
+        setError(null); // Clear any previous errors
+        setSuccessMessage(null); // Clear any previous success messages
         if (section === 'general') {
-            setEditableProfileData({ ...profileData });
+            setEditableProfileData({ ...profileData }); // Copy current data for editing
             setIsEditingGeneral(true);
         } else if (section === 'password') {
             setIsEditingPassword(true);
         }
     };
 
+    // Handler to cancel editing for a section
     const handleCancelClick = (section) => {
         setError(null);
         setSuccessMessage(null);
         if (section === 'general') {
-            setEditableProfileData(null);
-            setImagePreviewUrl(profileData.avatarUrl);
+            setEditableProfileData(null); // Discard edited data
+            setImagePreviewUrl(profileData.avatarUrl); // Revert image preview
             setIsEditingGeneral(false);
         } else if (section === 'password') {
+            // Clear password fields and reset errors
             setCurrentPassword('');
             setNewPassword('');
             setConfirmNewPassword('');
@@ -165,6 +161,7 @@ const ProfileContent = () => {
         }
     };
 
+    // Handler to save changes for a section
     const handleSaveClick = (section) => {
         if (section === 'general') {
             saveGeneralInfo();
@@ -173,11 +170,13 @@ const ProfileContent = () => {
         }
     };
 
+    // General input change handler for editable profile data
     const handleGeneralInputChange = (e) => {
         const { name, value } = e.target;
         setEditableProfileData(prev => ({ ...prev, [name]: value }));
     };
 
+    // Password input change handlers
     const handleCurrentPasswordChange = (e) => {
         setCurrentPassword(e.target.value);
         if (emptyPasswordError.current) {
@@ -206,12 +205,14 @@ const ProfileContent = () => {
         }
     };
 
+    // Handler for image file selection
     const handleFileChange = (e) => {
         const file = e.target.files[0];
         if (file) {
             const reader = new FileReader();
             reader.onloadend = () => {
                 setImagePreviewUrl(reader.result);
+                // Automatically go into general editing mode if image is changed
                 if (!isEditingGeneral) {
                     setIsEditingGeneral(true);
                     setEditableProfileData({ ...profileData });
@@ -221,339 +222,91 @@ const ProfileContent = () => {
         }
     };
 
+    // Toggle visibility of password fields
     const togglePasswordVisibility = (field) => {
         setPasswordVisibility(prev => ({ ...prev, [field]: !prev[field] }));
     };
 
+    // Trigger click on hidden file input
     const handleUploadButtonClick = () => {
         fileInputRef.current?.click();
     };
 
-   const handlePasswordEditToggle = () => {
-    if (isEditingPassword) {
-      savePassword();
-    } else {
-      setIsEditingPassword(true);
-      setSuccessMessage(null); // Clear success message
-      setError(null); // Clear error message
-    }
-  };
+    // Consolidated handler for password edit/save button
+    const handlePasswordEditToggle = () => {
+        if (isEditingPassword) {
+            savePassword();
+        } else {
+            setIsEditingPassword(true);
+            setSuccessMessage(null); // Clear success message when starting edit
+            setError(null); // Clear error message when starting edit
+        }
+    };
 
+    // Effect to fetch initial profile data on component mount
     useEffect(() => {
         fetchProfileData();
-    }, []);
+    }, []); // Empty dependency array ensures it runs only once on mount
 
     return (
-      <div className="p-6">
-        <div className="section-title font-semibold text-lg text-gray-800 dark:text-gray-200 mb-4">
-          Profile
-        </div>
-        <hr className="border-t border-gray-300 dark:border-gray-700 mt-4 mb-8" />
-        <div className="profile-section flex gap-8 mb-4 flex-wrap">
-          {/* Avatar Card */}
-          <div className="avatar-card w-[220px] h-[110px] p-3 bg-white border border-gray-300 dark:bg-gray-800 dark:border-gray-700 shadow-sm rounded-lg flex-shrink-0">
-            <div className="avatar-content flex items-center">
-              <Image
-                src={imagePreviewUrl || profileData.avatarUrl}
-                alt="Profile Avatar"
-                width={56}
-                height={56}
-                className="avatar-img w-12 h-12 rounded-full mr-3 object-cover mb-6"
-              />
-              <div className="avatar-info flex flex-col">
-                <div className="avatar-name font-semibold text-sm text-gray-800 dark:text-gray-200 mb-0.5">
-                  Dr.{" "}
-                  {isEditingGeneral
-                    ? `${editableProfileData?.firstName ?? ""} ${
-                        editableProfileData?.lastName ?? ""
-                      }`.trim()
-                    : `${profileData.firstName} ${profileData.lastName}`.trim()}
-                </div>
-                <div className="avatar-role font-semibold text-xs text-gray-500 dark:text-gray-400">
-                  Instructor
-                </div>
-                <button
-                  type="button"
-                  onClick={handleUploadButtonClick}
-                  disabled={isUploading}
-                  className="w-full rounded-md mt-2 px-3 py-2 text-xs font-semibold
-                                 text-white bg-blue-600 hover:bg-blue-700
-                                  disabled:opacity-50 disabled:cursor-not-allowed
-                                   focus:outline-none focus:ring-2 focus:ring-blue-600"
-                >
-                  {isUploading ? "Uploading..." : "Upload Picture"}
-                </button>
-                <input
-                  type="file"
-                  ref={fileInputRef}
-                  onChange={handleFileChange}
-                  accept="image/*"
-                  className="sr-only"
+        <div className="p-6">
+            <div className="section-title font-semibold text-lg text-gray-800 dark:text-gray-200 mb-4">
+                Profile
+            </div>
+            <hr className="border-t border-gray-300 dark:border-gray-700 mt-4 mb-8" />
+            <div className="profile-section flex gap-8 mb-4 flex-wrap">
+                {/* Avatar Card */}
+                <AvatarCard
+                    profileData={profileData}
+                    imagePreviewUrl={imagePreviewUrl}
+                    isEditingGeneral={isEditingGeneral}
+                    editableProfileData={editableProfileData}
+                    handleUploadButtonClick={handleUploadButtonClick}
+                    isUploading={isUploading}
+                    fileInputRef={fileInputRef}
+                    handleFileChange={handleFileChange}
+                    loading={loading}
                 />
-              </div>
-            </div>
-          </div>
 
-          <div className="info-details-wrapper flex-grow flex flex-col gap-8 min-w-[300px]">
-            {/* General Information Card */}
-            <div className="info-card p-3 sm:p-4 bg-white border border-gray-300 dark:bg-gray-800 dark:border-gray-700 shadow-sm rounded-lg">
-              <div className="section-title font-semibold text-sm text-gray-800 dark:text-gray-200 mb-3">
-                General Information
-              </div>
-
-              <div className="form-row flex gap-3 mb-2 flex-wrap">
-                <div className="form-group flex-1 min-w-[200px]">
-                  <label className="form-label block font-semibold text-xs text-gray-700 dark:text-gray-300 mb-1">
-                    First Name
-                  </label>
-                  <input
-                    type="text"
-                    name="firstName"
-                    className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs text-gray-700 dark:text-gray-300 ${
-                      !isEditingGeneral
-                        ? "bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600"
-                        : "bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600"
-                    }`}
-                    value={
-                      isEditingGeneral
-                        ? editableProfileData?.firstName || ""
-                        : profileData.firstName
-                    }
-                    onChange={handleGeneralInputChange}
-                    readOnly={!isEditingGeneral}
-                    disabled={loading}
-                  />
-                </div>
-                <div className="form-group flex-1 min-w-[200px]">
-                  <label className="form-label block font-semibold text-xs text-gray-700 dark:text-gray-300 mb-1">
-                    Last Name
-                  </label>
-                  <input
-                    type="text"
-                    name="lastName"
-                    className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs text-gray-700 dark:text-gray-300 ${
-                      !isEditingGeneral
-                        ? "bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600"
-                        : "bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600"
-                    }`}
-                    value={
-                      isEditingGeneral
-                        ? editableProfileData?.lastName || ""
-                        : profileData.lastName
-                    }
-                    onChange={handleGeneralInputChange}
-                    readOnly={!isEditingGeneral}
-                    disabled={loading}
-                  />
-                </div>
-              </div>
-
-              <div className="form-row flex gap-3 mb-2 flex-wrap">
-                <div className="form-group flex-1 min-w-[200px]">
-                  <label className="form-label block font-semibold text-xs text-gray-700 dark:text-gray-300 mb-1">
-                    Email
-                  </label>
-                  <input
-                    type="email"
-                    name="email"
-                    className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs text-gray-700 dark:text-gray-300 ${
-                      !isEditingGeneral
-                        ? "bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600"
-                        : "bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600"
-                    }`}
-                    value={
-                      isEditingGeneral
-                        ? editableProfileData?.email || ""
-                        : profileData.email
-                    }
-                    onChange={handleGeneralInputChange}
-                    readOnly={!isEditingGeneral}
-                    disabled={loading}
-                  />
-                </div>
-                <div className="form-group flex-1 min-w-[200px]">
-                  <label className="form-label block font-semibold text-xs text-gray-700 dark:text-gray-300 mb-1">
-                    Phone Number
-                  </label>
-                  <input
-                    type="tel"
-                    name="phoneNumber"
-                    className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs text-gray-700 dark:text-gray-300 ${
-                      !isEditingGeneral
-                        ? "bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600"
-                        : "bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600"
-                    }`}
-                    value={
-                      isEditingGeneral
-                        ? editableProfileData?.phoneNumber || ""
-                        : profileData.phoneNumber
-                    }
-                    onChange={handleGeneralInputChange}
-                    readOnly={!isEditingGeneral}
-                    disabled={loading}
-                  />
-                </div>
-              </div>
-
-              <div className="form-row flex gap-3 mb-2 flex-wrap">
-                <div className="form-group flex-1 min-w-[200px]">
-                  <label className="form-label block font-semibold text-xs text-gray-700 dark:text-gray-300 mb-1">
-                    Degree
-                  </label>
-                  <input
-                    type="text"
-                    name="degree"
-                    className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs text-gray-700 dark:text-gray-300 ${
-                      !isEditingGeneral
-                        ? "bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600"
-                        : "bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600"
-                    }`}
-                    value={
-                      isEditingGeneral
-                        ? editableProfileData?.degree || ""
-                        : profileData.degree
-                    }
-                    onChange={handleGeneralInputChange}
-                    readOnly={!isEditingGeneral}
-                    disabled={loading}
-                  />
-                </div>
-                {/* major */}
-                <div className="form-group flex-1 min-w-[200px]">
-                  <label className="form-label block font-semibold text-xs text-gray-700 dark:text-gray-300 mb-1">
-                    Major
-                  </label>
-                  <input
-                    type="text"
-                    name="major"
-                    className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs text-gray-700 dark:text-gray-300 ${
-                      !isEditingGeneral
-                        ? "bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600"
-                        : "bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600"
-                    }`}
-                    value={
-                      isEditingGeneral
-                        ? editableProfileData?.major || ""
-                        : profileData.major
-                    }
-                    onChange={handleGeneralInputChange}
-                    readOnly={!isEditingGeneral}
-                    disabled={loading}
-                  />
-                </div>
-              </div>
-
-              {/* department */}
-              <div className="form-row flex gap-3 mb-2 flex-wrap">
-                <div className="form-group flex-1 min-w-[200px]">
-                  <label className="form-label block font-semibold text-xs text-gray-700 dark:text-gray-300 mb-1">
-                    Department
-                  </label>
-                  <input
-                    type="text"
-                    name="department"
-                    className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs text-gray-700 dark:text-gray-300 ${
-                      !isEditingGeneral
-                        ? "bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600"
-                        : "bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600"
-                    }`}
-                    value={
-                      isEditingGeneral
-                        ? editableProfileData?.department || ""
-                        : profileData.department
-                    }
-                    onChange={handleGeneralInputChange}
-                    readOnly={!isEditingGeneral}
-                    disabled={loading}
-                  />
-                </div>
-                <div className="form-group flex-1 min-w-[200px]">
-                  <label className="form-label block font-semibold text-xs text-gray-700 dark:text-gray-300 mb-1">
-                    Address
-                  </label>
-                  <div className="form-group flex-1 min-w-[200px]">
-                    <input
-                      type="text"
-                      name="address"
-                      className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs text-gray-700 dark:text-gray-300 ${
-                        !isEditingGeneral
-                          ? "bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600"
-                          : "bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600"
-                      }`}
-                      value={
-                        isEditingGeneral
-                          ? editableProfileData?.address || ""
-                          : profileData.address
-                      }
-                      onChange={handleGeneralInputChange}
-                      readOnly={!isEditingGeneral}
-                      disabled={loading}
+                <div className="info-details-wrapper flex-grow flex flex-col gap-8 min-w-[300px]">
+                    {/* General Information Card */}
+                    <GeneralInfoCard
+                        profileData={profileData}
+                        editableProfileData={editableProfileData}
+                        isEditingGeneral={isEditingGeneral}
+                        handleGeneralInputChange={handleGeneralInputChange}
+                        handleSaveClick={handleSaveClick}
+                        handleCancelClick={handleCancelClick}
+                        handleEditClick={handleEditClick}
+                        loading={loading}
                     />
-                  </div>
-                </div>
-              </div>
-            </div>
 
-             {/* Password Information Card */}
-            <div className="info-card-password p-3 sm:p-4 bg-white border border-num-gray-light dark:bg-gray-800 dark:border-gray-700 shadow-custom-light rounded-lg">
-              <div className="section-title font-semibold text-base text-num-dark-text dark:text-white mb-3">Password information</div>
-              <div className="form-row flex gap-3 mb-2 flex-wrap">
-                <div className="form-group flex-1 min-w-[200px]">
-                  <label className="form-label block font-medium text-sm text-num-dark-text dark:text-white mb-1">Current Password</label>
-                  <input
-                    type="password"
-                    className="form-input w-full py-2 px-3 bg-num-content-bg border border-num-gray-light dark:bg-gray-700 dark:border-gray-600 rounded-md font-medium text-[14px] text-num-dark-text dark:text-white"
-                    placeholder="Enter current password"
-                    value={currentPassword}
-                    onChange={handleCurrentPasswordChange}
-                    readOnly={!isEditingPassword}
-                    disabled={loading}
-                  />
+                    {/* Password Information Card */}
+                    <PasswordInfoCard
+                        currentPassword={currentPassword}
+                        newPassword={newPassword}
+                        confirmNewPassword={confirmNewPassword}
+                        isEditingPassword={isEditingPassword}
+                        loading={loading}
+                        emptyPasswordError={emptyPasswordError}
+                        passwordMismatchError={passwordMismatchError}
+                        passwordVisibility={passwordVisibility}
+                        handleCurrentPasswordChange={handleCurrentPasswordChange}
+                        handleNewPasswordChange={handleNewPasswordChange}
+                        handleConfirmPasswordChange={handleConfirmPasswordChange}
+                        togglePasswordVisibility={togglePasswordVisibility}
+                        handlePasswordEditToggle={handlePasswordEditToggle}
+                        handleCancelClick={handleCancelClick}
+                        error={error} // Pass general error to PasswordInfoCard for display
+                        successMessage={successMessage} // Pass general success message
+                    />
                 </div>
-                <div className="form-group flex-1 min-w-[200px]">
-                  <label className="form-label block font-medium text-sm text-num-dark-text dark:text-white mb-1">New Password</label>
-                  <input
-                    type="password"
-                    className="form-input w-full py-2 px-3 bg-num-content-bg border border-num-gray-light dark:bg-gray-700 dark:border-gray-600 rounded-md font-medium text-[14px] text-num-dark-text dark:text-white"
-                    placeholder="Enter new password"
-                    value={newPassword}
-                    onChange={handleNewPasswordChange}
-                    readOnly={!isEditingPassword}
-                    disabled={loading}
-                  />
-                </div>
-              </div>
-              <div className="form-row flex gap-3 mb-2 flex-wrap">
-                <div className="form-group flex-1 min-w-[200px]">
-                  <label className="form-label block font-medium text-sm text-num-dark-text dark:text-white mb-1">Confirm New Password</label>
-                  <input
-                    type="password"
-                    className="form-input w-full py-2 px-3 bg-num-content-bg border border-num-gray-light dark:bg-gray-700 dark:border-gray-600 rounded-md font-medium text-[14px] text-num-dark-text dark:text-white"
-                    placeholder="Confirm new password"
-                    value={confirmNewPassword}
-                    onChange={handleConfirmPasswordChange}
-                    readOnly={!isEditingPassword}
-                    disabled={loading}
-                  />
-                </div>
-              </div>
-              <div className="form-actions flex justify-end mt-3">
-                <button
-                  className="save-button bg-blue-600 hover:bg-blue-700 shadow-custom-light rounded-md text-white border-none py-2 px-3 font-semibold text-sm cursor-pointer"
-                  onClick={handlePasswordEditToggle}
-                  disabled={loading} // Disable button during loading
-                >
-                  {loading && isEditingPassword ? "Saving..." : isEditingPassword ? "Save Password" : "Change Password"}
-                </button>
-              </div>
             </div>
-
-          </div>
         </div>
-      </div>
     );
 };
 
+// This is the default export for the Next.js page
 export default function InstructorDashboardPage() {
     return (
         <InstructorLayout activeItem="profile" pageTitle="Profile">
