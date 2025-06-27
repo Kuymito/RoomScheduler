@@ -220,7 +220,7 @@ export default function InstructorDetailClientView({ initialInstructor }) {
                 {/* Avatar Card */}
                 <div className="avatar-card w-[220px] h-[110px] p-3 bg-white border border-num-gray-light dark:bg-gray-800 dark:border-gray-700 shadow-custom-light rounded-lg flex-shrink-0">
                     <div className="avatar-content flex relative">
-                        {imagePreviewUrl ? ( <Image src={imagePreviewUrl} alt="Profile Preview" width={56} height={56} className="avatar-img w-14 h-14 rounded-full mr-3 object-cover" /> ) : ( <DefaultAvatarIcon className="avatar-img w-14 h-14 rounded-full mr-3" /> )}
+                        {imagePreviewUrl ? ( <img src={imagePreviewUrl} alt="Profile Preview" width={56} height={56} className="avatar-img w-14 h-14 rounded-full mr-3 object-cover" /> ) : ( <DefaultAvatarIcon className="avatar-img w-14 h-14 rounded-full mr-3" /> )}
                         <span className={`avatar-img absolute left-[42px] bottom-[20px] block h-4 w-4 rounded-full border-2 border-white dark:border-gray-800 ${instructorDetails.status === 'active' ? 'bg-green-500' : 'bg-red-500'}`} title={`Status: ${instructorDetails.status}`}></span>
                         <div className='avatar-info flex flex-col'>
                             <div className='avatar-name font-semibold text-lg text-black dark:text-white mb-0.5'>

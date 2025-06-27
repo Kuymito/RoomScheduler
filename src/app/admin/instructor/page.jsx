@@ -9,6 +9,7 @@ import InstructorClientView from './components/InstructorClientView'; // We will
  */
 const fetchInstructorData = async () => {
     const initialInstructorData = [
+<<<<<<< HEAD
         // { id: 1, name: 'Sok Mean', firstName: 'Sok', lastName: 'Mean', email: 'sok.mean@example.com', phone: '012345678', majorStudied: 'Computer Science', qualifications: 'PhD', status: 'active', profileImage: 'https://i.pravatar.cc/150?img=68' },
         // { id: 2, name: 'Sok Chan', firstName: 'Sok', lastName: 'Chan', email: 'sok.chan@example.com', phone: '012345679', majorStudied: 'Information Technology', qualifications: 'Master', status: 'active', profileImage: 'https://i.pravatar.cc/150?img=52' },
         // { id: 3, name: 'Dara Kim', firstName: 'Dara', lastName: 'Kim', email: 'dara.kim@example.com', phone: '012345680', majorStudied: 'Information Systems', qualifications: 'Professor', status: 'active', profileImage: null },
@@ -26,6 +27,16 @@ const fetchInstructorData = async () => {
         { id: 6, name: 'Phim Runsinarith', firstName: 'Phim', lastName: 'Runsinarith', email: 'phimrunsinarith@gamil.com', phone: '012345683', majorStudied: 'Research / Economics', qualifications: 'PhD', status: 'active', profileImage: 'https://num.e-khmer.com/wp-content/uploads/2023/09/DrPhim-Runsinarith-1-e1693629343364.png' },
         { id: 7, name: 'Ly Sok Heng', firstName: 'Ly', lastName: 'Sok Heng', email: 'sokheng@gamil.com', phone: '012345684', majorStudied: 'Economics/ Finance', qualifications: 'PhD', status: 'active', profileImage: 'https://num.e-khmer.com/wp-content/uploads/2023/09/Dr-Ly-Sok-Heng-e1693626068844.png' },
         { id: 8, name: 'Heng Dyna', firstName: 'Heng', lastName: 'Dyna', email: 'hengdyna@gamil.com', phone: '012345684', majorStudied: 'Economics/ Finance', qualifications: 'PhD', status: 'active', profileImage: 'https://num.e-khmer.com/wp-content/uploads/2023/09/Dr-Heng-Dyna.png' }, 
+=======
+        { id: 1, name: 'PhySOM', firstName: 'Phy', lastName: 'SOM', email: 'physom@gmail.com', phone: '012345678', majorStudied: 'Research Methodology', qualifications: 'PhD', status: 'active', profileImage: '/images/instructor/PhaySOM.jpeg' },
+        { id: 2, name: 'Sam Vicheka', firstName: 'Sam', lastName: 'Vicheka', email: 'Sam Vicheka.com', phone: '093956789', majorStudied: 'Network', qualifications: 'Master', status: 'active', profileImage: '/images/instructor/Sam Vicheka.jpeg' },
+        { id: 3, name: 'Sreng Vichet', firstName: 'Sreng', lastName: 'Vichet', email: 'srengvichet@gmail.com', phone: '012345680', majorStudied: 'Information Technology', qualifications: 'Professor', status: 'active', profileImage: '/images/instructor/Sreng Vichet.jpeg' }, 
+        { id: 4, name: 'Kang Sovannara', firstName: 'Kang', lastName: 'Sovannara', email: 'kangsovvanara@gmail.com', phone: '012345681', majorStudied: 'Management of Change / Business / Investment Management', qualifications: 'PhD', status: 'archived', profileImage: '/images/instructor/Kang Sovannara.png' },
+        { id: 5, name: 'Sok Seang', firstName: 'Sok', lastName: 'Seang', email: 'sokseang@gmail.com', phone: '012345682', majorStudied: 'Entrepreneurship', qualifications: 'PhD', status: 'active', profileImage: '/images/instructor/Sok Seang.png' },
+        { id: 6, name: 'Phim Runsinarith', firstName: 'Phim', lastName: 'Runsinarith', email: 'phimrunsinarith@gamil.com', phone: '012345683', majorStudied: 'Research / Economics', qualifications: 'PhD', status: 'active', profileImage: '/images/instructor/Phim Runsinarith.png' },
+        { id: 7, name: 'Ly Sok Heng', firstName: 'Ly', lastName: 'Sok Heng', email: 'sokheng@gamil.com', phone: '012345684', majorStudied: 'Economics/ Finance', qualifications: 'PhD', status: 'active', profileImage: '/images/instructor/Ly Sok Heng.png' },
+        { id: 8, name: 'Heng Dyna', firstName: 'Heng', lastName: 'Dyna', email: 'hengdyna@gamil.com', phone: '012345684', majorStudied: 'Economics/ Finance', qualifications: 'PhD', status: 'active', profileImage: '/images/instructor/Heng Dyna.png' }, 
+>>>>>>> 4ff0f2f01e6dc69dd29f65eec7cf1d126de91b84
     ];
 
     // Simulate network delay
