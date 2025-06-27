@@ -1,9 +1,9 @@
 import React from 'react';
-import LoginForm from './components/ForgotPasswordForm';
+import ForgotPasswordForm from './components/ForgotPasswordForm';
 
 const page = () => {
   return (
-    <LoginForm></LoginForm>
+    <ForgotPasswordForm></ForgotPasswordForm>
   );
 }
 

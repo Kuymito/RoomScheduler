@@ -1,9 +1,9 @@
 import React from 'react';
-import LoginForm from './components/ResetPasswordFormControl';
+import ResetPasswordFormControl from './components/ResetPasswordFormControl';
 
 const page = () => {
   return (
-    <LoginForm></LoginForm>
+    <ResetPasswordFormControl></ResetPasswordFormControl>
   );
 }
 

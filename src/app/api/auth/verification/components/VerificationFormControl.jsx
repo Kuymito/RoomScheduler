@@ -1,14 +1,11 @@
 'use client';
 
 import React, { Suspense } from 'react';
-import dynamic from 'next/dynamic';
 import Image from 'next/image';
 import { moul } from '@/components/fonts';
 import RightVerificationSectionSkeleton from './RightVerificationSectionSkeleton';
+import RightVerificationSection from './RightVerificationSection';
 
-const DynamicRightVerificationSection = dynamic(() => import('./RightVerificationSection'), {
-  ssr: false,
-});
 
 const VerificationFormControl = () => {
     return (
@@ -42,7 +39,7 @@ const VerificationFormControl = () => {
             {/* Right Column (Form Section) */}
             <div className="w-full h-full md:w-2/5 bg-[#E0E4F3] flex items-center justify-center p-6 sm:p-8 md:p-12 lg:p-16">
                 <Suspense fallback={<RightVerificationSectionSkeleton />}>
-                    <DynamicRightVerificationSection />
+                    <RightVerificationSection />
                 </Suspense>
             </div>
         </div>

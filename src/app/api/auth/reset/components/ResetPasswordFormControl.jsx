@@ -1,15 +1,10 @@
 'use client';
 
 import React, { Suspense } from 'react';
-import dynamic from 'next/dynamic';
 import Image from 'next/image';
 import { moul } from '@/components/fonts';
 import RightResetPasswordSectionSkeleton from './RightResetPasswordSectionSkeleton';
-
-// --- Dynamically import the main form component ---
-const DynamicRightResetPasswordSection = dynamic(() => import('./RightResetPasswordSection'), {
-    ssr: false, // This component uses client-side hooks
-});
+import RightResetPasswordSection from './RightResetPasswordSection';
 
 const ResetPasswordFormControl = () => {
     return (
@@ -42,7 +37,7 @@ const ResetPasswordFormControl = () => {
             {/* Right Column (Form Section) */}
             <div className="w-full md:w-2/5 bg-[#E0E4F3] flex items-center justify-center p-6 sm:p-8 md:p-12 lg:p-16">
                 <Suspense fallback={<RightResetPasswordSectionSkeleton />}>
-                    <DynamicRightResetPasswordSection />
+                    <RightResetPasswordSection />
                 </Suspense>
             </div>
         </div>

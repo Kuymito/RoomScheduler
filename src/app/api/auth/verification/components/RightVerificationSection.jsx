@@ -7,7 +7,7 @@ import { moul } from '@/components/fonts';
 import { authService } from '@/services/auth.service';
 
 // This component now holds all the logic for the verification form
-const RightVerificationSection = () => {
+export default function RightVerificationSection() {
     const [otp, setOtp] = useState(['', '', '', '']);
     // Updated timer to 5 minutes (300 seconds)
     const [timer, setTimer] = useState(300); 
@@ -71,8 +71,8 @@ const RightVerificationSection = () => {
         setIsLoading(true);
         try {
             await authService.verifyOtp(email, verificationCode);
-            // If successful, redirect to the reset password page.
-            // The email is still in session storage for the next step.
+            // If successful, store the OTP and redirect to the reset password page.
+            sessionStorage.setItem('otpForReset', verificationCode); // Store OTP
             router.push('/api/auth/reset');
         } catch (err) {
             console.error("OTP verification error:", err.message); // Log the actual error
@@ -164,8 +164,8 @@ const RightVerificationSection = () => {
                 
                 {error && <p className="text-red-500 text-xs text-center italic mt-2">{error}</p>}
 
-                <div className="flex justify-center text-red-600 font-semibold">
-                    {timer > 0 ? formatTime(timer) : "Time's up!"}
+                <div className="flex justify-center text-red-600 font-base">
+                    {timer > 0 ? formatTime(timer) : "The validation period has ended. Please try again."}
                 </div>
 
                 <button
@@ -189,5 +189,3 @@ const RightVerificationSection = () => {
         </div>
     );
 };
-
-export default RightVerificationSection;

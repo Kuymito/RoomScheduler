@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { signIn } from 'next-auth/react';
 import { moul } from '@/components/fonts';
 
-const RightSection = () => {
+export default function RightSection() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [passwordVisible, setPasswordVisible] = useState(false);
@@ -163,5 +163,3 @@ const RightSection = () => {
         </div>
     );
 };
-
-export default RightSection;

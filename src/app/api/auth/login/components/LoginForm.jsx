@@ -1,7 +1,10 @@
-import React from 'react';
+'use client';
+
+import React, { Suspense } from 'react';
 import Image from 'next/image';
 import { moul } from '@/components/fonts';
 import RightSection from './RightSection';
+import RightSectionSkeleton from './RightSectionSkeleton';
 
 const LoginForm = () => {
     return (
@@ -34,7 +37,12 @@ const LoginForm = () => {
 
             {/* Right Column (Form Section) */}
             <div className="w-full md:w-2/5 bg-[#E0E4F3] flex items-center justify-center p-6 sm:p-8 md:p-12 lg:p-16">
-                <RightSection />
+                 {/* Suspense will show the 'fallback' component (our skeleton) 
+                  until the RightSection component is loaded and ready to be displayed.
+                */}
+                <Suspense fallback={<RightSectionSkeleton />}>
+                    <RightSection />
+                </Suspense>
             </div>
         </div>
     );

@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { moul } from '@/components/fonts';
+import { authService } from '@/services/auth.service';
 
 // --- SVG Icons ---
 const EyeIcon = () => (
@@ -24,7 +25,7 @@ const CheckCircleIcon = () => (
 );
 
 // --- Form Control Component ---
-const RightResetPasswordSection = () => {
+export default function RightResetPasswordSection() {
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
@@ -34,6 +35,7 @@ const RightResetPasswordSection = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [isSuccess, setIsSuccess] = useState(false);
     const [isNavigating, setIsNavigating] = useState(false);
+    const [apiError, setApiError] = useState(''); // For API-level errors
     const router = useRouter();
 
     const validatePassword = (value) => {
@@ -71,16 +73,33 @@ const RightResetPasswordSection = () => {
         validateConfirmPassword(newConfirmPassword, password);
     };
 
-    const handleSubmit = (event) => {
+    const handleSubmit = async (event) => {
         event.preventDefault();
+        setApiError('');
         const isPasswordValid = validatePassword(password);
         const isConfirmPasswordValid = validateConfirmPassword(confirmPassword, password);
 
         if (isPasswordValid && isConfirmPasswordValid) {
+            const email = sessionStorage.getItem('emailForVerification');
+            const otp = sessionStorage.getItem('otpForReset');
+
+            if (!email || !otp) {
+                setApiError("Session expired. Please start the password reset process again.");
+                return;
+            }
+
             setIsLoading(true);
-            // Artificial delay removed
-            setIsLoading(false);
-            setIsSuccess(true);
+            try {
+                await authService.resetPassword({ email, otp, newPassword: password });
+                setIsSuccess(true);
+                // Clean up session storage on success
+                sessionStorage.removeItem('emailForVerification');
+                sessionStorage.removeItem('otpForReset');
+            } catch (err) {
+                setApiError(err.message || "An unexpected error occurred.");
+            } finally {
+                setIsLoading(false);
+            }
         }
     };
 
@@ -128,11 +147,12 @@ const RightResetPasswordSection = () => {
             </div>
             <h2 className="text-3xl sm:text-[24px] text-gray-900 mb-2 font-bold">Create new password</h2>
             <p className="text-sm text-gray-500 mb-8 leading-normal">Your new password must be different from previously used passwords.</p>
+            {apiError && <p className="text-red-500 text-sm text-center mb-4">{apiError}</p>}
             <form onSubmit={handleSubmit} className="space-y-6">
                 <div>
                     <label htmlFor="password" className="block text-sm sm:text-base mb-1 font-base text-gray-900">Password</label>
                     <div className="relative">
-                        <input type={showPassword ? 'text' : 'password'} id="password" value={password} onChange={handlePasswordChange} required className={`w-full p-3 pr-10 bg-white rounded-md text-gray-600 border ${passwordError ? 'border-red-500' : 'border-gray-300'} focus:border-blue-500 focus:outline-none focus:ring-1 ${passwordError ? 'focus:ring-red-500/50' : 'focus:ring-blue-500/50'}`} />
+                        <input type={showPassword ? 'text' : 'password'} id="password" value={password} onChange={handlePasswordChange} required className={`w-full p-3 pr-10 bg-white rounded-md text-gray-600 border ${passwordError || apiError ? 'border-red-500' : 'border-gray-300'} focus:border-blue-500 focus:outline-none focus:ring-1 ${passwordError || apiError ? 'focus:ring-red-500/50' : 'focus:ring-blue-500/50'}`} />
                         <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute inset-y-0 right-0 px-3 flex items-center">{showPassword ? <EyeOffIcon /> : <EyeIcon />}</button>
                     </div>
                     {passwordError ? (<p className="mt-2 text-xs text-red-600">{passwordError}</p>) : (<p className="mt-2 text-xs text-gray-500">Must be at least 8 characters.</p>)}
@@ -140,17 +160,15 @@ const RightResetPasswordSection = () => {
                 <div>
                     <label htmlFor="confirmPassword" className="block text-sm sm:text-base mb-1 font-base text-gray-900">Confirm Password</label>
                     <div className="relative">
-                        <input type={showConfirmPassword ? 'text' : 'password'} id="confirmPassword" value={confirmPassword} onChange={handleConfirmPasswordChange} required className={`w-full p-3 pr-10 bg-white rounded-md text-gray-600 border ${confirmPasswordError ? 'border-red-500' : 'border-gray-300'} focus:border-blue-500 focus:outline-none focus:ring-1 ${confirmPasswordError ? 'focus:ring-red-500/50' : 'focus:ring-blue-500/50'}`} />
+                        <input type={showConfirmPassword ? 'text' : 'password'} id="confirmPassword" value={confirmPassword} onChange={handleConfirmPasswordChange} required className={`w-full p-3 pr-10 bg-white rounded-md text-gray-600 border ${confirmPasswordError || apiError ? 'border-red-500' : 'border-gray-300'} focus:border-blue-500 focus:outline-none focus:ring-1 ${confirmPasswordError || apiError ? 'focus:ring-red-500/50' : 'focus:ring-blue-500/50'}`} />
                         <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute inset-y-0 right-0 px-3 flex items-center">{showConfirmPassword ? <EyeOffIcon /> : <EyeIcon />}</button>
                     </div>
                     {confirmPasswordError && (<p className="mt-2 text-xs text-red-600">{confirmPasswordError}</p>)}
                 </div>
-                <button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition disabled:bg-blue-400 disabled:cursor-not-allowed" disabled={!password || !confirmPassword || !!passwordError || !!confirmPasswordError}>
+                <button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition disabled:bg-blue-400 disabled:cursor-not-allowed" disabled={!password || !confirmPassword || !!passwordError || !!confirmPasswordError || isLoading}>
                     Reset Password
                 </button>
             </form>
         </div>
     );
 };
-
-export default RightResetPasswordSection;

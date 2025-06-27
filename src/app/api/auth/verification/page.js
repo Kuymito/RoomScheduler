@@ -1,9 +1,9 @@
 import React from 'react';
-import LoginForm from './components/VerificationFormControl';
+import VerificationFormControl from './components/VerificationFormControl';
 
 const page = () => {
   return (
-    <LoginForm></LoginForm>
+    <VerificationFormControl></VerificationFormControl>
   );
 }
 

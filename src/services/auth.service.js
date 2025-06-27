@@ -47,10 +47,27 @@ const verifyOtp = async (email, otp) => {
     }
 };
 
-const resetPassword = async ({ token, password }) => {
-    console.log(`Simulating password reset with token: ${token}`);
-    // Artificial delay removed
-    return { message: "Password has been reset successfully." };
+const resetPassword = async ({ email, otp, newPassword }) => {
+    try {
+        const response = await axios.post(`${SERVER_API_URL}/auth/reset-password-with-otp`, {
+            email,
+            otp,
+            newPassword
+        });
+        
+        // The API returns a status like "100 CONTINUE" on success.
+        // We'll check if the response and status exist and if status includes "100".
+        if (response.data && response.data.status && response.data.status.includes('100')) {
+            return response.data;
+        } else {
+            // If the API returns a success-like status code (2xx) but the payload says otherwise.
+            throw new Error(response.data.message || 'An unexpected error occurred.');
+        }
+    } catch (error) {
+        console.error("Reset Password service error:", error.response ? error.response.data : error.message);
+        // Throw a more specific error message if available from the API response
+        throw new Error(error.response?.data?.message || 'Failed to reset password. Please check your details and try again.');
+    }
 };
 
 
