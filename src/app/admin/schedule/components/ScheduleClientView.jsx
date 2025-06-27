@@ -11,7 +11,7 @@ const RoomCardSkeleton = () => (
 
 const ScheduledClassCard = ({ classData, onDragStart, onDragEnd }) => (
     // This div is intentionally draggable, as it represents a scheduled class that can be moved
-    <div draggable onDragStart={onDragStart} onDragEnd={onDragEnd} className="w-full h-24 p-2 bg-blue-100 dark:bg-blue-800 border-2 border-blue-400 dark:border-blue-600 rounded-lg shadow-md flex flex-col justify-center items-center text-center cursor-grab active:cursor-grabbing transition-all duration-150">
+    <div draggable onDragStart={onDragStart} onDragEnd={onDragEnd} className="w-full h-24 p-2 bg-blue-100 dark:bg-blue-800 border border-blue-400 dark:border-blue-600 rounded-lg shadow-md flex flex-col justify-center items-center text-center cursor-grab active:cursor-grabbing transition-all duration-150">
         <p className="text-xs font-semibold text-blue-800 dark:text-blue-100 break-words">{classData.name}</p>
         <p className="text-xs text-blue-600 dark:text-blue-300 opacity-80">{classData.code}</p>
     </div>
@@ -36,7 +36,7 @@ const RoomCard = ({ cellData, isDragOver, isWarning, dragHandlers, className }) 
 
     return (
         <div
-            className={`rounded-lg border-2 flex flex-col transition-all duration-150 overflow-hidden ${getBorderColor()}
+            className={`rounded-lg border flex flex-col transition-all duration-150 overflow-hidden ${getBorderColor()}
             ${isUnavailable ? 'cursor-not-allowed bg-slate-50 dark:bg-slate-800/50 opacity-70' : ''}
             ${className || ''}
             `}

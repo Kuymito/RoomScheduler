@@ -34,7 +34,7 @@ const ScheduledInstructorCard = ({ instructorData, day, onDragStart, onDragEnd, 
 
     return (
         <div className="w-full flex flex-col items-center">
-            <div className="mb-3 w-full">
+            <div className="mb-5 w-full">
                 <label htmlFor={`studyMode-${day}`} className="sr-only">Study Mode for {day}</label>
                 <select id={`studyMode-${day}`} name={`studyMode-${day}`} value={studyMode} onChange={(e) => onStudyModeChange(day, e.target.value)} className={`${baseSelectClasses} ${colorSelectClasses}`}>
                      {studyModes.map(mode => (<option key={mode.value} value={mode.value}>{mode.label}</option>))}
@@ -70,10 +70,11 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
     const [saveStatus, setSaveStatus] = useState('');
     const [saveMessage, setSaveMessage] = useState('');
     const saveStatusRef = useRef(saveStatus);
+    const [selectedDegree, setSelectedDegree] = useState('All');
     
     const generationOptions = ['30', '31', '32', '33', '34', '35'];
     const majorOptions = ['IT', 'CS', 'IS', 'SE', 'AI', 'DS', 'ML', 'DA'];
-    const degreesOptions = ['Associate', 'Bachelor', 'Master', 'PhD'];
+    const degreesOptions = ['All', 'Associate', 'Bachelor', 'Master', 'PhD'];
     const facultyOptions = ['Faculty of IT', 'Faculty of CS', 'Faculty of IS', 'Faculty of AI', 'Faculty of DS', 'Faculty of ML', 'Faculty of DA', 'Faculty of SE'];
     const semesterOptions = ['Semester 1', 'Semester 2', 'Semester 3', 'Semester 4', 'Semester 5', 'Semester 6'];
     const shiftOptions = ['7:00 - 10:00', '8:00 - 11:00', '9:00 - 12:00', '13:00 - 16:00', '15:00 - 18:00', '17:00 - 20:00', '18:00 - 21:00', '19:00 - 22:00'];
@@ -84,6 +85,11 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
     const availableInstructors = useMemo(() => {
         const assignedInstructorIds = new Set(Object.values(schedule).filter(day => day?.instructor).map(day => day.instructor.id));
         let filtered = allInstructors.filter(instructor => !assignedInstructorIds.has(instructor.id));
+        
+        if (selectedDegree !== 'All') {
+            filtered = filtered.filter(instructor => instructor.degree === selectedDegree);
+        }
+
         if (searchTerm.trim()) {
             const lowerCaseSearchTerm = searchTerm.toLowerCase();
             filtered = filtered.filter(instructor =>
@@ -92,7 +98,7 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
             );
         }
         return filtered;
-    }, [schedule, searchTerm, allInstructors]);
+    }, [schedule, searchTerm, allInstructors, selectedDegree]);
 
     useEffect(() => {
         if (!isEditing || !editableClassDetails || isNameManuallySet) return;
@@ -301,7 +307,7 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
                         </div>
                         <div className="form-row flex gap-3 mb-2 flex-wrap">
                             {renderSelectField("Faculty", "faculty", currentData.faculty, facultyOptions)}
-                            {renderSelectField("Degree", "degrees", currentData.degrees, degreesOptions)}
+                            {renderSelectField("Degree", "degrees", currentData.degrees, degreesOptions.filter(d => d !== 'All'))}
                             {renderSelectField("Major", "major", currentData.major, majorOptions)}
                         </div>
                         <div className="form-row flex gap-3 mb-2 flex-wrap">
@@ -328,13 +334,16 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
                     <div className='h-[530px] lg:w-[250px] xl:w-[280px] flex-shrink-0 p-4 bg-white border border-num-gray-light dark:bg-gray-800 dark:border-gray-700 shadow-custom-light rounded-lg self-start flex flex-col'>
                         <div> 
                             <h3 className="text-base sm:text-lg font-semibold mb-2 text-num-dark-text dark:text-gray-100 border-b dark:border-gray-600 pb-2">Available Instructors</h3>
-                            <div className="my-3">
-                                <input type="text" placeholder="Search by name or degree..." className="w-full p-2 text-sm border border-gray-300 rounded-md dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200 focus:ring-sky-500 focus:border-sky-500 placeholder-gray-400 dark:placeholder-gray-500" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}/>
+                            <div className="my-3 flex flex-col sm:flex-row items-center gap-2">
+                                <input type="text" placeholder="Search by name..." className="w-full p-2 text-sm border border-gray-300 rounded-md dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200 focus:ring-sky-500 focus:border-sky-500 placeholder-gray-400 dark:placeholder-gray-500" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}/>
+                                <select value={selectedDegree} onChange={(e) => setSelectedDegree(e.target.value)} className="w-full sm:w-auto p-2 text-sm border border-gray-300 rounded-md dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200 focus:ring-sky-500 focus:border-sky-500">
+                                    {degreesOptions.map(option => <option key={option} value={option}>{option}</option>)}
+                                </select>
                             </div>
                         </div>
                         <div className="space-y-3 flex-grow overflow-y-auto pr-1 min-h-[200px]">
                             {availableInstructors.length > 0 ? availableInstructors.map((instructor) => (
-                                <div key={instructor.id} draggable onDragStart={(e) => handleNewInstructorDragStart(e, instructor)} onDragEnd={handleNewInstructorDragEnd} className="p-3 bg-sky-50 dark:bg-sky-700 dark:hover:bg-sky-600 border border-sky-200 dark:border-sky-600 rounded-md shadow-sm hover:shadow-md cursor-grab active:cursor-grabbing transition-all duration-150 ease-in-out flex items-center gap-3 group">
+                                <div key={instructor.id} draggable onDragStart={(e) => handleNewInstructorDragStart(e, instructor)} onDragEnd={handleNewInstructorDragEnd} className="p-2 bg-sky-50 dark:bg-sky-700 dark:hover:bg-sky-600 border border-sky-200 dark:border-sky-600 rounded-md shadow-sm hover:shadow-md cursor-grab active:cursor-grabbing transition-all duration-150 ease-in-out flex items-center gap-3 group">
                                     {instructor.profileImage ? (<img src={instructor.profileImage} alt={instructor.name} className="w-10 h-10 rounded-full object-cover border border-gray-200 dark:border-gray-600 flex-shrink-0" onError={(e) => { e.currentTarget.style.display = 'none'; }}/>) : (<DefaultAvatarIcon className={`w-10 h-10 flex-shrink-0`} /> )}
                                     <div className="flex-grow">
                                         <p className="text-sm font-medium text-sky-800 dark:text-sky-100 group-hover:text-sky-900 dark:group-hover:text-white">{instructor.name}</p>
@@ -346,10 +355,10 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
                     </div>
                     <div id="weeklySchedulePanel" className='flex-1 p-4 sm:p-6 bg-white border border-num-gray-light dark:bg-gray-800 dark:border-gray-700 shadow-custom-light rounded-lg flex flex-col'>
                         <h3 className="text-base sm:text-lg font-semibold mb-6 text-num-dark-text dark:text-gray-100 border-b dark:border-gray-600 pb-2">Weekly Class Schedule</h3>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-7 gap-3 sm:gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-7 gap-1">
                             {daysOfWeek.map((day) => (
                                 <div key={day} onDragOver={handleDayDragOver} onDragEnter={(e) => handleDayDragEnter(e, day)} onDragLeave={(e) => handleDayDragLeave(e, day)} onDrop={(e) => handleDayDrop(e, day)}
-                                    className={`p-3 rounded-lg min-h-[160px] sm:min-h-[220px] flex flex-col justify-start items-center group border-2 transition-all duration-200 ease-in-out ${dragOverDay === day && draggedItem ? 'bg-emerald-50 dark:bg-emerald-800 border-emerald-400 dark:border-emerald-500 ring-2 ring-emerald-300' : 'bg-gray-50 dark:bg-gray-800 border-dashed border-gray-300 dark:border-gray-600 hover:border-gray-400'}`}>
+                                    className={`p-1 rounded-lg min-h-[220px] flex flex-col justify-start items-center group border-2 transition-all duration-200 ease-in-out ${dragOverDay === day && draggedItem ? 'bg-emerald-50 dark:bg-emerald-800 border-emerald-400 dark:border-emerald-500 ring-1 ring-emerald-300' : 'bg-gray-50 dark:bg-gray-800 border-dashed border-gray-300 dark:border-gray-600 hover:border-gray-400'}`}>
                                     <h4 className="text-sm sm:text-base font-semibold text-gray-700 dark:text-gray-200 mb-3 select-none pt-1">{day}</h4>
                                     {schedule[day]?.instructor ? (<ScheduledInstructorCard instructorData={schedule[day]} day={day} onDragStart={handleScheduledInstructorDragStart} onDragEnd={handleScheduledInstructorDragEnd} onRemove={handleRemoveInstructorFromDay} studyMode={schedule[day].studyMode} onStudyModeChange={handleStudyModeChange}/>) : 
                                     (<div className="flex-grow flex items-center justify-center text-xs text-gray-400 dark:text-gray-500 italic select-none px-2 text-center">Drag instructor here</div>)}
@@ -367,7 +376,6 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
                                 <button onClick={handleSaveSchedule} disabled={isSaving || !isDirty} className={`${saveButtonBaseClasses} ${saveButtonColorClasses}`}>
                                     {isSaving ? ( <span className="flex items-center justify-center"><svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Saving...</span>) : 'Save Schedule'}
                                 </button>
-                                {saveMessage && (<p className={`text-xs w-full text-center sm:text-left mt-2 ${saveStatus === 'success' ? 'text-green-600 dark:text-green-400' : saveStatus === 'error' ? 'text-red-600 dark:text-red-400' : 'text-gray-500 dark:text-gray-400'}`}>{saveMessage}</p>)}
                             </div>
                             <div className="flex flex-col items-end gap-1 w-full sm:w-auto mt-24">
                                 <button onClick={handleDownloadSchedule} className={`${downloadButtonBaseClasses} ${downloadButtonColorClasses}`} disabled={isSaving || scheduleIsEmpty}>

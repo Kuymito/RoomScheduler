@@ -60,7 +60,7 @@ export default async function ClassDetailsPage({ params }) {
     }
 
     return (
-        <AdminLayout activeItem="class" pageTitle="Class Details">
+        <AdminLayout activeItem="class" pageTitle={`Class: ${classDetails.name}`}>
             <Suspense fallback={<ClassDetailSkeleton />}>
                 {/* Render the Client Component, passing the server-fetched data as props.
                   The browser receives the pre-rendered HTML for an instant load, then the

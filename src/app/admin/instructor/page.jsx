@@ -24,7 +24,7 @@ export default async function AdminInstructorsPage() {
     const initialInstructors = await fetchInstructorData();
 
     return (
-        <AdminLayout activeItem="instructor" pageTitle="Instructor Management">
+        <AdminLayout activeItem="instructor" pageTitle={`Instructor: $ }`}>
             <Suspense fallback={<InstructorPageSkeleton />}>
                  {/* We render the Client Component here, passing the server-fetched data as a prop.
                    The browser will receive the pre-rendered HTML for the table, making the initial
