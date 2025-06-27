@@ -97,7 +97,7 @@ const RightSection = () => {
                         name="email"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        className={`shadow-sm border rounded-lg w-full py-2 px-3 text-gray-700 focus:outline-none focus:ring-2 ${error ? 'border-red-500 ring-red-500' : 'border-gray-300 focus:ring-blue-500'}`}
+                        className={`shadow-sm border rounded-lg w-full py-2 px-3 text-[14px] text-gray-700 focus:outline-white focus:ring-2 ${error ? 'border-red-500 ring-red-500' : 'border-gray-300 focus:ring-blue-500'}`}
                         placeholder="example@gmail.com"
                     />
                 </div>
@@ -111,7 +111,7 @@ const RightSection = () => {
                             name="password"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
-                            className={`shadow-sm border rounded-lg w-full py-2 px-3 text-gray-700 focus:outline-none focus:ring-2 ${error ? 'border-red-500 ring-red-500' : 'border-gray-300 focus:ring-blue-500'}`}
+                            className={`shadow-sm border rounded-lg w-full py-2 px-3 text-gray-700  text-[14px] focus:outline-white focus:ring-2 ${error ? 'border-red-500 ring-red-500' : 'border-gray-300 focus:ring-blue-500'}`}
                             placeholder="at least 8 characters"
                         />
                         <span
@@ -119,9 +119,12 @@ const RightSection = () => {
                             onClick={togglePasswordVisibility}
                         >
                             {passwordVisible ? (
-                                <svg className="h-5 w-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.879 16.121A3 3 0 1012 12M21 12c-1.785 4.398-5.672 7-9 7-1.488 0-2.92-.254-4.252-.733L5 18.5V21h2l-2-2m-2-2l2-2" /></svg>
-                            ) : (
                                 <svg className="h-5 w-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                            ) : (
+                                
+                                <svg className="h-5 w-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m2.122-2.122C7.695 5.802 9.79 5 12 5c4.478 0 8.268 2.943 9.543 7a9.973 9.973 0 01-4.152 5.132M15 12a3 3 0 00-3-3m0 0a3 3 0 00-3 3m3-3l9 9m-9-9L3 3" />
+                                </svg>
                             )}
                         </span>
                     </div>
@@ -135,14 +138,15 @@ const RightSection = () => {
                     >
                         Login
                     </button>
-                    <button
+                    
+                </div>
+                <button
                         type="button"
                         onClick={handleForgotPasswordClick}
-                        className="text-sm text-blue-600 hover:text-blue-800"
+                        className="text-sm text-blue-600 hover:text-blue-800 float-right"
                     >
                         Forgot Password
-                    </button>
-                </div>
+                </button>
             </form>
         </div>
     );
