@@ -49,21 +49,19 @@ const verifyOtp = async (email, otp) => {
 
 const resetPassword = async ({ email, otp, newPassword }) => {
     try {
-        const response = await axios.post(`${LOCAL_API_URL}/auth/reset-password-with-otp`, {
+        // Await the response from the API call
+        const response = await axios.post(`${SERVER_API_URL}/auth/reset-password-with-otp`, {
             email,
             otp,
             newPassword
         });
         
-        // The API returns a status like "100 CONTINUE" on success.
-        // We'll check if the response and status exist and if status includes "100".
-        if (response.data && response.data.status && response.data.status.includes('100')) {
-            return response.data;
-        } else {
-            // If the API returns a success-like status code (2xx) but the payload says otherwise.
-            throw new Error(response.data.message || 'An unexpected error occurred.');
-        }
+        // If the axios call is successful (i.e., it doesn't throw an error),
+        // we can assume the password reset was successful and return the response data.
+        return response.data;
+
     } catch (error) {
+        // This block will now correctly handle actual network errors or non-2xx server responses.
         console.error("Reset Password service error:", error.response ? error.response.data : error.message);
         // Throw a more specific error message if available from the API response
         throw new Error(error.response?.data?.message || 'Failed to reset password. Please check your details and try again.');

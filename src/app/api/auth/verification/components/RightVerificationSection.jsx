@@ -53,6 +53,38 @@ export default function RightVerificationSection() {
         }
     };
 
+    /**
+     * Handles pasting OTP from clipboard.
+     * @param {React.ClipboardEvent<HTMLDivElement>} e - The paste event.
+     */
+    const handlePaste = (e) => {
+        e.preventDefault();
+        const pasteData = e.clipboardData.getData('text').replace(/\s+/g, ''); // Get pasted data and remove spaces
+        
+        // Use a regex to get up to 4 digits from the pasted data
+        const digits = pasteData.match(/\d/g);
+        if (!digits) {
+            return;
+        }
+
+        const newOtp = [...otp];
+        let focusedIndex = 0;
+        digits.slice(0, 4).forEach((digit, index) => {
+            newOtp[index] = digit;
+            focusedIndex = index;
+        });
+
+        setOtp(newOtp);
+
+        // Focus the next available input, or the last one filled
+        if (focusedIndex < 3) {
+             inputRefs[focusedIndex + 1].current?.focus();
+        } else {
+             inputRefs[focusedIndex].current?.focus();
+        }
+    };
+
+
     const handleSubmit = async (event) => {
         event.preventDefault();
         setError('');
@@ -146,7 +178,7 @@ export default function RightVerificationSection() {
                 Enter the 4-digit code that you received in your email.
             </p>
             <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="flex justify-center space-x-2 sm:space-x-3 md:space-x-4">
+                <div className="flex justify-center space-x-2 sm:space-x-3 md:space-x-4" onPaste={handlePaste}>
                     {otp.map((digit, index) => (
                         <input
                             key={index}

@@ -90,9 +90,9 @@ export default function RightResetPasswordSection() {
 
             setIsLoading(true);
             try {
+                // Ensure the key 'newPassword' is used as expected by the service
                 await authService.resetPassword({ email, otp, newPassword: password });
                 setIsSuccess(true);
-                // Clean up session storage on success
                 sessionStorage.removeItem('emailForVerification');
                 sessionStorage.removeItem('otpForReset');
             } catch (err) {
