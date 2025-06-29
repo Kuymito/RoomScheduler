@@ -4,37 +4,43 @@ const API_URL = "https://jaybird-new-previously.ngrok-free.app/api/v1";
 
 async function handler(req) {
   const { pathname, search } = req.nextUrl;
-  const destinationUrl = `${API_URL}${pathname.replace('/api', '')}${search}`;
   
-  // Create a new Headers object for the outgoing request. This is a safer approach.
-  const headers = new Headers();
+  // --- Start Path Remapping ---
+  let backendPath;
 
-  // Explicitly copy the necessary headers from the incoming request.
-  const contentType = req.headers.get('Content-Type');
-  if (contentType) {
-    headers.set('Content-Type', contentType);
+  // Special case for the profile to avoid NextAuth conflict.
+  // If the request is to our friendly URL `/api/profile`...
+  if (pathname === '/api/profile') {
+    // ...we map it to the real backend endpoint `/auth/profile`.
+    backendPath = '/auth/profile';
+  } else {
+    // For all other requests, we just remove the `/api` prefix.
+    backendPath = pathname.replace('/api', '');
   }
+  // --- End Path Remapping ---
 
-  const authToken = req.headers.get('Authorization');
-  if (authToken) {
-    headers.set('Authorization', authToken);
-  }
+  const destinationUrl = `${API_URL}${backendPath}${search}`;
 
-  // Add the ngrok header for direct server-to-server requests to bypass warnings.
+  // Log for debugging
+  console.log("--- API Proxy ---");
+  console.log("Incoming Path:", req.nextUrl.pathname);
+  console.log("Mapped Backend Path:", backendPath);
+  console.log("Final Destination URL:", destinationUrl);
+  console.log("-------------------");
+  
+  const headers = new Headers(req.headers);
+  headers.set('host', new URL(API_URL).host);
   headers.set('ngrok-skip-browser-warning', 'true');
 
   try {
-    // Make the request to the destination with the newly constructed headers.
     const response = await fetch(destinationUrl, {
       method: req.method,
       headers: headers,
-      body: req.body,
+      body: req.method === 'GET' || req.method === 'HEAD' ? null : req.body,
       redirect: 'follow',
-      // The 'duplex' property is required for streaming request bodies.
       duplex: 'half'
     });
     
-    // Stream the backend's response directly back to the client.
     return new NextResponse(response.body, {
         status: response.status,
         statusText: response.statusText,
