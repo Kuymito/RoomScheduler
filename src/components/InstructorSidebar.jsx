@@ -4,6 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import React from 'react';
 import useSWR from 'swr';
+import { authService } from '@/services/auth.service'; // Make sure to import the authService
 
 // --- Icon Components ---
 const DashboardIcon = ({ className }) => ( <svg className={className} width="15" height="16" viewBox="0 0 15 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M13.75 5.52422V2.68672C13.75 1.80547 13.35 1.44922 12.3563 1.44922H9.83125C8.8375 1.44922 8.4375 1.80547 8.4375 2.68672V5.51797C8.4375 6.40547 8.8375 6.75547 9.83125 6.75547H12.3563C13.35 6.76172 13.75 6.40547 13.75 5.52422Z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round"/><path d="M13.75 12.5555V10.0305C13.75 9.03672 13.35 8.63672 12.3563 8.63672H9.83125C8.8375 8.63672 8.4375 9.03672 8.4375 10.0305V12.5555C8.4375 13.5492 8.8375 13.9492 9.83125 13.9492H12.3563C13.35 13.9492 13.75 13.5492 13.75 12.5555Z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round"/><path d="M6.5625 5.52422V2.68672C6.5625 1.80547 6.1625 1.44922 5.16875 1.44922H2.64375C1.65 1.44922 1.25 1.80547 1.25 2.68672V5.51797C1.25 6.40547 1.65 6.75547 2.64375 6.75547H5.16875C6.1625 6.76172 6.5625 6.40547 6.5625 5.52422Z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round"/><path d="M6.5625 12.5555V10.0305C6.5625 9.03672 6.1625 8.63672 5.16875 8.63672H2.64375C1.65 8.63672 1.25 9.03672 1.25 10.0305V12.5555C1.25 13.5492 1.65 13.9492 2.64375 13.9492H5.16875C6.1625 13.9492 6.5625 13.5492 6.5625 12.5555Z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round"/></svg> );
@@ -31,14 +32,16 @@ const NavItem = ({ href, icon: Icon, label, isActive, isCollapsed, onClick, isNa
   </Link>
 );
 
-const fetcher = (...args) => fetch(...args).then(res => res.json());
+const fetcher = ([, token]) => authService.getProfile(token);
 
 const InstructorSidebar = ({ isCollapsed, activeItem, onNavItemClick, navigatingTo }) => {
-    // Fetch session data directly in the Sidebar component
-    const { data: session, error, isLoading } = useSWR('/api/auth/session', fetcher);
-    
-    // The user object is nested in the session data
-    const user = session?.user;
+    // Fetch session data to get the access token
+    const { data: session } = useSWR('/api/auth/session', (url) => fetch(url).then(res => res.json()));
+    const token = session?.accessToken;
+
+    // Use the getProfile service to fetch profile data, including the image
+    const { data: profile, error, isLoading } = useSWR(token ? ['/api/profile', token] : null, fetcher);
+    const user = profile;
 
     const navItemsData = [
         { id: 'dashboard', href: '/instructor/dashboard', icon: DashboardIcon, label: 'Dashboard' },
@@ -60,13 +63,13 @@ const InstructorSidebar = ({ isCollapsed, activeItem, onNavItemClick, navigating
                 <div className={`profile-avatar rounded-full mb-2.5 flex justify-center items-center ${isCollapsed ? 'w-10 h-10' : 'w-20 h-20'}`}>
                     {isLoading ? (
                          <div className={`rounded-full bg-gray-300 dark:bg-gray-600 animate-pulse ${isCollapsed ? 'h-10 w-10' : 'h-[70px] w-[70px]'}`}></div>
-                    ) : user?.image ? (
-                        <Image 
-                            src={user.image}
+                    ) : user?.profile ? (
+                        <Image
+                            src={user.profile}
                             alt={user.name || "Instructor Avatar"}
-                            width={isCollapsed ? 40 : 80} 
-                            height={isCollapsed ? 40 : 80} 
-                            className={`rounded-full object-cover`} 
+                            width={isCollapsed ? 40 : 80}
+                            height={isCollapsed ? 40 : 80}
+                            className={`rounded-full object-cover`}
                         />
                     ) : (
                         <InstructorAvatarIcon className={`text-gray-700 dark:text-gray-400 ${isCollapsed ? 'h-16 w-16' : 'h-22 w-22'}`} />
@@ -81,7 +84,7 @@ const InstructorSidebar = ({ isCollapsed, activeItem, onNavItemClick, navigating
                     ) : (
                         <>
                             <div className="profile-name text-center font-semibold text-base text-black dark:text-white mb-1 whitespace-nowrap">
-                                {user?.name || 'Keo Linda'}
+                                {user?.firstName || 'Keo Linda'}
                             </div>
                             <div className="profile-email text-center text-[10px] text-num-gray dark:text-gray-200 whitespace-nowrap">
                                 {user?.email || 'instructor@example.com'}

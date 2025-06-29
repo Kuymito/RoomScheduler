@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { useSession } from 'next-auth/react';
 import useSWR from 'swr';
 import { authService } from '@/services/auth.service';
+import SuccessPopup from '@/app/instructor/profile/components/SuccessPopup'; // Import the new component
 
 // --- Icon Components ---
 const EyeOpenIcon = ({ className = "h-5 w-5" }) => ( <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className}><path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" /></svg> );
@@ -53,7 +54,7 @@ const fetcher = ([, token]) => authService.getProfile(token);
 const ProfileContent = () => {
     const { data: session, status: sessionStatus } = useSession();
     
-    const { data: profileResponse, error: profileError } = useSWR(
+    const { data: profileResponse, error: profileError, mutate } = useSWR(
         session?.accessToken ? ['/api/profile', session.accessToken] : null,
         fetcher
     );
@@ -65,14 +66,14 @@ const ProfileContent = () => {
     const fileInputRef = useRef(null);
     const [isEditingGeneral, setIsEditingGeneral] = useState(false);
     const [isEditingPassword, setIsEditingPassword] = useState(false);
+    const [currentPassword, setCurrentPassword] = useState('');
     const [newPassword, setNewPassword] = useState('');
     const [confirmNewPassword, setConfirmNewPassword] = useState('');
-    const [currentPassword, setCurrentPassword] = useState('');
     const [passwordMismatchError, setPasswordMismatchError] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
-    const [successMessage, setSuccessMessage] = useState(null);
-    const [emptyPasswordError, setEmptyPasswordError] = useState({ new: false, confirm: false, current: false });
+    const [showSuccessPopup, setShowSuccessPopup] = useState(false);
+    const [emptyPasswordError, setEmptyPasswordError] = useState({ current: false, new: false, confirm: false });
     const [passwordVisibility, setPasswordVisibility] = useState({ current: false, new: false, confirm: false });
 
     useEffect(() => {
@@ -84,7 +85,6 @@ const ProfileContent = () => {
                 phoneNumber: profileResponse.phone || "NA",
                 address: profileResponse.address || "NA",
                 avatarUrl: profileResponse.profile,
-                password: profileResponse.password || "N/A",
                 degree: profileResponse.degree || "N/A",
                 department: profileResponse.departmentName || "N/A",
                 major: profileResponse.major || "N/A",
@@ -115,7 +115,6 @@ const ProfileContent = () => {
 
     const handleEditClick = (section) => {
         setError(null);
-        setSuccessMessage(null);
         if (section === 'general') {
             setEditableProfileData({ ...profileData });
             setIsEditingGeneral(true);
@@ -126,12 +125,12 @@ const ProfileContent = () => {
 
     const handleCancelClick = (section) => {
         setError(null);
-        setSuccessMessage(null);
         if (section === 'general') {
             setEditableProfileData({ ...profileData });
             setImagePreviewUrl(profileData.avatarUrl);
             setIsEditingGeneral(false);
         } else if (section === 'password') {
+            setCurrentPassword('');
             setNewPassword('');
             setConfirmNewPassword('');
             setIsEditingPassword(false);
@@ -140,39 +139,89 @@ const ProfileContent = () => {
         }
     };
 
-    const handleSaveClick = (section) => {
-        if(section === 'general') {
+    const handleSaveClick = async (section) => {
+        if (section === 'general') {
              console.log("Saving general info:", editableProfileData);
              setProfileData({ ...editableProfileData });
              setIsEditingGeneral(false);
-        } else {
-            console.log("Saving password...");
-            setIsEditingPassword(false);
+             setShowSuccessPopup(true);
+        } else if (section === 'password') {
+            setLoading(true);
+            setError(null);
+            setPasswordMismatchError(false);
+            setEmptyPasswordError({ new: false, confirm: false, current: false });
+
+            const isCurrentEmpty = !currentPassword;
+            const isNewEmpty = !newPassword;
+            const isConfirmEmpty = !confirmNewPassword;
+
+            if (isCurrentEmpty || isNewEmpty || isConfirmEmpty) {
+                setError("All password fields are required.");
+                setEmptyPasswordError({ current: isCurrentEmpty, new: isNewEmpty, confirm: isConfirmEmpty });
+                setLoading(false);
+                return;
+            }
+
+            if (newPassword !== confirmNewPassword) {
+                setError("New passwords do not match.");
+                setPasswordMismatchError(true);
+                setLoading(false);
+                return;
+            }
+
+            try {
+                if (!session?.accessToken) {
+                    throw new Error("You are not authenticated.");
+                }
+                await authService.changePassword(currentPassword, newPassword, session.accessToken);
+                setShowSuccessPopup(true);
+                setCurrentPassword('');
+                setNewPassword('');
+                setConfirmNewPassword('');
+                setIsEditingPassword(false);
+                mutate();
+            } catch (err) {
+                setError(err.message || "An unexpected error occurred.");
+            } finally {
+                setLoading(false);
+            }
         }
-    };
-
-    const handleNewPasswordChange = (e) => {
-        setNewPassword(e.target.value);
-    };
-
-    const handleConfirmPasswordChange = (e) => {
-        setConfirmNewPassword(e.target.value);
     };
 
     const handleCurrentPasswordChange = (e) => {
         setCurrentPassword(e.target.value);
+        if (emptyPasswordError.current) {
+            setEmptyPasswordError(prev => ({ ...prev, current: false }));
+            setError(null);
+        }
+    };
+    
+    const handleNewPasswordChange = (e) => {
+        setNewPassword(e.target.value);
+        if(passwordMismatchError || emptyPasswordError.new) {
+            setPasswordMismatchError(false);
+            setEmptyPasswordError(p => ({...p, new: false}));
+        }
+    };
+
+    const handleConfirmPasswordChange = (e) => {
+        setConfirmNewPassword(e.target.value);
+         if(passwordMismatchError || emptyPasswordError.confirm) {
+            setPasswordMismatchError(false);
+            setEmptyPasswordError(p => ({...p, confirm: false}));
+        }
     };
 
     const togglePasswordVisibility = (field) => { setPasswordVisibility(prev => ({ ...prev, [field]: !prev[field] })) };
 
-    const renderPasswordField = (label, name, value, onChange, fieldName, isReadOnly = false) => (
+    const renderPasswordField = (label, name, value, onChange, fieldName, isReadOnly = false, hasError = false) => (
         <div className="form-group flex-1 min-w-[200px]">
             <label className="form-label block font-semibold text-xs text-num-dark-text dark:text-white mb-1">{label}</label>
             <div className="relative">
                 <input
                     type={passwordVisibility[fieldName] ? "text" : "password"}
                     name={name}
-                    className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs ${isReadOnly ? 'bg-gray-100 dark:bg-gray-800 border-num-gray-light dark:border-gray-700 text-gray-500 dark:text-gray-400' : 'bg-white dark:bg-gray-700 border-num-gray-light dark:border-gray-600 text-num-dark-text dark:text-white'}`}
+                    className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs ${isReadOnly ? 'bg-gray-100 dark:bg-gray-800 border-num-gray-light dark:border-gray-700 text-gray-500 dark:text-gray-400' : 'bg-white dark:bg-gray-700 border-num-gray-light dark:border-gray-600 text-num-dark-text dark:text-white'} ${hasError ? 'border-red-500 ring-1 ring-red-500' : ''}`}
                     placeholder={`Enter ${label.toLowerCase()}`}
                     value={value}
                     onChange={onChange}
@@ -204,10 +253,21 @@ const ProfileContent = () => {
 
     return (
         <div className="p-6">
+            <SuccessPopup
+                show={showSuccessPopup}
+                onClose={() => setShowSuccessPopup(false)}
+                title="Success"
+                message="Your profile has been updated successfully."
+            />
             <div className="section-title font-semibold text-lg text-gray-800 dark:text-gray-200 mb-4">
                 Profile
             </div>
             <hr className="border-t border-gray-300 dark:border-gray-700 mt-4 mb-8" />
+            {error && (
+                <div className={`p-4 mb-4 text-sm rounded-lg bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300`}>
+                    {error}
+                </div>
+            )}
             <div className="profile-section flex gap-8 mb-4 flex-wrap">
                 <div className="avatar-card w-[220px] p-3 bg-white border border-gray-300 dark:bg-gray-800 dark:border-gray-700 shadow-sm rounded-lg flex-shrink-0 self-start">
                     <div className="avatar-content flex items-center">
@@ -253,31 +313,31 @@ const ProfileContent = () => {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                              <div className="form-group">
                                 <label className="form-label block font-semibold text-xs text-gray-700 dark:text-gray-300 mb-1">First Name</label>
-                                <input type="text" name="firstName" value={currentDisplayData.firstName} onChange={handleGeneralInputChange} readOnly={!isEditingGeneral} className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs ${!isEditingGeneral ? 'bg-gray-100 dark:bg-gray-700' : 'bg-white dark:bg-gray-600'}`} />
+                                <input type="text" name="firstName" value={currentDisplayData.firstName} onChange={handleGeneralInputChange} readOnly={!isEditingGeneral} className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs ${!isEditingGeneral ? 'bg-gray-100 dark:bg-gray-700' : 'bg-white dark:bg-gray-600'}`}/>
                             </div>
                             <div className="form-group">
                                 <label className="form-label block font-semibold text-xs text-gray-700 dark:text-gray-300 mb-1">Last Name</label>
-                                <input type="text" name="lastName" value={currentDisplayData.lastName} onChange={handleGeneralInputChange} readOnly={!isEditingGeneral} className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs ${!isEditingGeneral ? 'bg-gray-100 dark:bg-gray-700' : 'bg-white dark:bg-gray-600'}`} />
+                                <input type="text" name="lastName" value={currentDisplayData.lastName} onChange={handleGeneralInputChange} readOnly={!isEditingGeneral} className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs ${!isEditingGeneral ? 'bg-gray-100 dark:bg-gray-700' : 'bg-white dark:bg-gray-600'}`}/>
                             </div>
                             <div className="form-group">
                                 <label className="form-label block font-semibold text-xs text-gray-700 dark:text-gray-300 mb-1">Email</label>
-                                <input type="email" name="email" value={currentDisplayData.email} readOnly className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs bg-gray-100 dark:bg-gray-700`} />
+                                <input type="email" name="email" value={currentDisplayData.email} readOnly className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs bg-gray-100 dark:bg-gray-700`}/>
                             </div>
                             <div className="form-group">
                                 <label className="form-label block font-semibold text-xs text-gray-700 dark:text-gray-300 mb-1">Phone Number</label>
-                                <input type="tel" name="phoneNumber" value={currentDisplayData.phoneNumber} onChange={handleGeneralInputChange} readOnly={!isEditingGeneral} className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs ${!isEditingGeneral ? 'bg-gray-100 dark:bg-gray-700' : 'bg-white dark:bg-gray-600'}`} />
+                                <input type="tel" name="phoneNumber" value={currentDisplayData.phoneNumber} onChange={handleGeneralInputChange} readOnly={!isEditingGeneral} className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs ${!isEditingGeneral ? 'bg-gray-100 dark:bg-gray-700' : 'bg-white dark:bg-gray-600'}`}/>
                             </div>
                              <div className="form-group">
                                 <label className="form-label block font-semibold text-xs text-gray-700 dark:text-gray-300 mb-1">Degree</label>
-                                <input type="text" name="degree" value={currentDisplayData.degree} onChange={handleGeneralInputChange} readOnly={!isEditingGeneral} className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs ${!isEditingGeneral ? 'bg-gray-100 dark:bg-gray-700' : 'bg-white dark:bg-gray-600'}`} />
+                                <input type="text" name="degree" value={currentDisplayData.degree} onChange={handleGeneralInputChange} readOnly={!isEditingGeneral} className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs ${!isEditingGeneral ? 'bg-gray-100 dark:bg-gray-700' : 'bg-white dark:bg-gray-600'}`}/>
                             </div>
                              <div className="form-group">
                                 <label className="form-label block font-semibold text-xs text-gray-700 dark:text-gray-300 mb-1">Major</label>
-                                <input type="text" name="major" value={currentDisplayData.major} onChange={handleGeneralInputChange} readOnly={!isEditingGeneral} className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs ${!isEditingGeneral ? 'bg-gray-100 dark:bg-gray-700' : 'bg-white dark:bg-gray-600'}`} />
+                                <input type="text" name="major" value={currentDisplayData.major} onChange={handleGeneralInputChange} readOnly={!isEditingGeneral} className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs ${!isEditingGeneral ? 'bg-gray-100 dark:bg-gray-700' : 'bg-white dark:bg-gray-600'}`}/>
                             </div>
                              <div className="form-group md:col-span-2">
                                 <label className="form-label block font-semibold text-xs text-gray-700 dark:text-gray-300 mb-1">Department</label>
-                                <input type="text" name="department" value={currentDisplayData.department} onChange={handleGeneralInputChange} readOnly={!isEditingGeneral} className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs ${!isEditingGeneral ? 'bg-gray-100 dark:bg-gray-700' : 'bg-white dark:bg-gray-600'}`} />
+                                <input type="text" name="department" value={currentDisplayData.department} onChange={handleGeneralInputChange} readOnly={!isEditingGeneral} className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs ${!isEditingGeneral ? 'bg-gray-100 dark:bg-gray-700' : 'bg-white dark:bg-gray-600'}`}/>
                             </div>
                         </div>
                         <div className="form-actions flex justify-end items-center gap-3 mt-4">
@@ -295,12 +355,12 @@ const ProfileContent = () => {
                     <div className="info-card-password p-3 sm:p-4 bg-white border border-gray-300 dark:bg-gray-800 dark:border-gray-700 shadow-sm rounded-lg">
                         <div className="section-title font-semibold text-sm text-gray-800 dark:text-gray-200 mb-3">Password Information</div>
                         <div className="space-y-4">
-                            <div className="flex gap-3 flex-wrap">
-                                {renderPasswordField("Current Password", "currentPassword", isEditingPassword ? currentPassword : profileData.password, handleCurrentPasswordChange, "current", !isEditingPassword)}
-                                {renderPasswordField("New Password", "newPassword", newPassword, handleNewPasswordChange, "new", !isEditingPassword)}
+                             <div className="flex gap-3 flex-wrap">
+                                {renderPasswordField("Current Password", "currentPassword", currentPassword, handleCurrentPasswordChange, "current", !isEditingPassword, emptyPasswordError.current)}
+                                {renderPasswordField("New Password", "newPassword", newPassword, handleNewPasswordChange, "new", !isEditingPassword, emptyPasswordError.new || passwordMismatchError)}
                             </div>
                             <div className="flex gap-3 flex-wrap">
-                                {renderPasswordField("Confirm New Password", "confirmNewPassword", confirmNewPassword, handleConfirmPasswordChange, "confirm", !isEditingPassword || passwordMismatchError)}
+                                {renderPasswordField("Confirm New Password", "confirmNewPassword", confirmNewPassword, handleConfirmPasswordChange, "confirm", !isEditingPassword, emptyPasswordError.confirm || passwordMismatchError)}
                             </div>
                         </div>
                          <div className="form-actions flex justify-end items-center gap-3 mt-4">
