@@ -6,34 +6,32 @@ import { useRouter } from 'next/navigation';
 import useSWR from 'swr';
 import { useSession } from 'next-auth/react';
 import { classService } from '@/services/class.service';
+import ClassPageSkeleton from './ClassPageSkeleton'; // Import the skeleton component
 
 // --- Reusable Icon and Spinner Components ---
 const Spinner = () => ( <svg className="animate-spin h-5 w-5 text-gray-500 dark:text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> );
 const EditIcon = ({ className = "w-[14px] h-[14px]" }) => ( <svg className={className} width="14" height="14" viewBox="0 0 17 17" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M8.06671 2.125H4.95837C3.00254 2.125 2.12504 3.0025 2.12504 4.95833V12.0417C2.12504 13.9975 3.00254 14.875 4.95837 14.875H12.0417C13.9975 14.875 14.875 13.9975 14.875 12.0417V8.93333" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/><path d="M10.6579 3.2658L6.28042 7.64327C6.10542 7.81827 5.93042 8.15055 5.89125 8.3928L5.64958 10.112C5.56625 10.7037 6.01958 11.157 6.61125 11.0737L8.33042 10.832C8.57292 10.7928 8.90542 10.6178 9.08042 10.4428L13.4579 6.0653C14.2662 5.25705 14.5796 4.26827 13.4579 3.14662C12.3362 2.03205 11.3479 2.45705 10.6579 3.2658Z" stroke="currentColor" strokeWidth="1.2" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round"/><path d="M9.8999 4.02502C10.2716 5.66752 11.0583 6.45419 12.7008 6.82585" stroke="currentColor" strokeWidth="1.2" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round"/></svg> );
 const ArchiveIcon = ({ className = "w-[14px] h-[14px]" }) => ( <svg className={className} width="14" height="14" viewBox="0 0 17 17" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M14.1667 5.66667V12.0417C14.1667 13.9975 13.2892 14.875 11.3334 14.875H5.66671C3.71087 14.875 2.83337 13.9975 2.83337 12.0417V5.66667" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/><path d="M14.875 2.125H2.125L2.12504 5.66667H14.875V2.125Z" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/><path d="M7.79163 8.5H9.20829" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/></svg> );
 
-/**
- * The fetcher function for useSWR. It takes an array containing the API key and the token.
- * @param {[string, string]} args - An array where the first element is the API key (URL) and the second is the auth token.
- * @returns {Promise<Array>} A promise that resolves to the array of class data.
- */
 const fetcher = ([key, token]) => classService.getAllClasses(token);
 
 export default function ClassClientView({ initialClasses }) {
     const router = useRouter();
-    const { data: session } = useSession(); // Get session data on the client
+    const { data: session } = useSession();
 
-    // --- SWR Data Fetching ---
-    const { data, error, isLoading: isSWRLoading } = useSWR(
+    const [isLoading, setIsLoading] = useState(true);
+
+    const { data, error } = useSWR(
         session?.accessToken ? ['/api/v1/class', session.accessToken] : null,
         fetcher,
         {
             fallbackData: initialClasses,
             revalidateOnFocus: true,
+            onSuccess: () => setIsLoading(false),
+            onError: () => setIsLoading(false),
         }
     );
 
-    // --- Component State ---
     const [classData, setClassData] = useState(initialClasses);
     const [isPending, startTransition] = useTransition();
     const [rowLoadingId, setRowLoadingId] = useState(null);
@@ -46,7 +44,6 @@ export default function ClassClientView({ initialClasses }) {
     const [sortDirection, setSortDirection] = useState('asc');
     const [searchTexts, setSearchTexts] = useState({ name: '', generation: '', group: '', major: '', degrees: '', faculty: '', semester: '', shift: '' });
 
-    // Update local state when SWR fetches new data
     useEffect(() => {
         if (data) {
             const formattedData = data.map(item => ({
@@ -65,7 +62,6 @@ export default function ClassClientView({ initialClasses }) {
         }
     }, [data]);
 
-    
     const handleSaveNewClass = (newClassData) => {
         const newId = classData.length > 0 ? Math.max(...classData.map(item => item.id)) + 1 : 1;
         setClassData(prevData => [...prevData, { id: newId, ...newClassData, status: 'active' }]);
@@ -160,7 +156,10 @@ export default function ClassClientView({ initialClasses }) {
     };
 
 
-    // --- Render Logic ---
+    if (isLoading) {
+        return <ClassPageSkeleton />;
+    }
+
      if (error) {
         return <div className="p-6 text-center text-red-500">Failed to load class data. Please try again.</div>
     }
@@ -221,9 +220,7 @@ export default function ClassClientView({ initialClasses }) {
                         </tr>
                     </thead>
                     <tbody className="text-xs font-normal text-gray-700 dark:text-gray-400">
-                        {isSWRLoading && currentTableData.length === 0 ? (
-                            <tr><td colSpan="10" className="text-center py-4"><Spinner /></td></tr>
-                        ) : currentTableData.length > 0 ? currentTableData.map((data) => ( 
+                        {currentTableData.length > 0 ? currentTableData.map((data) => ( 
                             <tr key={data.id} className={`bg-white border-b border-gray-200 dark:bg-gray-800 dark:border-gray-700 ${(isPending && rowLoadingId === data.id) ? 'cursor-wait bg-gray-100 dark:bg-gray-700' : 'hover:bg-gray-50 dark:hover:bg-gray-600 cursor-pointer'}`} onClick={() => handleRowClick(data.id)}>
                                 {isPending && rowLoadingId === data.id ? (
                                     <td colSpan={10} className="px-6 py-3 text-center"><div className="flex justify-center items-center h-6"><Spinner /></div></td>
@@ -251,7 +248,6 @@ export default function ClassClientView({ initialClasses }) {
                             <tr className="bg-white dark:bg-gray-800"><td colSpan={10} className="px-6 py-4 text-center text-gray-500 dark:text-gray-400">No matching results found.</td></tr>
                         )}
                     </tbody>
-                    {/* Restoring the table footer (tfoot) */}
                     <tfoot className="text-xs text-gray-700 border-t border-gray-200 bg-gray-50 dark:text-gray-400 dark:border-gray-600 dark:bg-gray-700">
                         <tr>
                             <td className="px-6 py-2.5 md:table-cell hidden"></td>
