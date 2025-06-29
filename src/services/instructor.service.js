@@ -33,6 +33,36 @@ const getAllInstructors = async (token) => {
   }
 };
 
+/**
+ * Fetches a single instructor by their ID from the API.
+ * @param {string} instructorId - The ID of the instructor to fetch.
+ * @param {string} token - The authorization token for the request.
+ * @returns {Promise<Object>} A promise that resolves to a single instructor object.
+ */
+const getInstructorById = async (instructorId, token) => {
+  try {
+    const response = await axios.get(`${API_URL}/instructors/${instructorId}`, {
+       headers: {
+        'Authorization': `Bearer ${token}`,
+        ...(isServer && { 'ngrok-skip-browser-warning': 'true' })
+      }
+    });
+    if (response.data && response.data.payload) {
+      return response.data.payload;
+    }
+     throw new Error('Invalid data structure for single instructor from API');
+  } catch (error) {
+    console.error(`Get instructor by ID (${instructorId}) service error:`, {
+      message: error.message,
+      code: error.code,
+      response: error.response ? error.response.data : 'No response data'
+    });
+    throw new Error(error.response?.data?.message || `Failed to fetch instructor ${instructorId}.`);
+  }
+};
+
+
 export const instructorService = {
   getAllInstructors,
+  getInstructorById,
 };
