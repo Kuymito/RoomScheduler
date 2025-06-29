@@ -13,7 +13,33 @@ const EyeClosedIcon = ({ className = "h-5 w-5" }) => ( <svg xmlns="http://www.w3
 
 const ProfileContentSkeleton = () => (
     <div className='p-6 animate-pulse'>
-        {/* ... (Skeleton structure similar to Admin profile) ... */}
+        <div className="h-7 w-24 bg-slate-300 dark:bg-slate-600 rounded mb-4"></div>
+        <hr className="border-t border-slate-300 dark:border-slate-700 mt-4 mb-8" />
+        <div className="profile-section flex gap-8 mb-4 flex-wrap">
+            <div className="avatar-card w-[220px] p-3 bg-white border border-gray-200 dark:bg-gray-800 dark:border-gray-700 shadow-sm rounded-lg flex-shrink-0 self-start">
+                <div className="flex items-center">
+                    <div className="w-14 h-14 rounded-full bg-slate-300 dark:bg-slate-600 mr-3"></div>
+                    <div className="flex-1 space-y-2">
+                        <div className="h-5 bg-slate-300 dark:bg-slate-600 rounded w-full"></div>
+                        <div className="h-4 bg-slate-300 dark:bg-slate-600 rounded w-3/4"></div>
+                    </div>
+                </div>
+                 <div className="h-9 mt-3 bg-slate-300 dark:bg-slate-600 rounded-md"></div>
+            </div>
+            <div className="info-details-wrapper flex-grow flex flex-col gap-8 min-w-[300px]">
+                <div className="info-card p-4 bg-white border border-gray-200 dark:bg-gray-800 dark:border-gray-700 shadow-sm rounded-lg space-y-4">
+                     <div className="h-5 w-48 bg-slate-300 dark:bg-slate-600 rounded mb-3"></div>
+                     <div className="h-9 bg-slate-200 dark:bg-slate-700 rounded-md w-full"></div>
+                     <div className="h-9 bg-slate-200 dark:bg-slate-700 rounded-md w-full"></div>
+                     <div className="h-9 bg-slate-200 dark:bg-slate-700 rounded-md w-full"></div>
+                </div>
+                <div className="info-card p-4 bg-white border border-gray-200 dark:bg-gray-800 dark:border-gray-700 shadow-sm rounded-lg space-y-4">
+                     <div className="h-5 w-48 bg-slate-300 dark:bg-slate-600 rounded mb-3"></div>
+                     <div className="h-9 bg-slate-200 dark:bg-slate-700 rounded-md w-full"></div>
+                     <div className="h-9 bg-slate-200 dark:bg-slate-700 rounded-md w-full"></div>
+                </div>
+            </div>
+        </div>
     </div>
 );
 
@@ -47,13 +73,13 @@ const ProfileContent = () => {
     useEffect(() => {
         if (profileResponse) {
              const initialData = {
-                firstName: profileResponse.firstName || "Instructor",
-                lastName: profileResponse.lastName || "",
-                email: profileResponse.email || "instructor@example.edu",
-                phoneNumber: profileResponse.phone || "123456789",
-                address: profileResponse.address || "Phnom Penh",
+                firstName: profileResponse.firstName || "NA",
+                lastName: profileResponse.lastName || "NA",
+                email: profileResponse.email || "NA",
+                phoneNumber: profileResponse.phone || "NA",
+                address: profileResponse.address || "NA",
                 avatarUrl: profileResponse.profile || "/images/reach.jpg",
-                password: "password123", // Placeholder
+                password: "password123",
                 degree: profileResponse.degree || "N/A",
                 department: profileResponse.departmentName || "N/A",
                 major: profileResponse.major || "N/A",
