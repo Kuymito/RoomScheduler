@@ -82,8 +82,8 @@ const ProfileContent = () => {
                 email: profileResponse.email || "NA",
                 phoneNumber: profileResponse.phone || "NA",
                 address: profileResponse.address || "NA",
-                avatarUrl: profileResponse.profile || "/images/kok.png",
-                password: "password123",
+                avatarUrl: profileResponse.profile,
+                password: profileResponse.password || "NA",
             };
             setProfileData(initialData);
             setEditableProfileData(initialData);
@@ -210,13 +210,19 @@ const ProfileContent = () => {
             <div className="profile-section flex gap-8 mb-4 flex-wrap">
                 <div className="avatar-card w-[220px] p-3 bg-white border border-num-gray-light dark:bg-gray-800 dark:border-gray-700 shadow-custom-light rounded-lg flex-shrink-0 self-start">
                     <div className="avatar-content flex items-center">
-                        <Image
-                            src={imagePreviewUrl || "/images/kok.png"}
-                            alt="Profile Avatar"
-                            width={56}
-                            height={56}
-                            className="avatar-img w-14 h-14 rounded-full mr-3 object-cover"
-                        />
+                        {imagePreviewUrl ? (
+                            <Image
+                                src={imagePreviewUrl}
+                                alt="Profile Avatar"
+                                width={56}
+                                height={56}
+                                className="avatar-img w-14 h-14 rounded-full mr-3 object-cover"
+                            />
+                        ) : (
+                            <div className="w-14 h-14 rounded-full mr-3 flex items-center justify-center">
+                            {defaultUserIcon({className: "h-34 w-34 text-gray-700 dark:text-gray-400"})}
+                            </div>
+                        )}
                         <div className="avatar-info flex flex-col">
                             <div className="avatar-name font-semibold text-sm text-black dark:text-white mb-0.5">
                                 {`${currentDisplayData.firstName} ${currentDisplayData.lastName}`.trim()}
