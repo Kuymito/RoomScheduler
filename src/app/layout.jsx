@@ -1,6 +1,7 @@
 import { Inter, Poppins, Roboto } from 'next/font/google';
 import './globals.css';
 import ThemeProvider from '@/components/ThemeProvider';
+import AuthProvider from '@/components/AuthProvider'; // Import the new AuthProvider
 
 const inter = Inter({
   subsets: ['latin'],
@@ -34,11 +35,13 @@ export default function RootLayout({ children }) {
         <title>{metadata.title}</title>
         <link rel="icon" href="https://numregister.com/assets/img/logo/num.png" />
       </head>
-      <ThemeProvider>
-        <body className="flex min-h-screen">
-          {children}
-        </body>
-      </ThemeProvider>
+      <body>
+        <AuthProvider>
+          <ThemeProvider>
+            {children}
+          </ThemeProvider>
+        </AuthProvider>
+      </body>
     </html>
   );
 }

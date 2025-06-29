@@ -1,44 +1,65 @@
 import { Suspense } from 'react';
 import AdminLayout from '@/components/AdminLayout';
 import ClassPageSkeleton from './components/ClassPageSkeleton';
-import ClassClientView from './components/ClassClientView'; // We will create this next
+import ClassClientView from './components/ClassClientView';
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import axios from 'axios'; // Import axios for direct fetching
+
+// The external API URL to be used by the server component directly.
+const EXTERNAL_API_URL = "https://jaybird-new-previously.ngrok-free.app/api/v1";
 
 /**
- * Mock data fetching function. In a real app, this would fetch from your database.
- * Because this is a Server Component, this function runs on the server.
+ * An async Server Component to fetch the data directly from the external API.
  */
-const fetchClassData = async () => {
-    const initialClassData = [
-        { id: 1, name: 'NUM30-01', generation: '30', group: '01', major: 'IT', degrees: 'Bachelor', faculty: 'Faculty of IT', semester: 'Semester 1', shift: '7:00 - 10:00', status: 'active' },
-        { id: 2, name: 'NUM30-01', generation: '30', group: '01', major: 'IT', degrees: 'Bachelor', faculty: 'Faculty of IT', semester: 'Semester 1', shift: '7:00 - 10:00', status: 'active' },
-        { id: 3, name: 'NUM30-02', generation: '30', group: '02', major: 'CS', degrees: 'Bachelor', faculty: 'Faculty of CS', semester: 'Semester 1', shift: '8:00 - 11:00', status: 'active' },
-        { id: 4, name: 'NUM32-03', generation: '32', group: '03', major: 'IS', degrees: 'Bachelor', faculty: 'Faculty of IS', semester: 'Semester 2', shift: '9:00 - 12:00', status: 'active' },
-        { id: 5, name: 'NUM32-04', generation: '32', group: '04', major: 'SE', degrees: 'Bachelor', faculty: 'Faculty of SE', semester: 'Semester 2', shift: '13:00 - 16:00', status: 'active' },
-        { id: 6, name: 'NUM32-05', generation: '32', group: '05', major: 'AI', degrees: 'Bachelor', faculty: 'Faculty of AI', semester: 'Semester 2', shift: '15:00 PM - 18:00', status: 'active' },
-        { id: 7, name: 'NUM33-06', generation: '33', group: '06', major: 'DS', degrees: 'Bachelor', faculty: 'Faculty of DS', semester: 'Semester 3', shift: '17:00 - 20:00', status: 'active' },
-        { id: 8, name: 'NUM33-07', generation: '33', group: '07', major: 'ML', degrees: 'Bachelor', faculty: 'Faculty of ML', semester: '2Semester 3', shift: '18:00 - 21:00', status: 'active' },
-        { id: 9, name: 'NUM33-08', generation: '33', group: '08', major: 'DA', degrees: 'Bachelor', faculty: 'Faculty of DA', semester: 'Semester 3', shift: '19:00 - 22:00', status: 'archived' },
-        { id: 10, name: 'NUM33-09', generation: '33', group: '09', major: 'SE', degrees: 'Bachelor', faculty: 'Faculty of SE & R', semester: '2024-2025 S3', shift: '8:00 - 11:00', status: 'active' }
-    ];
-    // Artificial delay removed
-    return initialClassData;
-};
+async function ClassData() {
+    const session = await getServerSession(authOptions);
+    const token = session?.accessToken;
+
+    if (!token) {
+        console.error("No access token found in session. User is not authenticated.");
+        return <ClassClientView initialClasses={[]} />; 
+    }
+
+    try {
+        // Fetch directly from the external API, bypassing the internal proxy route.
+        const response = await axios.get(`${EXTERNAL_API_URL}/class`, {
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'ngrok-skip-browser-warning': 'true'
+            }
+        });
+        
+        const apiData = response.data.payload;
+        
+        const formattedData = apiData.map(item => ({
+            id: item.classId,
+            name: item.className,
+            generation: item.generation,
+            group: item.groupName,
+            major: item.majorName,
+            degrees: item.degreeName,
+            faculty: item.department?.name || 'N/A',
+            semester: item.semester,
+            shift: item.shift?.name || 'N/A',
+            status: item.archived ? 'archived' : 'active',
+        }));
+
+        return <ClassClientView initialClasses={formattedData} />;
+    } catch (error) {
+        console.error("Failed to fetch class data in page.jsx:", error.message);
+        return <ClassClientView initialClasses={[]} />; 
+    }
+}
 
 /**
- * The main page component is now an async Server Component.
+ * The main page component, responsible for layout and the Suspense boundary.
  */
-export default async function AdminClassPage() {
-    // Data is fetched on the server before the page is sent to the browser.
-    const initialClasses = await fetchClassData();
-
+export default function AdminClassPage() {
     return (
         <AdminLayout activeItem="class" pageTitle="Class Management">
             <Suspense fallback={<ClassPageSkeleton />}>
-                {/* The Client Component is rendered here, receiving the server-fetched data as a prop.
-                  The browser gets the pre-rendered HTML for the table, making the initial
-                  load appear instant. Then, the client-side JavaScript loads to enable interactivity.
-                */}
-                <ClassClientView initialClasses={initialClasses} />
+                <ClassData />
             </Suspense>
         </AdminLayout>
     );

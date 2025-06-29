@@ -4,8 +4,10 @@ import { useRouter } from 'next/navigation';
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import { classService } from '@/services/class.service';
+import { useSession } from 'next-auth/react';
 
-// --- Reusable Components (from your original file) ---
+// --- Reusable Components ---
 const DefaultAvatarIcon = ({ className = "w-8 h-8" }) => (
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={`${className} text-gray-500 dark:text-gray-400 border border-gray-300 rounded-full p-1 dark:border-gray-600`}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
@@ -51,13 +53,19 @@ const ScheduledInstructorCard = ({ instructorData, day, onDragStart, onDragEnd, 
     );
 };
 
-export default function ClassDetailClientView({ initialClassDetails, allInstructors }) {
+export default function ClassDetailClientView({ initialClassDetails, allInstructors, allDepartments }) {
     const router = useRouter();
-    const [classDetails, setClassDetails] = useState(initialClassDetails);
-    const [editableClassDetails, setEditableClassDetails] = useState(null);
+    const { data: session } = useSession();
+    
+    const [classData, setClassData] = useState(initialClassDetails);
+    const [backupData, setBackupData] = useState(null); 
+
     const [isEditing, setIsEditing] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [error, setError] = useState('');
+    const [success, setSuccess] = useState('');
     const [isNameManuallySet, setIsNameManuallySet] = useState(false);
+    
     const daysOfWeek = useMemo(() => ['Mon', 'Tue', 'Wed', 'Thur', 'Fri', 'Sat', 'Sun'], []);
     const clientInitialSchedule = useMemo(() => daysOfWeek.reduce((acc, day) => { acc[day] = null; return acc; }, {}), [daysOfWeek]);
     const [schedule, setSchedule] = useState(clientInitialSchedule);
@@ -73,16 +81,23 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
     const [selectedDegree, setSelectedDegree] = useState('All');
     
     const generationOptions = ['30', '31', '32', '33', '34', '35'];
-    const majorOptions = ['IT', 'CS', 'IS', 'SE', 'AI', 'DS', 'ML', 'DA'];
-    const degreesOptions = ['All', 'Associate', 'Bachelor', 'Master', 'PhD'];
-    const facultyOptions = ['Faculty of IT', 'Faculty of CS', 'Faculty of IS', 'Faculty of AI', 'Faculty of DS', 'Faculty of ML', 'Faculty of DA', 'Faculty of SE'];
+    const majorOptions = ['Computer Science', 'Information Technology', 'Information Systems', 'Software Engineering', 'Artificial Intelligence', 'Data Science', 'Machine Learning', 'Data Analytics', 'Robotics'];
+    const degreesOptions = ['Bachelor', 'Master', 'PhD'];
+    const shiftOptions = ['Morning Session 1', 'Morning Session 2', 'Afternoon Session 1', 'Afternoon Session 2'];
+    const facultyOptions = allDepartments || [];
+
+    const degreeFilterOptions = ['All', ...degreesOptions];
     const semesterOptions = ['Semester 1', 'Semester 2', 'Semester 3', 'Semester 4', 'Semester 5', 'Semester 6'];
-    const shiftOptions = ['7:00 - 10:00', '8:00 - 11:00', '9:00 - 12:00', '13:00 - 16:00', '15:00 - 18:00', '17:00 - 20:00', '18:00 - 21:00', '19:00 - 22:00'];
     const statusOptions = ['Active', 'Archived'];
 
-    const currentData = isEditing ? editableClassDetails : classDetails;
+    // The data to display in the form fields.
+    const currentDisplayData = isEditing ? classData : classData;
 
     const availableInstructors = useMemo(() => {
+        if (!allInstructors || !Array.isArray(allInstructors)) {
+            return [];
+        }
+        
         const assignedInstructorIds = new Set(Object.values(schedule).filter(day => day?.instructor).map(day => day.instructor.id));
         let filtered = allInstructors.filter(instructor => !assignedInstructorIds.has(instructor.id));
         
@@ -101,9 +116,9 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
     }, [schedule, searchTerm, allInstructors, selectedDegree]);
 
     useEffect(() => {
-        if (!isEditing || !editableClassDetails || isNameManuallySet) return;
-        setEditableClassDetails(prev => ({ ...prev, name: `NUM${prev.generation}-${prev.group}` }));
-    }, [editableClassDetails?.generation, editableClassDetails?.group, isEditing, isNameManuallySet]);
+        if (!isEditing || !classData || isNameManuallySet) return;
+        setClassData(prev => ({ ...prev, name: `NUM${prev.generation}-${prev.group}` }));
+    }, [isEditing, isNameManuallySet, classData?.generation, classData?.group]);
     
     useEffect(() => {
         saveStatusRef.current = saveStatus;
@@ -120,40 +135,75 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
             setIsDirty(false);
         }
     }, [schedule, initialScheduleForCheck]);
-    
-    const handleSaveDetails = async () => {
-        setLoading(true);
-        // Artificial delay removed
-        setClassDetails(editableClassDetails);
-        setIsEditing(false);
-        setLoading(false);
-    };
 
     const handleEditToggle = () => {
         if (isEditing) {
             handleSaveDetails();
         } else {
-            const initialEditableData = { ...classDetails };
-            const expectedName = `NUM${initialEditableData.generation}-${initialEditableData.group}`;
-            setIsNameManuallySet(initialEditableData.name !== expectedName);
-            setEditableClassDetails(initialEditableData);
+            setBackupData(JSON.parse(JSON.stringify(classData)));
+            const expectedName = `NUM${classData.generation}-${classData.group}`;
+            setIsNameManuallySet(classData.name !== expectedName);
             setIsEditing(true);
+            setError('');
+            setSuccess('');
         }
     };
     
     const handleCancelClick = () => {
+        setClassData(backupData);
         setIsEditing(false);
-        setEditableClassDetails(classDetails);
+        setBackupData(null); 
+        setError('');
+        setSuccess('');
     };
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
         if (name === 'name') {
-            setIsNameManuallySet(value !== `NUM${editableClassDetails.generation}-${editableClassDetails.group}`);
+            setIsNameManuallySet(value !== `NUM${classData.generation}-${classData.group}`);
         }
-        setEditableClassDetails(prev => ({ ...prev, [name]: value }));
+        setClassData(prev => ({ ...prev, [name]: value }));
     };
 
+    const handleSaveDetails = async () => {
+        setLoading(true);
+        setError('');
+        setSuccess('');
+
+        if (!session?.accessToken) {
+            setError("You are not authenticated.");
+            setLoading(false);
+            return;
+        }
+
+        // Construct the payload according to the PATCH schema.
+        const apiPayload = {
+            className: classData.name,
+            generation: classData.generation,
+            groupName: classData.group,
+            majorName: classData.major,
+            degreeName: classData.degrees,
+            facultyName: classData.faculty,
+            semester: classData.semester,
+            shift: classData.shift,
+            is_archived: classData.status === 'Archived',
+        };
+
+        try {
+            await classService.patchClass(classData.id, apiPayload, session.accessToken);
+            setSuccess("Class updated successfully!");
+            setIsEditing(false);
+            setBackupData(null); // Clear the backup on successful save
+        } catch (err) {
+            setError(err.message || "Failed to update class.");
+            if (backupData) {
+                setClassData(backupData);
+            }
+        } finally {
+            setLoading(false);
+        }
+    };
+    
     const renderSelectField = (label, name, value, options) => (
         <div className="form-group flex-1 min-w-[200px]">
             <label className="form-label block font-semibold text-xs text-num-dark-text dark:text-white mb-1">{label}</label>
@@ -170,7 +220,7 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
     const renderTextField = (label, name, value) => (
          <div className="form-group flex-1 min-w-[200px]">
             <label className="form-label block font-semibold text-xs text-num-dark-text dark:text-white mb-1">{label}</label>
-            <input type="text" name={name} value={value} onChange={handleInputChange} readOnly={!isEditing} disabled={loading} className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs text-num-dark-text dark:text-white ${!isEditing ? 'bg-gray-100 dark:bg-gray-800 border-num-gray-light dark:border-gray-700' : 'bg-num-content-bg dark:bg-gray-700 border-num-gray-light dark:border-gray-600'}`}/>
+            <input type="text" name={name} value={value || ''} onChange={handleInputChange} readOnly={!isEditing} disabled={loading} className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs text-num-dark-text dark:text-white ${!isEditing ? 'bg-gray-100 dark:bg-gray-800 border-num-gray-light dark:border-gray-700 text-gray-500 dark:text-gray-400' : 'bg-num-content-bg dark:bg-gray-700 border-num-gray-light dark:border-gray-600'}`}/>
         </div>
     );
 
@@ -243,7 +293,7 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
         setIsSaving(true);
         setSaveStatus('saving');
         setSaveMessage('Saving schedule...');
-        // Artificial delay removed
+        await new Promise(resolve => setTimeout(resolve, 1500));
         setSaveStatus('success');
         setSaveMessage('Schedule saved successfully!');
         setInitialScheduleForCheck(JSON.parse(JSON.stringify(schedule)));
@@ -298,25 +348,12 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
                 <div className="info-details-wrapper flex-grow flex flex-col gap-8 min-w-[300px]">
                     <div className="info-card p-3 sm:p-4 bg-white border border-num-gray-light dark:bg-gray-800 dark:border-gray-700 shadow-custom-light rounded-lg">
                         <div className="section-title font-semibold text-md text-num-dark-text dark:text-white mb-3">General Information</div>
-                        <div className="form-row flex gap-3 mb-2 flex-wrap">
-                            {renderTextField("Class Name", "name", currentData.name)}
-                        </div>
-                        <div className="form-row flex gap-3 mb-2 flex-wrap">
-                            {renderTextField("Group", "group", currentData.group)}
-                            {renderSelectField("Generation", "generation", currentData.generation, generationOptions)}
-                        </div>
-                        <div className="form-row flex gap-3 mb-2 flex-wrap">
-                            {renderSelectField("Faculty", "faculty", currentData.faculty, facultyOptions)}
-                            {renderSelectField("Degree", "degrees", currentData.degrees, degreesOptions.filter(d => d !== 'All'))}
-                            {renderSelectField("Major", "major", currentData.major, majorOptions)}
-                        </div>
-                        <div className="form-row flex gap-3 mb-2 flex-wrap">
-                            {renderSelectField("Semester", "semester", currentData.semester, semesterOptions)}
-                            {renderSelectField("Shift", "shift", currentData.shift, shiftOptions)}
-                            {renderSelectField("Status", "status", currentData.status, statusOptions)}
-                        </div>
+                        <div className="form-row flex gap-3 mb-2 flex-wrap">{renderTextField("Class Name", "name", classData.name)}</div>
+                        <div className="form-row flex gap-3 mb-2 flex-wrap">{renderTextField("Group", "group", classData.group)}{renderSelectField("Generation", "generation", classData.generation, generationOptions)}</div>
+                        <div className="form-row flex gap-3 mb-2 flex-wrap">{renderSelectField("Faculty", "faculty", classData.faculty, facultyOptions)}{renderSelectField("Degree", "degrees", classData.degrees, degreesOptions)}{renderSelectField("Major", "major", classData.major, majorOptions)}</div>
+                        <div className="form-row flex gap-3 mb-2 flex-wrap">{renderSelectField("Semester", "semester", classData.semester, semesterOptions)}{renderSelectField("Shift", "shift", classData.shift, shiftOptions)}{renderSelectField("Status", "status", classData.status, statusOptions)}</div>
                         <div className="form-actions flex justify-end items-center gap-3 mt-4">
-                            { isEditing ? (
+                            {isEditing ? (
                                 <>
                                     <button onClick={handleCancelClick} className="back-button bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 shadow-custom-light rounded-md text-gray-800 dark:text-white border-none py-2 px-3 font-semibold text-xs cursor-pointer" disabled={loading}>Cancel</button>
                                     <button onClick={handleSaveDetails} className="save-button bg-blue-600 hover:bg-blue-700 shadow-custom-light rounded-md text-white border-none py-2 px-3 font-semibold text-xs cursor-pointer" disabled={loading}>{loading ? "Saving..." : "Save Changes"}</button>
@@ -328,6 +365,8 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
                                 </>
                             )}
                         </div>
+                         {error && <p className="text-red-500 text-xs mt-2 text-right">{error}</p>}
+                         {success && <p className="text-green-500 text-xs mt-2 text-right">{success}</p>}
                     </div>
                 </div>
                 <div className='flex-grow flex flex-col lg:flex-row gap-6 min-w-[300px]'>
@@ -337,7 +376,7 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
                             <div className="my-3 flex flex-col sm:flex-row items-center gap-2">
                                 <input type="text" placeholder="Search by name..." className="w-full p-2 text-sm border border-gray-300 rounded-md dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200 focus:ring-sky-500 focus:border-sky-500 placeholder-gray-400 dark:placeholder-gray-500" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}/>
                                 <select value={selectedDegree} onChange={(e) => setSelectedDegree(e.target.value)} className="w-full sm:w-auto p-2 text-sm border border-gray-300 rounded-md dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200 focus:ring-sky-500 focus:border-sky-500">
-                                    {degreesOptions.map(option => <option key={option} value={option}>{option}</option>)}
+                                    {degreeFilterOptions.map(option => <option key={option} value={option}>{option}</option>)}
                                 </select>
                             </div>
                         </div>
@@ -368,10 +407,10 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
                         <div className="mt-auto pt-6 border-t border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row justify-between items-center gap-4">
                             <div className="flex flex-col items-start gap-1 w-full sm:w-auto">
                                 <ul className="list-disc text-xs mb-4 ml-3">
-                                    <li>Generation: <span className="font-semibold text-num-dark-text dark:text-gray-100">{currentData.generation}</span></li>
-                                    <li>Group: <span className="font-semibold text-num-dark-text dark:text-gray-100">{currentData.group}</span></li>
-                                    <li>Semester: <span className="font-semibold text-num-dark-text dark:text-gray-100">{currentData.semester}</span></li>
-                                    <li>Shift: <span className="font-semibold text-num-dark-text dark:text-gray-100">{currentData.shift}</span></li>
+                                    <li>Generation: <span className="font-semibold text-num-dark-text dark:text-gray-100">{classData.generation}</span></li>
+                                    <li>Group: <span className="font-semibold text-num-dark-text dark:text-gray-100">{classData.group}</span></li>
+                                    <li>Semester: <span className="font-semibold text-num-dark-text dark:text-gray-100">{classData.semester}</span></li>
+                                    <li>Shift: <span className="font-semibold text-num-dark-text dark:text-gray-100">{classData.shift}</span></li>
                                 </ul>
                                 <button onClick={handleSaveSchedule} disabled={isSaving || !isDirty} className={`${saveButtonBaseClasses} ${saveButtonColorClasses}`}>
                                     {isSaving ? ( <span className="flex items-center justify-center"><svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Saving...</span>) : 'Save Schedule'}

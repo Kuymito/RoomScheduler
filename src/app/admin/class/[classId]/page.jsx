@@ -1,60 +1,71 @@
 import { Suspense } from 'react';
 import AdminLayout from '@/components/AdminLayout';
 import ClassDetailSkeleton from '../components/ClassDetailSkeleton';
-import ClassDetailClientView from '../components/ClassDetailClientView'; // We will create this next
+import ClassDetailClientView from '../components/ClassDetailClientView';
 import { notFound } from 'next/navigation';
-
-// --- Data Simulation (Move to a central lib/data.js file in a real app) ---
-const initialClassData = [
-    { id: 1, name: 'NUM30-01', generation: '30', group: '01', major: 'IT', degrees: 'Bachelor', faculty: 'Faculty of IT', semester: '2024-2025 S1', shift: '7:00 - 10:00', status: 'Active' },
-    { id: 2, name: 'NUM30-01', generation: '30', group: '01', major: 'IT', degrees: 'Bachelor', faculty: 'Faculty of IT', semester: '2024-2025 S1', shift: '7:00 - 10:00', status: 'Active' },
-    { id: 3, name: 'NUM30-02', generation: '30', group: '02', major: 'CS', degrees: 'Bachelor', faculty: 'Faculty of CS', semester: '2024-2025 S1', shift: '8:00 - 11:00', status: 'Active' },
-    { id: 4, name: 'NUM32-03', generation: '32', group: '03', major: 'IS', degrees: 'Bachelor', faculty: 'Faculty of IS', semester: '2024-2025 S2', shift: '9:00 - 12:00', status: 'Active' },
-    { id: 5, name: 'NUM32-04', generation: '32', group: '04', major: 'SE', degrees: 'Bachelor', faculty: 'Faculty of SE', semester: '2024-2025 S2', shift: '13:00 - 16:00', status: 'Active' },
-    { id: 6, name: 'NUM32-05', generation: '32', group: '05', major: 'AI', degrees: 'Bachelor', faculty: 'Faculty of AI & R', semester: '2024-2025 S2', shift: '15:00 PM - 18:00', status: 'Active' },
-    { id: 7, name: 'NUM33-06', generation: '33', group: '06', major: 'DS', degrees: 'Bachelor', faculty: 'Faculty of DS', semester: '2024-2025 S3', shift: '17:00 - 20:00', status: 'Active' },
-    { id: 8, name: 'NUM33-07', generation: '33', group: '07', major: 'ML', degrees: 'Bachelor', faculty: 'Faculty of ML', semester: '2024-2025 S3', shift: '18:00 - 21:00', status: 'Active' },
-    { id: 9, name: 'NUM33-08', generation: '33', group: '08', major: 'DA', degrees: 'Bachelor', faculty: 'Faculty of DA', semester: '2024-2025 S3', shift: '19:00 - 22:00', status: 'Archived' },
-    { id: 10, name: 'NUM33-09', generation: '33', group: '09', major: 'SE', degrees: 'Bachelor', faculty: 'Faculty of SE & R', semester: '2024-2025 S3', shift: '8:00 - 11:00', status: 'Active' }
-];
-
-const initialInstructorsData = [
-    { id: 'inst1', name: 'Dr. Evelyn Reed', profileImage: '/images/admin.jpg', degree: 'PhD' },
-    { id: 'inst2', name: 'Prof. Samuel Green', profileImage: null, degree: 'Master' },
-    { id: 'inst3', name: 'Ms. Olivia Blue', profileImage: '', degree: 'Associate' },
-    { id: 'inst4', name: 'Mr. Kenji Tanaka', profileImage: '/images/reach.jpg', degree: 'PhD' },
-    { id: 'inst5', name: 'Dr. Aisha Khan', profileImage: null, degree: 'Master' },
-    { id: 'inst6', name: 'Prof. Ethan Brown', profileImage: null, degree: 'Associate' },
-    { id: 'inst7', name: 'Ms. Olivia Green', profileImage: null, degree: 'PhD' },
-    { id: 'inst8', name: 'Mr. Kenji Tanaka', profileImage: null, degree: 'Master' },
-    { id: 'inst9', name: 'Dr. Aisha Khan', profileImage: null, degree: 'Associate' },
-    { id: 'inst10', name: 'Prof. Ethan Brown', profileImage: null, degree: 'PhD' },
-];
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import { classService } from '@/services/class.service';
+import { instructorService } from '@/services/instructor.service';
+import { departmentService } from '@/services/department.service'; // Import the new department service
 
 /**
- * Server-side data fetching function. This runs on the server, not in the browser.
- * It fetches both the class details and the list of available instructors.
+ * Server-side data fetching function.
+ * It fetches class details, all instructors, and all departments.
  */
-const fetchClassDetailData = async (id) => {
-    console.log(`Fetching data for class ID: ${id} on the server.`);
-    // Artificial delay removed
-    
-    const classDetails = initialClassData.find(cls => cls.id === id);
-    // In a real app, you would also fetch the instructors and any existing schedule here.
-    const instructors = initialInstructorsData; 
+const fetchClassPageData = async (classId) => {
+    const session = await getServerSession(authOptions);
+    const token = session?.accessToken;
 
-    return { classDetails, instructors };
+    if (!token) {
+        console.error("Authentication token not found.");
+        return { classDetails: null, instructors: [], departments: [] };
+    }
+
+    try {
+        const [classDetailsResponse, instructorsResponse, departmentsResponse] = await Promise.all([
+            classService.getClassById(classId, token),
+            instructorService.getAllInstructors(token),
+            departmentService.getAllDepartments(token)
+        ]);
+
+        const formattedClassDetails = {
+            id: classDetailsResponse.classId,
+            name: classDetailsResponse.className,
+            generation: classDetailsResponse.generation,
+            group: classDetailsResponse.groupName,
+            major: classDetailsResponse.majorName,
+            degrees: classDetailsResponse.degreeName,
+            faculty: classDetailsResponse.department?.name || 'N/A',
+            semester: classDetailsResponse.semester,
+            shift: classDetailsResponse.shift?.name || 'N/A',
+            status: classDetailsResponse.archived ? 'Archived' : 'Active',
+        };
+
+        const formattedInstructors = instructorsResponse.map(inst => ({
+            id: inst.instructorId,
+            name: `${inst.firstName} ${inst.lastName}`,
+            profileImage: inst.profile || null,
+            degree: inst.degree,
+        }));
+
+        const formattedDepartments = departmentsResponse.map(dep => dep.name);
+
+        return { classDetails: formattedClassDetails, instructors: formattedInstructors, departments: formattedDepartments };
+
+    } catch (error) {
+        console.error(`Failed to fetch data for class ${classId}:`, error);
+        return { classDetails: null, instructors: [], departments: [] };
+    }
 };
 
 /**
- * The main page is now an async Server Component.
- * It receives `params` from the URL to fetch the correct data.
+ * The main page Server Component.
  */
 export default async function ClassDetailsPage({ params }) {
-    const classId = parseInt(params.classId, 10);
-    const { classDetails, instructors } = await fetchClassDetailData(classId);
+    const classId = params.classId;
+    const { classDetails, instructors, departments } = await fetchClassPageData(classId);
 
-    // If no class is found for the given ID, show a 404 page.
     if (!classDetails) {
         notFound();
     }
@@ -62,13 +73,10 @@ export default async function ClassDetailsPage({ params }) {
     return (
         <AdminLayout activeItem="class" pageTitle={`Class: ${classDetails.name}`}>
             <Suspense fallback={<ClassDetailSkeleton />}>
-                {/* Render the Client Component, passing the server-fetched data as props.
-                  The browser receives the pre-rendered HTML for an instant load, then the
-                  client-side JS hydrates the component to make it fully interactive.
-                */}
                 <ClassDetailClientView 
                     initialClassDetails={classDetails}
                     allInstructors={instructors}
+                    allDepartments={departments}
                 />
             </Suspense>
         </AdminLayout>

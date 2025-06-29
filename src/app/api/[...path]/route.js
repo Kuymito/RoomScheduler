@@ -6,16 +6,25 @@ async function handler(req) {
   const { pathname, search } = req.nextUrl;
   const destinationUrl = `${API_URL}${pathname.replace('/api', '')}${search}`;
   
-  // Create a new Headers object from the incoming request
-  const headers = new Headers(req.headers);
-  
-  // Set the ngrok header to bypass the warning page.
+  // Create a new Headers object for the outgoing request. This is a safer approach.
+  const headers = new Headers();
+
+  // Explicitly copy the necessary headers from the incoming request.
+  const contentType = req.headers.get('Content-Type');
+  if (contentType) {
+    headers.set('Content-Type', contentType);
+  }
+
+  const authToken = req.headers.get('Authorization');
+  if (authToken) {
+    headers.set('Authorization', authToken);
+  }
+
+  // Add the ngrok header for direct server-to-server requests to bypass warnings.
   headers.set('ngrok-skip-browser-warning', 'true');
-  // Let Next.js/Vercel manage the host header.
-  headers.delete('host');
 
   try {
-    // Stream the request body directly to the destination.
+    // Make the request to the destination with the newly constructed headers.
     const response = await fetch(destinationUrl, {
       method: req.method,
       headers: headers,
@@ -41,4 +50,4 @@ async function handler(req) {
   }
 }
 
-export { handler as GET, handler as POST, handler as PUT, handler as DELETE };
+export { handler as GET, handler as POST, handler as PUT, handler as DELETE, handler as PATCH };
