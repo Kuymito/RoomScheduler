@@ -19,7 +19,7 @@ async function handler(req) {
     const response = await fetch(destinationUrl, {
       method: req.method,
       headers: headers,
-      body: req.body,
+      body: req.body, 
       redirect: 'follow',
       // The 'duplex' property is required for streaming request bodies.
       duplex: 'half'
