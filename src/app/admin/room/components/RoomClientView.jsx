@@ -20,7 +20,7 @@ export default function RoomClientView({ initialAllRoomsData, buildingLayout, in
     const WEEKDAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
     const TIME_SLOTS = ['07:00:00-10:00:00', '10:30:00-13:30:00', '14:00:00-17:00:00', '17:30:00-20:30:00'];
     const getDayName = (date) => date.toLocaleDateString('en-US', { weekday: 'long' });
-    const formatTimeSlot = (time) => time.replace(/:00/g, ''); // "07:00:00-10:00:00" -> "07-10"
+    const formatTimeSlot = (time) => time.replace('-', ' to ');
 
     // --- Style Constants ---
     const textLabelRoom = "font-medium text-base leading-7 text-slate-700 dark:text-slate-300 tracking-[-0.01em]";
