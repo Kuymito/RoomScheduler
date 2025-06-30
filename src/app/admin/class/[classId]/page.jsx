@@ -8,8 +8,8 @@ import html2canvas from 'html2canvas';
 // --- Corrected Imports ---
 import AdminLayout from '@/components/AdminLayout';
 import ClassDetailSkeleton from '../components/ClassDetailSkeleton';
-import * as classService from '@/services/classService';
-import * as instructorService from '@/services/instructorService';
+import * as classService from '@/services/classService.service';
+import * as instructorService from '@/services/instructorService.service';
 
 
 // --- Hardcoded Options & Mock Data ---

@@ -4,18 +4,6 @@ import { useState, useMemo, useEffect } from 'react';
 import InstructorLayout from '@/components/InstructorLayout';
 import { useRouter } from 'next/navigation';
 
-
-// --- Data ---
-const initialClassData = [
-    { id: 1, name: "NUM33-09", generation: "33", group: "09", major: "SE", degrees: "Bachelor", faculty: "Faculty of SE & R", shift: "8:00 - 11:00" },
-    { id: 2, name: "NUM32-01", generation: "32", group: "01", major: "IT", degrees: "Bachelor", faculty: "Faculty of IT", shift: "7:00 - 10:00" },
-    { id: 3, name: "NUM31-05", generation: "31", group: "05", major: "CS", degrees: "Bachelor", faculty: "Faculty of CS", shift: "13:00 - 16:00" },
-    { id: 4, name: "NUM33-10", generation: "33", group: "10", major: "AI", degrees: "Master", faculty: "Faculty of AI", shift: "18:00 - 21:00" },
-    { id: 5, name: "NUM30-03", generation: "30", group: "03", major: "DS", degrees: "Bachelor", faculty: "Faculty of DS", shift: "9:00 - 12:00" },
-    { id: 6, name: "NUM32-02", generation: "32", group: "02", major: "IT", degrees: "Bachelor", faculty: "Faculty of IT", shift: "8:00 - 11:00" },
-];
-
-// NEW: Skeleton component for the table
 const TableSkeleton = ({ columns, rows = 5 }) => (
     <div className="relative overflow-x-auto border border-gray-200 dark:border-gray-600 rounded-lg">
         <table className="w-full text-sm text-left text-gray-500">
@@ -43,7 +31,6 @@ const TableSkeleton = ({ columns, rows = 5 }) => (
     </div>
 );
 
-
 const InstructorClassViewContent = () => {
     const [classData, setClassData] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -54,13 +41,50 @@ const InstructorClassViewContent = () => {
     const [sortColumn, setSortColumn] = useState(null);
     const [sortDirection, setSortDirection] = useState('asc');
 
-    // Simulate data fetching
+    // Simulate data fetching from API
     useEffect(() => {
-        const timer = setTimeout(() => {
-            setClassData(initialClassData);
-            setLoading(false);
-        }, 2000); // 2-second delay
-        return () => clearTimeout(timer);
+        const fetchInstructorClasses = async () => {
+            try {
+                setLoading(true);
+                const response = await fetch('https://jaybird-new-previously.ngrok-free.app/api/v1/class/my-classes', {
+                    method: 'GET',
+                    headers: {
+                        'accept': '*/*',
+                        'Authorization': `Bearer ${localStorage.getItem('jwtToken')}`,
+                        'ngrok-skip-browser-warning': 'true'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to fetch classes');
+                }
+
+                const data = await response.json();
+                
+                // Map API data to match our table format
+                const mappedData = data.payload.map(classItem => ({
+                    id: classItem.classId,
+                    name: classItem.className,
+                    generation: classItem.generation,
+                    group: classItem.groupName,
+                    major: classItem.majorName,
+                    degrees: classItem.degreeName,
+                    faculty: classItem.department?.name || 'N/A',
+                    shift: `${classItem.shift?.startTime} - ${classItem.shift?.endTime}`,
+                    semester: classItem.semester,
+                    day: classItem.day,
+                    rawData: classItem // Keep original data
+                }));
+
+                setClassData(mappedData);
+            } catch (error) {
+                console.error('Error fetching classes:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchInstructorClasses();
     }, []);
 
     const handleSort = (column) => {
@@ -158,7 +182,6 @@ const InstructorClassViewContent = () => {
         }
     };
 
-    // Define columns for the skeleton
     const tableColumns = [
         { key: 'name', label: 'Name' },
         { key: 'generation', label: 'Generation', className: 'lg:table-cell hidden' },
@@ -168,7 +191,6 @@ const InstructorClassViewContent = () => {
         { key: 'faculty', label: 'Faculty', className: '2xl:table-cell hidden' },
         { key: 'shift', label: 'Shift', className: 'sm:table-cell hidden' },
     ];
-
 
     return (
         <div className="p-6 dark:text-white">

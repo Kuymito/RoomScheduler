@@ -5,7 +5,7 @@ import AdminLayout from '@/components/AdminLayout';
 import ClassCreatePopup from './components/ClassCreatePopup';
 import { useRouter } from 'next/navigation';
 import ClassPageSkeleton from './components/ClassPageSkeleton';
-import * as classService from '@/services/classService';
+import * as classService from '@/services/classService.service';
 
 const ClassViewContent = () => {
     // --- State Variables ---

@@ -18,6 +18,18 @@ const getAuthHeaders = () => {
     };
 };
 
+const decodeToken = (token) => {
+    if (!token) {
+      return null;
+    }
+    try {
+      return jwtDecode(token);
+    } catch (error) {
+      console.error("Failed to decode token:", error);
+      return null;
+    }
+  };
+
 const handleResponse = async (response) => {
     console.log("API response:", {
         status: response.status,
@@ -28,7 +40,7 @@ const handleResponse = async (response) => {
         console.warn("Authentication failed, redirecting to login");
         localStorage.removeItem('jwtToken');
         // Delay redirect to allow logs to be seen
-        setTimeout(() => window.location.href = '/login', 2000);
+        setTimeout(() => window.location.href = '/auth/login', 2000);
         throw new Error("Session expired. Please log in again.");
     }
 

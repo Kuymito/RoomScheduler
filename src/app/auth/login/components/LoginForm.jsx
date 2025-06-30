@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -11,7 +11,28 @@ const moul = Moul({ weight: '400', subsets: ['latin'] });
 // Define the API URL for your login endpoint
 const LOGIN_API_URL = process.env.NEXT_PUBLIC_API_URL ? `${process.env.NEXT_PUBLIC_API_URL}/auth/login` : 'https://jaybird-new-previously.ngrok-free.app/api/v1/auth/login';
 
-// This new component contains the form and its logic
+/**
+ * A simple helper function to decode the payload from a JWT.
+ * This runs on the client and does not verify the token's signature.
+ * @param {string} token The JWT string.
+ * @returns {object|null} The decoded payload object or null if parsing fails.
+ */
+const parseJwt = (token) => {
+    if (!token) { return null; }
+    try {
+        const base64Url = token.split('.')[1];
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+            return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+        }).join(''));
+        return JSON.parse(jsonPayload);
+    } catch (error) {
+        console.error("Error parsing JWT:", error);
+        return null;
+    }
+};
+
+// This component contains the form and its logic
 const RightSection = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -26,23 +47,17 @@ const RightSection = () => {
     };
 
     const handleSubmit = async (e) => {
-        // This should prevent the page from reloading. If it reloads, the form isn't correctly wired.
         e.preventDefault(); 
-        console.log("1. Login button clicked, handleSubmit function started.");
     
         if (!email || !password) {
             setError("Please enter both email and password.");
-            console.log("2. Function stopped: Email or password field is empty.");
             return;
         }
     
-        console.log("3. Setting loading state to true.");
         setIsLoading(true);
         setError('');
     
         try {
-            console.log("4. Attempting to send request to API:", LOGIN_API_URL);
-            
             const response = await fetch(LOGIN_API_URL, {
                 method: 'POST',
                 headers: {
@@ -51,26 +66,59 @@ const RightSection = () => {
                 body: JSON.stringify({ email, password }),
             });
     
-            console.log("5. Received response from API with status:", response.status);
+            // First, check if the response is okay. If not, parse error message.
+            if (!response.ok) {
+                let errorMsg = 'Login failed. Please check your credentials.';
+                try {
+                    // Try to get a more specific error message from the backend
+                    const errorData = await response.json();
+                    errorMsg = errorData.message || errorMsg;
+                } catch (e) {
+                    // Ignore if error response is not JSON
+                }
+                throw new Error(errorMsg);
+            }
     
             const data = await response.json();
-            console.log("6. Parsed response JSON:", data);
-    
-            if (!response.ok) {
-                console.error("7. Response was not OK. Throwing error.");
-                throw new Error(data.message || 'An unknown error occurred.');
-            }
             
-            if (data.token) {
-                console.log("8. Token found! Saving to storage and navigating.");
-                localStorage.setItem('jwtToken', data.token);
-                router.push('/admin/dashboard');
+            // The token should be in the 'payload' of your successful ApiResponse
+            const token = data.payload?.token || data.token;
+            
+            if (token) {
+                console.log("Token found! Saving to storage and navigating.");
+                localStorage.setItem('jwtToken', token);
+                
+                // --- ✅ ROLE-BASED REDIRECTION LOGIC ---
+                const decodedToken = parseJwt(token);
+
+                if (decodedToken && decodedToken.roles) {
+                    // Check if the user has the 'ROLE_ADMIN'
+                    if (decodedToken.roles.includes('ROLE_ADMIN')) {
+                        console.log("Admin user detected. Redirecting to admin dashboard.");
+                        router.push('/admin/dashboard'); 
+                    } 
+                    // Check if the user has the 'ROLE_INSTRUCTOR'
+                    else if (decodedToken.roles.includes('ROLE_INSTRUCTOR')) {
+                        console.log("Instructor user detected. Redirecting to instructor dashboard.");
+                        router.push('/instructor/dashboard'); // Make sure this route exists
+                    } 
+                    // Fallback for any other authenticated user
+                    else {
+                        console.log("User with other roles detected. Redirecting to default page.");
+                        router.push('/'); 
+                    }
+                } else {
+                    // Fallback if token is valid but has no roles claim
+                    console.warn("Token is valid but no roles found. Redirecting to default dashboard.");
+                    router.push('/admin/dashboard');
+                }
+
             } else {
                 throw new Error('Login successful, but no token was received from the server.');
             }
     
         } catch (err) {
-            console.error("9. An error occurred inside the try-catch block:", err);
+            console.error("An error occurred during login:", err);
             setError(err.message);
             setIsLoading(false); // Stop loading spinner on error
         }
@@ -78,7 +126,6 @@ const RightSection = () => {
 
     const handleForgotPasswordClick = () => {
         setIsForgotLoading(true);
-        // This is a simple navigation, but can be updated to call an OTP endpoint later
         setTimeout(() => {
             router.push('/auth/forgot');
         }, 1500);
