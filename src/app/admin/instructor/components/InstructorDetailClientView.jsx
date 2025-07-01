@@ -6,7 +6,7 @@ import Image from 'next/image';
 
 // --- Options (can be passed as props or kept here) ---
 const majorOptions = ['Computer Science', 'Information Technology', 'Information Systems', 'Software Engineering', 'Artificial Intelligence', 'Data Science', 'Machine Learning', 'Data Analytics', 'Robotics'];
-const degreeOptions = ['Bachelor', 'Master', 'PhD', 'Professor', 'Associate Professor', 'Lecturer'];
+const degreeOptions = [ 'Master', 'Doctor / PhD', 'Professor', 'Associate Professor', 'Lecturer'];
 const departmentOptions = ['Faculty of CS', 'Faculty of IT', 'Faculty of IS', 'Faculty of SE', 'Faculty of AI', 'Faculty of DS', 'Faculty of ML', 'Faculty of DA', 'Faculty of Robotics'];
 
 
