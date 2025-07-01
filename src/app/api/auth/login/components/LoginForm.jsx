@@ -23,7 +23,7 @@ const LoginForm = () => {
                     />
                     <h1 className={`${moul.className} font-bold mb-2 text-center sm:text-[25px]`}>សាកលវិទ្យាល័យជាតិគ្រប់គ្រង</h1>
                     <h2 className="sm:text-[21px] font-medium mb-6 text-center">National University of Management</h2>
-                    <h3 className="font-medium mb-3 relative sm:text-[21px]">Welcome student login form.</h3>
+                    <h3 className="font-medium mb-3 relative sm:text-[21px]">Welcome admin login form.</h3>
                     <p className="sm:text-[17px] sm:leading-[1.8]">
                         First, as the Rector of the National University of Management (NUM), I would like to sincerely
                         welcome you to our institution here in the Capital City of Phnom Penh, Cambodia. For those who

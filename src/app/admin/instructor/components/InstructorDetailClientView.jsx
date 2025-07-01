@@ -245,11 +245,14 @@ export default function InstructorDetailClientView({ initialInstructor }) {
                                     <input type={passwordVisibility.current ? "text" : "password"} readOnly value={instructorDetails.password} className="form-input w-full py-2 px-3  bg-gray-100 border border-num-gray-light dark:bg-gray-800 dark:border-gray-700 rounded-md font-medium text-xs text-gray-500 dark:text-gray-400"/>
                                     <button type="button" onClick={() => togglePasswordVisibility('current')} className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500 hover:text-gray-700" aria-label={passwordVisibility.current ? "Hide password" : "Show password"}>{passwordVisibility.current ? <EyeClosedIcon /> : <EyeOpenIcon />}</button>
                                 </div>
-                            </div>
-                            {renderPasswordField("New Password", "newPassword", newPassword, handleNewPasswordChange, "new")}
+                            </div>      
                         </div>
+
                         <div className="form-row flex gap-3 mb-2 flex-wrap">
-                            {renderPasswordField( "Confirm New Password", "confirmNewPassword", handleConfirmPasswordChange, "confirm", passwordMismatchError )}
+                            {renderPasswordField("New Password", "newPassword", newPassword, handleNewPasswordChange, "new")}
+
+                            {renderPasswordField( "Confirm New Password", "confirmNewPassword", 
+                                handleConfirmPasswordChange, "confirm", passwordMismatchError )}
                         </div>
                         <div className="form-actions flex justify-end items-center gap-3 mt-4">
                              {isEditingPassword ? ( <> <button onClick={() => handleCancelClick('password')} className="back-button bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 shadow-custom-light rounded-md text-gray-800 dark:text-white border-none py-2 px-3 font-semibold text-xs cursor-pointer" disabled={loading}>Cancel</button><button onClick={() => handleSaveClick('password')} className="save-button bg-blue-600 hover:bg-blue-700 shadow-custom-light rounded-md text-white border-none py-2 px-3 font-semibold text-xs cursor-pointer" disabled={loading}>{loading ? "Saving..." : "Save Password"}</button> </> ) : ( <> <button onClick={() => router.back()} className="back-button bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 shadow-custom-light rounded-md text-gray-800 dark:text-white border-none py-2 px-3 font-semibold text-xs cursor-pointer" disabled={loading}> Back </button> <button onClick={() => handleEditClick('password')} className="save-button bg-blue-600 hover:bg-blue-700 shadow-custom-light rounded-md text-white border-none py-2 px-3 font-semibold text-xs cursor-pointer" disabled={loading}>Change Password</button> </> )}
@@ -260,3 +263,40 @@ export default function InstructorDetailClientView({ initialInstructor }) {
         </div>
     );
 }
+
+//  <div className="space-y-4">
+//                 {/* current password */}
+//                 <div className="flex gap-3 flex-wrap">
+//                   {renderPasswordField(
+//                     "Current Password",
+//                     "currentPassword",
+//                     currentPassword,
+//                     handleCurrentPasswordChange,
+//                     "current",
+//                     !isEditingPassword,
+//                     emptyPasswordError.current
+//                   )}
+//                 </div>
+
+//                 {/* New & Confirm password */}
+//                 <div className="flex gap-3 flex-wrap">
+//                   {renderPasswordField(
+//                     "New Password",
+//                     "newPassword",
+//                     newPassword,
+//                     handleNewPasswordChange,
+//                     "new",
+//                     !isEditingPassword,
+//                     emptyPasswordError.new || passwordMismatchError
+//                   )}
+//                   {renderPasswordField(
+//                     "Confirm New Password",
+//                     "confirmNewPassword",
+//                     confirmNewPassword,
+//                     handleConfirmPasswordChange,
+//                     "confirm",
+//                     !isEditingPassword,
+//                     emptyPasswordError.confirm || passwordMismatchError
+//                   )}
+//                 </div>
+//               </div>
