@@ -221,7 +221,7 @@ const ProfileContent = () => {
                 <input
                     type={passwordVisibility[fieldName] ? "text" : "password"}
                     name={name}
-                    className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs ${isReadOnly ? 'bg-gray-100 dark:bg-gray-800 border-num-gray-light dark:border-gray-700 text-gray-500 dark:text-gray-400' : 'bg-white dark:bg-gray-700 border-num-gray-light dark:border-gray-600 text-num-dark-text dark:text-white'} ${hasError ? 'border-red-500 ring-1 ring-red-500' : ''}`}
+                    className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs ${isReadOnly ? 'bg-gray-100 dark:bg-gray-800 border-num-gray-light dark:border-gray-700 text-gray-500 dark:text-gray-400' : 'bg-white dark:bg-gray-800 border-num-gray-light dark:border-gray-600 text-num-dark-text dark:text-white'} ${hasError ? 'border-red-500 ring-1 ring-red-500' : ''}`}
                     placeholder={`Enter ${label.toLowerCase()}`}
                     value={value}
                     onChange={onChange}
@@ -310,34 +310,34 @@ const ProfileContent = () => {
                         <div className="section-title font-semibold text-sm text-gray-800 dark:text-gray-200 mb-3">
                             General Information
                         </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 dark:text-gray-300">
                              <div className="form-group">
                                 <label className="form-label block font-semibold text-xs text-gray-700 dark:text-gray-300 mb-1">First Name</label>
-                                <input type="text" name="firstName" value={currentDisplayData.firstName} onChange={handleGeneralInputChange} readOnly={!isEditingGeneral} className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs ${!isEditingGeneral ? 'bg-gray-100 dark:bg-gray-700' : 'bg-white dark:bg-gray-600'}`}/>
+                                <input type="text" name="firstName" value={currentDisplayData.firstName} onChange={handleGeneralInputChange} readOnly={!isEditingGeneral} className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs ${!isEditingGeneral ? 'bg-gray-100 dark:bg-gray-800' : 'bg-white dark:bg-gray-600'}`}/>
                             </div>
                             <div className="form-group">
                                 <label className="form-label block font-semibold text-xs text-gray-700 dark:text-gray-300 mb-1">Last Name</label>
-                                <input type="text" name="lastName" value={currentDisplayData.lastName} onChange={handleGeneralInputChange} readOnly={!isEditingGeneral} className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs ${!isEditingGeneral ? 'bg-gray-100 dark:bg-gray-700' : 'bg-white dark:bg-gray-600'}`}/>
+                                <input type="text" name="lastName" value={currentDisplayData.lastName} onChange={handleGeneralInputChange} readOnly={!isEditingGeneral} className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs ${!isEditingGeneral ? 'bg-gray-100 dark:bg-gray-800' : 'bg-white dark:bg-gray-600'}`}/>
                             </div>
                             <div className="form-group">
                                 <label className="form-label block font-semibold text-xs text-gray-700 dark:text-gray-300 mb-1">Email</label>
-                                <input type="email" name="email" value={currentDisplayData.email} readOnly className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs bg-gray-100 dark:bg-gray-700`}/>
+                                <input type="email" name="email" value={currentDisplayData.email} readOnly className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs bg-gray-100 dark:bg-gray-800`}/>
                             </div>
                             <div className="form-group">
                                 <label className="form-label block font-semibold text-xs text-gray-700 dark:text-gray-300 mb-1">Phone Number</label>
-                                <input type="tel" name="phoneNumber" value={currentDisplayData.phoneNumber} onChange={handleGeneralInputChange} readOnly={!isEditingGeneral} className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs ${!isEditingGeneral ? 'bg-gray-100 dark:bg-gray-700' : 'bg-white dark:bg-gray-600'}`}/>
+                                <input type="tel" name="phoneNumber" value={currentDisplayData.phoneNumber} onChange={handleGeneralInputChange} readOnly={!isEditingGeneral} className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs ${!isEditingGeneral ? 'bg-gray-100 dark:bg-gray-800' : 'bg-white dark:bg-gray-600'}`}/>
                             </div>
                              <div className="form-group">
                                 <label className="form-label block font-semibold text-xs text-gray-700 dark:text-gray-300 mb-1">Degree</label>
-                                <input type="text" name="degree" value={currentDisplayData.degree} onChange={handleGeneralInputChange} readOnly={!isEditingGeneral} className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs ${!isEditingGeneral ? 'bg-gray-100 dark:bg-gray-700' : 'bg-white dark:bg-gray-600'}`}/>
+                                <input type="text" name="degree" value={currentDisplayData.degree} onChange={handleGeneralInputChange} readOnly={!isEditingGeneral} className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs ${!isEditingGeneral ? 'bg-gray-100 dark:bg-gray-800' : 'bg-white dark:bg-gray-600'}`}/>
                             </div>
                              <div className="form-group">
                                 <label className="form-label block font-semibold text-xs text-gray-700 dark:text-gray-300 mb-1">Major</label>
-                                <input type="text" name="major" value={currentDisplayData.major} onChange={handleGeneralInputChange} readOnly={!isEditingGeneral} className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs ${!isEditingGeneral ? 'bg-gray-100 dark:bg-gray-700' : 'bg-white dark:bg-gray-600'}`}/>
+                                <input type="text" name="major" value={currentDisplayData.major} onChange={handleGeneralInputChange} readOnly={!isEditingGeneral} className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs ${!isEditingGeneral ? 'bg-gray-100 dark:bg-gray-800' : 'bg-white dark:bg-gray-600'}`}/>
                             </div>
                              <div className="form-group md:col-span-2">
                                 <label className="form-label block font-semibold text-xs text-gray-700 dark:text-gray-300 mb-1">Department</label>
-                                <input type="text" name="department" value={currentDisplayData.department} onChange={handleGeneralInputChange} readOnly={!isEditingGeneral} className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs ${!isEditingGeneral ? 'bg-gray-100 dark:bg-gray-700' : 'bg-white dark:bg-gray-600'}`}/>
+                                <input type="text" name="department" value={currentDisplayData.department} onChange={handleGeneralInputChange} readOnly={!isEditingGeneral} className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs ${!isEditingGeneral ? 'bg-gray-100 dark:bg-gray-800' : 'bg-white dark:bg-gray-600'}`}/>
                             </div>
                         </div>
                         <div className="form-actions flex justify-end items-center gap-3 mt-4">
