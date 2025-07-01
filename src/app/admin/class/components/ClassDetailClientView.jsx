@@ -1,3 +1,4 @@
+// src/app/admin/class/components/ClassDetailClientView.jsx
 'use client';
 
 import { useRouter } from 'next/navigation';
@@ -8,6 +9,11 @@ import { classService } from '@/services/class.service';
 import { useSession } from 'next-auth/react';
 
 // --- Reusable Components ---
+// const DefaultAvatarIcon = ({ className = "w-8 h-8" }) => (
+//     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={`${className} text-gray-500 dark:text-gray-400 border border-gray-300 rounded-full p-1 dark:border-gray-600`}>
+//         <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
+//     </svg>
+// );
 const DefaultAvatarIcon = ({ className = "w-8 h-8" }) => (
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={`${className} text-gray-500 dark:text-gray-400 border border-gray-300 rounded-full p-1 dark:border-gray-600`}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
@@ -285,7 +291,7 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
     const handleStudyModeChange = (day, newMode) => { 
         setSchedule(prevSchedule => {
             if (prevSchedule[day]?.instructor) {
-                return { ...prevSchedule, [day]: { ...prevSchedule[day], studyMode: newMode } };
+                return { ...prevSchedule[day], studyMode: newMode } ;
             }
             return prevSchedule;
         });
@@ -362,7 +368,7 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
                             ) : (
                                 <>
                                     <button onClick={() => router.back()} className="back-button bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 shadow-custom-light rounded-md text-gray-800 dark:text-white border-none py-2 px-3 font-semibold text-xs cursor-pointer" disabled={loading}>Back</button>
-                                    <button onClick={handleEditToggle} className="edit-button bg-blue-600 hover:bg-blue-700 shadow-custom-light rounded-md text-white border-none py-2 px-3 font-semibold text-xs cursor-pointer" disabled={loading}>Edit Class</button>
+                                    <button onClick={handleEditToggle} className="save-button bg-blue-600 hover:bg-blue-700 shadow-custom-light rounded-md text-white border-none py-2 px-3 font-semibold text-xs cursor-pointer" disabled={loading}>Edit Class</button>
                                 </>
                             )}
                         </div>
@@ -394,7 +400,7 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
                         </div>
                     </div>
                     <div id="weeklySchedulePanel" className='flex-1 p-4 sm:p-6 bg-white border border-num-gray-light dark:bg-gray-800 dark:border-gray-700 shadow-custom-light rounded-lg flex flex-col'>
-                        <h3 className="text-base sm:text-lg font-semibold mb-6 text-num-dark-text dark:text-gray-100 border-b dark:border-gray-600 pb-2">Weekly Class Schedule</h3>
+                        <h3 className="text-base sm:text-lg font-semibold mb-6 text-num-dark-text dark:text-gray-100 border-b dark:border-gray-600 pb-2">Weekly Class Schedule for {classData.name}</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-7 gap-1">
                             {daysOfWeek.map((day) => (
                                 <div key={day} onDragOver={handleDayDragOver} onDragEnter={(e) => handleDayDragEnter(e, day)} onDragLeave={(e) => handleDayDragLeave(e, day)} onDrop={(e) => handleDayDrop(e, day)}
