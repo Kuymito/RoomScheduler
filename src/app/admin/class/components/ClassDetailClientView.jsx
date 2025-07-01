@@ -82,7 +82,7 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
     
     const generationOptions = ['29','30', '31', '32', '33'];
     const majorOptions = ['Computer Science', 'Information Technology', 'Information Systems', 'Software Engineering', 'Artificial Intelligence', 'Data Science', 'Machine Learning', 'Data Analytics', 'Robotics'];
-    const degreesOptions = ['Associate', 'Master', 'PhD','Doctor'];
+    const degreesOptions = ['Bachelor', 'Master', 'PhD','Doctor'];
     // const shiftOptions = ['Morning Session 1', 'Morning Session 2', 'Afternoon Session 1', 'Afternoon Session 2']; //old session
     const shiftOptions = ['Morning Session', 'Afternoon Session', 'Evening Session', 'Saturday Session', 'Sunday Session'];
     const facultyOptions = allDepartments || [];
