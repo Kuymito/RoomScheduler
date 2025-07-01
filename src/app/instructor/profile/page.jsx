@@ -305,7 +305,7 @@ const ProfileContent = () => {
                     <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" className="sr-only" />
                 </div>
 
-                <div className="info-details-wrapper flex-grow flex flex-col gap-8 min-w-[300px]">
+                <div className="info-details-wrapper flex-grow flex flex-col gap-8 min-w-[300px] ">
                     <div className="info-card p-3 sm:p-4 bg-white border border-gray-300 dark:bg-gray-800 dark:border-gray-700 shadow-sm rounded-lg">
                         <div className="section-title font-semibold text-sm text-gray-800 dark:text-gray-200 mb-3">
                             General Information
@@ -336,7 +336,7 @@ const ProfileContent = () => {
                                 <input type="text" name="major" value={currentDisplayData.major} onChange={handleGeneralInputChange} readOnly={!isEditingGeneral} className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs ${!isEditingGeneral ? 'bg-gray-100 dark:bg-gray-800' : 'bg-white dark:bg-gray-600'}`}/>
                             </div>
                              <div className="form-group md:col-span-2">
-                                <label className="form-label block font-semibold text-xs text-gray-700 dark:text-gray-300 mb-1">Department</label>
+                                <label className="form-label block font-semibold text-xs text-gray-700 dark:text-gray-300 mb-1 ">Department</label>
                                 <input type="text" name="department" value={currentDisplayData.department} onChange={handleGeneralInputChange} readOnly={!isEditingGeneral} className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs ${!isEditingGeneral ? 'bg-gray-100 dark:bg-gray-800' : 'bg-white dark:bg-gray-600'}`}/>
                             </div>
                         </div>
