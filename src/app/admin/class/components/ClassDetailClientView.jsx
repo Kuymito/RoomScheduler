@@ -9,14 +9,9 @@ import { classService } from '@/services/class.service';
 import { useSession } from 'next-auth/react';
 
 // --- Reusable Components ---
-// const DefaultAvatarIcon = ({ className = "w-8 h-8" }) => (
-//     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={`${className} text-gray-500 dark:text-gray-400 border border-gray-300 rounded-full p-1 dark:border-gray-600`}>
-//         <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
-//     </svg>
-// );
 const DefaultAvatarIcon = ({ className = "w-8 h-8" }) => (
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={`${className} text-gray-500 dark:text-gray-400 border border-gray-300 rounded-full p-1 dark:border-gray-600`}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 017.5 0ZM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
     </svg>
 );
 
@@ -85,7 +80,11 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
     const [saveMessage, setSaveMessage] = useState('');
     const saveStatusRef = useRef(saveStatus);
     const [selectedDegree, setSelectedDegree] = useState('All');
-    
+    // State for current date and time
+    const [currentDateTime, setCurrentDateTime] = useState('');
+    // State to control visibility of elements during PDF generation
+    const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+
     const generationOptions = ['29','30', '31', '32', '33'];
     const majorOptions = ['Computer Science', 'Information Technology', 'Information Systems', 'Software Engineering', 'Artificial Intelligence', 'Data Science', 'Machine Learning', 'Data Analytics', 'Robotics'];
     const degreesOptions = ['Bachelor', 'Master', 'PhD','Doctor'];
@@ -142,6 +141,27 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
             setIsDirty(false);
         }
     }, [schedule, initialScheduleForCheck]);
+
+    // Effect to update currentDateTime every second
+    useEffect(() => {
+        const updateDateTime = () => {
+            const now = new Date();
+            setCurrentDateTime(now.toLocaleString('en-US', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: false
+            }).replace(',', '')); // Remove comma if en-US adds it
+        };
+
+        updateDateTime(); // Set initial value
+        const intervalId = setInterval(updateDateTime, 1000); // Update every second
+
+        return () => clearInterval(intervalId); // Cleanup on unmount
+    }, []);
 
     const handleEditToggle = () => {
         if (isEditing) {
@@ -291,7 +311,7 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
     const handleStudyModeChange = (day, newMode) => { 
         setSchedule(prevSchedule => {
             if (prevSchedule[day]?.instructor) {
-                return { ...prevSchedule[day], studyMode: newMode } ;
+                return { ...prevSchedule, [day]: { ...prevSchedule[day], studyMode: newMode } };
             }
             return prevSchedule;
         });
@@ -318,26 +338,51 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
         if (!schedulePanelElement) return;
         const scheduleIsEmpty = Object.values(schedule).every(dayData => !dayData || !dayData.instructor);
         if (scheduleIsEmpty) return;
+        
+        // Show relevant elements for PDF capture
+        setIsGeneratingPdf(true); 
+
         try {
-            const canvas = await html2canvas(schedulePanelElement, { scale: 2 });
-            const imgData = canvas.toDataURL('image/png');
-            const pdf = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });
-            const pdfWidth = pdf.internal.pageSize.getWidth();
-            const pdfHeight = pdf.internal.pageSize.getHeight();
-            const imgProps = pdf.getImageProperties(imgData);
-            const ratio = imgProps.width / imgProps.height;
-            let newImgWidth = pdfWidth - 20;
-            let newImgHeight = newImgWidth / ratio;
-            if (newImgHeight > pdfHeight - 20) {
-                newImgHeight = pdfHeight - 20;
-                newImgWidth = newImgHeight * ratio;
+            // Give a small delay to ensure DOM updates (hiding/showing elements) apply before capture
+            await new Promise(resolve => setTimeout(resolve, 50)); 
+
+            const canvas = await html2canvas(schedulePanelElement, { 
+                scale: 2, 
+                useCORS: true, 
+                logging: true,
+                backgroundColor: document.documentElement.classList.contains('dark') ? '#191F29' : '#ffffff', 
+            });
+
+            const imgData = canvas.toDataURL('image/png'); 
+            
+            // A4 dimensions in points (landscape)
+            const a4Width = 841.89; // 297mm in points
+            const a4Height = 595.28; // 210mm in points
+
+            const imgWidth = canvas.width; 
+            const imgHeight = canvas.height; 
+            const ratio = imgWidth / imgHeight; 
+
+            let pdfImgWidth = a4Width - 40; // 20pt margin on each side 
+            let pdfImgHeight = pdfImgWidth / ratio; 
+
+            if (pdfImgHeight > a4Height - 40) { 
+                pdfImgHeight = a4Height - 40; 
+                pdfImgWidth = pdfImgHeight * ratio; 
             }
-            const xOffset = (pdfWidth - newImgWidth) / 2;
-            const yOffset = (pdfHeight - newImgHeight) / 2;
-            pdf.addImage(imgData, 'PNG', xOffset, yOffset, newImgWidth, newImgHeight);
-            pdf.save('class_schedule.pdf');
+
+            const xOffset = (a4Width - pdfImgWidth) / 2; 
+            const yOffset = (a4Height - pdfImgHeight) / 2; 
+            
+            const pdf = new jsPDF('landscape', 'pt', 'a4'); 
+            pdf.addImage(imgData, 'PNG', xOffset, yOffset, pdfImgWidth, pdfImgHeight); 
+            
+            pdf.save('class_schedule.pdf'); 
         } catch (error) {
             console.error("Error generating PDF:", error);
+        } finally {
+            // Hide elements again after PDF generation
+            setIsGeneratingPdf(false); 
         }
     };
     
@@ -389,7 +434,7 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
                         </div>
                         <div className="space-y-3 flex-grow overflow-y-auto pr-1 min-h-[200px]">
                             {availableInstructors.length > 0 ? availableInstructors.map((instructor) => (
-                                <div key={instructor.id} draggable onDragStart={(e) => handleNewInstructorDragStart(e, instructor)} onDragEnd={handleNewInstructorDragEnd} className="p-2 bg-sky-50 dark:bg-sky-700 dark:hover:bg-sky-600 border border-sky-200 dark:border-sky-600 rounded-md shadow-sm hover:shadow-md cursor-grab active:cursor-grabbing transition-all duration-150 ease-in-out flex items-center gap-3 group">
+                                <div key={instructor.id} draggable onDragStart={(e) => handleNewInstructorDragStart(e, instructor)} onDragEnd={handleScheduledInstructorDragEnd} className="p-2 bg-sky-50 dark:bg-sky-700 dark:hover:bg-sky-600 border border-sky-200 dark:border-sky-600 rounded-md shadow-sm hover:shadow-md cursor-grab active:cursor-grabbing transition-all duration-150 ease-in-out flex items-center gap-3 group">
                                     {instructor.profileImage ? (<img src={instructor.profileImage} alt={instructor.name} className="w-10 h-10 rounded-full object-cover border border-gray-200 dark:border-gray-600 flex-shrink-0" onError={(e) => { e.currentTarget.style.display = 'none'; }}/>) : (<DefaultAvatarIcon className={`w-10 h-10 flex-shrink-0`} /> )}
                                     <div className="flex-grow">
                                         <p className="text-sm font-medium text-sky-800 dark:text-sky-100 group-hover:text-sky-900 dark:group-hover:text-white">{instructor.name}</p>
@@ -399,19 +444,26 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
                                 (<p className="text-sm text-gray-500 dark:text-gray-400 italic">{searchTerm ? 'No matching instructors found.' : 'No instructors available.'}</p>)}
                         </div>
                     </div>
-                    <div id="weeklySchedulePanel" className='flex-1 p-4 sm:p-6 bg-white border border-num-gray-light dark:bg-gray-800 dark:border-gray-700 shadow-custom-light rounded-lg flex flex-col'>
+                    <div id="weeklySchedulePanel" className='flex-1 p-4 sm:p-6 bg-white border border-num-gray-light dark:bg-gray-800 dark:border-gray-700 shadow-custom-light rounded-lg flex flex-col relative'>
                         <h3 className="text-base sm:text-lg font-semibold mb-6 text-num-dark-text dark:text-gray-100 border-b dark:border-gray-600 pb-2">Weekly Class Schedule for {classData.name}</h3>
+                        
+                        {/* Public Date element, visible only during PDF generation and positioned absolutely */}
+                        <p className={`absolute top-4 right-4 text-xs text-gray-500 dark:text-gray-400 ${isGeneratingPdf ? 'block' : 'hidden'}`}>
+                            Public Date: {currentDateTime}
+                        </p>
+
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-7 gap-1">
                             {daysOfWeek.map((day) => (
                                 <div key={day} onDragOver={handleDayDragOver} onDragEnter={(e) => handleDayDragEnter(e, day)} onDragLeave={(e) => handleDayDragLeave(e, day)} onDrop={(e) => handleDayDrop(e, day)}
-                                    className={`p-1 rounded-lg min-h-[220px] flex flex-col justify-start items-center group border-2 transition-all duration-200 ease-in-out ${dragOverDay === day && draggedItem ? 'bg-emerald-50 dark:bg-emerald-800 border-emerald-400 dark:border-emerald-500 ring-1 ring-emerald-300' : 'bg-gray-50 dark:bg-gray-800 border-dashed border-gray-300 dark:border-gray-600 hover:border-gray-400'}`}>
+                                    className={`p-1 rounded-lg min-h-[220px] flex flex-col justify-start items-center group border-2 transition-all duration-200 ease-in-out ${dragOverDay === day && draggedItem ? 'bg-emerald-500 dark:bg-emerald-800 border-emerald-400 dark:border-emerald-500 ring-1 ring-emerald-300' : 'bg-gray-50 dark:bg-gray-800 border-dashed border-gray-300 dark:border-gray-600 hover:border-gray-400'}`}>
                                     <h4 className="text-sm sm:text-base font-semibold text-gray-700 dark:text-gray-200 mb-3 select-none pt-1">{day}</h4>
                                     {schedule[day]?.instructor ? (<ScheduledInstructorCard instructorData={schedule[day]} day={day} onDragStart={handleScheduledInstructorDragStart} onDragEnd={handleScheduledInstructorDragEnd} onRemove={handleRemoveInstructorFromDay} studyMode={schedule[day].studyMode} onStudyModeChange={handleStudyModeChange}/>) : 
                                     (<div className="flex-grow flex items-center justify-center text-xs text-gray-400 dark:text-gray-500 italic select-none px-2 text-center">Drag instructor here</div>)}
                                 </div>
                             ))}
                         </div>
-                        <div className="mt-auto pt-6 border-t border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row justify-between items-center gap-4">
+                        {/* This div contains Generation, Group, Semester, Shift, and the buttons */}
+                        <div className={`mt-auto pt-6 border-t border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row justify-between items-center gap-4 ${isGeneratingPdf ? 'hidden' : 'flex'}`}>
                             <div className="flex flex-col items-start gap-1 w-full sm:w-auto">
                                 <ul className="list-disc text-xs mb-4 ml-3">
                                     <li>Generation: <span className="font-semibold text-num-dark-text dark:text-gray-100">{classData.generation}</span></li>
@@ -424,6 +476,9 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
                                 </button>
                             </div>
                             <div className="flex flex-col items-end gap-1 w-full sm:w-auto mt-24">
+                                <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
+                                    Public Date : {currentDateTime}
+                                </p>
                                 <button onClick={handleDownloadSchedule} className={`${downloadButtonBaseClasses} ${downloadButtonColorClasses}`} disabled={isSaving || scheduleIsEmpty}>
                                     Download Schedule
                                 </button>
