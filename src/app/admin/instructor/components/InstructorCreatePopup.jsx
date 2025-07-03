@@ -10,7 +10,7 @@ const InstructorCreatePopup = ({ isOpen, onClose, onSave }) => {
         'Machine Learning', 'Data Analytics', 'Robotics'
     ];
     const qualificationOptions = [
-        'Bachelor', 'Master', 'PhD', 'Professor', 'Associate Professor', 'Lecturer'
+        'Master', 'PhD', 'Doctor'
     ];
 
     // State to manage the form fields for the new instructor

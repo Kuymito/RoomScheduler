@@ -80,14 +80,14 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
     const saveStatusRef = useRef(saveStatus);
     const [selectedDegree, setSelectedDegree] = useState('All');
     
-    const generationOptions = ['30', '31', '32', '33', '34', '35'];
+    const generationOptions = ['29','30', '31', '32', '33'];
     const majorOptions = ['Computer Science', 'Information Technology', 'Information Systems', 'Software Engineering', 'Artificial Intelligence', 'Data Science', 'Machine Learning', 'Data Analytics', 'Robotics'];
-    const degreesOptions = ['Bachelor', 'Master', 'PhD'];
-    const shiftOptions = ['Morning Session 1', 'Morning Session 2', 'Afternoon Session 1', 'Afternoon Session 2'];
+    const degreesOptions = ['Bachelor', 'Master', 'PhD', 'Doctor'];
+    const shiftOptions = ['Morning Session', 'Afternoon Session', 'Evening Session', 'Weekend Session'];
     const facultyOptions = allDepartments || [];
 
     const degreeFilterOptions = ['All', ...degreesOptions];
-    const semesterOptions = ['Semester 1', 'Semester 2', 'Semester 3', 'Semester 4', 'Semester 5', 'Semester 6'];
+    const semesterOptions = ['Semester 1', 'Semester 2', 'Semester 3', 'Semester 4', 'Semester 5', 'Semester 6', 'Semester 7', 'Semester 8'];
     const statusOptions = ['Active', 'Archived'];
 
     // The data to display in the form fields.

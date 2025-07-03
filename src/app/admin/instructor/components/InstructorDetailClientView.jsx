@@ -6,7 +6,7 @@ import Image from 'next/image';
 
 // --- Options (can be passed as props or kept here) ---
 const majorOptions = ['Computer Science', 'Information Technology', 'Information Systems', 'Software Engineering', 'Artificial Intelligence', 'Data Science', 'Machine Learning', 'Data Analytics', 'Robotics'];
-const degreeOptions = ['Bachelor', 'Master', 'PhD', 'Professor', 'Associate Professor', 'Lecturer'];
+const degreeOptions = [ 'Master', 'Doctor / PhD', 'Professor', 'Associate Professor', 'Lecturer'];
 const departmentOptions = ['Faculty of CS', 'Faculty of IT', 'Faculty of IS', 'Faculty of SE', 'Faculty of AI', 'Faculty of DS', 'Faculty of ML', 'Faculty of DA', 'Faculty of Robotics'];
 
 
@@ -230,7 +230,7 @@ export default function InstructorDetailClientView({ initialInstructor }) {
                         <div className="form-row flex gap-3 mb-2 flex-wrap">{renderTextField("First Name", "firstName", currentData.firstName, isEditingGeneral)}{renderTextField("Last Name", "lastName", currentData.lastName, isEditingGeneral)}</div>
                         <div className="form-row flex gap-3 mb-2 flex-wrap">{renderTextField("Email", "email", currentData.email, isEditingGeneral, { type: 'email' })}{renderTextField("Phone Number", "phone", currentData.phone, isEditingGeneral, { type: 'tel' })}</div>
                         <div className="form-row flex gap-3 mb-2 flex-wrap">{renderSelectField("Major", "major", currentData.major, majorOptions, isEditingGeneral)}{renderSelectField("Degree", "degree", currentData.degree, degreeOptions, isEditingGeneral)}</div>
-                        <div className="form-row flex gap-3 mb-2 flex-wrap">{renderSelectField("Department", "department", currentData.department, departmentOptions, isEditingGeneral)}{renderTextField("Address", "address", currentData.address, isEditingGeneral)}</div>
+                        <div className="form-row flex gap-3 mb-2 flex-wrap">{renderSelectField("Faculty / Department", "department", currentData.department, departmentOptions, isEditingGeneral)}{renderTextField("Address", "address", currentData.address, isEditingGeneral)}</div>
                         <div className="form-actions flex justify-end items-center gap-3 mt-4">
                             {isEditingGeneral ? ( <> <button onClick={() => handleCancelClick('general')} className="back-button bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 shadow-custom-light rounded-md text-gray-800 dark:text-white border-none py-2 px-3 font-semibold text-xs cursor-pointer" disabled={loading}>Cancel</button><button onClick={() => handleSaveClick('general')} className="save-button bg-blue-600 hover:bg-blue-700 shadow-custom-light rounded-md text-white border-none py-2 px-3 font-semibold text-xs cursor-pointer" disabled={loading}>{loading ? "Saving..." : "Save Changes"}</button> </> ) : ( <> <button onClick={() => router.back()} className="back-button bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 shadow-custom-light rounded-md text-gray-800 dark:text-white border-none py-2 px-3 font-semibold text-xs cursor-pointer" disabled={loading}> Back </button> <button onClick={() => handleEditClick('general')} className="save-button bg-blue-600 hover:bg-blue-700 shadow-custom-light rounded-md text-white border-none py-2 px-3 font-semibold text-xs cursor-pointer" disabled={loading}>Edit Profile</button> </> )}
                         </div>
@@ -245,11 +245,14 @@ export default function InstructorDetailClientView({ initialInstructor }) {
                                     <input type={passwordVisibility.current ? "text" : "password"} readOnly value={instructorDetails.password} className="form-input w-full py-2 px-3  bg-gray-100 border border-num-gray-light dark:bg-gray-800 dark:border-gray-700 rounded-md font-medium text-xs text-gray-500 dark:text-gray-400"/>
                                     <button type="button" onClick={() => togglePasswordVisibility('current')} className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500 hover:text-gray-700" aria-label={passwordVisibility.current ? "Hide password" : "Show password"}>{passwordVisibility.current ? <EyeClosedIcon /> : <EyeOpenIcon />}</button>
                                 </div>
-                            </div>
-                            {renderPasswordField("New Password", "newPassword", newPassword, handleNewPasswordChange, "new")}
+                            </div>      
                         </div>
+
                         <div className="form-row flex gap-3 mb-2 flex-wrap">
-                            {renderPasswordField( "Confirm New Password", "confirmNewPassword", handleConfirmPasswordChange, "confirm", passwordMismatchError )}
+                            {renderPasswordField("New Password", "newPassword", newPassword, handleNewPasswordChange, "new")}
+
+                            {renderPasswordField( "Confirm New Password", "confirmNewPassword", 
+                                handleConfirmPasswordChange, "confirm", passwordMismatchError )}
                         </div>
                         <div className="form-actions flex justify-end items-center gap-3 mt-4">
                              {isEditingPassword ? ( <> <button onClick={() => handleCancelClick('password')} className="back-button bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 shadow-custom-light rounded-md text-gray-800 dark:text-white border-none py-2 px-3 font-semibold text-xs cursor-pointer" disabled={loading}>Cancel</button><button onClick={() => handleSaveClick('password')} className="save-button bg-blue-600 hover:bg-blue-700 shadow-custom-light rounded-md text-white border-none py-2 px-3 font-semibold text-xs cursor-pointer" disabled={loading}>{loading ? "Saving..." : "Save Password"}</button> </> ) : ( <> <button onClick={() => router.back()} className="back-button bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 shadow-custom-light rounded-md text-gray-800 dark:text-white border-none py-2 px-3 font-semibold text-xs cursor-pointer" disabled={loading}> Back </button> <button onClick={() => handleEditClick('password')} className="save-button bg-blue-600 hover:bg-blue-700 shadow-custom-light rounded-md text-white border-none py-2 px-3 font-semibold text-xs cursor-pointer" disabled={loading}>Change Password</button> </> )}

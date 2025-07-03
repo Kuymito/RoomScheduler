@@ -196,7 +196,7 @@ export default function RoomClientView({ initialAllRoomsData, buildingLayout, in
                 <div className="flex flex-col lg:flex-row gap-6">
                     <div className="flex-1 min-w-0">
                         <div className="flex flex-col sm:flex-row items-center justify-between border-b dark:border-gray-600 pb-3 gap-4 mb-4">
-                            <div className="flex rounded-lg border border-gray-300 dark:border-gray-600 overflow-hidden w-full sm:w-auto">
+                            <div className="flex rounded-lg border border-gray-300 dark:border-gray-600 dark:text-gray-300 overflow-hidden w-full sm:w-auto">
                                 {WEEKDAYS.map(day => (<button key={day} onClick={() => handleDayChange(day)} className={`px-3 py-1.5 text-xs font-medium transition-colors w-full ${selectedDay === day ? 'bg-blue-600 text-white shadow' : 'border-r dark:border-r-gray-500 last:border-r-0 hover:bg-gray-100 dark:hover:bg-gray-700'}`}>{day.substring(0, 3)}</button>))}
                             </div>
                             <div className="flex items-center gap-2 w-full sm:w-auto">
@@ -231,7 +231,7 @@ export default function RoomClientView({ initialAllRoomsData, buildingLayout, in
                                                         <span className={`ml-3 text-xs sm:text-sm font-medium ${isSelected ? 'text-blue-700 dark:text-blue-300' : isOccupied ? 'text-slate-500 dark:text-slate-400' : 'text-slate-700 dark:text-slate-300'}`}>{room.name}</span>
                                                     </div>
                                                     <div className={`flex-1 rounded-b-md p-2 flex flex-col justify-center items-center ${isOccupied ? 'bg-slate-50 dark:bg-slate-800/50' : 'bg-white dark:bg-slate-800'}`}>
-                                                        <span className={`text-xs font-semibold ${isOccupied ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}`}>{isOccupied ? scheduledClass : 'Available'}</span>
+                                                        <span className={`text-xs ${isOccupied ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}`}>{isOccupied ? scheduledClass : 'Available'}</span>
                                                         <span className={`text-xs text-slate-500 dark:text-slate-400 ${isSelected ? "text-slate-600 dark:text-slate-300" : ""} mt-1`}>Capacity: {room.capacity}</span>
                                                     </div>
                                                 </div>

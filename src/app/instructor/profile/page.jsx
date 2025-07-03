@@ -221,7 +221,7 @@ const ProfileContent = () => {
                 <input
                     type={passwordVisibility[fieldName] ? "text" : "password"}
                     name={name}
-                    className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs ${isReadOnly ? 'bg-gray-100 dark:bg-gray-800 border-num-gray-light dark:border-gray-700 text-gray-500 dark:text-gray-400' : 'bg-white dark:bg-gray-700 border-num-gray-light dark:border-gray-600 text-num-dark-text dark:text-white'} ${hasError ? 'border-red-500 ring-1 ring-red-500' : ''}`}
+                    className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs ${isReadOnly ? 'bg-gray-100 dark:bg-gray-800 border-num-gray-light dark:border-gray-700 text-gray-500 dark:text-gray-400' : 'bg-white dark:bg-gray-800 border-num-gray-light dark:border-gray-600 text-num-dark-text dark:text-white'} ${hasError ? 'border-red-500 ring-1 ring-red-500' : ''}`}
                     placeholder={`Enter ${label.toLowerCase()}`}
                     value={value}
                     onChange={onChange}
@@ -252,109 +252,222 @@ const ProfileContent = () => {
     const currentDisplayData = isEditingGeneral ? editableProfileData : profileData;
 
     return (
-        <div className="p-6">
-            <SuccessPopup
-                show={showSuccessPopup}
-                onClose={() => setShowSuccessPopup(false)}
-                title="Success"
-                message="Your profile has been updated successfully."
-            />
-            <div className="section-title font-semibold text-lg text-gray-800 dark:text-gray-200 mb-4">
-                Profile
+      <div className="p-6">
+        <SuccessPopup
+          show={showSuccessPopup}
+          onClose={() => setShowSuccessPopup(false)}
+          title="Success"
+          message="Your profile has been updated successfully."
+        />
+        <div className="section-title font-semibold text-lg text-gray-800 dark:text-gray-200 mb-4">
+          Profile
+        </div>
+        <hr className="border-t border-gray-300 dark:border-gray-700 mt-4 mb-8" />
+        {error && (
+          <div
+            className={`p-4 mb-4 text-sm rounded-lg bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300`}
+          >
+            {error}
+          </div>
+        )}
+        <div className="profile-section flex gap-8 mb-4 flex-wrap">
+          <div className="avatar-card w-[220px] p-3 bg-white border border-gray-300 dark:bg-gray-800 dark:border-gray-700 shadow-sm rounded-lg flex-shrink-0 self-start">
+            <div className="avatar-content flex items-center">
+              {imagePreviewUrl ? (
+                <Image
+                  src={imagePreviewUrl}
+                  alt="Profile Avatar"
+                  width={56}
+                  height={56}
+                  className="avatar-img w-14 h-14 rounded-full mr-3 object-cover"
+                />
+              ) : (
+                <div className="w-14 h-14 rounded-full mr-3 flex items-center justify-center">
+                  {defaultUserIcon({
+                    className: "h-34 w-34 text-gray-700 dark:text-gray-400",
+                  })}
+                </div>
+              )}
+              <div className="avatar-info flex flex-col">
+                <div className="avatar-name font-semibold text-sm text-gray-800 dark:text-gray-200 mb-0.5">
+                  Dr. {currentDisplayData.firstName}{" "}
+                  {currentDisplayData.lastName}
+                </div>
+                <div className="avatar-role font-semibold text-xs text-gray-500 dark:text-gray-400">
+                  Instructor
+                </div>
+              </div>
             </div>
-            <hr className="border-t border-gray-300 dark:border-gray-700 mt-4 mb-8" />
-            {error && (
-                <div className={`p-4 mb-4 text-sm rounded-lg bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300`}>
-                    {error}
+            <button
+              type="button"
+              onClick={handleUploadButtonClick}
+              disabled={isUploading || !isEditingGeneral}
+              className="w-full rounded-md mt-2 px-3 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isUploading ? "Uploading..." : "Upload Picture"}
+            </button>
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileChange}
+              accept="image/*"
+              className="sr-only"
+            />
+          </div>
+
+          <div className="info-details-wrapper flex-grow flex flex-col gap-8 min-w-[300px] ">
+            <div className="info-card p-3 sm:p-4 bg-white border border-gray-300 dark:bg-gray-800 dark:border-gray-700 shadow-sm rounded-lg">
+              <div className="section-title font-semibold text-sm text-gray-800 dark:text-gray-200 mb-3">
+                General Information
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 dark:text-gray-300">
+                <div className="form-group ">
+                  <label className="form-label block font-semibold text-xs text-gray-700 dark:text-gray-300 mb-1 ">
+                    First Name
+                  </label>
+                  <input
+                    type="text"
+                    name="firstName"
+                    value={currentDisplayData.firstName}
+                    onChange={handleGeneralInputChange}
+                    readOnly={!isEditingGeneral}
+                    className={`form-input w-full py-2 px-3 border dark:border-gray-700 dark:text-gray-400 rounded-md font-medium text-xs ${
+                      !isEditingGeneral
+                        ? "bg-gray-100 dark:bg-gray-800"
+                        : "bg-white dark:bg-gray-600 "
+                    }`}
+                  />
                 </div>
-            )}
-            <div className="profile-section flex gap-8 mb-4 flex-wrap">
-                <div className="avatar-card w-[220px] p-3 bg-white border border-gray-300 dark:bg-gray-800 dark:border-gray-700 shadow-sm rounded-lg flex-shrink-0 self-start">
-                    <div className="avatar-content flex items-center">
-                        {imagePreviewUrl ? (
-                            <Image
-                                src={imagePreviewUrl}
-                                alt="Profile Avatar"
-                                width={56}
-                                height={56}
-                                className="avatar-img w-14 h-14 rounded-full mr-3 object-cover"
-                            />
-                        ) : (
-                            <div className="w-14 h-14 rounded-full mr-3 flex items-center justify-center">
-                            {defaultUserIcon({className: "h-34 w-34 text-gray-700 dark:text-gray-400"})}
-                            </div>
-                        )}
-                        <div className="avatar-info flex flex-col">
-                            <div className="avatar-name font-semibold text-sm text-gray-800 dark:text-gray-200 mb-0.5">
-                                Dr.{" "}
-                                {currentDisplayData.firstName} {currentDisplayData.lastName}
-                            </div>
-                            <div className="avatar-role font-semibold text-xs text-gray-500 dark:text-gray-400">
-                                Instructor
-                            </div>
-                        </div>
-                    </div>
-                     <button
-                        type="button"
-                        onClick={handleUploadButtonClick}
-                        disabled={isUploading || !isEditingGeneral}
-                        className="w-full rounded-md mt-2 px-3 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                <div className="form-group">
+                  <label className="form-label block font-semibold text-xs text-gray-700 dark:text-gray-300 mb-1">
+                    Last Name
+                  </label>
+                  <input
+                    type="text"
+                    name="lastName"
+                    value={currentDisplayData.lastName}
+                    onChange={handleGeneralInputChange}
+                    readOnly={!isEditingGeneral}
+                    className={`form-input w-full py-2 px-3 border dark:border-gray-700 rounded-md font-medium text-xs ${
+                      !isEditingGeneral
+                        ? "bg-gray-100 dark:bg-gray-800"
+                        : "bg-white dark:bg-gray-600"
+                    }`}
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label block font-semibold text-xs text-gray-700 dark:text-gray-300 mb-1">
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    name="email"
+                    value={currentDisplayData.email}
+                    readOnly
+                    className={`form-input w-full py-2 px-3 border dark:border-gray-700 rounded-md font-medium text-xs bg-gray-100 dark:bg-gray-800`}
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label block font-semibold text-xs text-gray-700 dark:text-gray-300 mb-1">
+                    Phone Number
+                  </label>
+                  <input
+                    type="tel"
+                    name="phoneNumber"
+                    value={currentDisplayData.phoneNumber}
+                    onChange={handleGeneralInputChange}
+                    readOnly={!isEditingGeneral}
+                    className={`form-input w-full py-2 px-3 border dark:border-gray-700 rounded-md font-medium text-xs ${
+                      !isEditingGeneral
+                        ? "bg-gray-100 dark:bg-gray-800"
+                        : "bg-white dark:bg-gray-600"
+                    }`}
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label block font-semibold text-xs text-gray-700 dark:text-gray-300 mb-1">
+                    Degree
+                  </label>
+                  <input
+                    type="text"
+                    name="degree"
+                    value={currentDisplayData.degree}
+                    onChange={handleGeneralInputChange}
+                    readOnly={!isEditingGeneral}
+                    className={`form-input w-full py-2 px-3 border dark:border-gray-700 rounded-md font-medium text-xs ${
+                      !isEditingGeneral
+                        ? "bg-gray-100 dark:bg-gray-800"
+                        : "bg-white dark:bg-gray-600"
+                    }`}
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label block font-semibold text-xs text-gray-700 dark:text-gray-300 mb-1">
+                    Major
+                  </label>
+                  <input
+                    type="text"
+                    name="major"
+                    value={currentDisplayData.major}
+                    onChange={handleGeneralInputChange}
+                    readOnly={!isEditingGeneral}
+                    className={`form-input w-full py-2 px-3 border dark:border-gray-700 rounded-md font-medium text-xs ${
+                      !isEditingGeneral
+                        ? "bg-gray-100 dark:bg-gray-800"
+                        : "bg-white dark:bg-gray-600"
+                    }`}
+                  />
+                </div>
+                <div className="form-group md:col-span-2">
+                  <label className="form-label block font-semibold text-xs text-gray-700 dark:text-gray-300 mb-1 ">
+                    Department
+                  </label>
+                  <input
+                    type="text"
+                    name="department"
+                    value={currentDisplayData.department}
+                    onChange={handleGeneralInputChange}
+                    readOnly={!isEditingGeneral}
+                    className={`form-input w-full py-2 px-3 border dark:border-gray-700 rounded-md font-medium text-xs ${
+                      !isEditingGeneral
+                        ? "bg-gray-100 dark:bg-gray-800"
+                        : "bg-white dark:bg-gray-600"
+                    }`}
+                  />
+                </div>
+              </div>
+              <div className="form-actions flex justify-end items-center gap-3 mt-4">
+                {isEditingGeneral ? (
+                  <>
+                    <button
+                      onClick={() => handleCancelClick("general")}
+                      className="back-button bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 shadow-custom-light rounded-md text-gray-800 dark:text-white py-2 px-3 font-semibold text-xs"
                     >
-                        {isUploading ? "Uploading..." : "Upload Picture"}
+                      Cancel
                     </button>
-                    <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" className="sr-only" />
-                </div>
+                    <button
+                      onClick={() => handleSaveClick("general")}
+                      className="save-button bg-blue-600 hover:bg-blue-700 shadow-custom-light rounded-md text-white text-xs py-2 px-3 font-semibold"
+                    >
+                      Save Changes
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    onClick={() => handleEditClick("general")}
+                    className="save-button bg-blue-600 hover:bg-blue-700 shadow-custom-light rounded-md text-white py-2 px-3 font-semibold text-xs"
+                  >
+                    Edit Profile
+                  </button>
+                )}
+              </div>
+            </div>
 
-                <div className="info-details-wrapper flex-grow flex flex-col gap-8 min-w-[300px]">
-                    <div className="info-card p-3 sm:p-4 bg-white border border-gray-300 dark:bg-gray-800 dark:border-gray-700 shadow-sm rounded-lg">
-                        <div className="section-title font-semibold text-sm text-gray-800 dark:text-gray-200 mb-3">
-                            General Information
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                             <div className="form-group">
-                                <label className="form-label block font-semibold text-xs text-gray-700 dark:text-gray-300 mb-1">First Name</label>
-                                <input type="text" name="firstName" value={currentDisplayData.firstName} onChange={handleGeneralInputChange} readOnly={!isEditingGeneral} className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs ${!isEditingGeneral ? 'bg-gray-100 dark:bg-gray-700' : 'bg-white dark:bg-gray-600'}`}/>
-                            </div>
-                            <div className="form-group">
-                                <label className="form-label block font-semibold text-xs text-gray-700 dark:text-gray-300 mb-1">Last Name</label>
-                                <input type="text" name="lastName" value={currentDisplayData.lastName} onChange={handleGeneralInputChange} readOnly={!isEditingGeneral} className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs ${!isEditingGeneral ? 'bg-gray-100 dark:bg-gray-700' : 'bg-white dark:bg-gray-600'}`}/>
-                            </div>
-                            <div className="form-group">
-                                <label className="form-label block font-semibold text-xs text-gray-700 dark:text-gray-300 mb-1">Email</label>
-                                <input type="email" name="email" value={currentDisplayData.email} readOnly className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs bg-gray-100 dark:bg-gray-700`}/>
-                            </div>
-                            <div className="form-group">
-                                <label className="form-label block font-semibold text-xs text-gray-700 dark:text-gray-300 mb-1">Phone Number</label>
-                                <input type="tel" name="phoneNumber" value={currentDisplayData.phoneNumber} onChange={handleGeneralInputChange} readOnly={!isEditingGeneral} className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs ${!isEditingGeneral ? 'bg-gray-100 dark:bg-gray-700' : 'bg-white dark:bg-gray-600'}`}/>
-                            </div>
-                             <div className="form-group">
-                                <label className="form-label block font-semibold text-xs text-gray-700 dark:text-gray-300 mb-1">Degree</label>
-                                <input type="text" name="degree" value={currentDisplayData.degree} onChange={handleGeneralInputChange} readOnly={!isEditingGeneral} className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs ${!isEditingGeneral ? 'bg-gray-100 dark:bg-gray-700' : 'bg-white dark:bg-gray-600'}`}/>
-                            </div>
-                             <div className="form-group">
-                                <label className="form-label block font-semibold text-xs text-gray-700 dark:text-gray-300 mb-1">Major</label>
-                                <input type="text" name="major" value={currentDisplayData.major} onChange={handleGeneralInputChange} readOnly={!isEditingGeneral} className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs ${!isEditingGeneral ? 'bg-gray-100 dark:bg-gray-700' : 'bg-white dark:bg-gray-600'}`}/>
-                            </div>
-                             <div className="form-group md:col-span-2">
-                                <label className="form-label block font-semibold text-xs text-gray-700 dark:text-gray-300 mb-1">Department</label>
-                                <input type="text" name="department" value={currentDisplayData.department} onChange={handleGeneralInputChange} readOnly={!isEditingGeneral} className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs ${!isEditingGeneral ? 'bg-gray-100 dark:bg-gray-700' : 'bg-white dark:bg-gray-600'}`}/>
-                            </div>
-                        </div>
-                        <div className="form-actions flex justify-end items-center gap-3 mt-4">
-                            {isEditingGeneral ? (
-                                <>
-                                    <button onClick={() => handleCancelClick('general')} className="back-button bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 shadow-custom-light rounded-md text-gray-800 dark:text-white py-2 px-3 font-semibold text-xs">Cancel</button>
-                                    <button onClick={() => handleSaveClick('general')} className="save-button bg-blue-600 hover:bg-blue-700 shadow-custom-light rounded-md text-white text-xs py-2 px-3 font-semibold">Save Changes</button>
-                                </>
-                            ) : (
-                                <button onClick={() => handleEditClick('general')} className="save-button bg-blue-600 hover:bg-blue-700 shadow-custom-light rounded-md text-white py-2 px-3 font-semibold text-xs">Edit Profile</button>
-                            )}
-                        </div>
-                    </div>
-
-                    <div className="info-card-password p-3 sm:p-4 bg-white border border-gray-300 dark:bg-gray-800 dark:border-gray-700 shadow-sm rounded-lg">
-                        <div className="section-title font-semibold text-sm text-gray-800 dark:text-gray-200 mb-3">Password Information</div>
-                        <div className="space-y-4">
+            <div className="info-card-password p-3 sm:p-4 bg-white border border-gray-300 dark:bg-gray-800 dark:border-gray-700 shadow-sm rounded-lg">
+              <div className="section-title font-semibold text-sm text-gray-800 dark:text-gray-200 mb-3">
+                Password Information
+              </div>
+              {/* <div className="space-y-4">
                              <div className="flex gap-3 flex-wrap">
                                 {renderPasswordField("Current Password", "currentPassword", currentPassword, handleCurrentPasswordChange, "current", !isEditingPassword, emptyPasswordError.current)}
                                 {renderPasswordField("New Password", "newPassword", newPassword, handleNewPasswordChange, "new", !isEditingPassword, emptyPasswordError.new || passwordMismatchError)}
@@ -362,21 +475,76 @@ const ProfileContent = () => {
                             <div className="flex gap-3 flex-wrap">
                                 {renderPasswordField("Confirm New Password", "confirmNewPassword", confirmNewPassword, handleConfirmPasswordChange, "confirm", !isEditingPassword, emptyPasswordError.confirm || passwordMismatchError)}
                             </div>
-                        </div>
-                         <div className="form-actions flex justify-end items-center gap-3 mt-4">
-                             {isEditingPassword ? (
-                                <>
-                                    <button onClick={() => handleCancelClick('password')} className="back-button bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 shadow-custom-light rounded-md text-gray-800 dark:text-white border-none py-2 px-3 font-semibold text-xs cursor-pointer" disabled={loading}>Cancel</button>
-                                    <button onClick={() => handleSaveClick('password')} className="save-button bg-blue-600 hover:bg-blue-700 shadow-custom-light rounded-md text-white border-none py-2 px-3 font-semibold text-xs cursor-pointer" disabled={loading}>{loading ? "Saving..." : "Save Password"}</button>
-                                </>
-                            ) : (
-                                <button onClick={() => handleEditClick('password')} className="save-button bg-blue-600 hover:bg-blue-700 shadow-custom-light rounded-md text-white border-none py-2 px-3 font-semibold text-xs cursor-pointer" disabled={loading}>Change Password</button>
-                            )}
-                        </div>
-                    </div>
+                        </div> */}
+
+              <div className="space-y-4">
+                {/* current password */}
+                <div className="flex gap-3 flex-wrap">
+                  {renderPasswordField(
+                    "Current Password",
+                    "currentPassword",
+                    currentPassword,
+                    handleCurrentPasswordChange,
+                    "current",
+                    !isEditingPassword,
+                    emptyPasswordError.current
+                  )}
                 </div>
+
+                {/* New & Confirm password */}
+                <div className="flex gap-3 flex-wrap">
+                  {renderPasswordField(
+                    "New Password",
+                    "newPassword",
+                    newPassword,
+                    handleNewPasswordChange,
+                    "new",
+                    !isEditingPassword,
+                    emptyPasswordError.new || passwordMismatchError
+                  )}
+                  {renderPasswordField(
+                    "Confirm New Password",
+                    "confirmNewPassword",
+                    confirmNewPassword,
+                    handleConfirmPasswordChange,
+                    "confirm",
+                    !isEditingPassword,
+                    emptyPasswordError.confirm || passwordMismatchError
+                  )}
+                </div>
+              </div>
+              <div className="form-actions flex justify-end items-center gap-3 mt-4">
+                {isEditingPassword ? (
+                  <>
+                    <button
+                      onClick={() => handleCancelClick("password")}
+                      className="back-button bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 shadow-custom-light rounded-md text-gray-800 dark:text-white border-none py-2 px-3 font-semibold text-xs cursor-pointer"
+                      disabled={loading}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={() => handleSaveClick("password")}
+                      className="save-button bg-blue-600 hover:bg-blue-700 shadow-custom-light rounded-md text-white border-none py-2 px-3 font-semibold text-xs cursor-pointer"
+                      disabled={loading}
+                    >
+                      {loading ? "Saving..." : "Save Password"}
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    onClick={() => handleEditClick("password")}
+                    className="save-button bg-blue-600 hover:bg-blue-700 shadow-custom-light rounded-md text-white border-none py-2 px-3 font-semibold text-xs cursor-pointer"
+                    disabled={loading}
+                  >
+                    Change Password
+                  </button>
+                )}
+              </div>
             </div>
+          </div>
         </div>
+      </div>
     );
 };
 
