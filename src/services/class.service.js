@@ -1,27 +1,37 @@
 import axios from 'axios';
 
-// Detect if the code is running on the server or the client.
-const isServer = typeof window === 'undefined';
-// Use the full external URL when on the server, and the relative proxy path when on the client.
-const API_URL = isServer ? "https://jaybird-new-previously.ngrok-free.app/api/v1" : "/api";
+// Define the base URLs for server-side and client-side calls
+const SERVER_API_URL = "https://jaybird-new-previously.ngrok-free.app/api/v1";
+const LOCAL_API_URL = "/api"; // This points to the Next.js API proxy
 
 /**
  * Fetches all classes from the API.
+ * This function is "universal" - it works on both the client and server.
  * @param {string} token - The authorization token for the request.
  * @returns {Promise<Array>} A promise that resolves to an array of class objects.
  */
 const getAllClasses = async (token) => {
+  // Ensure a token is provided before making the request.
+  if (!token) {
+    throw new Error("Authentication token is required to fetch classes.");
+  }
+
+  // Determine if the code is running on the server or the client.
+  const isServer = typeof window === 'undefined';
+  const url = isServer ? `${SERVER_API_URL}/class` : `${LOCAL_API_URL}/class`;
+
   try {
-    const response = await axios.get(`${API_URL}/class`, {
+    const response = await axios.get(url, {
       headers: {
         'Authorization': `Bearer ${token}`,
         ...(isServer && { 'ngrok-skip-browser-warning': 'true' })
       }
     });
+
     if (response.data && Array.isArray(response.data.payload)) {
         return response.data.payload;
     }
-    throw new Error('Invalid data structure from API');
+    throw new Error('Invalid data structure for classes from API');
   } catch (error) {
     console.error("Get all classes service error:", {
       message: error.message,
@@ -39,8 +49,14 @@ const getAllClasses = async (token) => {
  * @returns {Promise<Object>} A promise that resolves to a single class object.
  */
 const getClassById = async (classId, token) => {
+  if (!token) {
+    throw new Error("Authentication token is required.");
+  }
+  const isServer = typeof window === 'undefined';
+  const url = isServer ? `${SERVER_API_URL}/class/${classId}` : `${LOCAL_API_URL}/class/${classId}`;
+
   try {
-    const response = await axios.get(`${API_URL}/class/${classId}`, {
+    const response = await axios.get(url, {
        headers: {
         'Authorization': `Bearer ${token}`,
         ...(isServer && { 'ngrok-skip-browser-warning': 'true' })
@@ -69,8 +85,7 @@ const getClassById = async (classId, token) => {
  */
 const patchClass = async (classId, classData, token) => {
   try {
-    // Client-side calls should always go to the local proxy.
-    const response = await axios.patch(`/api/class/${classId}`, classData, {
+    const response = await axios.patch(`${LOCAL_API_URL}/class/${classId}`, classData, {
        headers: {
         'Authorization': `Bearer ${token}`,
       }
@@ -86,9 +101,35 @@ const patchClass = async (classId, classData, token) => {
   }
 };
 
+/**
+ * Creates a new class via a POST request.
+ * @param {object} classData - An object with the class details matching the API spec.
+ * @param {string} token - The authorization token for the request.
+ * @returns {Promise<Object>} A promise that resolves to the API response.
+ */
+const createClass = async (classData, token) => {
+  try {
+    const response = await axios.post(`${LOCAL_API_URL}/class`, classData, {
+       headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    return response.data;
+  } catch (error) {
+    console.error(`Create class service error:`, {
+      message: error.message,
+      code: error.code,
+      response: error.response ? error.response.data : 'No response data'
+    });
+    throw new Error(error.response?.data?.message || `Failed to create class.`);
+  }
+};
+
 
 export const classService = {
   getAllClasses,
   getClassById,
   patchClass,
+  createClass,
 };

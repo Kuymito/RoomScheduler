@@ -5,20 +5,14 @@ const API_URL = "https://jaybird-new-previously.ngrok-free.app/api/v1";
 async function handler(req) {
   const { pathname, search } = req.nextUrl;
   
-  // --- Start Path Remapping ---
+  // --- Path Remapping ---
   let backendPath;
-
-  // Special case for the profile to avoid NextAuth conflict.
-  // If the request is to our friendly URL `/api/profile`...
   if (pathname === '/api/profile') {
-    // ...we map it to the real backend endpoint `/auth/profile`.
     backendPath = '/auth/profile';
   } else {
-    // For all other requests, we just remove the `/api` prefix.
     backendPath = pathname.replace('/api', '');
   }
-  // --- End Path Remapping ---
-
+  
   const destinationUrl = `${API_URL}${backendPath}${search}`;
 
   // Log for debugging
@@ -26,18 +20,34 @@ async function handler(req) {
   console.log("Incoming Path:", req.nextUrl.pathname);
   console.log("Mapped Backend Path:", backendPath);
   console.log("Final Destination URL:", destinationUrl);
-  console.log("-------------------");
+  console.log("Request Method:", req.method);
   
-  const headers = new Headers(req.headers);
-  headers.set('host', new URL(API_URL).host);
-  headers.set('ngrok-skip-browser-warning', 'true');
+  // --- Explicit Header Forwarding (FIX) ---
+  // Create a new Headers object to avoid issues with read-only properties.
+  const headersToForward = new Headers();
+  // Iterate over the incoming request's headers and append them to the new Headers object.
+  req.headers.forEach((value, key) => {
+    // Do not forward the original 'host' header, as it can cause issues.
+    if (key.toLowerCase() !== 'host') {
+      headersToForward.append(key, value);
+    }
+  });
+
+  // Set the correct host for the backend API.
+  headersToForward.set('host', new URL(API_URL).host);
+  // Add the ngrok header to bypass the browser warning page.
+  headersToForward.set('ngrok-skip-browser-warning', 'true');
+
+  console.log("Forwarding Authorization Header:", headersToForward.get('authorization'));
+  console.log("-------------------");
 
   try {
     const response = await fetch(destinationUrl, {
       method: req.method,
-      headers: headers,
+      headers: headersToForward, // Use the newly constructed headers object
       body: req.method === 'GET' || req.method === 'HEAD' ? null : req.body,
       redirect: 'follow',
+      // 'duplex: "half"' is required for streaming request bodies with `fetch`.
       duplex: 'half'
     });
     

@@ -7,12 +7,20 @@ import html2canvas from 'html2canvas';
 import { classService } from '@/services/class.service';
 import { useSession } from 'next-auth/react';
 
-// --- Reusable Components ---
+// --- Reusable Components & Constants ---
 const DefaultAvatarIcon = ({ className = "w-8 h-8" }) => (
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={`${className} text-gray-500 dark:text-gray-400 border border-gray-300 rounded-full p-1 dark:border-gray-600`}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
     </svg>
 );
+
+const shiftMap = {
+    'Morning Shift (07:00:00 - 10:00:00, Weekday)': 1,
+    'Noon Shift (10:30:00 - 13:30:00, Weekday)': 2,
+    'Afternoon Shift (14:00:00 - 17:00:00, Weekday)': 3,
+    'Evening Shift (17:30:00 - 20:30:00, Weekday)': 4,
+    'Weekend Shift (07:30:00 - 17:00:00, Weekend)': 5
+};
 
 const ScheduledInstructorCard = ({ instructorData, day, onDragStart, onDragEnd, onRemove, studyMode, onStudyModeChange }) => {
     if (!instructorData || !instructorData.instructor) return null;
@@ -81,30 +89,20 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
     const [selectedDegree, setSelectedDegree] = useState('All');
     
     const generationOptions = ['29','30', '31', '32', '33'];
-    const majorOptions = ['Computer Science', 'Information Technology', 'Information Systems', 'Software Engineering', 'Artificial Intelligence', 'Data Science', 'Machine Learning', 'Data Analytics', 'Robotics'];
     const degreesOptions = ['Bachelor', 'Master', 'PhD', 'Doctor'];
-    const shiftOptions = ['Morning Session', 'Afternoon Session', 'Evening Session', 'Weekend Session'];
-    const facultyOptions = allDepartments || [];
-
-    const degreeFilterOptions = ['All', ...degreesOptions];
+    const shiftOptions = Object.keys(shiftMap);
+    const departmentOptions = useMemo(() => allDepartments || [], [allDepartments]);
+    const majorOptions = useMemo(() => departmentOptions, [departmentOptions]);
     const semesterOptions = ['Semester 1', 'Semester 2', 'Semester 3', 'Semester 4', 'Semester 5', 'Semester 6', 'Semester 7', 'Semester 8'];
     const statusOptions = ['Active', 'Archived'];
 
-    // The data to display in the form fields.
-    const currentDisplayData = isEditing ? classData : classData;
+    const degreeFilterOptions = ['All', ...degreesOptions];
 
     const availableInstructors = useMemo(() => {
-        if (!allInstructors || !Array.isArray(allInstructors)) {
-            return [];
-        }
-        
+        if (!allInstructors || !Array.isArray(allInstructors)) return [];
         const assignedInstructorIds = new Set(Object.values(schedule).filter(day => day?.instructor).map(day => day.instructor.id));
         let filtered = allInstructors.filter(instructor => !assignedInstructorIds.has(instructor.id));
-        
-        if (selectedDegree !== 'All') {
-            filtered = filtered.filter(instructor => instructor.degree === selectedDegree);
-        }
-
+        if (selectedDegree !== 'All') filtered = filtered.filter(instructor => instructor.degree === selectedDegree);
         if (searchTerm.trim()) {
             const lowerCaseSearchTerm = searchTerm.toLowerCase();
             filtered = filtered.filter(instructor =>
@@ -120,26 +118,15 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
         setClassData(prev => ({ ...prev, name: `NUM${prev.generation}-${prev.group}` }));
     }, [isEditing, isNameManuallySet, classData?.generation, classData?.group]);
     
+    useEffect(() => { saveStatusRef.current = saveStatus; }, [saveStatus]);
+    useEffect(() => { setInitialScheduleForCheck(JSON.parse(JSON.stringify(clientInitialSchedule))); }, [clientInitialSchedule]);
     useEffect(() => {
-        saveStatusRef.current = saveStatus;
-    }, [saveStatus]);
-
-    useEffect(() => {
-        setInitialScheduleForCheck(JSON.parse(JSON.stringify(clientInitialSchedule)));
-    }, [clientInitialSchedule]);
-
-    useEffect(() => {
-        if (initialScheduleForCheck) {
-            setIsDirty(JSON.stringify(schedule) !== JSON.stringify(initialScheduleForCheck));
-        } else {
-            setIsDirty(false);
-        }
+        if (initialScheduleForCheck) setIsDirty(JSON.stringify(schedule) !== JSON.stringify(initialScheduleForCheck));
+        else setIsDirty(false);
     }, [schedule, initialScheduleForCheck]);
 
     const handleEditToggle = () => {
-        if (isEditing) {
-            handleSaveDetails();
-        } else {
+        if (!isEditing) {
             setBackupData(JSON.parse(JSON.stringify(classData)));
             const expectedName = `NUM${classData.generation}-${classData.group}`;
             setIsNameManuallySet(classData.name !== expectedName);
@@ -150,7 +137,7 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
     };
     
     const handleCancelClick = () => {
-        setClassData(backupData);
+        if (backupData) setClassData(backupData);
         setIsEditing(false);
         setBackupData(null); 
         setError('');
@@ -159,9 +146,7 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
-        if (name === 'name') {
-            setIsNameManuallySet(value !== `NUM${classData.generation}-${classData.group}`);
-        }
+        if (name === 'name') setIsNameManuallySet(value !== `NUM${classData.generation}-${classData.group}`);
         setClassData(prev => ({ ...prev, [name]: value }));
     };
 
@@ -176,40 +161,62 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
             return;
         }
 
-        // Construct the payload according to the PATCH schema.
+        const selectedDepartment = allDepartments.find(dep => dep.name === classData.faculty);
+        if (!selectedDepartment) {
+            setError("Invalid department selected.");
+            setLoading(false);
+            return;
+        }
+        
+        // FIX: Directly look up the shift ID from the full shift name string
+        const shiftIdValue = shiftMap[classData.shift];
+        
+        if (!shiftIdValue) {
+            setError("Invalid shift selected.");
+            setLoading(false);
+            return;
+        }
+
         const apiPayload = {
             className: classData.name,
             generation: classData.generation,
             groupName: classData.group,
-            majorName: classData.major,
-            degreeName: classData.degrees,
-            facultyName: classData.faculty,
+            major: classData.major,
+            degree: classData.degrees,
             semester: classData.semester,
-            shift: classData.shift,
-            is_archived: classData.status === 'Archived',
+            day: "Monday",
+            year: 1,
+            departmentId: selectedDepartment.departmentId,
+            shiftId: shiftIdValue,
+            isArchived: classData.status === 'Archived',
         };
 
         try {
             await classService.patchClass(classData.id, apiPayload, session.accessToken);
             setSuccess("Class updated successfully!");
             setIsEditing(false);
-            setBackupData(null); // Clear the backup on successful save
+            setBackupData(null);
         } catch (err) {
             setError(err.message || "Failed to update class.");
-            if (backupData) {
-                setClassData(backupData);
-            }
+            if (backupData) setClassData(backupData);
         } finally {
             setLoading(false);
         }
     };
     
-    const renderSelectField = (label, name, value, options) => (
+    // --- Render Helpers ---
+    const renderSelectField = (label, name, value, options, keyField, valueField, labelField) => (
         <div className="form-group flex-1 min-w-[200px]">
             <label className="form-label block font-semibold text-xs text-num-dark-text dark:text-white mb-1">{label}</label>
             {isEditing ? (
                 <select name={name} value={value} onChange={handleInputChange} disabled={loading} className="form-input w-full py-2 px-3 bg-num-content-bg border border-num-gray-light dark:bg-gray-700 dark:border-gray-600 rounded-md font-medium text-xs text-num-dark-text dark:text-white">
-                    {options.map(option => <option key={option} value={option}>{option}</option>)}
+                    {options.map(option => {
+                        // FIX: Ensure the key is unique and stable, like an ID.
+                        const optionKey = keyField ? option[keyField] : (typeof option === 'object' ? JSON.stringify(option) : option);
+                        const optionValue = valueField ? option[valueField] : option;
+                        const optionLabel = labelField ? option[labelField] : option;
+                        return <option key={optionKey} value={optionValue}>{optionLabel}</option>;
+                    })}
                 </select>
             ) : (
                 <input type="text" value={value} readOnly className="form-input w-full py-2 px-3 bg-gray-100 border border-num-gray-light dark:bg-gray-800 dark:border-gray-700 rounded-md font-medium text-xs text-gray-500 dark:text-gray-400"/>
@@ -224,116 +231,19 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
         </div>
     );
 
-    const handleNewInstructorDragStart = (e, instructor) => { 
-        setDraggedItem({ item: instructor, type: 'new' });
-        e.dataTransfer.effectAllowed = 'move';
-        e.dataTransfer.setData('application/json', JSON.stringify(instructor));
-        e.currentTarget.classList.add('opacity-60', 'scale-95');
-    };
-    const handleNewInstructorDragEnd = (e) => { 
-        if (draggedItem?.type === 'new') setDraggedItem(null);
-        e.currentTarget.classList.remove('opacity-60', 'scale-95');
-        setDragOverDay(null);
-    };
-    const handleScheduledInstructorDragStart = (e, instructor, originDay) => { 
-        setDraggedItem({ item: instructor, type: 'scheduled', originDay: originDay });
-        e.dataTransfer.effectAllowed = 'move';
-        e.dataTransfer.setData('application/json', JSON.stringify({ ...instructor, originDay }));
-    };
-    const handleScheduledInstructorDragEnd = (e) => { 
-        if (draggedItem?.type === 'scheduled' && e.dataTransfer.dropEffect === 'none') {
-            setSchedule(prevSchedule => ({ ...prevSchedule, [draggedItem.originDay]: null }));
-        }
-        setDraggedItem(null); 
-        setDragOverDay(null);
-    };
+    // --- Drag & Drop and other handlers (unchanged) ---
+    const handleNewInstructorDragStart = (e, instructor) => { setDraggedItem({ item: instructor, type: 'new' }); e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('application/json', JSON.stringify(instructor)); e.currentTarget.classList.add('opacity-60', 'scale-95'); };
+    const handleNewInstructorDragEnd = (e) => { if (draggedItem?.type === 'new') setDraggedItem(null); e.currentTarget.classList.remove('opacity-60', 'scale-95'); setDragOverDay(null); };
+    const handleScheduledInstructorDragStart = (e, instructor, originDay) => { setDraggedItem({ item: instructor, type: 'scheduled', originDay: originDay }); e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('application/json', JSON.stringify({ ...instructor, originDay })); };
+    const handleScheduledInstructorDragEnd = (e) => { if (draggedItem?.type === 'scheduled' && e.dataTransfer.dropEffect === 'none') { setSchedule(prevSchedule => ({ ...prevSchedule, [draggedItem.originDay]: null })); } setDraggedItem(null); setDragOverDay(null); };
     const handleDayDragOver = (e) => { e.preventDefault(); if (draggedItem) e.dataTransfer.dropEffect = 'move'; };
     const handleDayDragEnter = (e, day) => { e.preventDefault(); if (draggedItem) setDragOverDay(day); };
-    const handleDayDragLeave = (e, day) => { 
-        if (e.currentTarget.contains(e.relatedTarget)) return;
-        if (dragOverDay === day) setDragOverDay(null);
-    };
-    const handleDayDrop = (e, targetDay) => {
-        e.preventDefault();
-        if (!draggedItem) return;
-        const newSchedule = { ...schedule };
-        if (draggedItem.type === 'new') {
-            newSchedule[targetDay] = {
-                instructor: {id: draggedItem.item.id, name: draggedItem.item.name, profileImage: draggedItem.item.profileImage, degree: draggedItem.item.degree},
-                studyMode: 'in-class',
-            };
-        } else if (draggedItem.type === 'scheduled') {
-            const originDay = draggedItem.originDay;
-            if (originDay === targetDay) { setDragOverDay(null); return; }
-            const dataFromOriginDay = schedule[originDay];
-            const dataFromTargetDay = schedule[targetDay];
-            if (dataFromTargetDay?.instructor) {
-                newSchedule[originDay] = { instructor: dataFromTargetDay.instructor, studyMode: dataFromTargetDay.studyMode};
-                newSchedule[targetDay] = { instructor: draggedItem.item, studyMode: dataFromOriginDay.studyMode};
-            } else {
-                newSchedule[targetDay] = { instructor: draggedItem.item, studyMode: dataFromOriginDay.studyMode};
-                if (originDay) newSchedule[originDay] = null;
-            }
-        }
-        setSchedule(newSchedule);
-        setDragOverDay(null);
-    };
-    const handleRemoveInstructorFromDay = (day) => { 
-        setSchedule(prevSchedule => ({ ...prevSchedule, [day]: null }));
-    };
-    const handleStudyModeChange = (day, newMode) => { 
-        setSchedule(prevSchedule => {
-            if (prevSchedule[day]?.instructor) {
-                return { ...prevSchedule, [day]: { ...prevSchedule[day], studyMode: newMode } };
-            }
-            return prevSchedule;
-        });
-    };
-    const handleSaveSchedule = async () => {
-        setIsSaving(true);
-        setSaveStatus('saving');
-        setSaveMessage('Saving schedule...');
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        setSaveStatus('success');
-        setSaveMessage('Schedule saved successfully!');
-        setInitialScheduleForCheck(JSON.parse(JSON.stringify(schedule)));
-        setIsSaving(false);
-        setTimeout(() => {
-            if (saveStatusRef.current !== 'saving') { 
-                setSaveMessage('');
-                setSaveStatus('');
-            }
-        }, 5000);
-    };
-    
-    const handleDownloadSchedule = async () => {
-        const schedulePanelElement = document.getElementById('weeklySchedulePanel');
-        if (!schedulePanelElement) return;
-        const scheduleIsEmpty = Object.values(schedule).every(dayData => !dayData || !dayData.instructor);
-        if (scheduleIsEmpty) return;
-        try {
-            const canvas = await html2canvas(schedulePanelElement, { scale: 2 });
-            const imgData = canvas.toDataURL('image/png');
-            const pdf = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });
-            const pdfWidth = pdf.internal.pageSize.getWidth();
-            const pdfHeight = pdf.internal.pageSize.getHeight();
-            const imgProps = pdf.getImageProperties(imgData);
-            const ratio = imgProps.width / imgProps.height;
-            let newImgWidth = pdfWidth - 20;
-            let newImgHeight = newImgWidth / ratio;
-            if (newImgHeight > pdfHeight - 20) {
-                newImgHeight = pdfHeight - 20;
-                newImgWidth = newImgHeight * ratio;
-            }
-            const xOffset = (pdfWidth - newImgWidth) / 2;
-            const yOffset = (pdfHeight - newImgHeight) / 2;
-            pdf.addImage(imgData, 'PNG', xOffset, yOffset, newImgWidth, newImgHeight);
-            pdf.save('class_schedule.pdf');
-        } catch (error) {
-            console.error("Error generating PDF:", error);
-        }
-    };
-    
+    const handleDayDragLeave = (e, day) => { if (e.currentTarget.contains(e.relatedTarget)) return; if (dragOverDay === day) setDragOverDay(null); };
+    const handleDayDrop = (e, targetDay) => { e.preventDefault(); if (!draggedItem) return; const newSchedule = { ...schedule }; if (draggedItem.type === 'new') { newSchedule[targetDay] = { instructor: {id: draggedItem.item.id, name: draggedItem.item.name, profileImage: draggedItem.item.profileImage, degree: draggedItem.item.degree}, studyMode: 'in-class', }; } else if (draggedItem.type === 'scheduled') { const originDay = draggedItem.originDay; if (originDay === targetDay) { setDragOverDay(null); return; } const dataFromOriginDay = schedule[originDay]; const dataFromTargetDay = schedule[targetDay]; if (dataFromTargetDay?.instructor) { newSchedule[originDay] = { instructor: dataFromTargetDay.instructor, studyMode: dataFromTargetDay.studyMode}; newSchedule[targetDay] = { instructor: draggedItem.item, studyMode: dataFromOriginDay.studyMode}; } else { newSchedule[targetDay] = { instructor: draggedItem.item, studyMode: dataFromOriginDay.studyMode}; if (originDay) newSchedule[originDay] = null; } } setSchedule(newSchedule); setDragOverDay(null); };
+    const handleRemoveInstructorFromDay = (day) => { setSchedule(prevSchedule => ({ ...prevSchedule, [day]: null })); };
+    const handleStudyModeChange = (day, newMode) => { setSchedule(prevSchedule => { if (prevSchedule[day]?.instructor) { return { ...prevSchedule, [day]: { ...prevSchedule[day], studyMode: newMode } }; } return prevSchedule; }); };
+    const handleSaveSchedule = async () => { setIsSaving(true); setSaveStatus('saving'); setSaveMessage('Saving schedule...'); await new Promise(resolve => setTimeout(resolve, 1500)); setSaveStatus('success'); setSaveMessage('Schedule saved successfully!'); setInitialScheduleForCheck(JSON.parse(JSON.stringify(schedule))); setIsSaving(false); setTimeout(() => { if (saveStatusRef.current !== 'saving') { setSaveMessage(''); setSaveStatus(''); } }, 5000); };
+    const handleDownloadSchedule = async () => { const schedulePanelElement = document.getElementById('weeklySchedulePanel'); if (!schedulePanelElement) return; const scheduleIsEmpty = Object.values(schedule).every(dayData => !dayData || !dayData.instructor); if (scheduleIsEmpty) return; try { const canvas = await html2canvas(schedulePanelElement, { scale: 2 }); const imgData = canvas.toDataURL('image/png'); const pdf = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' }); const pdfWidth = pdf.internal.pageSize.getWidth(); const pdfHeight = pdf.internal.pageSize.getHeight(); const imgProps = pdf.getImageProperties(imgData); const ratio = imgProps.width / imgProps.height; let newImgWidth = pdfWidth - 20; let newImgHeight = newImgWidth / ratio; if (newImgHeight > pdfHeight - 20) { newImgHeight = pdfHeight - 20; newImgWidth = newImgHeight * ratio; } const xOffset = (pdfWidth - newImgWidth) / 2; const yOffset = (pdfHeight - newImgHeight) / 2; pdf.addImage(imgData, 'PNG', xOffset, yOffset, newImgWidth, newImgHeight); pdf.save('class_schedule.pdf'); } catch (error) { console.error("Error generating PDF:", error); } };
     const saveButtonBaseClasses = "w-full sm:w-auto px-6 py-2 text-white font-semibold rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-opacity-50 transition-all duration-150 ease-in-out transform active:scale-95";
     const downloadButtonBaseClasses = "w-full sm:w-auto px-6 py-2 text-white font-semibold rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-opacity-50 transition-colors duration-150 ease-in-out transform active:scale-95";
     const scheduleIsEmpty = Object.values(schedule).every(dayData => !dayData || !dayData.instructor);
@@ -350,8 +260,16 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
                         <div className="section-title font-semibold text-md text-num-dark-text dark:text-white mb-3">General Information</div>
                         <div className="form-row flex gap-3 mb-2 flex-wrap">{renderTextField("Class Name", "name", classData.name)}</div>
                         <div className="form-row flex gap-3 mb-2 flex-wrap">{renderTextField("Group", "group", classData.group)}{renderSelectField("Generation", "generation", classData.generation, generationOptions)}</div>
-                        <div className="form-row flex gap-3 mb-2 flex-wrap">{renderSelectField("Faculty", "faculty", classData.faculty, facultyOptions)}{renderSelectField("Degree", "degrees", classData.degrees, degreesOptions)}{renderSelectField("Major", "major", classData.major, majorOptions)}</div>
-                        <div className="form-row flex gap-3 mb-2 flex-wrap">{renderSelectField("Semester", "semester", classData.semester, semesterOptions)}{renderSelectField("Shift", "shift", classData.shift, shiftOptions)}{renderSelectField("Status", "status", classData.status, statusOptions)}</div>
+                        <div className="form-row flex gap-3 mb-2 flex-wrap">
+                            {renderSelectField("Faculty", "faculty", classData.faculty, departmentOptions, 'departmentId', 'name', 'name')}
+                            {renderSelectField("Degree", "degrees", classData.degrees, degreesOptions)}
+                            {renderSelectField("Major", "major", classData.major, majorOptions, 'departmentId', 'name', 'name')}
+                        </div>
+                        <div className="form-row flex gap-3 mb-2 flex-wrap">
+                            {renderSelectField("Semester", "semester", classData.semester, semesterOptions)}
+                            {renderSelectField("Shift", "shift", classData.shift, shiftOptions, null, null, null)}
+                            {renderSelectField("Status", "status", classData.status, statusOptions)}
+                        </div>
                         <div className="form-actions flex justify-end items-center gap-3 mt-4">
                             {isEditing ? (
                                 <>

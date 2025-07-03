@@ -7,7 +7,16 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import { classService } from '@/services/class.service';
 import { instructorService } from '@/services/instructor.service';
-import { departmentService } from '@/services/department.service'; // Import the new department service
+import { departmentService } from '@/services/department.service';
+
+// Mapping from shiftId to the full descriptive name used in the UI dropdown.
+const shiftIdToFullNameMap = {
+    1: 'Morning Shift (07:00:00 - 10:00:00, Weekday)',
+    2: 'Noon Shift (10:30:00 - 13:30:00, Weekday)',
+    3: 'Afternoon Shift (14:00:00 - 17:00:00, Weekday)',
+    4: 'Evening Shift (17:30:00 - 20:30:00, Weekday)',
+    5: 'Weekend Shift (07:30:00 - 17:00:00, Weekend)'
+};
 
 /**
  * Server-side data fetching function.
@@ -38,7 +47,8 @@ const fetchClassPageData = async (classId) => {
             degrees: classDetailsResponse.degreeName,
             faculty: classDetailsResponse.department?.name || 'N/A',
             semester: classDetailsResponse.semester,
-            shift: classDetailsResponse.shift?.name || 'N/A',
+            // FIX: Use the map to find the full shift name based on the ID from the API
+            shift: classDetailsResponse.shift ? shiftIdToFullNameMap[classDetailsResponse.shift.shiftId] : 'N/A',
             status: classDetailsResponse.archived ? 'Archived' : 'Active',
         };
 
@@ -49,7 +59,7 @@ const fetchClassPageData = async (classId) => {
             degree: inst.degree,
         }));
 
-        const formattedDepartments = departmentsResponse.map(dep => dep.name);
+        const formattedDepartments = departmentsResponse;
 
         return { classDetails: formattedClassDetails, instructors: formattedInstructors, departments: formattedDepartments };
 
