@@ -1,120 +1,71 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 
-// --- Icon Components ---
 const CheckmarkIcon = (props) => (
-  <svg
-    {...props}
-    xmlns="http://www.w3.org/2000/svg"
-    fill="none"
-    viewBox="0 0 24 24"
-    strokeWidth={1.5}
-    stroke="currentColor"
-    className="text-green-500"
-  >
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
-    />
+  <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="text-white size-9">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
   </svg>
 );
 
 const CloseIconSvg = (props) => (
-  <svg
-    {...props}
-    xmlns="http://www.w3.org/2000/svg"
-    fill="none"
-    viewBox="0 0 24 24"
-    strokeWidth={1.5}
-    stroke="currentColor"
-    className="text-black dark:text-white hover:text-gray-500 transition-colors"
-  >
+  <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white transition-colors">
     <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
   </svg>
 );
 
-const SuccessAlert = ({ onConfirm, onClose, title = "Update Successfully", messageLine1 = "Your item has been updated successfully.", messageLine2 = "You can view or edit it anytime.", confirmButtonText = "OK" }) => {
-  const [isShowing, setIsShowing] = useState(false);
+const SuccessAlert = ({ show, onConfirm, onClose, title = "Update Successfully", messageLine1 = "Your item has been updated successfully.", messageLine2 = "You can view or edit it anytime.", confirmButtonText = "OK" }) => {
+  const [isExiting, setIsExiting] = useState(false);
 
-  // --- Handlers ---
+  useEffect(() => {
+    if (!show) {
+      setIsExiting(false);
+    }
+  }, [show]);
+
   const handleClose = () => {
-    setIsShowing(false); // Trigger the exit animation
-    setTimeout(() => {
-      if (onClose) {
-        onClose();
-      }
-    }, 200); // This duration should match the transition-out duration.
+    setIsExiting(true);
+    setTimeout(onClose, 200);
   };
 
   const handleConfirm = () => {
-    setIsShowing(false); // Trigger the exit animation
-    setTimeout(() => {
-      onConfirm();
-    }, 200); // This duration should match the transition-out duration.
+    setIsExiting(true);
+    setTimeout(onConfirm, 200);
   };
 
-  // --- Hooks ---
-  useEffect(() => {
-    // A tiny delay to allow the component to be in the DOM with initial (hidden) styles
-    // before transitioning to the visible state.
-    const timer = setTimeout(() => {
-      setIsShowing(true);
-    }, 10); // A small delay is sometimes needed for the transition to trigger correctly on mount.
-    return () => clearTimeout(timer);
-  }, []);
+  if (!show && !isExiting) return null;
 
   return (
-    <div
-      className={`
-        relative w-[480px] h-[330px] bg-white dark:bg-gray-800 shadow-custom-heavy rounded-[6px] font-sans
-        transition-all duration-200 ease-out
-        ${isShowing ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}
-      `}
-    >
-      {/* Close Icon Button */}
-      {onClose && (
-        <button
-          onClick={handleClose}
-          aria-label="Close alert"
-          className="absolute w-[20px] h-[20px] left-[431px] top-[21px] text-alert-close-icon hover:opacity-75 transition-opacity"
-        >
-          <CloseIconSvg className="w-full h-full" />
-        </button>
-      )}
-
-      {/* Icon container & Ellipse background */}
+    <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[1001] p-4">
       <div
-        className="box-border absolute w-[70px] h-[70px] left-[205px] top-[35px] bg-alert-success-icon-bg rounded-full flex items-center justify-center"
+        className={`relative w-full max-w-sm bg-white dark:bg-gray-800 shadow-custom-heavy rounded-lg font-sans
+          ${show && !isExiting ? 'animate-fade-in-scale' : ''}
+          ${isExiting ? 'animate-fade-out-scale' : ''}
+        `}
       >
-        <CheckmarkIcon className="w-[32px] h-[32px]" />
-      </div>
+        <div className="p-6 text-center">
+            {onClose && (
+              <button onClick={handleClose} aria-label="Close alert" className="absolute top-3 right-3 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700">
+                <CloseIconSvg className="w-5 h-5" />
+              </button>
+            )}
 
-      {/* Title Text */}
-      <h2
-        className="absolute w-[238px] left-[calc(50%-119px)] top-[125px] font-roboto font-semibold text-[26px] leading-[30px] text-black dark:text-white text-center"
-      >
-        {title}
-      </h2>
+            <div className="w-[70px] h-[70px] mx-auto mb-5 bg-green-500 rounded-full flex items-center justify-center animate-pulse-green">
+                <CheckmarkIcon className="w-9 h-9" />
+            </div>
 
-      {/* Descriptive Text */}
-      <p
-        className="absolute w-[370px] h-auto left-[55px] top-[181px] font-sans font-normal text-[12px] leading-[15px] text-center text-num-gray dark:text-gray-300"
-      >
-        {messageLine1}<br />
-        {messageLine2}
-      </p>
+            <h2 className="font-roboto font-semibold text-2xl text-black dark:text-white mb-2">
+                {title}
+            </h2>
 
-      {/* Button Container */}
-      <div className="absolute w-[400px] h-[45px] left-[40px] top-[250px]">
-        <button
-          onClick={handleConfirm}
-          className="flex flex-row justify-center items-center w-full h-full px-[92px] py-[10px] gap-[10px] text-white bg-blue-600 hover:bg-blue-700 rounded-[5px] hover:opacity-90 transition-opacity"
-        >
-          <span className="font-sans font-semibold text-[12px] leading-[15px] text-alert-button-text-light whitespace-nowrap">
-            {confirmButtonText}
-          </span>
-        </button>
+            <p className="font-sans font-normal text-sm text-gray-600 dark:text-gray-300 mb-6">
+                {messageLine1}<br />
+                {messageLine2}
+            </p>
+
+            <button onClick={handleConfirm} className="w-full h-11 px-6 bg-blue-600 hover:bg-blue-700 rounded-md text-white font-sans font-semibold text-sm transition-colors">
+                {confirmButtonText}
+            </button>
+        </div>
       </div>
     </div>
   );

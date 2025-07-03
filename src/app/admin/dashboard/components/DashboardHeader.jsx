@@ -1,8 +1,8 @@
 export default function DashboardHeader({
   title,
   description,
-  currentDate,
-  academicYear,
+  currentDate, // This prop will now be passed from the client component
+  academicYear, // This prop will now be passed from the client component
 }) {
   return (
     <>

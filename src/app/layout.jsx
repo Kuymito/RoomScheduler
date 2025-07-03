@@ -1,6 +1,7 @@
 import { Inter, Poppins, Roboto } from 'next/font/google';
 import './globals.css';
 import ThemeProvider from '@/components/ThemeProvider';
+import AuthProvider from '@/components/AuthProvider'; // Import the new AuthProvider
 
 const inter = Inter({
   subsets: ['latin'],
@@ -23,18 +24,24 @@ const roboto = Roboto({
 });
 
 export const metadata = {
-  title: 'Admin Profile',
-  description: 'Admin profile page for NUM',
+  title: 'Scheduler',
+  description: 'Scheduler Management System',
 };
 
 export default function RootLayout({ children }) {
   return (
     <html lang="en" className={`${inter.variable} ${poppins.variable} ${roboto.variable}`}>
-      <ThemeProvider>
-        <body className="flex min-h-screen">
-          {children}
-        </body>
-      </ThemeProvider>
+      <head>
+        <title>{metadata.title}</title>
+        <link rel="icon" href="https://numregister.com/assets/img/logo/num.png" />
+      </head>
+      <body>
+        <AuthProvider>
+          <ThemeProvider>
+            {children}
+          </ThemeProvider>
+        </AuthProvider>
+      </body>
     </html>
   );
 }

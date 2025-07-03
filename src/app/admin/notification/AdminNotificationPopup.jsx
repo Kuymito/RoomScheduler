@@ -1,56 +1,57 @@
-// NotificationPopup.js
+// src/app/admin/notification/AdminNotificationPopup.jsx
 'use client';
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import NotificationItem from './AdminNotification';
 
-const NotificationPopup = ({ show, notifications = [], onMarkAllRead, onApprove, onDeny, anchorRef // Optional ref of the bell icon for positioning
-}) => {
-  if (!show) return null;
-  
-  let popupStyle = {
-    right: '20px', // Default like UserPopup
-    top: '80px',   // Default like UserPopup
+const NotificationPopup = ({ show, notifications = [], onMarkAllRead, onApprove, onDeny, onMarkAsRead, anchorRef }) => {
+  const [isExiting, setIsExiting] = useState(false);
+
+  useEffect(() => {
+    if (!show) {
+      setIsExiting(false);
+    }
+  }, [show]);
+
+  const handleClose = () => {
+    setIsExiting(true);
+    setTimeout(onClose, 200);
   };
 
+  if (!show && !isExiting) return null;
+
+  let popupStyle = {
+    right: '20px',
+    top: '80px',
+  };
+
+  // Adjust popup position based on the anchorRef (e.g., the notification icon)
   if (anchorRef && anchorRef.current) {
     const rect = anchorRef.current.getBoundingClientRect();
     popupStyle = {
-      position: 'absolute', // Ensure it's absolute for top/left to work relative to positioned parent or viewport
-      top: `${rect.bottom + window.scrollY + 8}px`, // Position below the anchor + 8px gap
-      right: `${window.innerWidth - rect.right - (400 - rect.width)/2 - rect.left}px`, // Attempt to center/align right
-      // Ensure right positioning doesn't push it off-screen
-      // A more common pattern is to align its right edge with the anchor's right edge
-      // right: `${window.innerWidth - rect.right}px`, 
-      left: `${rect.left + rect.width / 2 - 400 + 20}px`, // Attempt to align right edge of popup with right of icon
-    };
-     // Simplified positioning: align popup's top-right near the icon's bottom-right
-    popupStyle = {
-        position: 'absolute',
-        top: `${rect.bottom + window.scrollY + 10}px`, // Below the icon
-        right: `${window.innerWidth - rect.right}px`, // Align right edges. Adjust as needed.
-        // This might need to be refined based on overall page layout
+      position: 'absolute',
+      // Position the popup 10px below the anchor element, relative to its bottom edge
+      top: `${rect.bottom + window.scrollY + 10}px`,
+      // Position the popup aligned with the right edge of the anchor element
+      right: `${window.innerWidth - rect.right}px`,
     };
   }
 
-
   return (
-    // Admin Popup (main container for notifications)
-    // Using fixed position relative to viewport for simplicity if anchorRef is tricky
-    // For better positioning, consider using a popover library.
     <div
-      className="fixed md:absolute w-[400px] h-[600px] bg-white dark:bg-gray-800 shadow-[0px_2px_15px_rgba(0,0,0,0.25)] rounded-[10px] z-[1000] flex flex-col right-5 top-20 md:right-auto md:left-auto" // Default fixed position, can be overridden by style prop
-      style={anchorRef?.current ? popupStyle : {}} // Apply calculated style if anchorRef is present
+      className={`fixed md:absolute w-full max-w-md bg-white dark:bg-gray-800 shadow-lg rounded-lg z-[1000] flex flex-col right-5 top-20 md:right-auto md:left-auto
+        ${show && !isExiting ? 'animate-fade-in-scale' : ''}
+        ${isExiting ? 'animate-fade-out-scale' : ''}
+      `}
+      style={anchorRef?.current ? popupStyle : {}} // Apply dynamic style if anchorRef is available
     >
-      {/* Header Section */}
-      <div className="relative flex justify-between items-center py-[20px] px-[21px]"> {/* padding simplified. top:20px, left:21px for title */}
-        <h2 className="font-roboto font-semibold text-xl leading-[23px] text-gray-800 dark:text-gray-100">
+      <div className="relative flex justify-between items-center py-4 px-5">
+        <h2 className="font-roboto font-semibold text-xl text-gray-800 dark:text-gray-100">
           Notifications
         </h2>
-        {/* Frame 8 & light-mode/Mark as Read */}
-        <div className="flex flex-row justify-end items-center gap-3"> {/* gap: 12px */}
+        <div className="flex items-center gap-3">
           <button
             onClick={onMarkAllRead}
-            className="font-inter font-medium text-xs leading-tight text-[#2E70E8] dark:text-blue-500 hover:underline" // line-height: 100% (12px)
+            className="font-inter font-medium text-xs text-blue-600 dark:text-blue-500 hover:underline"
             title="Mark all notifications as read"
           >
             Mark all as read
@@ -58,8 +59,8 @@ const NotificationPopup = ({ show, notifications = [], onMarkAllRead, onApprove,
         </div>
       </div>
 
-      {/* Frame 1321314673 (Notification List Area) */}
-      <div className="flex flex-col items-start flex-1 overflow-y-auto dark:bg-gray-800 border-t border-[#E2E8F0] dark:border-slate-600 rounded-b-[10px]"> {/* top: 74px implies it's below header. Added border */}
+      {/* Changed overflow-y-auto to overflow-y-scroll to always reserve scrollbar space */}
+      <div className="flex flex-col flex-1 overflow-y-scroll dark:bg-gray-800 border-t border-gray-200 dark:border-slate-600 rounded-b-lg">
         {notifications && notifications.length > 0 ? (
           notifications.map(notification => (
             <NotificationItem
@@ -67,6 +68,7 @@ const NotificationPopup = ({ show, notifications = [], onMarkAllRead, onApprove,
               notification={notification}
               onApprove={onApprove}
               onDeny={onDeny}
+              onMarkAsRead={onMarkAsRead}
             />
           ))
         ) : (

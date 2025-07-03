@@ -38,3 +38,61 @@ body {
   background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"><path d="M5 5l10 10M15 5L5 15" stroke="%23737373" fill="none"/></svg>');
   @apply bg-no-repeat bg-center;
 }
+
+/* Animations for Popups */
+@keyframes fade-in-scale {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes fade-out-scale {
+  from {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.95) translateY(10px);
+  }
+}
+
+@keyframes pulse-red {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(218, 58, 60, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 12px rgba(218, 58, 60, 0);
+  }
+}
+
+@keyframes pulse-green {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.5);
+  }
+  70% {
+    box-shadow: 0 0 0 12px rgba(74, 222, 128, 0);
+  }
+}
+
+
+.animate-fade-in-scale {
+  animation: fade-in-scale 0.2s ease-out forwards;
+}
+
+.animate-fade-out-scale {
+  animation: fade-out-scale 0.2s ease-in forwards;
+}
+
+.animate-pulse-red {
+  animation: pulse-red 2s infinite;
+}
+
+.animate-pulse-green {
+    animation: pulse-green 2s infinite;
+}
