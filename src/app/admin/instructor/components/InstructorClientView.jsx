@@ -6,7 +6,9 @@ import { useRouter } from 'next/navigation';
 import useSWR from 'swr';
 import { useSession } from 'next-auth/react';
 import { instructorService } from '@/services/instructor.service';
+import { departmentService } from '@/services/department.service';
 import InstructorPageSkeleton from './InstructorPageSkeleton';
+import SuccessPopup from '../../profile/components/SuccessPopup';
 
 // --- Reusable Icon and Spinner Components ---
 const Spinner = () => ( <svg className="animate-spin h-5 w-5 text-gray-500 dark:text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> );
@@ -14,16 +16,17 @@ const EditIcon = ({ className = "w-[14px] h-[14px]" }) => ( <svg className={clas
 const ArchiveIcon = ({ className = "w-[14px] h-[14px]" }) => ( <svg className={className} viewBox="0 0 17 17" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M14.1667 5.66667V12.0417C14.1667 13.9975 13.2892 14.875 11.3334 14.875H5.66671C3.71087 14.875 2.83337 13.9975 2.83337 12.0417V5.66667" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/><path d="M14.875 2.125H2.125L2.12504 5.66667H14.875V2.125Z" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/><path d="M7.79163 8.5H9.20829" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/></svg> );
 const DefaultAvatarIcon = ({ className = "w-8 h-8" }) => ( <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={`${className} border border-gray-300 rounded-full p-1 dark:border-gray-600`}><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" /></svg> );
 
-const fetcher = ([key, token]) => instructorService.getAllInstructors(token);
+const instructorFetcher = ([key, token]) => instructorService.getAllInstructors(token);
+const departmentFetcher = ([key, token]) => departmentService.getAllDepartments(token);
 
 export default function InstructorClientView({ initialInstructors }) {
     const router = useRouter();
     const { data: session } = useSession();
     const [isLoading, setIsLoading] = useState(true);
 
-    const { data, error } = useSWR(
+    const { data: instructors, error: instructorsError, mutate: mutateInstructors } = useSWR(
         session?.accessToken ? ['/api/v1/instructors', session.accessToken] : null,
-        fetcher,
+        instructorFetcher,
         {
             fallbackData: initialInstructors,
             revalidateOnFocus: true,
@@ -32,10 +35,16 @@ export default function InstructorClientView({ initialInstructors }) {
         }
     );
 
+    const { data: departments, error: departmentsError } = useSWR(
+        session?.accessToken ? ['/api/department', session.accessToken] : null,
+        departmentFetcher
+    );
+
     const [instructorData, setInstructorData] = useState(initialInstructors);
     const [isPending, startTransition] = useTransition();
     const [rowLoadingId, setRowLoadingId] = useState(null);
     const [showCreateInstructorPopup, setShowCreateInstructorPopup] = useState(false);
+    const [showSuccessPopup, setShowSuccessPopup] = useState(false);
     const [statusFilter, setStatusFilter] = useState('active');
     const [sortColumn, setSortColumn] = useState(null);
     const [sortDirection, setSortDirection] = useState('asc');
@@ -45,8 +54,8 @@ export default function InstructorClientView({ initialInstructors }) {
     const [itemsPerPage, setItemsPerPage] = useState(itemsPerPageOptions[0]);
 
     useEffect(() => {
-        if (data) {
-            const formattedData = data.map(item => ({
+        if (instructors) {
+            const formattedData = instructors.map(item => ({
                 id: item.instructorId,
                 name: `${item.firstName} ${item.lastName}`,
                 email: item.email,
@@ -58,7 +67,7 @@ export default function InstructorClientView({ initialInstructors }) {
             }));
             setInstructorData(formattedData);
         }
-    }, [data]);
+    }, [instructors]);
 
     const handleRowClick = (instructorId) => {
         setRowLoadingId(instructorId);
@@ -67,10 +76,20 @@ export default function InstructorClientView({ initialInstructors }) {
         });
     };
     
-    const handleSaveNewInstructor = (newInstructorData) => {
-        const newId = instructorData.length > 0 ? Math.max(...instructorData.map(item => item.id)) + 1 : 1;
-        setInstructorData(prevData => [...prevData, { id: newId, ...newInstructorData, status: 'active' }]);
-        setCurrentPage(1);
+    const handleSaveNewInstructor = async (newInstructorData) => {
+        if (!session?.accessToken) {
+            console.error("Cannot create instructor: not authenticated.");
+            // Optionally show an error message to the user
+            return;
+        }
+        try {
+            await instructorService.createInstructor(newInstructorData, session.accessToken);
+            mutateInstructors(); // Re-fetch the instructor list
+            setShowSuccessPopup(true);
+        } catch (error) {
+            console.error("Failed to create instructor:", error);
+            // Optionally show an error message to the user
+        }
     };
 
     const handleSort = (column) => {
@@ -156,12 +175,18 @@ export default function InstructorClientView({ initialInstructors }) {
         return <InstructorPageSkeleton />;
     }
     
-    if (error) {
+    if (instructorsError) {
         return <div className="p-6 text-center text-red-500">Failed to load instructor data. Please try again.</div>;
     }
 
     return (
         <div className="p-6 dark:text-white">
+            <SuccessPopup
+                show={showSuccessPopup}
+                onClose={() => setShowSuccessPopup(false)}
+                title="Instructor Created"
+                message="The new instructor has been added successfully."
+            />
             <div className="flex items-center justify-between">
                 <h1 className="text-lg font-bold">Instructor List</h1>
             </div>
@@ -271,7 +296,13 @@ export default function InstructorClientView({ initialInstructors }) {
                 </ul>
             </nav>
 
-            <InstructorCreatePopup isOpen={showCreateInstructorPopup} onClose={() => setShowCreateInstructorPopup(false)} onSave={handleSaveNewInstructor} />
+            <InstructorCreatePopup 
+                isOpen={showCreateInstructorPopup} 
+                onClose={() => setShowCreateInstructorPopup(false)} 
+                onSave={handleSaveNewInstructor}
+                departments={departments || []}
+                departmentsError={departmentsError}
+            />
         </div>
     );
 }

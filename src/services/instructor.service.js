@@ -61,8 +61,35 @@ const getInstructorById = async (instructorId, token) => {
   }
 };
 
+/**
+ * Creates a new instructor via a POST request.
+ * @param {object} instructorData - An object with the instructor details.
+ * @param {string} token - The authorization token for the request.
+ * @returns {Promise<Object>} A promise that resolves to the API response.
+ */
+const createInstructor = async (instructorData, token) => {
+  try {
+    // Client-side calls should always go to the local proxy.
+    const response = await axios.post(`/api/instructors`, instructorData, {
+       headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    return response.data;
+  } catch (error) {
+    console.error(`Create instructor service error:`, {
+      message: error.message,
+      code: error.code,
+      response: error.response ? error.response.data : 'No response data'
+    });
+    throw new Error(error.response?.data?.message || `Failed to create instructor.`);
+  }
+};
+
 
 export const instructorService = {
   getAllInstructors,
   getInstructorById,
+  createInstructor,
 };
