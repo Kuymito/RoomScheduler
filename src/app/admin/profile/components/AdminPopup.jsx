@@ -9,7 +9,7 @@ const SpinnerIcon = () => (
     </svg>
 );
 
-const AdminPopup = ({ show, onLogoutClick, adminName = "Admin", adminEmail = "admin@gmail.com", isNavigating, onNavigate }) => {
+const AdminPopup = ({ show, onLogoutClick, adminName, adminEmail, isNavigating, onNavigate }) => {
   if (!show) return null;
 
   return (

@@ -8,10 +8,13 @@ import InstructorPopup from 'src/app/instructor/profile/components/InstructorPop
 import LogoutAlert from '@/components/LogoutAlert';
 import Footer from '@/components/Footer';
 import InstructorNotificationPopup from '@/app/instructor/notification/InstructorNotificationPopup';
-import { signOut } from 'next-auth/react';
+import { signOut, useSession } from 'next-auth/react';
+import useSWR from 'swr';
+import { authService } from '@/services/auth.service';
 import { moul } from './fonts';
 
 const TOPBAR_HEIGHT = '90px';
+const fetcher = ([, token]) => authService.getProfile(token);
 
 export default function InstructorLayout({ children, activeItem, pageTitle }) {
     const [showAdminPopup, setShowAdminPopup] = useState(false);
@@ -33,6 +36,15 @@ export default function InstructorLayout({ children, activeItem, pageTitle }) {
         }
         return false;
     });
+
+    const { data: session } = useSession();
+    const token = session?.accessToken;
+
+    // Fetch profile data using useSWR for caching and revalidation
+    const { data: profile } = useSWR(
+        token ? ['/api/profile', token] : null,
+        fetcher
+    );
 
     const toggleSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
     const handleUserIconClick = (event) => { 
@@ -213,6 +225,8 @@ export default function InstructorLayout({ children, activeItem, pageTitle }) {
                     onLogoutClick={handleLogoutClick} 
                     isNavigating={isProfileNavigating}
                     onNavigate={handleProfileNav}
+                    instructorName={profile ? `${profile.firstName} ${profile.lastName}` : 'Instructor'}
+                    instructorEmail={profile?.email || 'instructor@example.com'}
                 />
             </div>
 

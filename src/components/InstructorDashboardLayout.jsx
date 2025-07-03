@@ -9,8 +9,12 @@ import LogoutAlert from '@/components/LogoutAlert';
 import Footer from '@/components/Footer';
 import InstructorNotificationPopup from '@/app/instructor/notification/InstructorNotificationPopup';
 import { usePathname, useRouter } from 'next/navigation';
-import { signOut } from 'next-auth/react';
+import { signOut, useSession } from 'next-auth/react';
+import useSWR from 'swr';
+import { authService } from '@/services/auth.service';
 import { moul } from './fonts';
+
+const fetcher = ([, token]) => authService.getProfile(token);
 
 export default function InstructorDashboardLayout({ children, activeItem, pageTitle }) {
     const [showAdminPopup, setShowAdminPopup] = useState(false);
@@ -32,6 +36,15 @@ export default function InstructorDashboardLayout({ children, activeItem, pageTi
         }
         return false;
     });
+
+    const { data: session } = useSession();
+    const token = session?.accessToken;
+
+    // Fetch profile data using useSWR for caching and revalidation
+    const { data: profile } = useSWR(
+        token ? ['/api/profile', token] : null,
+        fetcher
+    );
 
     useEffect(() => {
         if (typeof window !== 'undefined') {
@@ -209,6 +222,8 @@ export default function InstructorDashboardLayout({ children, activeItem, pageTi
                     onLogoutClick={handleLogoutClick}
                     isNavigating={isProfileNavigating}
                     onNavigate={handleProfileNav}
+                    instructorName={profile ? `${profile.firstName} ${profile.lastName}` : 'Instructor'}
+                    instructorEmail={profile?.email || 'instructor@example.com'}
                 />
             </div>
             <div ref={notificationPopupRef}>

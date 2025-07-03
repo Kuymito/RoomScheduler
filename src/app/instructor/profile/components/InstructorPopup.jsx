@@ -9,7 +9,7 @@ const SpinnerIcon = () => (
     </svg>
 );
 
-const InstructorPopup = ({ show, onLogoutClick, instructorName = "Instructor", instructorEmail = "instructor@gmail.com", isNavigating, onNavigate }) => {
+const InstructorPopup = ({ show, onLogoutClick, instructorName, instructorEmail, isNavigating, onNavigate }) => {
   if (!show) return null;
 
   return (

@@ -8,10 +8,13 @@ import AdminPopup from 'src/app/admin/profile/components/AdminPopup';
 import LogoutAlert from '@/components/LogoutAlert';
 import Footer from '@/components/Footer';
 import NotificationPopup from '@/app/admin/notification/AdminNotificationPopup';
-import { signOut } from 'next-auth/react';
+import { signOut, useSession } from 'next-auth/react';
+import useSWR from 'swr';
+import { authService } from '@/services/auth.service';
 import { moul } from './fonts';
 
 const TOPBAR_HEIGHT = '90px';
+const fetcher = ([, token]) => authService.getProfile(token);
 
 export default function AdminLayout({ children, activeItem, pageTitle }) {
     const [showAdminPopup, setShowAdminPopup] = useState(false);
@@ -33,6 +36,15 @@ export default function AdminLayout({ children, activeItem, pageTitle }) {
         }
         return false;
     });
+    
+    const { data: session } = useSession();
+    const token = session?.accessToken;
+
+    // Fetch profile data using useSWR for caching and revalidation
+    const { data: profile } = useSWR(
+        token ? ['/api/profile', token] : null,
+        fetcher
+    );
 
     const toggleSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
     const handleUserIconClick = (event) => { 
@@ -63,7 +75,6 @@ export default function AdminLayout({ children, activeItem, pageTitle }) {
     
     const mockAPICall = async (action, data) => {
         console.log(`MOCK API CALL: ${action}`, data || '');
-        // Artificial delay removed
         return { success: true, message: `${action} successful.` };
     };
 
@@ -205,7 +216,14 @@ export default function AdminLayout({ children, activeItem, pageTitle }) {
                 </div>
             </div>
             <div ref={adminPopupRef}>
-                <AdminPopup show={showAdminPopup} onLogoutClick={handleLogoutClick} isNavigating={isProfileNavigating} onNavigate={handleProfileNav} />
+                <AdminPopup 
+                    show={showAdminPopup} 
+                    onLogoutClick={handleLogoutClick} 
+                    isNavigating={isProfileNavigating} 
+                    onNavigate={handleProfileNav}
+                    adminName={profile ? `${profile.firstName} ${profile.lastName}` : 'Admin'}
+                    adminEmail={profile?.email || 'admin@example.com'}
+                />
             </div>
             <div ref={notificationPopupRef}>
                 <NotificationPopup show={showNotificationPopup} notifications={notifications} onMarkAllRead={handleMarkAllRead} onApprove={handleApproveNotification} onDeny={handleDenyNotification} onMarkAsRead={handleMarkSingleAsRead} anchorRef={notificationIconRef} />

@@ -9,8 +9,13 @@ import LogoutAlert from '@/components/LogoutAlert';
 import Footer from '@/components/Footer';
 import NotificationPopup from '@/app/admin/notification/AdminNotificationPopup';
 import { usePathname, useRouter } from 'next/navigation';
-import { signOut } from 'next-auth/react';
+import { signOut, useSession } from 'next-auth/react';
+import useSWR from 'swr';
+import { authService } from '@/services/auth.service';
 import { moul } from './fonts';
+
+const TOPBAR_HEIGHT = '90px';
+const fetcher = ([, token]) => authService.getProfile(token);
 
 export default function DashboardLayout({ children, activeItem, pageTitle }) {
     const [showAdminPopup, setShowAdminPopup] = useState(false);
@@ -25,13 +30,22 @@ export default function DashboardLayout({ children, activeItem, pageTitle }) {
     const userIconRef = useRef(null);
     const router = useRouter();
     const pathname = usePathname();
-    const [isProfileNavigating, setIsProfileNavigating] = useState(false);
+    const [ isProfileNavigating, setIsProfileNavigating] = useState(false);
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
         if (typeof window !== 'undefined') {
             return localStorage.getItem('sidebarCollapsed') === 'true';
         }
         return false;
     });
+
+    const { data: session } = useSession();
+    const token = session?.accessToken;
+
+    // Fetch profile data using useSWR for caching and revalidation
+    const { data: profile } = useSWR(
+        token ? ['/api/profile', token] : null,
+        fetcher
+    );
 
     useEffect(() => {
         if (typeof window !== 'undefined') {
@@ -77,7 +91,6 @@ export default function DashboardLayout({ children, activeItem, pageTitle }) {
     
     const mockAPICall = async (action, data) => {
         console.log(`MOCK API CALL: ${action}`, data || '');
-        // Artificial delay removed
         return { success: true, message: `${action} successful.` };
     };
 
@@ -107,12 +120,7 @@ export default function DashboardLayout({ children, activeItem, pageTitle }) {
                 prevNotifications.map(n => {
                     if (n.id === notificationId) {
                         const { requestorName, room, time } = n.details;
-                        return {
-                            ...n,
-                            message: `You approved the request from ${requestorName} for Room ${room} at ${time}.`,
-                            type: 'info_approved',
-                            isUnread: false
-                        };
+                        return { ...n, message: `You approved the request from ${requestorName} for Room ${room} at ${time}.`, type: 'info_approved', isUnread: false };
                     }
                     return n;
                 })
@@ -127,14 +135,9 @@ export default function DashboardLayout({ children, activeItem, pageTitle }) {
             await mockAPICall("Deny notification", { notificationId });
             setNotifications(prevNotifications =>
                 prevNotifications.map(n => {
-                     if (n.id === notificationId) {
+                    if (n.id === notificationId) {
                         const { requestorName, room, time } = n.details;
-                        return {
-                            ...n,
-                            message: `You denied the request from ${requestorName} for Room ${room} at ${time}.`,
-                            type: 'info_denied',
-                            isUnread: false
-                        };
+                        return { ...n, message: `You denied the request from ${requestorName} for Room ${room} at ${time}.`, type: 'info_denied', isUnread: false };
                     }
                     return n;
                 })
@@ -147,9 +150,7 @@ export default function DashboardLayout({ children, activeItem, pageTitle }) {
     const hasUnreadNotifications = notifications.some(n => n.isUnread);
 
     const handleProfileNav = (path) => {
-        if (isProfileNavigating) {
-            return;
-        }
+        if (isProfileNavigating) return;
         if (pathname === path) {
             setShowAdminPopup(false);
             return;
@@ -159,18 +160,13 @@ export default function DashboardLayout({ children, activeItem, pageTitle }) {
     };
     
     const sidebarWidth = isSidebarCollapsed ? '80px' : '265px';
-    const TOPBAR_HEIGHT = '90px'; 
 
     useEffect(() => {
         const handleClickOutside = (event) => {
-            if (showAdminPopup && 
-                adminPopupRef.current && !adminPopupRef.current.contains(event.target) &&
-                userIconRef.current && !userIconRef.current.contains(event.target)) {
+            if (showAdminPopup && adminPopupRef.current && !adminPopupRef.current.contains(event.target) && userIconRef.current && !userIconRef.current.contains(event.target)) {
                 setShowAdminPopup(false);
             }
-            if (showNotificationPopup &&
-                notificationPopupRef.current && !notificationPopupRef.current.contains(event.target) &&
-                notificationIconRef.current && !notificationIconRef.current.contains(event.target)) {
+            if (showNotificationPopup && notificationPopupRef.current && !notificationPopupRef.current.contains(event.target) && notificationIconRef.current && !notificationIconRef.current.contains(event.target)) {
                 setShowNotificationPopup(false);
             }
         };
@@ -193,95 +189,43 @@ export default function DashboardLayout({ children, activeItem, pageTitle }) {
             setIsProfileNavigating(false);
         }
     }, [pathname]);
-    
+
     if (isLoading) {
         return (
             <div className="min-h-screen w-screen flex flex-col items-center justify-center bg-[#E0E4F3] text-center p-6">
-                <img 
-                src="https://numregister.com/assets/img/logo/num.png" 
-                alt="University Logo" 
-                className="mx-auto mb-6 w-24 sm:w-28 md:w-32" 
-                />
-                <h1 className={`${moul.className} text-2xl sm:text-3xl font-bold mb-3 text-blue-800`}>
-                សាកលវិទ្យាល័យជាតិគ្រប់គ្រង
-                </h1>
-                <h2 className="text-xl sm:text-2xl font-medium mb-8 text-blue-700">
-                National University of Management
-                </h2>
-                <p className="text-lg sm:text-xl text-gray-700 font-semibold mb-4">
-                Logging out, please wait...
-                </p>
-                <div 
-                className="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-blue-600"
-                role="status"
-                >
-                <span className="sr-only">Loading...</span>
-                </div>
+                <img src="https://numregister.com/assets/img/logo/num.png" alt="University Logo" className="mx-auto mb-6 w-24 sm:w-28 md:w-32" />
+                <h1 className={`${moul.className} text-2xl sm:text-3xl font-bold mb-3 text-blue-800`}>សាកលវិទ្យាល័យជាតិគ្រប់គ្រង</h1>
+                <h2 className="text-xl sm:text-2xl font-medium mb-8 text-blue-700">National University of Management</h2>
+                <p className="text-lg sm:text-xl text-gray-700 font-semibold mb-4">Logging out, please wait...</p>
+                <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-blue-600" role="status"><span className="sr-only">Loading...</span></div>
             </div>
         );
     }
 
     return (
         <div className="flex w-full min-h-screen bg-[#E2E1EF] dark:bg-gray-800">
-            <Sidebar
-                isCollapsed={isSidebarCollapsed}
-                activeItem={activeItem}
-                onNavItemClick={handleNavItemClick}
-                navigatingTo={navigatingTo}
-            />
-            <div
-                className="flex flex-col flex-grow transition-all duration-300 ease-in-out"
-                style={{
-                    marginLeft: sidebarWidth,
-                    width: `calc(100% - ${sidebarWidth})`,
-                    height: '100vh',
-                    overflowY: 'auto',
-                }}
-            >
-                <div
-                    className="fixed top-0 bg-white dark:bg-gray-900 shadow-custom-medium p-5 flex justify-between items-center z-30 transition-all duration-300 ease-in-out"
-                    style={{
-                        left: sidebarWidth,
-                        width: `calc(100% - ${sidebarWidth})`,
-                        height: TOPBAR_HEIGHT,
-                    }}
-                >
-                    <Topbar
-                        onToggleSidebar={toggleSidebar}
-                        isSidebarCollapsed={isSidebarCollapsed}
-                        onUserIconClick={handleUserIconClick}
-                        pageSubtitle={pageTitle}
-                        userIconRef={userIconRef}
-                        onNotificationIconClick={handleToggleNotificationPopup}
-                        notificationIconRef={notificationIconRef}
-                        hasUnreadNotifications={hasUnreadNotifications}
-                    />
+            <Sidebar isCollapsed={isSidebarCollapsed} activeItem={activeItem} onNavItemClick={handleNavItemClick} navigatingTo={navigatingTo} />
+            <div className="flex flex-col flex-grow transition-all duration-300 ease-in-out" style={{ marginLeft: sidebarWidth, width: `calc(100% - ${sidebarWidth})`, height: '100vh', overflowY: 'auto' }}>
+                <div className="fixed top-0 bg-white dark:bg-gray-900 shadow-custom-medium p-5 flex justify-between items-center z-30 transition-all duration-300 ease-in-out" style={{ left: sidebarWidth, width: `calc(100% - ${sidebarWidth})`, height: TOPBAR_HEIGHT }}>
+                    <Topbar onToggleSidebar={toggleSidebar} isSidebarCollapsed={isSidebarCollapsed} onUserIconClick={handleUserIconClick} pageSubtitle={pageTitle} userIconRef={userIconRef} onNotificationIconClick={handleToggleNotificationPopup} notificationIconRef={notificationIconRef} hasUnreadNotifications={hasUnreadNotifications} />
                 </div>
                 <div className="flex flex-col flex-grow" style={{ paddingTop: TOPBAR_HEIGHT }}>
-                    <main className="content-area flex-grow m-6">
-                        {children}
-                    </main>
+                    <main className="content-area flex-grow m-6">{children}</main>
                     <Footer />
                 </div>
             </div>
             <div ref={adminPopupRef}>
                 <AdminPopup 
                     show={showAdminPopup} 
-                    onLogoutClick={handleLogoutClick}
-                    isNavigating={isProfileNavigating}
+                    onLogoutClick={handleLogoutClick} 
+                    isNavigating={isProfileNavigating} 
                     onNavigate={handleProfileNav}
+                    adminName={profile ? `${profile.firstName} ${profile.lastName}` : 'Admin'}
+                    adminEmail={profile?.email || 'admin@example.com'}
                 />
             </div>
             <div ref={notificationPopupRef}>
-                <NotificationPopup
-                    show={showNotificationPopup}
-                    notifications={notifications}
-                    onMarkAllRead={handleMarkAllRead}
-                    onApprove={handleApproveNotification}
-                    onDeny={handleDenyNotification}
-                    onMarkAsRead={handleMarkSingleAsRead}
-                    anchorRef={notificationIconRef} 
-                />
+                <NotificationPopup show={showNotificationPopup} notifications={notifications} onMarkAllRead={handleMarkAllRead} onApprove={handleApproveNotification} onDeny={handleDenyNotification} onMarkAsRead={handleMarkSingleAsRead} anchorRef={notificationIconRef} />
             </div>
             <LogoutAlert show={showLogoutAlert} onClose={handleCloseLogoutAlert} onConfirmLogout={handleConfirmLogout} />
         </div>
