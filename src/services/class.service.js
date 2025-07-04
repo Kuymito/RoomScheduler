@@ -31,6 +31,7 @@ const getAllClasses = async (token) => {
     if (response.data && Array.isArray(response.data.payload)) {
         return response.data.payload;
     }
+    console.error("Invalid data structure for classes from API", response.data);
     throw new Error('Invalid data structure for classes from API');
   } catch (error) {
     console.error("Get all classes service error:", {

@@ -2,17 +2,26 @@
 
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 
-const InstructorCreatePopup = ({ isOpen, onClose, onSave, departments, departmentsError }) => {
-    // Define options for select fields
-    const qualificationOptions = ['Master', 'PhD', 'Doctor'];
+// A default SVG icon for the avatar placeholder.
+const DefaultAvatarIcon = ({ className = "w-full h-full" }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1} stroke="currentColor" className={`${className} text-gray-400`}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
+    </svg>
+);
 
-    // Use the fetched department names for the Major dropdown options
+const InstructorCreatePopup = ({ isOpen, onClose, onSave, departments, departmentsError }) => {
+    // Define options for select fields.
+    const qualificationOptions = ['Master', 'PhD', 'Doctor'];
     const majorOptions = useMemo(() => {
         if (!departments) return [];
         return departments.map(dep => dep.name);
     }, [departments]);
 
-    // Function to get the initial state for the form
+    // Refs for the popup and the hidden file input.
+    const popupRef = useRef(null);
+    const fileInputRef = useRef(null);
+
+    // Helper function to define the initial state of the form.
     const getInitialState = () => ({
         firstName: '',
         lastName: '',
@@ -23,48 +32,78 @@ const InstructorCreatePopup = ({ isOpen, onClose, onSave, departments, departmen
         address: '',
         departmentId: departments?.[0]?.departmentId || '',
         password: '',
-        // Default values as per API requirements
-        roleId: 2,
-        profile: '',
+        roleId: 2, // Default roleId as per API requirements.
+        profile: null, // Use null for the image data.
     });
 
     const [newInstructor, setNewInstructor] = useState(getInitialState());
-    const popupRef = useRef(null);
+    const [imagePreviewUrl, setImagePreviewUrl] = useState(null);
 
-    // Effect to reset form state when departments load or when the popup opens
+    // Effect to reset the form state whenever the popup is opened or department data changes.
     useEffect(() => {
         if (isOpen) {
             setNewInstructor(getInitialState());
+            setImagePreviewUrl(null); // Reset the image preview as well.
         }
     }, [isOpen, departments]);
 
-    // Handle changes to form input/select fields
+    // Handles changes to form input and select fields.
     const handleInputChange = (e) => {
         const { name, value } = e.target;
         setNewInstructor(prev => ({ ...prev, [name]: value }));
     };
 
-    // Handle form submission
+    // Handles the file selection for the profile image.
+    const handleFileChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                // Store the base64 result for the API payload and preview.
+                setNewInstructor(prev => ({ ...prev, profile: reader.result }));
+                setImagePreviewUrl(reader.result);
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
+    // Triggers a click on the hidden file input.
+    const handleUploadButtonClick = () => {
+        fileInputRef.current?.click();
+    };
+
+    // Removes the selected profile image.
+    const handleRemoveImage = () => {
+        setNewInstructor(prev => ({ ...prev, profile: null }));
+        setImagePreviewUrl(null);
+        // Reset the file input so the same file can be re-selected.
+        if(fileInputRef.current) {
+            fileInputRef.current.value = "";
+        }
+    };
+
+    // Handles the form submission.
     const handleSubmit = (e) => {
         e.preventDefault();
 
-        // Basic validation
+        // Basic validation to ensure all required fields are filled.
         if (!newInstructor.firstName.trim() || !newInstructor.lastName.trim() || !newInstructor.email.trim() || !newInstructor.phone.trim() || !newInstructor.major || !newInstructor.degree || !newInstructor.address.trim() || !newInstructor.departmentId || !newInstructor.password) {
             alert('Please fill in all required fields.');
             return;
         }
 
-        // Construct the payload for the API
+        // Construct the payload for the API call.
         const payload = {
             ...newInstructor,
             departmentId: Number(newInstructor.departmentId),
+            profile: newInstructor.profile || '', // API expects a string (base64 or empty).
         };
 
         onSave(payload);
         onClose();
     };
 
-    // Effect to handle clicks outside the popup
+    // Effect to handle clicks outside the popup to close it.
     useEffect(() => {
         const handleClickOutside = (event) => {
             if (isOpen && popupRef.current && !popupRef.current.contains(event.target)) {
@@ -89,6 +128,50 @@ const InstructorCreatePopup = ({ isOpen, onClose, onSave, departments, departmen
                 <h2 className="text-xl font-bold mb-4">Create New Instructor</h2>
                 <hr className="border-t border-gray-200 mt-4 mb-4" />
                 <form onSubmit={handleSubmit}>
+                    {/* Photo Upload Section */}
+                    <div className="flex flex-row items-center gap-4 mb-5">
+                        {imagePreviewUrl ? (
+                            <img
+                                src={imagePreviewUrl}
+                                alt="Profile Preview"
+                                className="w-16 h-16 rounded-full object-cover border-2 border-gray-200 shadow-md"
+                            />
+                        ) : (
+                            <div className="w-16 h-16 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 text-sm border-2 border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-400">
+                                <DefaultAvatarIcon className="w-12 h-12" />
+                            </div>
+                        )}
+                        <button
+                            type="button"
+                            onClick={handleUploadButtonClick}
+                            className="rounded-md bg-white px-3 py-2 text-xs font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 dark:bg-gray-700 dark:text-gray-200 dark:ring-gray-600 dark:hover:bg-gray-600"
+                        >
+                            {imagePreviewUrl ? 'Change Photo' : 'Upload Photo'}
+                        </button>
+                        {imagePreviewUrl && (
+                            <button
+                                type="button"
+                                onClick={handleRemoveImage}
+                                className="p-1 rounded-full text-red-500 hover:bg-red-100 dark:text-red-400 dark:hover:bg-red-900/50"
+                                aria-label="Remove image"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-6">
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+                                </svg>
+                            </button>
+                        )}
+                        <input
+                            type="file"
+                            id="profileImage"
+                            name="profile"
+                            accept="image/*"
+                            onChange={handleFileChange}
+                            ref={fileInputRef}
+                            className="sr-only"
+                        />
+                    </div>
+
+                    {/* Form Fields Section */}
                     <div className="grid grid-cols-2 gap-3 mb-4 max-h-[60vh] overflow-y-auto pr-2">
                         <div>
                             <label htmlFor="firstName" className="block mb-2 text-xs font-medium text-gray-900 dark:text-white">First Name</label>
@@ -102,7 +185,7 @@ const InstructorCreatePopup = ({ isOpen, onClose, onSave, departments, departmen
                             <label htmlFor="email" className="block mb-2 text-xs font-medium text-gray-700 dark:text-gray-300">Email</label>
                             <input type="email" id="email" name="email" value={newInstructor.email} onChange={handleInputChange} className="bg-gray-50 border border-gray-300 text-gray-900 text-xs rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600" placeholder="john.doe@example.com" required />
                         </div>
-                         <div className="col-span-2">
+                        <div className="col-span-2">
                             <label htmlFor="password" className="block mb-2 text-xs font-medium text-gray-700 dark:text-gray-300">Password</label>
                             <input type="password" id="password" name="password" value={newInstructor.password} onChange={handleInputChange} className="bg-gray-50 border border-gray-300 text-gray-900 text-xs rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600" placeholder="••••••••" required />
                         </div>

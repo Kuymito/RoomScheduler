@@ -10,28 +10,25 @@ const RoomCardSkeleton = () => (
 );
 
 const ScheduledClassCard = ({ classData, onDragStart, onDragEnd }) => (
-    // This div is intentionally draggable, as it represents a scheduled class that can be moved
     <div draggable onDragStart={onDragStart} onDragEnd={onDragEnd} className="w-full h-24 p-2 bg-blue-100 dark:bg-blue-800 border border-blue-400 dark:border-blue-600 rounded-lg shadow-md flex flex-col justify-center items-center text-center cursor-grab active:cursor-grabbing transition-all duration-150">
-        <p className="text-xs font-semibold text-blue-800 dark:text-blue-100 break-words">{classData.name}</p>
-        <p className="text-xs text-blue-600 dark:text-blue-300 opacity-80">{classData.code}</p>
+        <p className="text-xs font-semibold text-blue-800 dark:text-blue-100 break-words">{classData.className}</p>
+        <p className="text-xs text-blue-600 dark:text-blue-300 opacity-80">{classData.majorName}</p>
     </div>
 );
 
-const RoomCard = ({ cellData, isDragOver, isWarning, dragHandlers, className }) => {
+const RoomCard = ({ room, classData, isDragOver, isWarning, dragHandlers, className }) => {
     const router = useRouter();
-    const { room, class: classData } = cellData;
     const isOccupied = !!classData;
     const isUnavailable = room.status === "unavailable";
 
     const getBorderColor = () => {
-        // Reintroducing scale-105 for drag over and warning states
         if (isWarning) return 'border-red-500 dark:border-red-400 shadow-lg scale-105';
         if (isDragOver) return 'border-emerald-400 dark:border-emerald-500 shadow-lg scale-105';
         return 'border-gray-300 dark:border-gray-700 shadow-sm';
     };
 
     const handleHeaderClick = () => {
-        router.push(`/admin/schedule/${room.id}`);
+        router.push(`/admin/schedule/${room.roomId}`);
     };
 
     return (
@@ -47,13 +44,12 @@ const RoomCard = ({ cellData, isDragOver, isWarning, dragHandlers, className }) 
                 ${isWarning ? 'bg-red-100 dark:bg-red-800/50' : (isUnavailable ? 'bg-slate-100 dark:bg-slate-700/60' : 'bg-gray-50 dark:bg-gray-800')}
                 `}
             >
-                <div
-                    className={`w-2 h-2 rounded-full ring-1 ring-white/50
+                <div className={`w-2 h-2 rounded-full ring-1 ring-white/50
                     ${isOccupied ? 'bg-red-500' : isUnavailable ? 'bg-red-500' : 'bg-green-500'}
                     `}
                     title={isOccupied ? 'Occupied' : 'Available'}
                 ></div>
-                <span className={`text-xs font-bold ${isUnavailable ? 'text-slate-500 dark:text-slate-400' : 'text-gray-700 dark:text-gray-300'}`}>{room.name}</span>
+                <span className={`text-xs font-bold ${isUnavailable ? 'text-slate-500 dark:text-slate-400' : 'text-gray-700 dark:text-gray-300'}`}>{room.roomName}</span>
             </div>
             <div
                 onDragOver={!isUnavailable ? dragHandlers.onDragOver : null}
@@ -68,7 +64,7 @@ const RoomCard = ({ cellData, isDragOver, isWarning, dragHandlers, className }) 
                     <ScheduledClassCard classData={classData} onDragStart={dragHandlers.onDragStart} onDragEnd={dragHandlers.onDragEnd} />
                 ) : (
                     <span className={`text-xs italic select-none pointer-events-none ${isUnavailable ? 'text-red-600 dark:text-red-400' : 'text-gray-400 dark:text-gray-600'}`}>
-                        {isUnavailable ? 'Unavailable' : `${room.name}`}
+                        {isUnavailable ? 'Unavailable' : `${room.roomName}`}
                     </span>
                 )}
             </div>
@@ -76,18 +72,9 @@ const RoomCard = ({ cellData, isDragOver, isWarning, dragHandlers, className }) 
     );
 };
 
-
 // This is the main interactive client component
-export default function ScheduleClientView({ initialClasses, initialRooms, initialSchedules, constants }) {
-    const allRoomsMap = useMemo(() => {
-        return initialRooms.reduce((acc, room) => {
-            acc[room.id] = room;
-            return acc;
-        }, {});
-    }, [initialRooms]);
-
-
-    const { degrees, generations, buildings, weekdays, timeSlots, gridDimensions } = constants;
+export default function ScheduleClientView({ initialClasses, initialRooms, initialSchedules, buildingLayout, constants }) {
+    const { degrees, generations, buildings, weekdays, timeSlots } = constants;
 
     const [schedules, setSchedules] = useState(initialSchedules);
     const [selectedDay, setSelectedDay] = useState(weekdays[0]);
@@ -119,19 +106,17 @@ export default function ScheduleClientView({ initialClasses, initialRooms, initi
         const assignedClassIds = new Set();
         Object.values(schedules).forEach(daySchedule => {
             Object.values(daySchedule).forEach(timeSchedule => {
-                Object.values(timeSchedule).forEach(buildingSchedule => {
-                    buildingSchedule.forEach(floor => {
-                        floor.forEach(cell => { if (cell.class) assignedClassIds.add(cell.class.id); });
-                    });
+                Object.values(timeSchedule).forEach(classId => {
+                    if (classId) assignedClassIds.add(classId);
                 });
             });
         });
 
         return initialClasses.filter(c => {
-            const isAssigned = assignedClassIds.has(c.id);
-            const degreeMatch = selectedDegree === 'All' || c.degree === selectedDegree;
+            const isAssigned = assignedClassIds.has(c.classId);
+            const degreeMatch = selectedDegree === 'All' || c.degreeName === selectedDegree;
             const generationMatch = selectedGeneration === 'All' || c.generation === selectedGeneration;
-            const searchTermMatch = searchTerm === '' || c.name.toLowerCase().includes(searchTerm.toLowerCase()) || c.code.toLowerCase().includes(searchTerm.toLowerCase());
+            const searchTermMatch = searchTerm === '' || c.className.toLowerCase().includes(searchTerm.toLowerCase()) || (c.majorName && c.majorName.toLowerCase().includes(searchTerm.toLowerCase()));
 
             return !isAssigned && degreeMatch && generationMatch && searchTermMatch;
         });
@@ -143,8 +128,8 @@ export default function ScheduleClientView({ initialClasses, initialRooms, initi
             groups[slot] = [];
         });
         allFilteredClasses.forEach(c => {
-            if (c.shift) {
-                groups[c.shift].push(c);
+            if (c.shift?.name) {
+                groups[c.shift.name].push(c);
             }
         });
         return groups;
@@ -159,38 +144,44 @@ export default function ScheduleClientView({ initialClasses, initialRooms, initi
     }, [selectedTime, timeSlots]);
 
     const currentGrid = useMemo(() => {
-        return schedules[selectedDay]?.[selectedTime]?.[selectedBuilding] ?? [];
-    }, [schedules, selectedDay, selectedTime, selectedBuilding]);
+        return buildingLayout[selectedBuilding] ?? {};
+    }, [buildingLayout, selectedBuilding]);
 
     const handleDragStartFromList = (e, classData) => setDraggedItem({ item: classData, type: 'new' });
-    const handleDragStartFromGrid = (e, classData, f, r) => setDraggedItem({ item: classData, type: 'scheduled', origin: { day: selectedDay, time: selectedTime, building: selectedBuilding, floorIndex: f, roomIndex: r } });
+    const handleDragStartFromGrid = (e, classData, roomId) => setDraggedItem({ item: classData, type: 'scheduled', origin: { day: selectedDay, time: selectedTime, roomId } });
     const handleDragEnd = (e) => {
         if (draggedItem?.type === 'scheduled' && e.dataTransfer.dropEffect === 'none') {
-            const { day, time, building, floorIndex, roomIndex } = draggedItem.origin;
-            setSchedules(p => { const n = JSON.parse(JSON.stringify(p)); n[day][time][building][floorIndex][roomIndex].class = null; return n; });
+            const { day, time, roomId } = draggedItem.origin;
+            setSchedules(p => {
+                const n = JSON.parse(JSON.stringify(p));
+                if (n[day] && n[day][time]) {
+                    delete n[day][time][roomId];
+                }
+                return n;
+            });
         }
         setDraggedItem(null); setDragOverCell(null); setWarningCellId(null);
     };
     const handleGridCellDragOver = (e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; };
-    const handleGridCellDragEnter = (e, f, r) => {
+    const handleGridCellDragEnter = (e, roomId) => {
         e.preventDefault();
-        const targetRoom = currentGrid[f][r].room;
-        if (targetRoom.status === "unavailable") {
-            setWarningCellId(targetRoom.id);
+        const room = initialRooms.find(r => r.roomId === roomId);
+        if (room.status === "unavailable") {
+            setWarningCellId(roomId);
         } else {
-            setDragOverCell({ floorIndex: f, roomIndex: r });
-            if (draggedItem?.type === 'new' && currentGrid[f][r].class) {
-                setWarningCellId(currentGrid[f][r].room.id);
+            setDragOverCell({ roomId });
+            if (draggedItem?.type === 'new' && schedules[selectedDay]?.[selectedTime]?.[roomId]) {
+                setWarningCellId(roomId);
             }
         }
     };
     const handleGridCellDragLeave = (e) => { if (!e.currentTarget.contains(e.relatedTarget)) { setDragOverCell(null); setWarningCellId(null); } };
-    const handleGridCellDrop = (e, f, r) => {
+    const handleGridCellDrop = (e, roomId) => {
         e.preventDefault();
         if (!draggedItem) return;
 
-        const targetCell = schedules[selectedDay][selectedTime][selectedBuilding][f][r];
-        if (targetCell.room.status === "unavailable") {
+        const room = initialRooms.find(r => r.roomId === roomId);
+        if (room.status === "unavailable") {
             showToast("Cannot assign to an unavailable room.");
             setDragOverCell(null);
             setWarningCellId(null);
@@ -198,26 +189,37 @@ export default function ScheduleClientView({ initialClasses, initialRooms, initi
         }
 
         if (draggedItem.type === 'new') {
-            if (targetCell.class) {
+            if (schedules[selectedDay]?.[selectedTime]?.[roomId]) {
                 showToast("This room is already occupied.");
             } else {
                 setSchedules(p => {
                     const n = JSON.parse(JSON.stringify(p));
-                    n[selectedDay][selectedTime][selectedBuilding][f][r].class = draggedItem.item;
+                    if (!n[selectedDay]) n[selectedDay] = {};
+                    if (!n[selectedDay][selectedTime]) n[selectedDay][selectedTime] = {};
+                    n[selectedDay][selectedTime][roomId] = draggedItem.item.classId;
                     return n;
                 });
             }
         } else {
-            const { day: oD, time: oT, building: oB, floorIndex: oF, roomIndex: oR } = draggedItem.origin;
-            const originCell = schedules[oD][oT][oB][oF][oR];
-            if (oD === selectedDay && oT === selectedTime && oB === selectedBuilding && oF === f && oR === r) return;
-            if (targetCell.class) {
-                setSwapConfirmation({ isOpen: true, details: { from: { classData: originCell.class, day: oD, time: oT, building: oB, floorIndex: oF, roomIndex: oR, roomName: originCell.room.name }, to: { classData: targetCell.class, day: selectedDay, time: selectedTime, building: selectedBuilding, floorIndex: f, roomIndex: r, roomName: targetCell.room.name } } });
+            const { day: oD, time: oT, roomId: oR } = draggedItem.origin;
+            if (oD === selectedDay && oT === selectedTime && oR === roomId) return;
+
+            const targetClassId = schedules[selectedDay]?.[selectedTime]?.[roomId];
+            if (targetClassId) {
+                setSwapConfirmation({
+                    isOpen: true,
+                    details: {
+                        from: { classId: draggedItem.item.classId, day: oD, time: oT, roomId: oR },
+                        to: { classId: targetClassId, day: selectedDay, time: selectedTime, roomId: roomId }
+                    }
+                });
             } else {
                 setSchedules(p => {
                     const n = JSON.parse(JSON.stringify(p));
-                    n[selectedDay][selectedTime][selectedBuilding][f][r].class = originCell.class;
-                    n[oD][oT][oB][oF][oR].class = null;
+                    if (n[oD] && n[oD][oT]) delete n[oD][oT][oR];
+                    if (!n[selectedDay]) n[selectedDay] = {};
+                    if (!n[selectedDay][selectedTime]) n[selectedDay][selectedTime] = {};
+                    n[selectedDay][selectedTime][roomId] = draggedItem.item.classId;
                     return n;
                 });
             }
@@ -228,19 +230,12 @@ export default function ScheduleClientView({ initialClasses, initialRooms, initi
 
     const handleConfirmSwap = () => {
         const { from, to } = swapConfirmation.details;
-
-        const targetRoomInSwap = schedules[to.day][to.time][to.building][to.floorIndex][to.roomIndex].room;
-        if (targetRoomInSwap.status === "unavailable") {
-            showToast("Cannot swap into an unavailable room.");
-            setSwapConfirmation({ isOpen: false, details: null });
-            return;
-        }
-
         setSchedules(p => {
             const n = JSON.parse(JSON.stringify(p));
-            const originCell = n[from.day][from.time][from.building][from.floorIndex][from.roomIndex];
-            const targetCell = n[to.day][to.time][to.building][to.floorIndex][to.roomIndex];
-            [originCell.class, targetCell.class] = [targetCell.class, originCell.class];
+            const fromClass = n[from.day][from.time][from.roomId];
+            const toClass = n[to.day][to.time][to.roomId];
+            n[from.day][from.time][from.roomId] = toClass;
+            n[to.day][to.time][to.roomId] = fromClass;
             return n;
         });
         setSwapConfirmation({ isOpen: false, details: null });
@@ -249,35 +244,19 @@ export default function ScheduleClientView({ initialClasses, initialRooms, initi
 
     const getGridColumnClasses = (building, floorNumber) => {
         switch (building) {
-            case "Building A":
-                return "xl:grid-cols-5 lg:grid-cols-3 md:grid-cols-2 grid-cols-[repeat(auto-fit,minmax(160px,1fr))]";
-            case "Building B":
-                if (floorNumber === 2) {
-                    return "grid-cols-5";
-                }
-                return "xl:grid-cols-5 lg:grid-cols-3 md:grid-cols-2 grid-cols-[repeat(auto-fit,minmax(160px,1fr))]";
-            case "Building C":
-            case "Building F":
-                return "xl:grid-cols-4 lg:grid-cols-2 md:grid-cols-2 grid-cols-[repeat(auto-fit,minmax(160px,1fr))]";
-            case "Building D":
-                return "grid-cols-1";
-            case "Building E":
-                if (floorNumber === 1) {
-                    return "xl:grid-cols-6 lg:grid-cols-3 md:grid-cols-2 grid-cols-[repeat(auto-fit,minmax(160px,1fr))]";
-                }
-                return "xl:grid-cols-5 lg:grid-cols-3 md:grid-cols-2 grid-cols-[repeat(auto-fit,minmax(160px,1fr))]";
-            default:
-                return "grid-cols-[repeat(auto-fit,minmax(160px,1fr))]";
+            case "Building A": return "xl:grid-cols-5 lg:grid-cols-3 md:grid-cols-2 grid-cols-[repeat(auto-fit,minmax(160px,1fr))]";
+            case "Building B": return floorNumber === 2 ? "grid-cols-5" : "xl:grid-cols-5 lg:grid-cols-3 md:grid-cols-2 grid-cols-[repeat(auto-fit,minmax(160px,1fr))]";
+            case "Building C": case "Building F": return "xl:grid-cols-4 lg:grid-cols-2 md:grid-cols-2 grid-cols-[repeat(auto-fit,minmax(160px,1fr))]";
+            case "Building D": return "grid-cols-1";
+            case "Building E": return floorNumber === 1 ? "xl:grid-cols-6 lg:grid-cols-3 md:grid-cols-2 grid-cols-[repeat(auto-fit,minmax(160px,1fr))]" : "xl:grid-cols-5 lg:grid-cols-3 md:grid-cols-2 grid-cols-[repeat(auto-fit,minmax(160px,1fr))]";
+            default: return "grid-cols-[repeat(auto-fit,minmax(160px,1fr))]";
         }
     };
 
     const getRoomColSpan = (building, roomName) => {
-        if (building === "Building B" && roomName === "Meeting Room") {
-            return "col-span-4";
-        }
-        if (building === "Building D" && roomName.includes("Library Room")) {
-            return "col-span-full";
-        }
+        if (building === "Building A" && roomName === "Conference Room") return "col-span-2";
+        if (building === "Building B" && roomName === "Conference Room") return "col-span-4";
+        if (building === "Building D" && roomName.includes("Library Room")) return "col-span-full";
         return "";
     };
 
@@ -315,9 +294,9 @@ export default function ScheduleClientView({ initialClasses, initialRooms, initi
                                             <hr className="flex-1 border-t border-slate-300 dark:border-slate-700" />
                                         </div>
                                         {classesInShift.map((classData) => (
-                                            <div key={classData.id} draggable onDragStart={(e) => handleDragStartFromList(e, classData)} onDragEnd={handleDragEnd} className="p-2 bg-gray-50 dark:bg-gray-800 dark:hover:bg-gray-700 border dark:border-gray-700 rounded-lg shadow-sm hover:shadow-md cursor-grab active:cursor-grabbing transition-all flex group">
+                                            <div key={classData.classId} draggable onDragStart={(e) => handleDragStartFromList(e, classData)} onDragEnd={handleDragEnd} className="p-2 bg-gray-50 dark:bg-gray-800 dark:hover:bg-gray-700 border dark:border-gray-700 rounded-lg shadow-sm hover:shadow-md cursor-grab active:cursor-grabbing transition-all flex group">
                                                 <div className={`w-1.5 h-auto rounded-lg ${generationColorMap[classData.generation] || 'bg-slate-400'} mr-3`}></div>
-                                                <div><p className="text-sm font-medium text-gray-800 dark:text-gray-200">{classData.name}</p><p className="text-xs text-gray-500 dark:text-gray-400">{classData.code}</p></div>
+                                                <div><p className="text-sm font-medium text-gray-800 dark:text-gray-200">{classData.className}</p><p className="text-xs text-gray-500 dark:text-gray-400">{classData.majorName}</p></div>
                                             </div>
                                         ))}
                                     </div>
@@ -336,39 +315,39 @@ export default function ScheduleClientView({ initialClasses, initialRooms, initi
                         <div className="flex items-center gap-2"><label htmlFor="time-select" className="text-sm font-medium dark:text-gray-300">Time:</label><select id="time-select" value={selectedTime} onChange={(e) => setSelectedTime(e.target.value)} className="p-2 text-sm border border-gray-300 rounded-md dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200 focus:ring-sky-500 focus:border-sky-500">{timeSlots.map(t => <option key={t} value={t}>{t}</option>)}</select></div>
                     </div>
                     <div className="flex flex-col sm:flex-row justify-between items-center gap-2">
-                        <div className="flex items-center gap-2">
-                            <label htmlFor="building-select" className="text-sm font-medium text-slate-600 dark:text-slate-400">Building:</label>
-                            <select id="building-select" value={selectedBuilding} onChange={(e) => setSelectedBuilding(e.target.value)} className="p-2 text-sm rounded-md dark:bg-gray-800 dark:text-gray-200">
+                        <div className="flex items-center">
+                            <select id="small" value={selectedBuilding} onChange={(e) => setSelectedBuilding(e.target.value)} className="block w-full p-2 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white">
                                 {buildings.map(b => <option key={b} value={b}>{b}</option>)}
                             </select>
                         </div>
                         <hr className="flex-1 border-t border-slate-300 dark:border-slate-700" />
                     </div>
                     <div className="flex-grow flex flex-col gap-y-4 mt-4">
-                        {currentGrid.map((floor, floorIndex) => (
-                            <div key={floorIndex}>
+                        {Object.entries(currentGrid).sort((a, b) => b[0] - a[0]).map(([floor, rooms]) => (
+                            <div key={floor}>
                                 <div className="flex items-center gap-2 mb-2">
                                     <h4 className="text-xs sm:text-sm font-medium text-slate-600 dark:text-slate-400 whitespace-nowrap">
-                                        Floor {floor[0]?.room.floor}
+                                        Floor {floor}
                                     </h4>
                                     <hr className="flex-1 border-t border-slate-300 dark:border-slate-700" />
                                 </div>
-                                <div className={`grid gap-3 ${getGridColumnClasses(selectedBuilding, floor[0]?.room.floor)}`}>
-                                    {floor.map((cellData, roomIndex) => (
+                                <div className={`grid gap-3 ${getGridColumnClasses(selectedBuilding, parseInt(floor))}`}>
+                                    {rooms.map((room) => (
                                         <RoomCard
-                                            key={cellData.room.id}
-                                            cellData={cellData}
-                                            isDragOver={dragOverCell?.floorIndex === floorIndex && dragOverCell?.roomIndex === roomIndex}
-                                            isWarning={warningCellId === cellData.room.id}
+                                            key={room.roomId}
+                                            room={room}
+                                            classData={initialClasses.find(c => c.classId === schedules[selectedDay]?.[selectedTime]?.[room.roomId])}
+                                            isDragOver={dragOverCell?.roomId === room.roomId}
+                                            isWarning={warningCellId === room.roomId}
                                             dragHandlers={{
                                                 onDragOver: handleGridCellDragOver,
-                                                onDragEnter: (e) => handleGridCellDragEnter(e, floorIndex, roomIndex),
+                                                onDragEnter: (e) => handleGridCellDragEnter(e, room.roomId),
                                                 onDragLeave: handleGridCellDragLeave,
-                                                onDrop: (e) => handleGridCellDrop(e, floorIndex, roomIndex),
-                                                onDragStart: (e) => handleDragStartFromGrid(e, cellData.class, floorIndex, roomIndex),
+                                                onDrop: (e) => handleGridCellDrop(e, room.roomId),
+                                                onDragStart: (e) => handleDragStartFromGrid(e, initialClasses.find(c => c.classId === schedules[selectedDay]?.[selectedTime]?.[room.roomId]), room.roomId),
                                                 onDragEnd: handleDragEnd,
                                             }}
-                                            className={getRoomColSpan(selectedBuilding, cellData.room.name)}
+                                            className={getRoomColSpan(selectedBuilding, room.roomName)}
                                         />
                                     ))}
                                 </div>
