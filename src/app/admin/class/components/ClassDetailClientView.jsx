@@ -26,7 +26,7 @@ const ScheduledInstructorCard = ({ instructorData, day, onDragStart, onDragEnd, 
     if (!instructorData || !instructorData.instructor) return null;
     const { instructor } = instructorData;
     const studyModes = [ { value: 'in-class', label: 'In Class' }, { value: 'online', label: 'Online' } ];
-    const baseCardClasses = "w-full p-2 rounded-md shadow text-center flex flex-col items-center cursor-grab active:cursor-grabbing group relative transition-all duration-150 hover:shadow-lg hover:scale-[1.02] border-2";
+    const baseCardClasses = "w-full p-2 rounded-md shadow text-center flex flex-col items-center cursor-grab active:cursor-grabbing group relative transition-all duration-150 hover:shadow-lg hover:scale-[1.02] border";
     let colorCardClasses = "";
     let cardTextColorClasses = "";
     const baseSelectClasses = "block w-full p-1.5 text-xs rounded-md shadow-sm transition-colors";
@@ -89,7 +89,7 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
     const [selectedDegree, setSelectedDegree] = useState('All');
     
     const generationOptions = ['29','30', '31', '32', '33'];
-    const degreesOptions = ['Bachelor', 'Master', 'PhD', 'Doctor'];
+    const degreesOptions = ['Master', 'PhD', 'Doctor'];
     const shiftOptions = Object.keys(shiftMap);
     const departmentOptions = useMemo(() => allDepartments || [], [allDepartments]);
     const majorOptions = useMemo(() => departmentOptions, [departmentOptions]);

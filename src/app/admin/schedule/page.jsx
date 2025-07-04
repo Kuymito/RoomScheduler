@@ -7,35 +7,35 @@ import ScheduleGridSkeleton from './components/ScheduleGridSkeleton';
 // --- Data Structures & Fetching (Moved to server-side) ---
 
 const degrees = ['Bachelor', 'Master', 'PhD'];
-const generations = ['Gen 2023', 'Gen 2024', 'Gen 2025', 'Gen 2026'];
+const generations = ['29', '30', '31', '32', '33'];
 const buildings = ['A', 'B', 'C', 'D', 'E', 'F'];
 const weekdays = ['Mo', 'Tu', 'We', 'Thu', 'Fr', 'Sa', 'Su'];
-const timeSlots = ['7:00 - 10:00', '10:30 - 13:30', '14:00 - 17:00', '17:30 - 20:30'];
+const timeSlots = ['Morning Shift', 'Noon Shift', 'Afternoon Shift', 'Evening Shift', 'Weekend Shift'];
 const gridDimensions = { rows: 5, cols: 5 }; // Still keep it as a constant for now if other parts rely on it
 
 const fetchSchedulePageData = async () => {
     // In a real app, these would be database queries.
     const initialClasses = [
-        { id: 'class_101', name: 'Intro to Physics', code: 'PHY-101', degree: 'Bachelor', generation: 'Gen 2025', shift: '7:00 - 10:00' },
-        { id: 'class_102', name: 'Calculus I', code: 'MTH-110', degree: 'Bachelor', generation: 'Gen 2026', shift: '10:30 - 13:30' },
-        { id: 'class_103', name: 'Organic Chemistry', code: 'CHM-220', degree: 'Bachelor', generation: 'Gen 2024', shift: '14:00 - 17:00' },
-        { id: 'class_104', name: 'World History', code: 'HIS-100', degree: 'Master', generation: 'Gen 2023', shift: '17:30 - 20:30' },
-        { id: 'class_105', name: 'English Composition', code: 'ENG-101', degree: 'Master', generation: 'Gen 2025', shift: '7:00 - 10:00' },
-        { id: 'class_106', name: 'Linear Algebra', code: 'MTH-210', degree: 'Master', generation: 'Gen 2025', shift: '10:30 - 13:30' },
-        { id: 'class_107', name: 'Data Structures', code: 'CS-250', degree: 'PhD', generation: 'Gen 2024', shift: '14:00 - 17:00' },
-        { id: 'class_108', name: 'Microeconomics', code: 'ECN-200', degree: 'PhD', generation: 'Gen 2026', shift: '17:30 - 20:30' },
-        { id: 'class_109', name: 'Art History', code: 'ART-150', degree: 'PhD', generation: 'Gen 2023', shift: '7:00 - 10:00' },
-        { id: 'class_110', name: 'Computer Networks', code: 'CS-350', degree: 'PhD', generation: 'Gen 2023', shift: '10:30 - 13:30' },
-        { id: 'class_111', name: 'Thermodynamics', code: 'PHY-201', degree: 'Bachelor', generation: 'Gen 2025', shift: '14:00 - 17:00' },
-        { id: 'class_112', name: 'Discrete Math', code: 'MTH-220', degree: 'Bachelor', generation: 'Gen 2026', shift: '17:30 - 20:30' },
-        { id: 'class_113', name: 'Biochemistry', code: 'CHM-330', degree: 'Bachelor', generation: 'Gen 2024', shift: '7:00 - 10:00' },
-        { id: 'class_114', name: 'European History', code: 'HIS-200', degree: 'Master', generation: 'Gen 2023', shift: '10:30 - 13:30' },
-        { id: 'class_115', name: 'Creative Writing', code: 'ENG-201', degree: 'Master', generation: 'Gen 2025', shift: '14:00 - 17:00' },
-        { id: 'class_116', name: 'Abstract Algebra', code: 'MTH-310', degree: 'Master', generation: 'Gen 2025', shift: '17:30 - 20:30' },
-        { id: 'class_117', name: 'Algorithms', code: 'CS-351', degree: 'PhD', generation: 'Gen 2024', shift: '7:00 - 10:00' },
-        { id: 'class_118', name: 'Macroeconomics', code: 'ECN-300', degree: 'PhD', generation: 'Gen 2026', shift: '10:30 - 13:30' },
-        { id: 'class_119', name: 'Modern Art', code: 'ART-250', degree: 'PhD', generation: 'Gen 2023', shift: '14:00 - 17:00' },
-        { id: 'class_120', name: 'Operating Systems', code: 'CS-450', degree: 'PhD', generation: 'Gen 2023', shift: '17:30 - 20:30' },
+        { id: 'class_101', name: 'Intro to Physics', code: 'PHY-101', degree: 'Bachelor', generation: '33', shift: '7:00 - 10:00' },
+        { id: 'class_102', name: 'Calculus I', code: 'MTH-110', degree: 'Bachelor', generation: '32', shift: '10:30 - 13:30' },
+        { id: 'class_103', name: 'Organic Chemistry', code: 'CHM-220', degree: 'Bachelor', generation: '32', shift: '14:00 - 17:00' },
+        { id: 'class_104', name: 'World History', code: 'HIS-100', degree: 'Master', generation: '31', shift: '17:30 - 20:30' },
+        { id: 'class_105', name: 'English Composition', code: 'ENG-101', degree: 'Master', generation: '33', shift: '7:00 - 10:00' },
+        { id: 'class_106', name: 'Linear Algebra', code: 'MTH-210', degree: 'Master', generation: '30', shift: '10:30 - 13:30' },
+        { id: 'class_107', name: 'Data Structures', code: 'CS-250', degree: 'PhD', generation: '32', shift: '14:00 - 17:00' },
+        { id: 'class_108', name: 'Microeconomics', code: 'ECN-200', degree: 'PhD', generation: '32', shift: '17:30 - 20:30' },
+        { id: 'class_109', name: 'Art History', code: 'ART-150', degree: 'PhD', generation: '31', shift: '7:00 - 10:00' },
+        { id: 'class_110', name: 'Computer Networks', code: 'CS-350', degree: 'PhD', generation: '31', shift: '10:30 - 13:30' },
+        { id: 'class_111', name: 'Thermodynamics', code: 'PHY-201', degree: 'Bachelor', generation: '33', shift: '14:00 - 17:00' },
+        { id: 'class_112', name: 'Discrete Math', code: 'MTH-220', degree: 'Bachelor', generation: '33', shift: '17:30 - 20:30' },
+        { id: 'class_113', name: 'Biochemistry', code: 'CHM-330', degree: 'Bachelor', generation: '32', shift: '7:00 - 10:00' },
+        { id: 'class_114', name: 'European History', code: 'HIS-200', degree: 'Master', generation: '32', shift: '10:30 - 13:30' },
+        { id: 'class_115', name: 'Creative Writing', code: 'ENG-201', degree: 'Master', generation: '33', shift: '14:00 - 17:00' },
+        { id: 'class_116', name: 'Abstract Algebra', code: 'MTH-310', degree: 'Master', generation: '30', shift: '17:30 - 20:30' },
+        { id: 'class_117', name: 'Algorithms', code: 'CS-351', degree: 'PhD', generation: '31', shift: '7:00 - 10:00' },
+        { id: 'class_118', name: 'Macroeconomics', code: 'ECN-300', degree: 'PhD', generation: '32', shift: '10:30 - 13:30' },
+        { id: 'class_119', name: 'Modern Art', code: 'ART-250', degree: 'PhD', generation: '31', shift: '14:00 - 17:00' },
+        { id: 'class_120', name: 'Operating Systems', code: 'CS-450', degree: 'PhD', generation: '30', shift: '17:30 - 20:30' },
     ];
 
     // Hardcoded initial rooms data matching the room page layout for buildings A to F
