@@ -103,10 +103,11 @@ export default function ScheduleClientView({ initialClasses, initialRooms, initi
     const [swapConfirmation, setSwapConfirmation] = useState({ isOpen: false, details: null });
 
     const generationColorMap = {
-        'Gen 2023': 'bg-sky-500',
-        'Gen 2024': 'bg-emerald-500',
-        'Gen 2025': 'bg-amber-500',
-        'Gen 2026': 'bg-indigo-500',
+        '29': 'bg-sky-500',
+        '30': 'bg-emerald-500',
+        '31': 'bg-amber-500',
+        '32': 'bg-indigo-500',
+        '33': 'bg-violet-500',
     };
 
     const showToast = (message) => {
@@ -290,12 +291,12 @@ export default function ScheduleClientView({ initialClasses, initialRooms, initi
                     <div className="mb-2"><input type="text" placeholder="Search" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full p-2 text-sm border border-gray-300 rounded-md dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200 focus:ring-sky-500 focus:border-sky-500" /></div>
                     <div className="flex items-center flex-row gap-2 mb-2 ">
                         <div className="w-1/2">
-                            <select id="degree-select" value={selectedDegree} onChange={(e) => setSelectedDegree(e.target.value)} className="w-full mt-1 p-2 text-sm border border-gray-300 rounded-md dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200 focus:ring-sky-500 focus:border-sky-500">
+                            <select id="degree-select" value={selectedDegree} onChange={(e) => setSelectedDegree(e.target.value)} className="w-full mt-1 p-2 text-xs border border-gray-300 rounded-md dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200 focus:ring-sky-500 focus:border-sky-500">
                                 <option value="All">Degrees</option>{degrees.map(d => <option key={d} value={d}>{d}</option>)}
                             </select>
                         </div>
                         <div className="w-1/2">
-                            <select id="generation-select" value={selectedGeneration} onChange={(e) => setSelectedGeneration(e.target.value)} className="w-full mt-1 p-2 text-sm border border-gray-300 rounded-md dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200 focus:ring-sky-500 focus:border-sky-500">
+                            <select id="generation-select" value={selectedGeneration} onChange={(e) => setSelectedGeneration(e.target.value)} className="w-full mt-1 p-2 text-xs border border-gray-300 rounded-md dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200 focus:ring-sky-500 focus:border-sky-500">
                                 <option value="All">Generations</option>{generations.map(g => <option key={g} value={g}>{g}</option>)}
                             </select>
                         </div>

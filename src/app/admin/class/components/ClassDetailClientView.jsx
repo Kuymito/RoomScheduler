@@ -19,7 +19,7 @@ const ScheduledInstructorCard = ({ instructorData, day, onDragStart, onDragEnd, 
     if (!instructorData || !instructorData.instructor) return null;
     const { instructor } = instructorData;
     const studyModes = [ { value: 'in-class', label: 'In Class' }, { value: 'online', label: 'Online' } ];
-    const baseCardClasses = "w-full p-2 rounded-md shadow text-center flex flex-col items-center cursor-grab active:cursor-grabbing group relative transition-all duration-150 hover:shadow-lg hover:scale-[1.02] border-2";
+    const baseCardClasses = "w-full p-2 rounded-md shadow text-center flex flex-col items-center cursor-grab active:cursor-grabbing group relative transition-all duration-150 hover:shadow-lg hover:scale-[1.02] border";
     let colorCardClasses = "";
     let cardTextColorClasses = "";
     const baseSelectClasses = "block w-full p-1.5 text-xs rounded-md shadow-sm transition-colors";
@@ -87,7 +87,7 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
 
     const generationOptions = ['29','30', '31', '32', '33'];
     const majorOptions = ['Computer Science', 'Information Technology', 'Information Systems', 'Software Engineering', 'Artificial Intelligence', 'Data Science', 'Machine Learning', 'Data Analytics', 'Robotics'];
-    const degreesOptions = ['Bachelor', 'Master', 'PhD','Doctor'];
+    const degreesOptions = ['Master', 'PhD','Doctor'];
     // const shiftOptions = ['Morning Session 1', 'Morning Session 2', 'Afternoon Session 1', 'Afternoon Session 2']; //old session
     const shiftOptions = ['Morning Session', 'Afternoon Session', 'Evening Session', 'Weekend Session'];
     const facultyOptions = allDepartments || [];
