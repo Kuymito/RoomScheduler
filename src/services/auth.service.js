@@ -21,12 +21,16 @@ const login = async (email, password) => {
 
 const getProfile = async (token) => {
     try {
+        // The API call remains the same
         const response = await axios.get(`${LOCAL_API_URL}/profile`, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
-        if (response.data && response.data.payload) {
-            return response.data.payload;
+
+        // The key is to access response.data directly now, not response.data.payload
+        if (response.data) {
+            return response.data;
         }
+        
         throw new Error('Invalid data structure for profile from API');
     } catch (error) {
         console.error("Get profile service error:", {
