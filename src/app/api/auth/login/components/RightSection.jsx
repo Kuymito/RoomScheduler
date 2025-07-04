@@ -1,10 +1,10 @@
-// src/app/api/auth/login/components/RightSection.jsx
 "use client";
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { signIn } from 'next-auth/react';
 import { moul } from '@/components/fonts';
+import { authService } from '@/services/auth.service';
 
 export default function RightSection() {
     const [email, setEmail] = useState('');
@@ -30,35 +30,48 @@ export default function RightSection() {
 
         setIsLoading(true);
 
-        // Use the signIn function from NextAuth.js to trigger the 'authorize' function in your API route
-        const result = await signIn('credentials', {
-            redirect: false, // We handle the redirect manually
-            email,
-            password,
-        });
+        try {
+            // --- THIS IS THE FIX ---
+            // 1. Call your authService directly to verify the backend connection.
+            //    We pass a single credentials object as the function expects.
+            const apiResponse = await authService.login({ email, password });
 
-        if (result.error) {
-            // Display an error if signIn returns an error (e.g., invalid credentials)
-            setError("Invalid email or password. Please try again.");
-            setIsLoading(false);
-        } else if (result.ok) {
-            // On successful sign-in, fetch the session to get the user's role
-            const res = await fetch('/api/auth/session');
-            const session = await res.json();
-            
-            // Redirect based on the role from the session
-            const userRole = session?.user?.role;
-            if (userRole === 'ROLE_ADMIN') {
-                router.push('/admin/dashboard');
-            } else if (userRole === 'ROLE_INSTRUCTOR') {
-                router.push('/instructor/dashboard');
+            // 2. Check if a token was received from your backend.
+            if (apiResponse && apiResponse.token) {
+                // 3. If the direct API call was successful, call next-auth's signIn
+                //    to establish the session and set the secure cookie.
+                const result = await signIn('credentials', {
+                    redirect: false,
+                    email,
+                    password,
+                });
+
+                if (result.error) {
+                    // This error would come from your [...nextauth]/route.js if it fails
+                    setError(result.error || "Session could not be established.");
+                    setIsLoading(false);
+                } else if (result.ok) {
+                    // 4. On successful session creation, redirect the user.
+                    const sessionRes = await fetch('/api/auth/session');
+                    const session = await sessionRes.json();
+                    const userRole = session?.user?.role;
+
+                    if (userRole === 'ROLE_ADMIN') {
+                        router.push('/admin/dashboard');
+                    } else if (userRole === 'ROLE_INSTRUCTOR') {
+                        router.push('/instructor/dashboard');
+                    } else {
+                        router.push('/admin/dashboard'); 
+                    }
+                }
             } else {
-                // Fallback redirect if the role is not recognized
-                router.push('/admin/dashboard'); 
+                 // This handles the case where the direct API call did not return a token.
+                 throw new Error("Login failed: No token was received from the backend.");
             }
-        } else {
-             setError("An unknown error occurred. Please try again.");
-             setIsLoading(false);
+        } catch (err) {
+            // This catches any error from either the direct API call or the signIn process.
+            setError(err.message || 'An unexpected error occurred.');
+            setIsLoading(false);
         }
     };
 
@@ -70,7 +83,7 @@ export default function RightSection() {
     if (isLoading || isForgotLoading) {
         return (
             <div className="w-full max-w-xs sm:max-w-sm md:max-w-md flex flex-col items-center justify-center text-center">
-                 <img
+                <img
                     src="https://numregister.com/assets/img/logo/num.png"
                     alt="University Logo"
                     className="mx-auto mb-6 w-20"

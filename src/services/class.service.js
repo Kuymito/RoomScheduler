@@ -3,7 +3,7 @@ import axios from 'axios';
 // Detect if the code is running on the server or the client.
 const isServer = typeof window === 'undefined';
 // Use the full external URL when on the server, and the relative proxy path when on the client.
-const API_URL = isServer ? "https://jaybird-new-previously.ngrok-free.app/api/v1" : "/api";
+const API_URL = "https://jaybird-new-previously.ngrok-free.app/api/v1" ;
 
 /**
  * Fetches all classes from the API.
@@ -15,7 +15,7 @@ const getAllClasses = async (token) => {
     const response = await axios.get(`${API_URL}/class`, {
       headers: {
         'Authorization': `Bearer ${token}`,
-        ...(isServer && { 'ngrok-skip-browser-warning': 'true' })
+        'ngrok-skip-browser-warning': 'true' 
       }
     });
     if (response.data && Array.isArray(response.data.payload)) {
@@ -85,10 +85,24 @@ const patchClass = async (classId, classData, token) => {
     throw new Error(error.response?.data?.message || `Failed to update class ${classId}.`);
   }
 };
+/**
+ * Fetches all shifts from the API.
+ * @param {string} token - The authorization token.
+ * @returns {Promise<Array>} A promise that resolves to an array of shift objects.
+ */
+const getAllShifts = async (token) => {
+  try {
+      const response = await axios.get(`${API_URL}/shifts`, { headers: getAuthHeaders(token) });
+      return response.data.payload || [];
+  } catch (error) {
+      handleError("Get all shifts", error);
+  }
+};
 
 
 export const classService = {
   getAllClasses,
   getClassById,
   patchClass,
+  getAllShifts,
 };

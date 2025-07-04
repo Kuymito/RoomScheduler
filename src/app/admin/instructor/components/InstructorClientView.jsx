@@ -58,34 +58,30 @@ export default function InstructorClientView({ initialInstructors, departments }
         }));
     }, [instructors]);
 
-    const handleSaveNewInstructor = async (newInstructorData) => {
+    // --- CORRECTED SAVE HANDLER ---
+    const handleSaveNewInstructor = async (formData) => {
         if (!session?.accessToken) {
             toast.error("Authentication error. Please log in again.");
-            return;
+            throw new Error("Authentication session expired.");
         }
-        const selectedDept = departments.find(d => d.name === newInstructorData.major);
+
+        // Find the correct department to get its ID
+        const selectedDept = departments.find(department => department.name === formData.major);
         if (!selectedDept) {
-            toast.error(`Invalid major/department selected: ${newInstructorData.major}`);
-            return;
+            toast.error(`Invalid major/department selected: ${formData.major}`);
+            throw new Error("Invalid department selected.");
         }
-        const payload = {
-            firstName: newInstructorData.firstName,
-            lastName: newInstructorData.lastName,
-            email: newInstructorData.email,
-            phone: newInstructorData.phone,
-            degree: newInstructorData.qualifications,
-            major: newInstructorData.major,
-            address: newInstructorData.address,
-            profile: newInstructorData.profileImage || "",
-            departmentId: selectedDept.departmentId,
-        };
+
         try {
-            await instructorService.createInstructor(payload, session.accessToken);
+            // Call the service with arguments in the correct order: (formData, departmentId, token)
+            await instructorService.createInstructor(formData, selectedDept.departmentId, session.accessToken);
             toast.success("Instructor created successfully!");
             setShowCreateInstructorPopup(false);
-            mutate(swrKey);
+            mutate(swrKey); // Re-fetch the instructor list to show the new data
         } catch (error) {
             toast.error(`Creation failed: ${error.message}`);
+            // Re-throw the error to prevent the popup from closing on failure
+            throw error;
         }
     };
 
@@ -264,7 +260,6 @@ export default function InstructorClientView({ initialInstructors, departments }
                             <tr className="bg-white dark:bg-gray-800"><td colSpan="7" className="px-6 py-4 text-center text-gray-500 dark:text-gray-400">No matching results found.</td></tr>
                         )}
                     </tbody>
-                    {/* THIS IS THE ADDED SECTION */}
                     <tfoot className="text-xs text-gray-700 border-t border-gray-200 bg-gray-50 dark:text-gray-400 dark:border-gray-600 dark:bg-gray-700">
                         <tr>
                             <td className="px-6 py-2.5"></td>

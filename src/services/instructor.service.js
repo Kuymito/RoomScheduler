@@ -2,8 +2,11 @@ import axios from 'axios';
 
 // Detect if the code is running on the server or the client.
 const isServer = typeof window === 'undefined';
-// Use the full external URL when on the server, and the relative proxy path when on the client.
-const API_URL = isServer ? "https://jaybird-new-previously.ngrok-free.app/api/v1" : "/api";
+
+// --- THE FIX ---
+// Always use the full, absolute ngrok URL for all API requests,
+// regardless of whether they are from the server or the client.
+const API_URL = "https://jaybird-new-previously.ngrok-free.app/api/v1";
 
 /**
  * Creates the authorization headers for an API request.
@@ -12,20 +15,20 @@ const API_URL = isServer ? "https://jaybird-new-previously.ngrok-free.app/api/v1
  */
 const getAuthHeaders = (token) => ({
     'Authorization': `Bearer ${token}`,
-    // The ngrok header is only necessary for direct server-to-server requests
-    ...(isServer && { 'ngrok-skip-browser-warning': 'true' })
+    // This header is only necessary for direct server-to-server requests.
+     'ngrok-skip-browser-warning': 'true'
 });
 
 /**
  * A generic error handler for axios requests.
- * @param {string} context - A string describing the context of the error (e.g., "Get all instructors").
+ * @param {string} context - A string describing the context of the error.
  * @param {Error} error - The error object from the catch block.
  */
 const handleError = (context, error) => {
     console.error(`${context} service error:`, {
-      message: error.message,
-      code: error.code,
-      response: error.response ? error.response.data : 'No response data'
+        message: error.message,
+        code: error.code,
+        response: error.response ? error.response.data : 'No response data'
     });
     throw new Error(error.response?.data?.message || `Failed operation: ${context}.`);
 };
@@ -36,15 +39,15 @@ const handleError = (context, error) => {
  * @returns {Promise<Array>} A promise that resolves to an array of instructor objects.
  */
 const getAllInstructors = async (token) => {
-  try {
-    const response = await axios.get(`${API_URL}/instructors`, { headers: getAuthHeaders(token) });
-    if (Array.isArray(response.data.payload)) {
-        return response.data.payload;
+    try {
+        const response = await axios.get(`${API_URL}/instructors`, { headers: getAuthHeaders(token) });
+        if (Array.isArray(response.data.payload)) {
+            return response.data.payload;
+        }
+        throw new Error('Invalid data structure for instructors from API');
+    } catch (error) {
+        handleError("Get all instructors", error);
     }
-    throw new Error('Invalid data structure for instructors from API');
-  } catch (error) {
-    handleError("Get all instructors", error);
-  }
 };
 
 /**
@@ -54,7 +57,7 @@ const getAllInstructors = async (token) => {
  */
 const getAllDepartments = async (token) => {
     try {
-        const response = await axios.get(`${API_URL}/departments`, { headers: getAuthHeaders(token) });
+        const response = await axios.get(`${API_URL}/department`, { headers: getAuthHeaders(token) });
         if (Array.isArray(response.data.payload)) {
             return response.data.payload;
         }
@@ -66,26 +69,39 @@ const getAllDepartments = async (token) => {
 
 /**
  * Creates a new instructor.
- * @param {object} instructorPayload - The instructor data from the form.
+ * @param {object} instructorData - The instructor data from the form.
+ * @param {number} departmentId - The ID of the selected department.
  * @param {string} token - The authorization token.
  * @returns {Promise<Object>} A promise that resolves to the newly created instructor object.
  */
-const createInstructor = async (instructorPayload, token) => {
-    try {
-        const payload = {
-            ...instructorPayload,
-            password: "123", // Auto-assign password
-            roleId: 2,       // Auto-assign role
-        };
-        const response = await axios.post(`${API_URL}/instructors`, payload, { headers: getAuthHeaders(token) });
-        return response.data.payload;
-    } catch (error) {
-        handleError("Create instructor", error);
-    }
+const createInstructor = async (instructorData, departmentId, token) => {
+  try {
+      // --- THIS IS THE FIX ---
+      // Construct the payload exactly as the backend requires.
+      const payload = {
+          firstName: instructorData.firstName,
+          lastName: instructorData.lastName,
+          email: instructorData.email,
+          phone: instructorData.phone,
+          degree: instructorData.degree,
+          major: instructorData.major,
+          address: instructorData.address,
+          profile: instructorData.profile,
+          // Explicitly add the departmentId to the payload
+          departmentId: departmentId,
+          password: "123", // Auto-assign a default password
+          roleId: 2,       // Auto-assign the instructor role
+      };
+
+      const response = await axios.post(`${API_URL}/instructors`, payload, { headers: getAuthHeaders(token) });
+      return response.data.payload;
+  } catch (error) {
+      handleError("Create instructor", error);
+  }
 };
 
 /**
- * Updates an instructor's status (archives or unarchives them).
+ * Updates an instructor's status.
  * @param {string} instructorId - The ID of the instructor.
  * @param {boolean} isArchived - The new archive status.
  * @param {string} token - The authorization token.
@@ -117,26 +133,29 @@ const patchInstructor = async (instructorId, instructorPayload, token) => {
     }
 };
 
-// You can keep getInstructorById if you use it on the details page.
+/**
+ * Fetches a single instructor by their ID.
+ * @param {string} instructorId - The ID of the instructor.
+ * @param {string} token - The authorization token.
+ * @returns {Promise<Object>} A promise that resolves to the instructor object.
+ */
 const getInstructorById = async (instructorId, token) => {
-  try {
-    const response = await axios.get(`${API_URL}/instructors/${instructorId}`, {
-        headers: getAuthHeaders(token)
-    });
-    if (response.data && response.data.payload) {
-      return response.data.payload;
+    try {
+        const response = await axios.get(`${API_URL}/instructors/${instructorId}`, { headers: getAuthHeaders(token) });
+        if (response.data && response.data.payload) {
+            return response.data.payload;
+        }
+        throw new Error('Invalid data structure for single instructor from API');
+    } catch (error) {
+        handleError(`Get instructor by ID (${instructorId})`, error);
     }
-    throw new Error('Invalid data structure for single instructor from API');
-  } catch (error) {
-    handleError(`Get instructor by ID (${instructorId})`, error);
-  }
 };
 
 export const instructorService = {
-  getAllInstructors,
-  getAllDepartments, // Export the new function
-  createInstructor,
-  updateInstructorStatus,
-  patchInstructor, // This would be used on an edit page
-  getInstructorById,
+    getAllInstructors,
+    getAllDepartments,
+    createInstructor,
+    updateInstructorStatus,
+    patchInstructor,
+    getInstructorById,
 };

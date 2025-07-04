@@ -3,10 +3,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import toast from 'react-hot-toast';
 
-// LOGIC FIX: The component now accepts `departments` to populate the "Major" dropdown.
+// The component accepts a list of departments to populate the "Major" dropdown.
 const InstructorCreatePopup = ({ isOpen, onClose, onSave, departments }) => {
     
-    // This qualification list is fine to keep, as it's static.
+    // This qualification list is static and can be defined inside the component.
     const qualificationOptions = [
         'Bachelor', 'Master', 'PhD', 'Professor', 'Associate Professor', 'Lecturer'
     ];
@@ -17,12 +17,12 @@ const InstructorCreatePopup = ({ isOpen, onClose, onSave, departments }) => {
         lastName: '',
         email: '',
         phone: '',
-        // The 'major' field now defaults to the first available department name.
+        // The 'major' field now safely defaults to the first available department name.
         major: departments?.[0]?.name || '',
-        // The 'qualifications' field is now correctly named 'degree' to match the API.
+        // The field is correctly named 'degree' to match the API payload.
         degree: qualificationOptions[0],
         address: '',
-        // The 'profile' field will hold the image data for the API.
+        // The 'profile' field will hold the base64 image data.
         profile: null,
     });
 
@@ -33,24 +33,24 @@ const InstructorCreatePopup = ({ isOpen, onClose, onSave, departments }) => {
     const popupRef = useRef(null);
     const fileInputRef = useRef(null);
 
-    // Handles changes for all form inputs.
-    const handleInputChange = (e) => {
-        const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: value }));
+    // A single handler for all form inputs.
+    const handleInputChange = (event) => {
+        const { name, value } = event.target;
+        setFormData(previousState => ({ ...previousState, [name]: value }));
     };
 
-    // Handles the file upload and creates a base64 preview.
-    const handleFileChange = (e) => {
-        const file = e.target.files[0];
+    // Handles file selection and creates a base64 preview for the UI.
+    const handleFileChange = (event) => {
+        const file = event.target.files[0];
         if (file) {
             const reader = new FileReader();
             reader.onloadend = () => {
-                setFormData(prev => ({ ...prev, profile: reader.result }));
+                setFormData(previousState => ({ ...previousState, profile: reader.result }));
                 setImagePreviewUrl(reader.result);
             };
             reader.readAsDataURL(file);
         } else {
-            setFormData(prev => ({ ...prev, profile: null }));
+            setFormData(previousState => ({ ...previousState, profile: null }));
             setImagePreviewUrl(null);
         }
     };
@@ -59,18 +59,18 @@ const InstructorCreatePopup = ({ isOpen, onClose, onSave, departments }) => {
         fileInputRef.current.click();
     };
 
-    // LOGIC FIX: Handles form submission asynchronously to work with the API.
-    const handleSubmit = async (e) => {
-        e.preventDefault();
+    // This function handles the form submission.
+    const handleSubmit = async (event) => {
+        event.preventDefault();
 
         if (!formData.firstName || !formData.lastName || !formData.email) {
             toast.error('First Name, Last Name, and Email are required.');
             return;
         }
 
-        setIsSaving(true); // Disable buttons on submit.
+        setIsSaving(true); // Disable buttons while the API call is in progress.
         try {
-            // `onSave` is an async function passed from the parent. We await it here.
+            // `onSave` is the async function passed from the parent component.
             await onSave(formData);
             
             // On success, reset the form and close the popup.
@@ -78,26 +78,26 @@ const InstructorCreatePopup = ({ isOpen, onClose, onSave, departments }) => {
             setImagePreviewUrl(null);
             onClose();
         } catch (error) {
-            // The parent component's `onSave` function already shows a toast on error.
+            // The parent component's onSave function is already configured to show a toast on error.
+            // We just log the error here for debugging purposes.
             console.error("Failed to save instructor:", error);
         } finally {
             setIsSaving(false); // Re-enable buttons after the process completes.
         }
     };
 
-    // Resets the form to its initial state whenever the popup is opened.
+    // Resets the form to its initial state every time the popup is opened.
     useEffect(() => {
         if (isOpen) {
             setFormData(getInitialState());
             setImagePreviewUrl(null);
         }
-    }, [isOpen]);
+    }, [isOpen, departments]); // Also reset if the departments prop changes.
 
     if (!isOpen) {
         return null;
     }
 
-    // UI: The JSX is the same as your version, but the logic and props are corrected.
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
             <div ref={popupRef} className="relative p-5 bg-white rounded-lg shadow-lg max-w-lg w-full dark:bg-gray-800 dark:text-white">
@@ -130,7 +130,7 @@ const InstructorCreatePopup = ({ isOpen, onClose, onSave, departments }) => {
                             <button
                                 type="button"
                                 onClick={() => {
-                                    setFormData(prev => ({ ...prev, profile: null }));
+                                    setFormData(previousState => ({ ...previousState, profile: null }));
                                     setImagePreviewUrl(null);
                                 }}
                                 className="rounded-md text-red-500 text-sm font-semibold hover:text-red-600 dark:text-red-700 dark:hover:text-red-600"
@@ -168,10 +168,9 @@ const InstructorCreatePopup = ({ isOpen, onClose, onSave, departments }) => {
                         </div>
                         <div>
                             <label htmlFor="major" className="block mb-2 text-xs font-medium text-gray-700 dark:text-gray-300">Major</label>
-                            {/* UI FIX: This dropdown now uses the `departments` prop for its options. */}
                             <select id="major" name="major" value={formData.major} onChange={handleInputChange} className="bg-gray-50 border border-gray-300 text-gray-900 text-xs rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white" required>
-                                {departments?.map(dept => (
-                                    <option key={dept.departmentId} value={dept.name}>{dept.name}</option>
+                                {departments?.map(department => (
+                                    <option key={department.departmentId} value={department.name}>{department.name}</option>
                                 ))}
                             </select>
                         </div>
