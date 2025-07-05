@@ -6,6 +6,7 @@ import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { classService } from '@/services/class.service';
 import { useSession } from 'next-auth/react';
+import SuccessPopup from '../../profile/components/SuccessPopup'; // Import the SuccessPopup component
 
 // --- Reusable Components & Constants ---
 const DefaultAvatarIcon = ({ className = "w-8 h-8" }) => (
@@ -71,8 +72,9 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
     const [isEditing, setIsEditing] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
-    const [success, setSuccess] = useState('');
     const [isNameManuallySet, setIsNameManuallySet] = useState(false);
+    const [showSuccessPopup, setShowSuccessPopup] = useState(false);
+    const [successPopupMessage, setSuccessPopupMessage] = useState('');
     
     const daysOfWeek = useMemo(() => ['Mon', 'Tue', 'Wed', 'Thur', 'Fri', 'Sat', 'Sun'], []);
     const clientInitialSchedule = useMemo(() => daysOfWeek.reduce((acc, day) => { acc[day] = null; return acc; }, {}), [daysOfWeek]);
@@ -89,7 +91,7 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
     const [selectedDegree, setSelectedDegree] = useState('All');
     
     const generationOptions = ['29','30', '31', '32', '33'];
-    const degreesOptions = ['Master', 'PhD', 'Doctor'];
+    const degreesOptions = ['Bachelor', 'Master', 'PhD', 'Doctor'];
     const shiftOptions = Object.keys(shiftMap);
     const departmentOptions = useMemo(() => allDepartments || [], [allDepartments]);
     const majorOptions = useMemo(() => departmentOptions, [departmentOptions]);
@@ -132,7 +134,6 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
             setIsNameManuallySet(classData.name !== expectedName);
             setIsEditing(true);
             setError('');
-            setSuccess('');
         }
     };
     
@@ -141,7 +142,6 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
         setIsEditing(false);
         setBackupData(null); 
         setError('');
-        setSuccess('');
     };
 
     const handleInputChange = (e) => {
@@ -153,7 +153,6 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
     const handleSaveDetails = async () => {
         setLoading(true);
         setError('');
-        setSuccess('');
 
         if (!session?.accessToken) {
             setError("You are not authenticated.");
@@ -168,7 +167,6 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
             return;
         }
         
-        // FIX: Directly look up the shift ID from the full shift name string
         const shiftIdValue = shiftMap[classData.shift];
         
         if (!shiftIdValue) {
@@ -193,7 +191,8 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
 
         try {
             await classService.patchClass(classData.id, apiPayload, session.accessToken);
-            setSuccess("Class updated successfully!");
+            setSuccessPopupMessage("Class details have been updated successfully.");
+            setShowSuccessPopup(true);
             setIsEditing(false);
             setBackupData(null);
         } catch (err) {
@@ -211,7 +210,6 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
             {isEditing ? (
                 <select name={name} value={value} onChange={handleInputChange} disabled={loading} className="form-input w-full py-2 px-3 bg-num-content-bg border border-num-gray-light dark:bg-gray-700 dark:border-gray-600 rounded-md font-medium text-xs text-num-dark-text dark:text-white">
                     {options.map(option => {
-                        // FIX: Ensure the key is unique and stable, like an ID.
                         const optionKey = keyField ? option[keyField] : (typeof option === 'object' ? JSON.stringify(option) : option);
                         const optionValue = valueField ? option[valueField] : option;
                         const optionLabel = labelField ? option[labelField] : option;
@@ -252,6 +250,12 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
     
     return (
         <div className='p-6 dark:text-white'>
+            <SuccessPopup
+                show={showSuccessPopup}
+                onClose={() => setShowSuccessPopup(false)}
+                title="Update Successful"
+                message={successPopupMessage}
+            />
             <div className="section-title font-semibold text-lg text-num-dark-text dark:text-white mb-1">Class Details</div>
             <hr className="border-t border-slate-300 dark:border-slate-700 mt-4 mb-8" />
             <div className="class-section flex flex-col gap-6">
@@ -284,7 +288,6 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
                             )}
                         </div>
                          {error && <p className="text-red-500 text-xs mt-2 text-right">{error}</p>}
-                         {success && <p className="text-green-500 text-xs mt-2 text-right">{success}</p>}
                     </div>
                 </div>
                 <div className='flex-grow flex flex-col lg:flex-row gap-6 min-w-[300px]'>

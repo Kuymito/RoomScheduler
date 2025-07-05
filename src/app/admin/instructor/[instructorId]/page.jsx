@@ -6,39 +6,50 @@ import { notFound } from 'next/navigation';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import { instructorService } from '@/services/instructor.service';
+import { departmentService } from '@/services/department.service';
 
 /**
  * Server-side data fetching function.
+ * Fetches instructor details and all available departments.
  */
-const fetchInstructorDetails = async (id) => {
+const fetchInstructorPageData = async (id) => {
     const session = await getServerSession(authOptions);
     const token = session?.accessToken;
 
     if (!token) {
         console.error("Authentication token not found.");
-        return null;
+        return { instructor: null, departments: [] };
     }
     
     try {
-        const data = await instructorService.getInstructorById(id, token);
-        return {
-            id: data.instructorId,
-            name: `${data.firstName} ${data.lastName}`,
-            firstName: data.firstName,
-            lastName: data.lastName,
-            email: data.email,
-            phone: data.phone,
-            major: data.major,
-            degree: data.degree,
-            department: data.departmentName,
-            status: data.archived ? 'archived' : 'active',
-            profileImage: data.profile || null,
-            address: data.address,
+        // Fetch instructor details and all departments in parallel
+        const [instructorData, departmentsData] = await Promise.all([
+            instructorService.getInstructorById(id, token),
+            departmentService.getAllDepartments(token)
+        ]);
+
+        const instructor = {
+            id: instructorData.instructorId,
+            name: `${instructorData.firstName} ${instructorData.lastName}`,
+            firstName: instructorData.firstName,
+            lastName: instructorData.lastName,
+            email: instructorData.email,
+            phone: instructorData.phone,
+            major: instructorData.major,
+            degree: instructorData.degree,
+            department: instructorData.departmentName,
+            departmentId: instructorData.departmentId, // Pass departmentId to client
+            status: instructorData.archived ? 'archived' : 'active',
+            profileImage: instructorData.profile || null,
+            address: instructorData.address,
             password: 'password123', // Password should not be sent from API
         };
+
+        return { instructor, allDepartments: departmentsData };
+
     } catch (error) {
-        console.error(`Failed to fetch instructor details for ID ${id}:`, error);
-        return null;
+        console.error(`Failed to fetch page data for instructor ID ${id}:`, error);
+        return { instructor: null, allDepartments: [] };
     }
 };
 
@@ -47,7 +58,7 @@ const fetchInstructorDetails = async (id) => {
  */
 export default async function InstructorDetailsPage({ params }) {
     const instructorId = parseInt(params.instructorId, 10);
-    const instructor = await fetchInstructorDetails(instructorId);
+    const { instructor, allDepartments } = await fetchInstructorPageData(instructorId);
 
     if (!instructor) {
         notFound();
@@ -56,7 +67,10 @@ export default async function InstructorDetailsPage({ params }) {
     return (
         <AdminLayout activeItem="instructor" pageTitle="Instructor Details">
             <Suspense fallback={<InstructorDetailSkeleton />}>
-                <InstructorDetailClientView initialInstructor={instructor} />
+                <InstructorDetailClientView 
+                    initialInstructor={instructor}
+                    allDepartments={allDepartments} 
+                />
             </Suspense>
         </AdminLayout>
     );

@@ -87,9 +87,37 @@ const createInstructor = async (instructorData, token) => {
   }
 };
 
+/**
+ * Updates an existing instructor via a PATCH request.
+ * @param {string|number} instructorId - The ID of the instructor to update.
+ * @param {object} instructorData - An object with the fields to update.
+ * @param {string} token - The authorization token for the request.
+ * @returns {Promise<Object>} A promise that resolves to the API response.
+ */
+const updateInstructor = async (instructorId, instructorData, token) => {
+  try {
+    // Use the local API proxy for client-side requests
+    const response = await axios.patch(`/api/instructors/${instructorId}`, instructorData, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    return response.data;
+  } catch (error) {
+    console.error(`Update instructor service error for ID ${instructorId}:`, {
+      message: error.message,
+      code: error.code,
+      response: error.response ? error.response.data : 'No response data'
+    });
+    throw new Error(error.response?.data?.message || `Failed to update instructor ${instructorId}.`);
+  }
+};
+
 
 export const instructorService = {
   getAllInstructors,
   getInstructorById,
   createInstructor,
+  updateInstructor,
 };
