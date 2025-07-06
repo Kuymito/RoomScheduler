@@ -1,9 +1,13 @@
 'use client';
 
-import React from 'react';
-import { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import { useSession } from 'next-auth/react';
+import useSWR from 'swr';
+import { scheduleService } from '@/services/schedule.service';
+import { authService } from '@/services/auth.service';
+import SchedulePageSkeleton from './SchedulePageSkeleton';
 
 // --- CONSTANTS ---
 const DAYS_OF_WEEK = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
@@ -25,6 +29,11 @@ const ROW_CONFIG = {
 };
 const SCHEDULE_ITEM_BG_COLOR = 'bg-green-50 dark:bg-green-900/40';
 
+// --- SWR Fetcher functions ---
+const scheduleFetcher = ([, token]) => scheduleService.getMySchedule(token);
+const profileFetcher = ([, token]) => authService.getProfile(token);
+
+
 // --- UI COMPONENTS ---
 const ScheduleItemCard = ({ item }) => (
   <div className={`${SCHEDULE_ITEM_BG_COLOR} p-2 h-full w-full flex flex-col text-xs rounded-md shadow-sm border border-green-200 dark:border-green-800/60`}>
@@ -39,14 +48,57 @@ const ScheduleItemCard = ({ item }) => (
 
 /**
  * This is the Client Component for the Instructor Schedule page.
- * It receives its data via props and handles client-side interactions.
+ * It now handles its own data fetching using useSWR.
  */
-export default function InstructorScheduleClientView({ initialScheduleData, instructorDetails }) {
-    const [scheduleData] = useState(initialScheduleData);
-    const { instructorName, publicDate } = instructorDetails;
+export default function InstructorScheduleClientView() {
+    const { data: session } = useSession();
+    const token = session?.accessToken;
+
+    // Fetch schedule and profile data using useSWR
+    const { data: scheduleResponse, error: scheduleError, isLoading: isScheduleLoading } = useSWR(
+        token ? ['mySchedule', token] : null,
+        scheduleFetcher
+    );
+    const { data: profileResponse, error: profileError, isLoading: isProfileLoading } = useSWR(
+        token ? ['profile', token] : null,
+        profileFetcher
+    );
+
     const [classAssignCount, setClassAssignCount] = useState(0);
     const [availableShiftCount, setAvailableShiftCount] = useState(0);
     const scheduleRef = useRef(null);
+
+    // Process the fetched data into the format needed by the component
+    const { scheduleData, instructorDetails } = useMemo(() => {
+        const scheduleData = {};
+        DAYS_OF_WEEK.forEach(day => scheduleData[day] = {});
+
+        if (scheduleResponse) {
+            scheduleResponse.forEach(item => {
+                const timeSlot = `${item.shift.startTime.substring(0, 5)} - ${item.shift.endTime.substring(0, 5)}`;
+                const days = item.day.split(',').map(d => d.trim());
+                
+                days.forEach(apiDay => {
+                    const dayName = apiDay.charAt(0).toUpperCase() + apiDay.slice(1).toLowerCase();
+                    if (scheduleData[dayName]) {
+                        scheduleData[dayName][timeSlot] = {
+                            subject: item.className,
+                            generation: `Generation ${item.year}`,
+                            semester: item.semester,
+                            timeDisplay: timeSlot
+                        };
+                    }
+                });
+            });
+        }
+
+        const instructorDetails = {
+            instructorName: profileResponse ? `${profileResponse.firstName} ${profileResponse.lastName}` : "Instructor",
+            publicDate: new Date().toISOString().replace('T', ' ').substring(0, 19)
+        };
+
+        return { scheduleData, instructorDetails };
+    }, [scheduleResponse, profileResponse]);
 
     useEffect(() => {
         let assigned = 0;
@@ -73,12 +125,20 @@ export default function InstructorScheduleClientView({ initialScheduleData, inst
                     format: [canvas.width, canvas.height]
                 });
                 pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
-                pdf.save(`${instructorName}_Schedule.pdf`);
+                pdf.save(`${instructorDetails.instructorName}_Schedule.pdf`);
             }).catch(err => {
                 console.error("Error generating PDF:", err);
             });
         }
     };
+
+    if (isScheduleLoading || isProfileLoading) {
+        return <SchedulePageSkeleton />;
+    }
+
+    if (scheduleError || profileError) {
+        return <div className="p-6 text-center text-red-500">Failed to load schedule data. Please refresh the page.</div>
+    }
     
     return (
     <div className='p-6 min-h-screen dark:bg-gray-900'>
@@ -88,7 +148,7 @@ export default function InstructorScheduleClientView({ initialScheduleData, inst
       </div>
 
       <div ref={scheduleRef} className="bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-lg shadow-md border border-gray-200 dark:border-gray-700">
-        <h2 className="text-xl font-medium text-gray-700 dark:text-gray-300 mb-4">{instructorName}</h2>
+        <h2 className="text-xl font-medium text-gray-700 dark:text-gray-300 mb-4">{instructorDetails.instructorName}</h2>
 
         <div className="overflow-x-auto">
           <div className="grid grid-cols-[minmax(100px,1.5fr)_repeat(7,minmax(120px,2fr))] border border-gray-300 dark:border-gray-600 rounded-md min-w-[900px]">
@@ -133,7 +193,7 @@ export default function InstructorScheduleClientView({ initialScheduleData, inst
           Download PDF file
         </button>
         <p className="text-sm text-gray-500 dark:text-gray-400 order-2 sm:order-1">
-          Public Date : {publicDate}
+          Public Date : {instructorDetails.publicDate}
         </p>
       </div>
     </div>

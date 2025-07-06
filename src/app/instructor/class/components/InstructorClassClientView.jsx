@@ -2,6 +2,10 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
+import useSWR from 'swr';
+import { classService } from '@/services/class.service';
+import InstructorClassPageSkeleton from './InstructorClassPageSkeleton';
 
 // --- Reusable Icon and Spinner Components ---
 const Spinner = () => (
@@ -11,23 +15,58 @@ const Spinner = () => (
     </svg>
 );
 
+// SWR fetcher function for assigned classes
+const assignedClassesFetcher = ([, token]) => classService.getAssignedClasses(token);
+
+// Mapping from shiftId to the full descriptive name used in the UI.
+const shiftIdToFullNameMap = {
+    1: 'Morning Shift',
+    2: 'Noon Shift',
+    3: 'Afternoon Shift',
+    4: 'Evening Shift',
+    5: 'Weekend Shift'
+};
+
 /**
  * This is the Client Component for the Instructor Class page.
- * It receives initial data from its parent and handles all user interactions.
+ * It now handles its own data fetching using useSWR.
  */
-export default function InstructorClassClientView({ initialClasses }) {
+export default function InstructorClassClientView() {
     const router = useRouter();
-    const [classData, setClassData] = useState(initialClasses);
-    
-    // --- State for row-specific loading, matching the original file's logic ---
-    const [rowLoading, setRowLoading] = useState(null);
+    const { data: session } = useSession();
+    const token = session?.accessToken;
 
+    const { data: apiData, error, isLoading } = useSWR(
+        token ? ['assignedClasses', token] : null,
+        assignedClassesFetcher
+    );
+
+    const [classData, setClassData] = useState([]);
+    const [rowLoading, setRowLoading] = useState(null);
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPageOptions = [5, 10, 20, 50];
     const [itemsPerPage, setItemsPerPage] = useState(itemsPerPageOptions[0]);
     const [sortColumn, setSortColumn] = useState(null);
     const [sortDirection, setSortDirection] = useState('asc');
     const [searchTexts, setSearchTexts] = useState({ name: '', generation: '', group: '', major: '', degrees: '', faculty: '', shift: '' });
+
+    useEffect(() => {
+        if (apiData) {
+            const formattedData = apiData.map(item => ({
+                id: item.classId,
+                name: item.className,
+                generation: item.generation,
+                group: item.groupName,
+                major: item.majorName,
+                degrees: item.degreeName,
+                faculty: item.department?.name || 'N/A',
+                semester: item.semester,
+                shift: item.shift ? shiftIdToFullNameMap[item.shift.shiftId] || 'N/A' : 'N/A',
+                status: item.archived ? 'archived' : 'active',
+            }));
+            setClassData(formattedData);
+        }
+    }, [apiData]);
 
     const handleSort = (column) => {
         setCurrentPage(1);
@@ -116,12 +155,10 @@ export default function InstructorClassClientView({ initialClasses }) {
     };
 
     const handleRowClick = async (classId) => {
-        if (rowLoading) return; // Prevent multiple clicks
+        if (rowLoading) return;
         setRowLoading(classId);
-        // Simulate network delay to show spinner, just like original file
-        await new Promise(resolve => setTimeout(resolve, 1500)); 
+        await new Promise(resolve => setTimeout(resolve, 500)); 
         router.push(`/instructor/class/${classId}`);
-        // No need to setRowLoading(null) as the component will unmount on navigation
     };
 
     const tableColumns = [
@@ -133,6 +170,14 @@ export default function InstructorClassClientView({ initialClasses }) {
         { key: 'faculty', label: 'Faculty', className: '2xl:table-cell hidden' },
         { key: 'shift', label: 'Shift', className: 'sm:table-cell hidden' },
     ];
+
+    if (isLoading) {
+        return <InstructorClassPageSkeleton />;
+    }
+
+    if (error) {
+        return <div className="p-6 text-center text-red-500">Failed to load class data. Please try again.</div>;
+    }
 
     return (
         <div className="p-6 dark:text-white">
