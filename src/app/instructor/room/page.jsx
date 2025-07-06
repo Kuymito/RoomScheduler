@@ -39,11 +39,11 @@ async function fetchAllRoomsAndSchedules() {
     }
 
     try {
-        // Fetch rooms, schedules, and instructor's classes in parallel
+        // Fetch rooms, schedules, and instructor's assigned classes in parallel
         const [apiRooms, apiSchedules, apiInstructorClasses] = await Promise.all([
             getAllRooms(token),
             scheduleService.getAllSchedules(token),
-            classService.getAllClasses(token) // Assuming this fetches classes for the logged-in instructor
+            classService.getAssignedClasses(token) // Use the correct service to get only assigned classes
         ]);
 
         const roomsDataMap = {};

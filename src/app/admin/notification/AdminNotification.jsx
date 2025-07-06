@@ -4,10 +4,27 @@ const CheckCircleIcon = ({ className }) => <svg xmlns="http://www.w3.org/2000/sv
 const XCircleIcon = ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className={className}><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" /></svg>;
 
 const NotificationItem = ({ notification, onApprove, onDeny, onMarkAsRead }) => {
-  const isChangeRequest = notification.type === 'changeRequest';
-  const { id, message, timestamp, isUnread, type, details, status, requestId } = isChangeRequest
-    ? { id: notification.requestId, message: notification.description || "No description", timestamp: notification.requestedAt, isUnread: notification.status === 'PENDING', type: 'roomRequest', details: notification, status: notification.status, requestId: notification.requestId }
-    : { id: notification.notificationId, message: notification.message || "No message", timestamp: notification.createdAt, isUnread: !notification.read, type: 'notification', details: notification, status: notification.status, requestId: notification.changeRequestId };
+  // A notification is actionable if its status is 'PENDING'.
+  const isActionable = notification.status === 'PENDING';
+  
+  // A notification is a standard one (not a change request) if its type is 'notification'.
+  const isStandardNotification = notification.type === 'notification';
+
+  const {
+      message,
+      timestamp,
+      isUnread,
+      status,
+      requestId,
+      details,
+  } = {
+      message: notification.description || notification.message || "No description",
+      timestamp: notification.requestedAt || notification.createdAt,
+      isUnread: notification.status === 'PENDING' || (isStandardNotification && !notification.read),
+      status: notification.status,
+      requestId: notification.requestId || notification.changeRequestId,
+      details: notification,
+  };
 
   const AvatarPlaceholder = ({ name }) => (
     <div className="w-12 h-12 rounded-full bg-blue-600 text-white flex items-center justify-center text-lg font-semibold flex-shrink-0">
@@ -16,8 +33,9 @@ const NotificationItem = ({ notification, onApprove, onDeny, onMarkAsRead }) => 
   );
 
   const handleItemClick = () => {
-    if (isUnread && typeof onMarkAsRead === 'function') {
-      onMarkAsRead(id);
+    // Only mark as read if it's a standard notification and is unread.
+    if (isStandardNotification && isUnread && typeof onMarkAsRead === 'function') {
+      onMarkAsRead(notification.notificationId);
     }
   };
 
@@ -42,24 +60,26 @@ const NotificationItem = ({ notification, onApprove, onDeny, onMarkAsRead }) => 
 
         <div className="flex flex-col gap-2 flex-1 min-w-0">
           <p className="font-inter font-semibold text-sm leading-normal text-slate-700 dark:text-gray-300 self-stretch break-words flex items-start gap-2">
+            {/* Show icons only for non-pending (already resolved) statuses */}
             {status === 'APPROVED' && <CheckCircleIcon className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />}
             {status === 'DENIED' && <XCircleIcon className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />}
             <span>{message}</span>
           </p>
 
-          {type === 'roomRequest' && status === 'PENDING' && (
+          {/* Show buttons only for actionable PENDING requests */}
+          {isActionable && (
             <div className="flex flex-row items-center pt-1.5 gap-3">
               <button
                 onClick={(e) => { e.stopPropagation(); onApprove(requestId); }}
                 className="flex justify-center items-center py-2 px-4 bg-blue-600 rounded-md text-white font-inter font-medium text-xs hover:bg-blue-700 active:bg-blue-800 transition-colors shadow-sm"
-                title={`Approve request ${id}`}
+                title={`Approve request ${requestId}`}
               >
                 Approve
               </button>
               <button
                 onClick={(e) => { e.stopPropagation(); onDeny(requestId); }}
                 className="box-border flex justify-center items-center py-2 px-4 text-gray-800 dark:text-white bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 rounded-md font-inter font-medium text-xs active:bg-slate-100 border dark:border-gray-500 transition-colors shadow-sm"
-                title={`Deny request ${id}`}
+                title={`Deny request ${requestId}`}
               >
                 Deny
               </button>
@@ -69,7 +89,7 @@ const NotificationItem = ({ notification, onApprove, onDeny, onMarkAsRead }) => 
 
         <div className="flex flex-col items-end text-right flex-shrink-0 pl-2 ml-auto w-auto min-w-[60px]">
           <span className="font-inter font-normal text-xs leading-normal text-slate-500 dark:text-gray-400 whitespace-nowrap">
-            {new Date(timestamp).toLocaleTimeString()}
+            {new Date(timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
           </span>
         </div>
       </div>

@@ -1,6 +1,7 @@
 // src/app/instructor/notification/InstructorNotification.jsx
 'use client';
 import React from 'react';
+import Image from 'next/image'; // Import the Image component
 
 // --- Helper Icons ---
 const CheckCircleIcon = ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className={className}><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" /></svg>;
@@ -9,29 +10,28 @@ const InfoCircleIcon = ({ className }) => <svg xmlns="http://www.w3.org/2000/svg
 
 
 const InstructorNotification = ({ notification, onMarkAsRead }) => {
-  const { id, avatarUrl, message, timestamp, isUnread, type, details } = notification;
-
-  const AvatarPlaceholder = ({ name }) => (
-    <div className="w-12 h-12 rounded-full bg-blue-600 text-white flex items-center justify-center text-lg font-semibold flex-shrink-0">
-      {name ? name.substring(0, 2).toUpperCase() : 'AD'}
-    </div>
-  );
+  // Directly destructure properties from the notification object.
+  const { notificationId, message, createdAt, read, type, details } = notification;
+  // The key fix: derive isUnread from the 'read' property.
+  const isUnread = !read;
 
   const handleItemClick = () => {
     if (isUnread && typeof onMarkAsRead === 'function') {
-      onMarkAsRead(id);
+      onMarkAsRead(notificationId);
     }
   };
   
   const getIcon = () => {
-    switch (type) {
-        case 'request_approved':
-            return <CheckCircleIcon className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />;
-        case 'request_denied':
-            return <XCircleIcon className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />;
-        default:
-            return <InfoCircleIcon className="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" />;
+    // The API response for instructor notifications seems to use `type` differently.
+    // Let's adjust based on the message content for now, or use a default.
+    const lowerMessage = message.toLowerCase();
+    if (lowerMessage.includes('approved')) {
+        return <CheckCircleIcon className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />;
     }
+    if (lowerMessage.includes('denied')) {
+        return <XCircleIcon className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />;
+    }
+    return <InfoCircleIcon className="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" />;
   }
 
   return (
@@ -48,10 +48,15 @@ const InstructorNotification = ({ notification, onMarkAsRead }) => {
         )}
 
         <div 
-          className="w-12 h-12 rounded-full flex-shrink-0 bg-cover bg-center bg-slate-200 dark:bg-slate-500"
-          style={avatarUrl ? { backgroundImage: `url(${avatarUrl})` } : {}}
+          className="w-12 h-12 rounded-full flex-shrink-0 flex items-center justify-center"
         >
-          {!avatarUrl && <AvatarPlaceholder name={details?.adminName || "Admin"} />}
+          <Image
+            src="/images/LOGO-NUM-1.png"
+            alt="Notification Icon"
+            width={48}
+            height={48}
+            className="rounded-full object-cover"
+          />
         </div>
 
         <div className="flex flex-col gap-2 flex-1 min-w-0">
@@ -63,7 +68,7 @@ const InstructorNotification = ({ notification, onMarkAsRead }) => {
 
         <div className="flex flex-col items-end text-right flex-shrink-0 pl-2 ml-auto w-auto min-w-[60px]">
           <span className="font-inter font-normal text-xs leading-normal text-slate-500 dark:text-gray-400 whitespace-nowrap">
-            {timestamp}
+            {new Date(createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
           </span>
         </div>
       </div>

@@ -1,10 +1,12 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
+import { notificationService } from '@/services/notification.service';
 
 // --- Helper function to get the next date for a given weekday ---
 const getNextDateForDay = (day) => {
-    const dayIndexMap = { "Mon": 1, "Tue": 2, "Wed": 3, "Thur": 4, "Fri": 5, "Sat": 6, "Sun": 0 };
+    const dayIndexMap = { "Monday": 1, "Tuesday": 2, "Wednesday": 3, "Thursday": 4, "Friday": 5, "Saturday": 6, "Sunday": 0 };
     const targetDayIndex = dayIndexMap[day];
     if (targetDayIndex === undefined) return new Date();
 
@@ -18,7 +20,7 @@ const getNextDateForDay = (day) => {
     return today;
 };
 
-// --- NEW: Custom Calendar Component ---
+// --- Custom Calendar Component ---
 const CustomDatePicker = ({ selectedDate, onDateChange, minDate }) => {
     const [viewDate, setViewDate] = useState(selectedDate || new Date());
 
@@ -105,9 +107,17 @@ const CustomDatePicker = ({ selectedDate, onDateChange, minDate }) => {
 
 
 const RequestChangeForm = ({ isOpen, onClose, onSave, roomDetails, instructorClasses, selectedDay, selectedTime }) => {
-    
+    const { data: session } = useSession();
     const today = new Date();
     today.setHours(0, 0, 0, 0);
+
+    const timeSlotToShiftIdMap = {
+        '07:00-10:00': 1,
+        '10:30-13:30': 2,
+        '14:00-17:00': 3,
+        '17:30-20:30': 4,
+        '07:30-17:00': 5,
+    };
 
     const getInitialState = () => ({
         classId: instructorClasses[0]?.id || '', 
@@ -136,16 +146,37 @@ const RequestChangeForm = ({ isOpen, onClose, onSave, roomDetails, instructorCla
         setRequestData(prev => ({ ...prev, [name]: value, }));
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!requestData.classId || !requestData.date) {
+        if (!requestData.classId || !requestData.date || !roomDetails?.id) {
             alert('Please select a class and a valid date.');
             return;
         }
-        
-        // Format the date to YYYY-MM-DD string before saving
-        const dateString = requestData.date.toISOString().split('T')[0];
-        onSave({ ...requestData, date: dateString, timeSlot: selectedTime, room: roomDetails });
+
+        const shiftId = timeSlotToShiftIdMap[selectedTime];
+        if (!shiftId) {
+            alert('Invalid time slot selected.');
+            return;
+        }
+
+        const payload = {
+            classId: parseInt(requestData.classId, 10),
+            roomId: roomDetails.id,
+            shiftId: shiftId,
+            description: requestData.description,
+            dayOfChange: requestData.date.toISOString(),
+        };
+
+        try {
+            if (!session?.accessToken) {
+                throw new Error("Authentication token not found.");
+            }
+            await notificationService.submitChangeRequest(payload, session.accessToken);
+            onSave(payload); // Notify parent component of success
+        } catch (error) {
+            console.error("Failed to submit change request:", error);
+            alert(`Error: ${error.message}`);
+        }
 
         onClose();
     };
@@ -209,7 +240,7 @@ const RequestChangeForm = ({ isOpen, onClose, onSave, roomDetails, instructorCla
                             </select>
                         </div>
 
-                        {/* --- UPDATED: Custom Date Picker Input --- */}
+                        {/* --- Custom Date Picker Input --- */}
                         <div className="relative">
                             <label htmlFor="date" className="block mb-2 text-xs font-medium text-gray-900 dark:text-white">Date of Change</label>
                             <button

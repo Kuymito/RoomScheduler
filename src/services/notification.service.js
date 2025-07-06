@@ -2,6 +2,7 @@ import axios from 'axios';
 
 // Define the base URL for all API requests.
 const API_URL = "https://jaybird-new-previously.ngrok-free.app/api/v1";
+const LOCAL_API_URL = "/api"; // Proxy for client-side calls
 
 /**
  * Creates the authorization headers for an API request.
@@ -10,7 +11,8 @@ const API_URL = "https://jaybird-new-previously.ngrok-free.app/api/v1";
  */
 const getAuthHeaders = (token) => ({
     'Authorization': `Bearer ${token}`,
-    'ngrok-skip-browser-warning': 'true'
+    'ngrok-skip-browser-warning': 'true',
+    'Content-Type': 'application/json'
 });
 
 /**
@@ -63,7 +65,13 @@ const getChangeRequests = async (token) => {
  */
 const submitChangeRequest = async (requestData, token) => {
     try {
-        const response = await axios.post(`${API_URL}/change-requests`, requestData, { headers: getAuthHeaders(token) });
+        // Use the local proxy for client-side requests
+        const response = await axios.post(`${LOCAL_API_URL}/change-requests`, requestData, {
+             headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
         return response.data;
     } catch (error) {
         handleError("Submit change request", error);
