@@ -4,7 +4,7 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 
-const LOGIN_API_URL = process.env.LOGIN_API_URL || 'http://localhost:8080/api/v1/auth/login';
+const LOGIN_API_URL = `${process.env.NEXT_PUBLIC_API_URL}/api/v1/auth/login`;
 
 // Helper function to decode the JWT payload
 function parseJwt(token) {

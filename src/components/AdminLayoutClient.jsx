@@ -11,13 +11,29 @@ import Footer from '@/components/Footer';
 import NotificationPopup from '@/app/admin/notification/AdminNotificationPopup';
 import { moul } from './fonts';
 import { notificationService } from '@/services/notification.service';
+import useSWR from 'swr';
 
+const TOPBAR_HEIGHT = '90px';
+
+/**
+ * Transforms a raw notification from the backend into the format
+ * expected by the NotificationItem component.
+ * @param {object} notification - The raw notification data from the API.
+ * @returns {object} The transformed notification object for the UI.
+ */
 const transformNotification = (notification) => {
-    let type = 'info';
-    const message = notification.message.toLowerCase();
-    if (message.includes('requires your approval')) type = 'roomRequest';
-    else if (message.includes('approved')) type = 'info_approved';
-    else if (message.includes('denied')) type = 'info_denied';
+    // --- THIS IS THE FIX ---
+    // The status is now correctly extracted from the backend response.
+    const status = notification.status; // e.g., "PENDING", "APPROVED", "DENIED"
+
+    let type = 'info'; // Default type
+    if (status === 'PENDING') {
+        type = 'roomRequest'; // This type shows the action buttons.
+    } else if (status === 'APPROVED') {
+        type = 'info_approved';
+    } else if (status === 'DENIED') {
+        type = 'info_denied';
+    }
 
     return {
         id: notification.notificationId,
@@ -26,18 +42,36 @@ const transformNotification = (notification) => {
         timestamp: new Date(notification.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         isUnread: !notification.read,
         type: type,
+        status: status, // The status field is now correctly included
         avatarUrl: null,
         details: { requestorName: notification.message.match(/from (.*?) requires/)?.[1] || 'User' }
     };
 };
 
-const TOPBAR_HEIGHT = '90px';
+// Fetcher function for useSWR
+const notificationsFetcher = (url, token) => notificationService.getNotifications(token);
 
 export default function AdminLayoutClient({ children, activeItem, pageTitle, initialNotifications }) {
     const { data: session } = useSession();
     const token = session?.accessToken;
 
     const [notifications, setNotifications] = useState(() => initialNotifications.map(transformNotification));
+    
+    // SWR will fetch notifications on focus and reconnect, keeping the data fresh.
+    useSWR(
+        token ? ['/api/v1/notifications', token] : null,
+        notificationsFetcher,
+        {
+            onSuccess: (data) => {
+                if (data) {
+                    setNotifications(data.map(transformNotification));
+                }
+            },
+            revalidateOnFocus: true,
+            revalidateOnReconnect: true,
+        }
+    );
+    
     const [showAdminPopup, setShowAdminPopup] = useState(false);
     const [showLogoutAlert, setShowLogoutAlert] = useState(false);
     const [showNotificationPopup, setShowNotificationPopup] = useState(false);
@@ -57,21 +91,6 @@ export default function AdminLayoutClient({ children, activeItem, pageTitle, ini
     const userIconRef = useRef(null);
     const router = useRouter();
     const pathname = usePathname();
-
-    useEffect(() => {
-        const pollNotifications = async () => {
-            if (!token) return;
-            try {
-                const backendNotifications = await notificationService.getNotifications(token);
-                setNotifications(backendNotifications.map(transformNotification));
-            } catch (error) {
-                console.error("Failed to poll notifications:", error.message);
-            }
-        };
-
-        const interval = setInterval(pollNotifications, 30000);
-        return () => clearInterval(interval);
-    }, [token]);
 
     const handleApproveNotification = async (notificationId) => {
         if (!token) return;

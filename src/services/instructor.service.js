@@ -75,31 +75,28 @@ const getAllDepartments = async (token) => {
  * @returns {Promise<Object>} A promise that resolves to the newly created instructor object.
  */
 const createInstructor = async (instructorData, departmentId, token) => {
-  try {
-      // --- THIS IS THE FIX ---
-      // Construct the payload exactly as the backend requires.
-      const payload = {
-          firstName: instructorData.firstName,
-          lastName: instructorData.lastName,
-          email: instructorData.email,
-          phone: instructorData.phone,
-          degree: instructorData.degree,
-          major: instructorData.major,
-          address: instructorData.address,
-          profile: instructorData.profile,
-          // Explicitly add the departmentId to the payload
-          departmentId: departmentId,
-          password: "123", // Auto-assign a default password
-          roleId: 2,       // Auto-assign the instructor role
-      };
-
-      const response = await axios.post(`${API_URL}/instructors`, payload, { headers: getAuthHeaders(token) });
-      return response.data.payload;
-  } catch (error) {
-      handleError("Create instructor", error);
-  }
-};
-
+    try {
+        const payload = {
+            firstName: instructorData.firstName,
+            lastName: instructorData.lastName,
+            email: instructorData.email,
+            phone: instructorData.phone,
+            degree: instructorData.degree,
+            major: instructorData.major,
+            address: instructorData.address,
+            profile: instructorData.profile,
+            // If departmentId is not provided or is null, default to 0
+            departmentId: departmentId || 0,
+            password: "123", // Auto-assign a default password
+            roleId: 2,       // Auto-assign the instructor role
+        };
+  
+        const response = await axios.post(`${API_URL}/instructors`, payload, { headers: getAuthHeaders(token) });
+        return response.data.payload;
+    } catch (error) {
+        handleError("Create instructor", error);
+    }
+  };
 /**
  * Updates an instructor's status.
  * @param {string} instructorId - The ID of the instructor.

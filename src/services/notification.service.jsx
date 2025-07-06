@@ -1,27 +1,36 @@
 import axios from 'axios';
+import { getSession } from 'next-auth/react';
 
-// Detect if running on the server or client to select the correct base URL.
-const isServer = typeof window === 'undefined';
-
-// Define the correct, full base URL for all API requests.
-const API_URL =  "https://jaybird-new-previously.ngrok-free.app/api/v1" ;
+const API_BASE_URL = 'https://jaybird-new-previously.ngrok-free.app/api/v1';
 
 /**
- * Creates the authorization headers for an API request.
- * @param {string} token - The user's JWT token.
- * @returns {object} The headers object.
+ * A robust helper function to create authorization headers.
+ * It will use the provided token, but if it's missing, it will attempt
+ * to get the token from the current session.
+ * @param {string} [token] - Optional token for server-side requests.
+ * @returns {Promise<Object>} An object containing the necessary headers.
  */
-const getAuthHeaders = (token) => ({
-    'Authorization': `Bearer ${token}`,
-    // This header is only necessary for direct server-to-server requests to bypass the ngrok warning page.
-     'ngrok-skip-browser-warning': 'true'
-});
+const getAuthHeaders = async (token) => {
+    let authToken = token;
+    if (!authToken) {
+        const session = await getSession();
+        authToken = session?.accessToken;
+    }
 
-/**
- * A generic error handler for axios requests.
- * @param {string} context - A string describing the context of the error.
- * @param {Error} error - The error object from the catch block.
- */
+    if (!authToken) {
+        // This is the point where the "Bearer undefined" error originates.
+        // We now explicitly handle it.
+        console.warn('Authentication token could not be found.');
+    }
+
+    return {
+        'Content-Type': 'application/json',
+        'accept': '*/*',
+        ...(authToken && { 'Authorization': `Bearer ${authToken}` }),
+        'ngrok-skip-browser-warning': 'true',
+    };
+};
+
 const handleError = (context, error) => {
     console.error(`${context} service error:`, {
         message: error.message,
@@ -31,16 +40,15 @@ const handleError = (context, error) => {
     throw new Error(error.response?.data?.message || `Failed operation: ${context}.`);
 };
 
-// --- API Functions with Correctly Formatted URLs ---
-
 /**
  * Fetches all notifications for the current user.
- * @param {string} token - The authorization token.
+ * @param {string} [token] - Optional token for server-side calls.
  * @returns {Promise<Array>} A promise that resolves to an array of notification objects.
  */
 const getNotifications = async (token) => {
     try {
-        const response = await axios.get(`${API_URL}/notifications`, { headers: getAuthHeaders(token) });
+        const headers = await getAuthHeaders(token);
+        const response = await axios.get(`${API_BASE_URL}/notifications`, { headers });
         return response.data.payload || [];
     } catch (error) {
         handleError("Get notifications", error);
@@ -54,8 +62,8 @@ const getNotifications = async (token) => {
  */
 const approveChangeRequest = async (changeRequestId, token) => {
     try {
-        // Correct URL: https://.../api/v1/change-requests/{id}/approve
-        await axios.post(`${API_URL}/change-requests/${changeRequestId}/approve`, {}, { headers: getAuthHeaders(token) });
+        const headers = await getAuthHeaders(token);
+        await axios.post(`${API_BASE_URL}/change-requests/${changeRequestId}/approve`, {}, { headers });
     } catch (error) {
         handleError("Approve change request", error);
     }
@@ -68,8 +76,8 @@ const approveChangeRequest = async (changeRequestId, token) => {
  */
 const denyChangeRequest = async (changeRequestId, token) => {
     try {
-        // Correct URL: https://.../api/v1/change-requests/{id}/deny
-        await axios.post(`${API_URL}/change-requests/${changeRequestId}/deny`, {}, { headers: getAuthHeaders(token) });
+        const headers = await getAuthHeaders(token);
+        await axios.post(`${API_BASE_URL}/change-requests/${changeRequestId}/deny`, {}, { headers });
     } catch (error) {
         handleError("Deny change request", error);
     }
@@ -82,8 +90,8 @@ const denyChangeRequest = async (changeRequestId, token) => {
  */
 const markNotificationAsRead = async (notificationId, token) => {
     try {
-        // Correct URL: https://.../api/v1/notifications/{id}/read
-        await axios.post(`${API_URL}/notifications/${notificationId}/read`, {}, { headers: getAuthHeaders(token) });
+        const headers = await getAuthHeaders(token);
+        await axios.post(`${API_BASE_URL}/notifications/${notificationId}/read`, {}, { headers });
     } catch (error) {
         handleError("Mark notification as read", error);
     }

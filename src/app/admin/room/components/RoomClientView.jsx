@@ -8,12 +8,9 @@ import { roomService } from '@/services/room.service';
 import { scheduleService } from '@/services/schedule.service';
 import RoomPageSkeleton from './RoomPageSkeleton';
 
-// The fetcher function for SWR, which calls your service with the auth token
+// The fetcher function for SWR
 const scheduleFetcher = ([key, token]) => scheduleService.getAllSchedules(token);
 
-/**
- * Client Component for the Room Management page.
- */
 export default function RoomClientView({ initialAllRoomsData, buildingLayout, initialScheduleMap }) {
     // --- Constants ---
     const WEEKDAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
@@ -43,35 +40,34 @@ export default function RoomClientView({ initialAllRoomsData, buildingLayout, in
     const [selectedTimeSlot, setSelectedTimeSlot] = useState(TIME_SLOTS[0]);
     const [isSaving, setIsSaving] = useState(false);
 
-    // --- SWR Data Fetching for real-time schedule updates ---
+    // --- SWR Data Fetching ---
     const { data: session } = useSession();
     const { data: apiSchedules, error: scheduleError, isLoading: isScheduleLoading } = useSWR(
         session?.accessToken ? ['/api/v1/schedule', session.accessToken] : null,
         scheduleFetcher,
         {
-            fallbackData: initialScheduleMap,
             revalidateOnFocus: true,
             revalidateOnReconnect: true,
         }
     );
-    
+
     // --- Effects ---
-    // Re-process the schedule map whenever SWR fetches new data
     useEffect(() => {
         if (apiSchedules && Array.isArray(apiSchedules)) {
             const newScheduleMap = {};
             apiSchedules.forEach(schedule => {
                 if (schedule && schedule.shift) {
-                    const day = schedule.day;
                     const timeSlot = `${schedule.shift.startTime}-${schedule.shift.endTime}`;
-                    if (!newScheduleMap[day]) newScheduleMap[day] = {};
-                    if (!newScheduleMap[day][timeSlot]) newScheduleMap[day][timeSlot] = {};
-                    newScheduleMap[day][timeSlot][schedule.roomId] = schedule.className;
+                    const days = schedule.day.split(',').map(d => d.trim().toUpperCase());
+                    days.forEach(day => {
+                        const dayKey = day.charAt(0) + day.slice(1).toLowerCase();
+                        if (!newScheduleMap[dayKey]) newScheduleMap[dayKey] = {};
+                        if (!newScheduleMap[dayKey][timeSlot]) newScheduleMap[dayKey][timeSlot] = {};
+                        newScheduleMap[dayKey][timeSlot][schedule.roomId] = schedule.className;
+                    });
                 }
             });
             setScheduleMap(newScheduleMap);
-        } else if (apiSchedules && typeof apiSchedules === 'object') {
-            setScheduleMap(apiSchedules);
         }
     }, [apiSchedules]);
     
@@ -83,7 +79,7 @@ export default function RoomClientView({ initialAllRoomsData, buildingLayout, in
     
     const handleRoomClick = (roomId) => {
         const scheduledClass = scheduleMap[selectedDay]?.[selectedTimeSlot]?.[roomId];
-        if (scheduledClass) return; // Prevent clicking occupied rooms
+        if (scheduledClass) return;
 
         setSelectedRoomId(roomId);
         setRoomDetails(allRoomsData[roomId]);
@@ -115,11 +111,16 @@ export default function RoomClientView({ initialAllRoomsData, buildingLayout, in
         setIsSaving(true);
         setError('');
 
+        const isAvailable = !scheduleMap[selectedDay]?.[selectedTimeSlot]?.[selectedRoomId];
+
         const roomUpdateDto = {
             roomName: editableRoomDetails.name,
+            buildingName: editableRoomDetails.building,
+            floor: Number(editableRoomDetails.floor) || 0,
             capacity: Number(editableRoomDetails.capacity) || 0,
             type: editableRoomDetails.type,
             equipment: editableRoomDetails.equipment,
+            isAvailable: isAvailable
         };
 
         try {
@@ -132,9 +133,9 @@ export default function RoomClientView({ initialAllRoomsData, buildingLayout, in
             };
             setRoomDetails(updatedLocalData);
             setAllRoomsData(prev => ({ ...prev, [selectedRoomId]: updatedLocalData }));
-            
             setIsEditing(false);
             setShowSuccessAlert(true);
+            console.log("showSuccessAlert:", showSuccessAlert); // Debugging
         } catch (err) {
             setError(err.response?.data?.message || err.message || 'An error occurred while saving.');
         } finally {
@@ -142,13 +143,8 @@ export default function RoomClientView({ initialAllRoomsData, buildingLayout, in
         }
     };
     
-    // --- Render Logic ---
     const floors = buildings[selectedBuilding] || [];
 
-    if (isScheduleLoading && !apiSchedules) {
-        return <RoomPageSkeleton />;
-    }
-    
     if (scheduleError) {
         return <div className="text-red-500 p-6 text-center">Failed to load schedule data: {scheduleError.message}</div>;
     }
@@ -156,13 +152,12 @@ export default function RoomClientView({ initialAllRoomsData, buildingLayout, in
     return (
         <>
             {showSuccessAlert && (
-                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60">
-                     <SuccessAlert
-                         title="Room Updated"
-                         messageLine1={`Room ${roomDetails?.name || ''} has been updated successfully.`}
-                         onConfirm={() => setShowSuccessAlert(false)}
-                     />
-                 </div>
+                <SuccessAlert
+                    show={true} // Explicitly pass the `show` prop
+                    title="Room Updated"
+                    messageLine1={`Room ${roomDetails?.name || ''} has been updated successfully.`}
+                    onConfirm={() => setShowSuccessAlert(false)} // Close the alert on confirmation
+                />
             )}
             <div className='p-4 sm:p-6 min-h-full'>
                 <div className="mb-4 w-full">
@@ -173,7 +168,6 @@ export default function RoomClientView({ initialAllRoomsData, buildingLayout, in
                 
                 <div className="flex flex-col lg:flex-row gap-6">
                     <div className="flex-1 min-w-0">
-                        {/* Filters */}
                         <div className="flex flex-col sm:flex-row items-center justify-between border-b dark:border-gray-600 pb-3 gap-4 mb-4">
                              <div className="flex rounded-lg border border-gray-300 dark:border-gray-600 overflow-hidden w-full sm:w-auto">
                                  {WEEKDAYS.map(day => (<button key={day} onClick={() => handleDayChange(day)} className={`px-3 py-1.5 text-xs font-medium transition-colors w-full ${selectedDay === day ? 'bg-blue-600 text-white shadow' : 'border-r dark:border-r-gray-500 last:border-r-0 hover:bg-gray-100 dark:hover:bg-gray-700'}`}>{day.substring(0, 3)}</button>))}
@@ -192,7 +186,6 @@ export default function RoomClientView({ initialAllRoomsData, buildingLayout, in
                              <hr className="flex-1 border-t border-slate-300 dark:border-slate-700" />
                         </div>
                         
-                        {/* Room Grid */}
                         <div className="space-y-4">
                             {floors.map(({ floor, rooms }) => (
                                 <div key={floor} className="space-y-3">
@@ -225,7 +218,6 @@ export default function RoomClientView({ initialAllRoomsData, buildingLayout, in
                         </div>
                     </div>
                     
-                    {/* Details Panel */}
                     <div className="w-full lg:w-[320px] shrink-0">
                         <div className="flex items-center gap-2 mb-3 sm:mb-4"><h3 className="text-sm sm:text-base font-semibold text-slate-700 dark:text-slate-300">Details</h3><hr className="flex-1 border-t border-slate-300 dark:border-slate-700" /></div>
                         <div className="flex flex-col items-start gap-6 w-full min-h-[420px] bg-white dark:bg-slate-800 p-4 rounded-lg shadow-lg">

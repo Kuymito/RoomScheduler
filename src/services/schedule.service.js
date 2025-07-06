@@ -2,25 +2,17 @@
 import axios from 'axios';
 import { getSession } from 'next-auth/react';
 
-// The base URL for your backend API.
 const API_BASE_URL = 'https://jaybird-new-previously.ngrok-free.app/api/v1';
 
-/**
- * A helper function to create authorization headers.
- * @param {string} [token] - Optional token for server-side requests.
- * @returns {Promise<Object>} An object containing the necessary headers.
- */
 const getAuthHeaders = async (token) => {
     let authToken = token;
     if (!authToken) {
         const session = await getSession();
         authToken = session?.accessToken;
     }
-
     if (!authToken) {
         console.warn('Authentication token not found in session.');
     }
-
     return {
         'Content-Type': 'application/json',
         'accept': '*/*',
@@ -29,28 +21,14 @@ const getAuthHeaders = async (token) => {
     };
 };
 
-/**
- * A generic function to handle API responses.
- * @param {import('axios').AxiosResponse} response - The Axios response object.
- * @returns {any} The payload from the API response.
- * @throws {Error} Throws an error for non-successful responses.
- */
 const handleResponse = (response) => {
     if (response.status >= 200 && response.status < 300) {
-        if (response.data && response.data.payload) {
-            return response.data.payload;
-        }
-        return null;
+        return response.data?.payload || [];
     }
     const errorData = response.data || { message: 'An unknown error occurred' };
     throw new Error(errorData.message || `HTTP Error: ${response.status}`);
 };
 
-/**
- * Fetches all schedule entries from the API.
- * @param {string} [token] - Optional token for server-side calls.
- * @returns {Promise<Array>} A promise that resolves to an array of schedule objects.
- */
 export const getAllSchedules = async (token) => {
     try {
         const headers = await getAuthHeaders(token);
@@ -62,12 +40,6 @@ export const getAllSchedules = async (token) => {
     }
 };
 
-/**
- * Creates a new schedule entry.
- * @param {object} scheduleData - The data for the new schedule.
- * @param {string} [token] - Optional token for server-side calls.
- * @returns {Promise<any>} A promise that resolves to the newly created schedule object.
- */
 export const createSchedule = async (scheduleData, token) => {
     try {
         const headers = await getAuthHeaders(token);
@@ -79,9 +51,24 @@ export const createSchedule = async (scheduleData, token) => {
     }
 };
 
+/**
+ * Fetches the schedule for the currently authenticated instructor.
+ * @param {string} [token] - Optional token for server-side calls.
+ * @returns {Promise<Array>} A promise that resolves to an array of schedule objects.
+ */
+export const getMySchedules = async (token) => {
+    try {
+        const headers = await getAuthHeaders(token);
+        const response = await axios.get(`${API_BASE_URL}/schedule/my-schedule`, { headers });
+        return handleResponse(response);
+    } catch (error) {
+        console.error("getMySchedules service error:", error.message);
+        throw error;
+    }
+};
 
-// Export the service object with the new function
 export const scheduleService = {
   getAllSchedules,
-  createSchedule, // Add the new function here
+  createSchedule,
+  getMySchedules,
 };

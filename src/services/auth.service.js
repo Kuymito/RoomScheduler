@@ -20,24 +20,16 @@ const login = async (credentials) => {
             headers: { 'ngrok-skip-browser-warning': 'true' }
         });
 
-        // --- THIS IS THE FIX ---
-        // This is a more flexible check for the token.
-        // It looks for a token at `response.data.payload.token` (your original check)
-        // OR directly at `response.data.token`.
         const token = response.data?.payload?.token || response.data?.token;
 
         if (token) {
-            // Return the entire payload if it exists, otherwise return the response data directly.
-            // This ensures the userDetails are also passed along if they exist in the payload.
             return response.data.payload || response.data;
         }
 
-        // If no token is found in either location, the response is invalid.
         console.error("Login Error: Token not found in backend response.", response.data);
         throw new Error('Invalid response structure from login API.');
 
     } catch (error) {
-        // This will now only catch actual network errors or errors thrown from above.
         handleError("Login", error);
     }
 };
@@ -49,11 +41,18 @@ const login = async (credentials) => {
  */
 const getProfile = async (token) => {
     try {
-        const response = await axios.get(`${API_URL}/profile`, { headers: getAuthHeaders(token) });
-        if (response.data && response.data.payload) {
-            return response.data.payload;
+        const response = await axios.get(`${API_URL}/auth/profile`, { headers: getAuthHeaders(token) });
+        
+        // --- THIS IS THE FIX ---
+        // Check if response.data exists and return it directly.
+        // This matches the structure of your API response.
+        if (response.data) {
+            return response.data;
         }
-        throw new Error('Invalid data structure for profile from API');
+
+        // If there's no data, something went wrong.
+        throw new Error('No profile data received from API');
+        
     } catch (error) {
         handleError("Get profile", error);
     }
@@ -128,9 +127,12 @@ const resetPassword = async ({ email, otp, newPassword }) => {
  */
 const changePassword = async (currentPassword, newPassword, token) => {
     try {
+        // The payload object matches the required structure.
+        const payload = { currentPassword, newPassword };
+
         const response = await axios.post(
-            `${API_URL}/user/change-password`,
-            { currentPassword, newPassword },
+            `${API_URL}/auth/change-password`,
+            payload,
             { headers: getAuthHeaders(token) }
         );
         return response.data;

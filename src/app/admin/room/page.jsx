@@ -20,7 +20,6 @@ async function fetchAndProcessRoomData() {
     }
 
     try {
-        // Fetch rooms and schedules in parallel for efficiency
         const [apiRooms, apiSchedules] = await Promise.all([
             roomService.getAllRooms(token),
             scheduleService.getAllSchedules(token)
@@ -29,7 +28,6 @@ async function fetchAndProcessRoomData() {
         const roomsDataMap = {};
         const populatedLayout = {};
 
-        // Process all rooms to build the main data map and UI layout
         apiRooms.forEach(room => {
             const { roomId, roomName, buildingName, floor, capacity, type, equipment } = room;
 
@@ -45,7 +43,6 @@ async function fetchAndProcessRoomData() {
                  floorObj.rooms.push(roomName);
             }
 
-            // Store detailed room metadata, ensuring equipment is an array
             roomsDataMap[roomId] = {
                 id: roomId,
                 name: roomName,
@@ -57,18 +54,22 @@ async function fetchAndProcessRoomData() {
             };
         });
 
-        // Create a map of schedules for quick lookup: { "Monday": { "07:00:00-10:00:00": { roomId: className } } }
         const scheduleMap = {};
         apiSchedules.forEach(schedule => {
-            const day = schedule.day;
             const timeSlot = `${schedule.shift.startTime}-${schedule.shift.endTime}`;
             
-            if (!scheduleMap[day]) scheduleMap[day] = {};
-            if (!scheduleMap[day][timeSlot]) scheduleMap[day][timeSlot] = {};
-            scheduleMap[day][timeSlot][schedule.roomId] = schedule.className;
+            // Split the day string by comma and trim whitespace, then format correctly
+            const days = schedule.day.split(',').map(d => d.trim().toUpperCase());
+
+            days.forEach(day => {
+                // Convert "TUESDAY" to "Tuesday" to match frontend state
+                const dayKey = day.charAt(0) + day.slice(1).toLowerCase(); 
+                if (!scheduleMap[dayKey]) scheduleMap[dayKey] = {};
+                if (!scheduleMap[dayKey][timeSlot]) scheduleMap[dayKey][timeSlot] = {};
+                scheduleMap[dayKey][timeSlot][schedule.roomId] = schedule.className;
+            });
         });
 
-        // Sort floors in descending order for each building
         for (const building in populatedLayout) {
             populatedLayout[building].sort((a, b) => b.floor - a.floor);
         }
@@ -86,7 +87,7 @@ async function fetchAndProcessRoomData() {
 }
 
 /**
- * Main page component for Admin Room Management. This is a Server Component.
+ * Main page component for Admin Room Management.
  */
 export default async function AdminRoomPage() {
     const { initialAllRoomsData, buildingLayout, scheduleMap } = await fetchAndProcessRoomData();

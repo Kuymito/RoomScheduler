@@ -6,7 +6,8 @@ import Image from 'next/image';
 import { useSession } from 'next-auth/react';
 import useSWR from 'swr';
 import { authService } from '@/services/auth.service';
-import SuccessPopup from '@/app/instructor/profile/components/SuccessPopup'; // Import the new component
+import SuccessPopup from '@/app/instructor/profile/components/SuccessPopup';
+import PasswordConfirmationModal from './components/PasswordConfirmationModal';
 
 // --- Icon Components ---
 const EyeOpenIcon = ({ className = "h-5 w-5" }) => ( <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className}><path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" /></svg> );
@@ -34,15 +35,15 @@ const ProfileContentSkeleton = () => (
             </div>
             <div className="info-details-wrapper flex-grow flex flex-col gap-8 min-w-[300px]">
                 <div className="info-card p-4 bg-white border border-gray-200 dark:bg-gray-800 dark:border-gray-700 shadow-sm rounded-lg space-y-4">
-                     <div className="h-5 w-48 bg-slate-300 dark:bg-slate-600 rounded mb-3"></div>
-                     <div className="h-9 bg-slate-200 dark:bg-slate-700 rounded-md w-full"></div>
-                     <div className="h-9 bg-slate-200 dark:bg-slate-700 rounded-md w-full"></div>
-                     <div className="h-9 bg-slate-200 dark:bg-slate-700 rounded-md w-full"></div>
+                    <div className="h-5 w-48 bg-slate-300 dark:bg-slate-600 rounded mb-3"></div>
+                    <div className="h-9 bg-slate-200 dark:bg-slate-700 rounded-md w-full"></div>
+                    <div className="h-9 bg-slate-200 dark:bg-slate-700 rounded-md w-full"></div>
+                    <div className="h-9 bg-slate-200 dark:bg-slate-700 rounded-md w-full"></div>
                 </div>
                 <div className="info-card p-4 bg-white border border-gray-200 dark:bg-gray-800 dark:border-gray-700 shadow-sm rounded-lg space-y-4">
-                     <div className="h-5 w-48 bg-slate-300 dark:bg-slate-600 rounded mb-3"></div>
-                     <div className="h-9 bg-slate-200 dark:bg-slate-700 rounded-md w-full"></div>
-                     <div className="h-9 bg-slate-200 dark:bg-slate-700 rounded-md w-full"></div>
+                    <div className="h-5 w-48 bg-slate-300 dark:bg-slate-600 rounded mb-3"></div>
+                    <div className="h-9 bg-slate-200 dark:bg-slate-700 rounded-md w-full"></div>
+                    <div className="h-9 bg-slate-200 dark:bg-slate-700 rounded-md w-full"></div>
                 </div>
             </div>
         </div>
@@ -53,7 +54,6 @@ const fetcher = ([, token]) => authService.getProfile(token);
 
 const ProfileContent = () => {
     const { data: session, status: sessionStatus } = useSession();
-    
     const { data: profileResponse, error: profileError, mutate } = useSWR(
         session?.accessToken ? ['/api/profile', session.accessToken] : null,
         fetcher
@@ -62,19 +62,21 @@ const ProfileContent = () => {
     const [profileData, setProfileData] = useState(null);
     const [editableProfileData, setEditableProfileData] = useState(null);
     const [imagePreviewUrl, setImagePreviewUrl] = useState(null);
+    const [imageFile, setImageFile] = useState(null);
     const [isUploading, setIsUploading] = useState(false);
     const fileInputRef = useRef(null);
     const [isEditingGeneral, setIsEditingGeneral] = useState(false);
     const [isEditingPassword, setIsEditingPassword] = useState(false);
-    const [currentPassword, setCurrentPassword] = useState('');
     const [newPassword, setNewPassword] = useState('');
     const [confirmNewPassword, setConfirmNewPassword] = useState('');
     const [passwordMismatchError, setPasswordMismatchError] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [showSuccessPopup, setShowSuccessPopup] = useState(false);
-    const [emptyPasswordError, setEmptyPasswordError] = useState({ current: false, new: false, confirm: false });
-    const [passwordVisibility, setPasswordVisibility] = useState({ current: false, new: false, confirm: false });
+    const [emptyPasswordError, setEmptyPasswordError] = useState({ new: false, confirm: false });
+    const [passwordVisibility, setPasswordVisibility] = useState({ new: false, confirm: false });
+    const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+    const [modalError, setModalError] = useState(null);
 
     useEffect(() => {
         if (profileResponse) {
@@ -82,27 +84,28 @@ const ProfileContent = () => {
                 firstName: profileResponse.firstName || "NA",
                 lastName: profileResponse.lastName || "NA",
                 email: profileResponse.email || "NA",
-                phoneNumber: profileResponse.phone || "NA",
-                address: profileResponse.address || "NA",
+                phoneNumber: profileResponse.phone || "Not Provided", 
+                address: profileResponse.address || "Not Provided",
                 avatarUrl: profileResponse.profile,
-                degree: profileResponse.degree || "N/A",
-                department: profileResponse.departmentName || "N/A",
-                major: profileResponse.major || "N/A",
-            };
+                degree: profileResponse.degree || "Not Provided",
+                department: profileResponse.department || "N/A",
+                major: profileResponse.major || "Not Provided",
+             };
             setProfileData(initialData);
             setEditableProfileData(initialData);
             setImagePreviewUrl(initialData.avatarUrl);
         }
     }, [profileResponse]);
 
-    const handleGeneralInputChange = (e) => {
-        const { name, value } = e.target;
-        setEditableProfileData(prev => ({ ...prev, [name]: value }));
+    const handleGeneralInputChange = (event) => {
+        const { name, value } = event.target;
+        setEditableProfileData(previousState => ({ ...previousState, [name]: value }));
     };
 
-    const handleFileChange = (e) => {
-        const file = e.target.files[0];
+    const handleFileChange = (event) => {
+        const file = event.target.files[0];
         if (file) {
+            setImageFile(file);
             const reader = new FileReader();
             reader.onloadend = () => {
                 setImagePreviewUrl(reader.result);
@@ -115,6 +118,7 @@ const ProfileContent = () => {
 
     const handleEditClick = (section) => {
         setError(null);
+        setModalError(null);
         if (section === 'general') {
             setEditableProfileData({ ...profileData });
             setIsEditingGeneral(true);
@@ -125,39 +129,51 @@ const ProfileContent = () => {
 
     const handleCancelClick = (section) => {
         setError(null);
+        setModalError(null);
         if (section === 'general') {
             setEditableProfileData({ ...profileData });
             setImagePreviewUrl(profileData.avatarUrl);
+            setImageFile(null);
             setIsEditingGeneral(false);
         } else if (section === 'password') {
-            setCurrentPassword('');
             setNewPassword('');
             setConfirmNewPassword('');
             setIsEditingPassword(false);
             setPasswordMismatchError(false);
-            setEmptyPasswordError({ current: false, new: false, confirm: false });
+            setEmptyPasswordError({ new: false, confirm: false });
         }
     };
 
     const handleSaveClick = async (section) => {
-        if (section === 'general') {
-             console.log("Saving general info:", editableProfileData);
-             setProfileData({ ...editableProfileData });
-             setIsEditingGeneral(false);
-             setShowSuccessPopup(true);
-        } else if (section === 'password') {
-            setLoading(true);
-            setError(null);
-            setPasswordMismatchError(false);
-            setEmptyPasswordError({ new: false, confirm: false, current: false });
+        setLoading(true);
+        setError(null);
+        setModalError(null);
 
-            const isCurrentEmpty = !currentPassword;
+        if (section === 'general') {
+            try {
+                if (!session?.accessToken) {
+                    throw new Error("You are not authenticated.");
+                }
+                await authService.updateProfile(editableProfileData, imageFile, session.accessToken);
+                setShowSuccessPopup(true);
+                setIsEditingGeneral(false);
+                setImageFile(null);
+                mutate();
+            } catch (updateError) {
+                setError(updateError.message || "Failed to update profile.");
+            } finally {
+                setLoading(false);
+            }
+        } else if (section === 'password') {
+            setPasswordMismatchError(false);
+            setEmptyPasswordError({ new: false, confirm: false });
+
             const isNewEmpty = !newPassword;
             const isConfirmEmpty = !confirmNewPassword;
 
-            if (isCurrentEmpty || isNewEmpty || isConfirmEmpty) {
-                setError("All password fields are required.");
-                setEmptyPasswordError({ current: isCurrentEmpty, new: isNewEmpty, confirm: isConfirmEmpty });
+            if (isNewEmpty || isConfirmEmpty) {
+                setError("New password fields cannot be empty.");
+                setEmptyPasswordError({ new: isNewEmpty, confirm: isConfirmEmpty });
                 setLoading(false);
                 return;
             }
@@ -169,50 +185,62 @@ const ProfileContent = () => {
                 return;
             }
 
-            try {
-                if (!session?.accessToken) {
-                    throw new Error("You are not authenticated.");
-                }
-                await authService.changePassword(currentPassword, newPassword, session.accessToken);
-                setShowSuccessPopup(true);
-                setCurrentPassword('');
-                setNewPassword('');
-                setConfirmNewPassword('');
-                setIsEditingPassword(false);
-                mutate();
-            } catch (err) {
-                setError(err.message || "An unexpected error occurred.");
-            } finally {
-                setLoading(false);
-            }
+            setIsConfirmModalOpen(true);
+            setLoading(false);
         }
     };
 
-    const handleCurrentPasswordChange = (e) => {
-        setCurrentPassword(e.target.value);
-        if (emptyPasswordError.current) {
-            setEmptyPasswordError(prev => ({ ...prev, current: false }));
-            setError(null);
+    const handlePasswordSaveConfirm = async (currentPassword) => {
+        setLoading(true);
+        setModalError(null);
+        
+        if (!currentPassword) {
+            setModalError("Current password is required.");
+            setLoading(false);
+            return;
+        }
+
+        try {
+            if (!session?.accessToken) {
+                throw new Error("You are not authenticated.");
+            }
+            await authService.changePassword(currentPassword, newPassword, session.accessToken);
+            
+            setShowSuccessPopup(true);
+            setIsConfirmModalOpen(false);
+            
+            setNewPassword('');
+            setConfirmNewPassword('');
+            setIsEditingPassword(false);
+
+        } catch (passwordChangeError) {
+            setModalError(passwordChangeError.message || "An unexpected error occurred.");
+        } finally {
+            setLoading(false);
         }
     };
-    
-    const handleNewPasswordChange = (e) => {
-        setNewPassword(e.target.value);
+
+    const handleNewPasswordChange = (event) => {
+        setNewPassword(event.target.value);
         if(passwordMismatchError || emptyPasswordError.new) {
             setPasswordMismatchError(false);
-            setEmptyPasswordError(p => ({...p, new: false}));
+            setError(null);
+            setEmptyPasswordError(previousState => ({...previousState, new: false}));
         }
     };
 
-    const handleConfirmPasswordChange = (e) => {
-        setConfirmNewPassword(e.target.value);
+    const handleConfirmPasswordChange = (event) => {
+        setConfirmNewPassword(event.target.value);
          if(passwordMismatchError || emptyPasswordError.confirm) {
             setPasswordMismatchError(false);
-            setEmptyPasswordError(p => ({...p, confirm: false}));
+            setError(null);
+            setEmptyPasswordError(previousState => ({...previousState, confirm: false}));
         }
     };
 
-    const togglePasswordVisibility = (field) => { setPasswordVisibility(prev => ({ ...prev, [field]: !prev[field] })) };
+    const togglePasswordVisibility = (field) => { 
+        setPasswordVisibility(previousState => ({ ...previousState, [field]: !previousState[field] })) 
+    };
 
     const renderPasswordField = (label, name, value, onChange, fieldName, isReadOnly = false, hasError = false) => (
         <div className="form-group flex-1 min-w-[200px]">
@@ -239,7 +267,6 @@ const ProfileContent = () => {
             </div>
         </div>
     );
-    
 
     if (sessionStatus === 'loading' || !profileData) {
         return <ProfileContentSkeleton />;
@@ -253,6 +280,13 @@ const ProfileContent = () => {
 
     return (
         <div className="p-6">
+            <PasswordConfirmationModal 
+                show={isConfirmModalOpen}
+                onClose={() => setIsConfirmModalOpen(false)}
+                onConfirm={handlePasswordSaveConfirm}
+                loading={loading}
+                error={modalError}
+            />
             <SuccessPopup
                 show={showSuccessPopup}
                 onClose={() => setShowSuccessPopup(false)}
@@ -297,7 +331,7 @@ const ProfileContent = () => {
                      <button
                         type="button"
                         onClick={handleUploadButtonClick}
-                        disabled={isUploading || !isEditingGeneral}
+                        disabled={isUploading || !isEditingGeneral || loading}
                         className="w-full rounded-md mt-2 px-3 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         {isUploading ? "Uploading..." : "Upload Picture"}
@@ -343,8 +377,8 @@ const ProfileContent = () => {
                         <div className="form-actions flex justify-end items-center gap-3 mt-4">
                             {isEditingGeneral ? (
                                 <>
-                                    <button onClick={() => handleCancelClick('general')} className="back-button bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 shadow-custom-light rounded-md text-gray-800 dark:text-white py-2 px-3 font-semibold text-xs">Cancel</button>
-                                    <button onClick={() => handleSaveClick('general')} className="save-button bg-blue-600 hover:bg-blue-700 shadow-custom-light rounded-md text-white text-xs py-2 px-3 font-semibold">Save Changes</button>
+                                    <button onClick={() => handleCancelClick('general')} className="back-button bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 shadow-custom-light rounded-md text-gray-800 dark:text-white py-2 px-3 font-semibold text-xs" disabled={loading}>Cancel</button>
+                                    <button onClick={() => handleSaveClick('general')} className="save-button bg-blue-600 hover:bg-blue-700 shadow-custom-light rounded-md text-white text-xs py-2 px-3 font-semibold" disabled={loading}>{loading ? "Saving..." : "Save Changes"}</button>
                                 </>
                             ) : (
                                 <button onClick={() => handleEditClick('general')} className="save-button bg-blue-600 hover:bg-blue-700 shadow-custom-light rounded-md text-white py-2 px-3 font-semibold text-xs">Edit Profile</button>
@@ -356,10 +390,7 @@ const ProfileContent = () => {
                         <div className="section-title font-semibold text-sm text-gray-800 dark:text-gray-200 mb-3">Password Information</div>
                         <div className="space-y-4">
                              <div className="flex gap-3 flex-wrap">
-                                {renderPasswordField("Current Password", "currentPassword", currentPassword, handleCurrentPasswordChange, "current", !isEditingPassword, emptyPasswordError.current)}
                                 {renderPasswordField("New Password", "newPassword", newPassword, handleNewPasswordChange, "new", !isEditingPassword, emptyPasswordError.new || passwordMismatchError)}
-                            </div>
-                            <div className="flex gap-3 flex-wrap">
                                 {renderPasswordField("Confirm New Password", "confirmNewPassword", confirmNewPassword, handleConfirmPasswordChange, "confirm", !isEditingPassword, emptyPasswordError.confirm || passwordMismatchError)}
                             </div>
                         </div>
@@ -367,12 +398,12 @@ const ProfileContent = () => {
                              {isEditingPassword ? (
                                 <>
                                     <button onClick={() => handleCancelClick('password')} className="back-button bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 shadow-custom-light rounded-md text-gray-800 dark:text-white border-none py-2 px-3 font-semibold text-xs cursor-pointer" disabled={loading}>Cancel</button>
-                                    <button onClick={() => handleSaveClick('password')} className="save-button bg-blue-600 hover:bg-blue-700 shadow-custom-light rounded-md text-white border-none py-2 px-3 font-semibold text-xs cursor-pointer" disabled={loading}>{loading ? "Saving..." : "Save Password"}</button>
+                                    <button onClick={() => handleSaveClick('password')} className="save-button bg-blue-600 hover:bg-blue-700 shadow-custom-light rounded-md text-white border-none py-2 px-3 font-semibold text-xs cursor-pointer" disabled={loading}>Save Password</button>
                                 </>
                             ) : (
                                 <button onClick={() => handleEditClick('password')} className="save-button bg-blue-600 hover:bg-blue-700 shadow-custom-light rounded-md text-white border-none py-2 px-3 font-semibold text-xs cursor-pointer" disabled={loading}>Change Password</button>
                             )}
-                        </div>
+                         </div>
                     </div>
                 </div>
             </div>

@@ -1,4 +1,3 @@
-// src/app/api/auth/[...nextauth]/route.js
 import NextAuth from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import { authService } from '@/services/auth.service';
@@ -28,45 +27,30 @@ export const authOptions = {
         if (!credentials?.email || !credentials?.password) {
           throw new Error("Please provide both email and password.");
         }
+
         try {
-          const apiResponse = await authService.login(credentials.email, credentials.password);
+          const apiResponse = await authService.login({
+            email: credentials.email,
+            password: credentials.password,
+          });
+
           const accessToken = apiResponse.token;
 
           if (accessToken) {
             const decodedPayload = decodeJwt(accessToken);
             if (!decodedPayload) throw new Error("Could not decode token.");
-            
-            console.log("Decoded JWT Payload:", decodedPayload);
 
             const userRole = decodedPayload.roles && decodedPayload.roles[0];
-
             if (!userRole) {
               console.error("Role not found in JWT payload's 'roles' array!");
               return null;
             }
             
-            // --- UPDATED NAME HANDLING ---
-            let userName;
-            
-            // Priority 1: Use firstName and lastName if available
-            if (decodedPayload.firstName) {
-                userName = decodedPayload.firstName;
-                if (decodedPayload.lastName) {
-                    userName += ` ${decodedPayload.lastName}`;
-                }
-            } 
-            // Priority 2: Use the 'name' field if available and not empty
-            else if (decodedPayload.name) {
-                userName = decodedPayload.name;
-            } 
-            // Priority 3: Fallback to the email, but strip the domain part
-            else {
-                userName = credentials.email.split('@')[0];
-            }
+            let userName = decodedPayload.firstName ? `${decodedPayload.firstName} ${decodedPayload.lastName || ''}`.trim() : (decodedPayload.name || credentials.email.split('@')[0]);
 
             return {
               id: decodedPayload.sub,
-              name: userName, // Use the constructed or cleaned-up name
+              name: userName,
               email: decodedPayload.sub,
               role: userRole,
               accessToken: accessToken,

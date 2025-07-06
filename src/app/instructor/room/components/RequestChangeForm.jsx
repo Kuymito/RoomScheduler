@@ -4,7 +4,7 @@ import React, { useState, useRef, useEffect } from 'react';
 
 // --- Helper function to get the next date for a given weekday ---
 const getNextDateForDay = (day) => {
-    const dayIndexMap = { "Mon": 1, "Tue": 2, "Wed": 3, "Thur": 4, "Fri": 5, "Sat": 6, "Sun": 0 };
+    const dayIndexMap = { "Monday": 1, "Tuesday": 2, "Wednesday": 3, "Thursday": 4, "Friday": 5, "Saturday": 6, "Sunday": 0 };
     const targetDayIndex = dayIndexMap[day];
     if (targetDayIndex === undefined) return new Date();
 
@@ -18,7 +18,7 @@ const getNextDateForDay = (day) => {
     return today;
 };
 
-// --- NEW: Custom Calendar Component ---
+// --- Custom Calendar Component ---
 const CustomDatePicker = ({ selectedDate, onDateChange, minDate }) => {
     const [viewDate, setViewDate] = useState(selectedDate || new Date());
 
@@ -48,7 +48,7 @@ const CustomDatePicker = ({ selectedDate, onDateChange, minDate }) => {
     const handleDayClick = (day) => {
         const newDate = new Date(viewDate.getFullYear(), viewDate.getMonth(), day);
         if (minDate && newDate < minDate && !isSameDay(newDate, minDate)) {
-             return; // Don't allow selection of past dates
+             return; 
         }
         onDateChange(newDate);
     };
@@ -103,7 +103,7 @@ const CustomDatePicker = ({ selectedDate, onDateChange, minDate }) => {
     );
 };
 
-
+// --- Main Form Component ---
 const RequestChangeForm = ({ isOpen, onClose, onSave, roomDetails, instructorClasses, selectedDay, selectedTime }) => {
     
     const today = new Date();
@@ -111,7 +111,7 @@ const RequestChangeForm = ({ isOpen, onClose, onSave, roomDetails, instructorCla
 
     const getInitialState = () => ({
         classId: instructorClasses[0]?.id || '', 
-        date: getNextDateForDay(selectedDay),
+        date: getNextDateForDay(selectedDay.substring(0, 3)), // Use the helper to get a valid starting date
         description: '',
     });
 
@@ -125,10 +125,9 @@ const RequestChangeForm = ({ isOpen, onClose, onSave, roomDetails, instructorCla
         }
     }, [isOpen, instructorClasses, selectedDay, selectedTime]);
 
-
     const handleDateChange = (newDate) => {
         setRequestData(prev => ({ ...prev, date: newDate }));
-        setIsCalendarOpen(false); // Close calendar on date selection
+        setIsCalendarOpen(false);
     };
     
     const handleInputChange = (e) => {
@@ -143,9 +142,11 @@ const RequestChangeForm = ({ isOpen, onClose, onSave, roomDetails, instructorCla
             return;
         }
         
-        // Format the date to YYYY-MM-DD string before saving
-        const dateString = requestData.date.toISOString().split('T')[0];
-        onSave({ ...requestData, date: dateString, timeSlot: selectedTime, room: roomDetails });
+        // --- THIS IS THE FIX ---
+        // The date is now formatted as a full ISO string, which your backend can parse.
+        const isoDateString = requestData.date.toISOString();
+        onSave({ ...requestData, date: isoDateString, timeSlot: selectedTime, room: roomDetails });
+        // -------------------------
 
         onClose();
     };
@@ -209,7 +210,6 @@ const RequestChangeForm = ({ isOpen, onClose, onSave, roomDetails, instructorCla
                             </select>
                         </div>
 
-                        {/* --- UPDATED: Custom Date Picker Input --- */}
                         <div className="relative">
                             <label htmlFor="date" className="block mb-2 text-xs font-medium text-gray-900 dark:text-white">Date of Change</label>
                             <button

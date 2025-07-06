@@ -6,6 +6,31 @@ const isServer = typeof window === 'undefined';
 const API_URL = "https://jaybird-new-previously.ngrok-free.app/api/v1" ;
 
 /**
+ * Creates the authorization headers for an API request.
+ * @param {string} token - The user's JWT token.
+ * @returns {object} The headers object.
+ */
+const getAuthHeaders = (token) => ({
+    'Authorization': `Bearer ${token}`,
+    // This header is necessary to bypass the ngrok warning page on server-side requests.
+    'ngrok-skip-browser-warning': 'true'
+});
+
+/**
+ * A generic error handler for axios requests.
+ * @param {string} context - A string describing the context of the error.
+ * @param {Error} error - The error object from the catch block.
+ */
+const handleError = (context, error) => {
+    console.error(`${context} service error:`, {
+      message: error.message,
+      code: error.code,
+      response: error.response ? error.response.data : 'No response data'
+    });
+    throw new Error(error.response?.data?.message || `Failed operation: ${context}.`);
+};
+
+/**
  * Fetches all classes from the API.
  * @param {string} token - The authorization token for the request.
  * @returns {Promise<Array>} A promise that resolves to an array of class objects.
@@ -13,22 +38,33 @@ const API_URL = "https://jaybird-new-previously.ngrok-free.app/api/v1" ;
 const getAllClasses = async (token) => {
   try {
     const response = await axios.get(`${API_URL}/class`, {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'ngrok-skip-browser-warning': 'true' 
-      }
+      headers: getAuthHeaders(token)
     });
     if (response.data && Array.isArray(response.data.payload)) {
         return response.data.payload;
     }
     throw new Error('Invalid data structure from API');
   } catch (error) {
-    console.error("Get all classes service error:", {
-      message: error.message,
-      code: error.code,
-      response: error.response ? error.response.data : 'No response data'
+    handleError("Get all classes", error);
+  }
+};
+
+/**
+ * Fetches only the classes assigned to the currently authenticated instructor.
+ * @param {string} token - The authorization token for the request.
+ * @returns {Promise<Array>} A promise that resolves to an array of class objects.
+ */
+const getMyClasses = async (token) => {
+  try {
+    const response = await axios.get(`${API_URL}/class/my-classes`, {
+      headers: getAuthHeaders(token)
     });
-    throw new Error(error.response?.data?.message || "Failed to fetch classes.");
+    if (response.data && Array.isArray(response.data.payload)) {
+        return response.data.payload;
+    }
+    throw new Error('Invalid data structure from API');
+  } catch (error) {
+    handleError("Get My Classes", error);
   }
 };
 
@@ -41,22 +77,14 @@ const getAllClasses = async (token) => {
 const getClassById = async (classId, token) => {
   try {
     const response = await axios.get(`${API_URL}/class/${classId}`, {
-       headers: {
-        'Authorization': `Bearer ${token}`,
-        ...(isServer && { 'ngrok-skip-browser-warning': 'true' })
-      }
+       headers: getAuthHeaders(token)
     });
     if (response.data && response.data.payload) {
       return response.data.payload;
     }
      throw new Error('Invalid data structure for single class from API');
   } catch (error) {
-    console.error(`Get class by ID (${classId}) service error:`, {
-      message: error.message,
-      code: error.code,
-      response: error.response ? error.response.data : 'No response data'
-    });
-    throw new Error(error.response?.data?.message || `Failed to fetch class ${classId}.`);
+    handleError(`Get class by ID (${classId})`, error);
   }
 };
 
@@ -69,22 +97,15 @@ const getClassById = async (classId, token) => {
  */
 const patchClass = async (classId, classData, token) => {
   try {
-    // Client-side calls should always go to the local proxy.
-    const response = await axios.patch(`/api/class/${classId}`, classData, {
-       headers: {
-        'Authorization': `Bearer ${token}`,
-      }
+    const response = await axios.patch(`${API_URL}/class/${classId}`, classData, {
+       headers: getAuthHeaders(token)
     });
     return response.data;
   } catch (error) {
-    console.error(`Update class by ID (${classId}) service error:`, {
-      message: error.message,
-      code: error.code,
-      response: error.response ? error.response.data : 'No response data'
-    });
-    throw new Error(error.response?.data?.message || `Failed to update class ${classId}.`);
+    handleError(`Update class by ID (${classId})`, error);
   }
 };
+
 /**
  * Fetches all shifts from the API.
  * @param {string} token - The authorization token.
@@ -102,6 +123,7 @@ const getAllShifts = async (token) => {
 
 export const classService = {
   getAllClasses,
+  getMyClasses,
   getClassById,
   patchClass,
   getAllShifts,

@@ -2,47 +2,94 @@ import { Suspense } from 'react';
 import InstructorDashboardLayout from '@/components/InstructorDashboardLayout';
 import InstructorDashboardClientView from './components/InstructorDashboardClientView';
 import DashboardSkeleton from './components/DashboardSkeleton';
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import { classService } from '@/services/class.service';
+import { scheduleService } from '@/services/schedule.service';
 
-// --- SERVER-SIDE DATA FETCHING ---
+/**
+ * Fetches and processes live data for the instructor dashboard from the API.
+ */
 const fetchDashboardData = async () => {
-  return new Promise(resolve => setTimeout(() => resolve({
-    classAssign: 65,
-    ClassToday: 15,
-    onlineClass: 28,
-    currentDate: '16 June 2025',
-    academicYear: '2025 - 2026',
-  }), 500)); 
-};
+    const session = await getServerSession(authOptions);
+    const token = session?.accessToken;
 
-const fetchScheduleTableData = async () => {
-  return new Promise(resolve => setTimeout(() => resolve([
-    { id: 1, classNum: '34/27', major: 'IT', date: 'Monday', session: 'In Class', shift: '07:00 - 10:00', room: '1A' },
-    { id: 2, classNum: '32/12', major: 'IT', date: 'Monday', session: 'In Class', shift: '05:30 - 08:30', room: '2B' },
-    { id: 3, classNum: '31/21', major: 'MG', date: 'Wednesday', session: 'In Class', shift: '10:30 - 01:30', room: '6A' },
-    { id: 4, classNum: '32/15', major: 'IT', date: 'Thursday', session: 'Online', shift: '02:00 - 05:00', room: 'Unavailable' },
-    { id: 5, classNum: '32/49', major: 'IT', date: 'Friday', session: 'Online', shift: '07:00 - 10:00', room: 'Unavailable' },
-    { id: 6, classNum: '31/17', major: 'BIT', date: 'Saturday', session: 'Online', shift: '05:30 - 08:30', room: 'Unavailable' },
-  ]), 500));
+    if (!token) {
+        console.error("Dashboard Page: Not authenticated.");
+        return {
+            dashboardStats: { classAssign: 0, ClassToday: 0, onlineClass: 0, currentDate: '', academicYear: '' },
+            scheduleItems: []
+        };
+    }
+
+    try {
+        const [myClasses, mySchedules] = await Promise.all([
+            classService.getMyClasses(token),
+            scheduleService.getMySchedules(token)
+        ]);
+
+        // --- THIS IS THE FIX ---
+        // De-duplicate the schedules received from the API.
+        const uniqueSchedules = Array.from(new Map(mySchedules.map(schedule => {
+            // Create a unique key for each schedule based on its core properties
+            const key = `${schedule.classId}-${schedule.day}-${schedule.shift.shiftId}`;
+            return [key, schedule];
+        })).values());
+        // -------------------------
+
+        const classAssignCount = myClasses.length;
+        const onlineClassCount = myClasses.filter(cls => cls.isOnline).length;
+        const today = new Date().toLocaleDateString('en-US', { weekday: 'long' }).toUpperCase();
+        
+        const classesTodayCount = uniqueSchedules.filter(schedule => 
+            schedule.day.toUpperCase().split(',').map(d => d.trim()).includes(today)
+        ).length;
+
+        const scheduleItems = [];
+        uniqueSchedules.forEach(schedule => {
+            const scheduleDays = schedule.day.split(',').map(d => d.trim());
+
+            scheduleDays.forEach((day, index) => {
+                scheduleItems.push({
+                    id: `${schedule.scheduleId}-${index}`, 
+                    classNum: schedule.className,
+                    major: schedule.majorName || 'N/A',
+                    date: day.charAt(0) + day.slice(1).toLowerCase(), 
+                    session: schedule.isOnline ? 'Online' : 'In Class',
+                    shift: `${schedule.shift.startTime.slice(0, 5)} - ${schedule.shift.endTime.slice(0, 5)}`,
+                    room: schedule.roomName || 'Unavailable'
+                });
+            });
+        });
+
+        const dashboardStats = {
+            classAssign: classAssignCount,
+            ClassToday: classesTodayCount,
+            onlineClass: onlineClassCount,
+            currentDate: new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }),
+            academicYear: '2025 - 2026',
+        };
+
+        return { dashboardStats, scheduleItems };
+
+    } catch (error) {
+        console.error("Failed to fetch dashboard data:", error.message);
+        return {
+            dashboardStats: { classAssign: 0, ClassToday: 0, onlineClass: 0, currentDate: '', academicYear: '' },
+            scheduleItems: []
+        };
+    }
 };
 
 /**
- * The main page component is now an async Server Component.
- * It fetches data on the server before sending the page to the client.
+ * The main page component that renders the instructor dashboard.
  */
 export default async function InstructorDashboardPage() {
-    // Fetch initial data in parallel on the server
-    const [dashboardStats, scheduleItems] = await Promise.all([
-        fetchDashboardData(),
-        fetchScheduleTableData()
-    ]);
+    const { dashboardStats, scheduleItems } = await fetchDashboardData();
 
     return (
         <InstructorDashboardLayout activeItem="dashboard" pageTitle="Dashboard">
             <Suspense fallback={<DashboardSkeleton />}>
-                {/* Render the Client Component here, passing the server-fetched data as props.
-                  The browser receives pre-rendered HTML for an instant load, then hydrates
-                  the component to make it interactive (if needed).
-                */}
                 <InstructorDashboardClientView 
                     dashboardStats={dashboardStats}
                     scheduleItems={scheduleItems}

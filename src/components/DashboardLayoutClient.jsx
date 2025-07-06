@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
+import useSWR from 'swr';
 import Sidebar from '@/components/Sidebar';
 import Topbar from '@/components/Topbar';
 import AdminPopup from 'src/app/admin/profile/components/AdminPopup';
@@ -13,11 +14,17 @@ import { moul } from './fonts';
 import { notificationService } from '@/services/notification.service';
 
 const transformNotification = (notification) => {
+    // This function now correctly uses the status field from the API response
+    const status = notification.status; 
     let type = 'info';
-    const message = notification.message.toLowerCase();
-    if (message.includes('requires your approval')) type = 'roomRequest';
-    else if (message.includes('approved')) type = 'info_approved';
-    else if (message.includes('denied')) type = 'info_denied';
+
+    if (status === 'PENDING') {
+        type = 'roomRequest';
+    } else if (status === 'APPROVED') {
+        type = 'info_approved';
+    } else if (status === 'DENIED') {
+        type = 'info_denied';
+    }
 
     return {
         id: notification.notificationId,
@@ -26,18 +33,34 @@ const transformNotification = (notification) => {
         timestamp: new Date(notification.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         isUnread: !notification.read,
         type: type,
+        status: status,
         avatarUrl: null,
         details: { requestorName: notification.message.match(/from (.*?) requires/)?.[1] || 'User' }
     };
 };
 
 const TOPBAR_HEIGHT = '90px';
+const notificationsFetcher = (url, token) => notificationService.getNotifications(token);
 
-export default function DashboardLayoutClient({ children, activeItem, pageTitle, initialNotifications }) {
+export default function AdminLayoutClient({ children, activeItem, pageTitle, initialNotifications }) {
     const { data: session } = useSession();
     const token = session?.accessToken;
 
     const [notifications, setNotifications] = useState(() => initialNotifications.map(transformNotification));
+    
+    useSWR(
+        token ? ['/api/v1/notifications', token] : null,
+        notificationsFetcher,
+        {
+            onSuccess: (data) => {
+                if (data) {
+                    setNotifications(data.map(transformNotification));
+                }
+            },
+            revalidateOnFocus: true,
+            revalidateOnReconnect: true,
+        }
+    );
     
     const [showAdminPopup, setShowAdminPopup] = useState(false);
     const [showLogoutAlert, setShowLogoutAlert] = useState(false);
@@ -58,21 +81,6 @@ export default function DashboardLayoutClient({ children, activeItem, pageTitle,
     const userIconRef = useRef(null);
     const router = useRouter();
     const pathname = usePathname();
-
-    useEffect(() => {
-        const pollNotifications = async () => {
-            if (!token) return;
-            try {
-                const backendNotifications = await notificationService.getNotifications(token);
-                setNotifications(backendNotifications.map(transformNotification));
-            } catch (error) {
-                console.error("Failed to poll notifications:", error.message);
-            }
-        };
-
-        const interval = setInterval(pollNotifications, 30000);
-        return () => clearInterval(interval);
-    }, [token]);
 
     const handleApproveNotification = async (notificationId) => {
         if (!token) return;
