@@ -12,15 +12,16 @@ import { usePathname, useRouter } from 'next/navigation';
 import { signOut, useSession } from 'next-auth/react';
 import useSWR from 'swr';
 import { authService } from '@/services/auth.service';
+import { notificationService } from '@/services/notification.service';
 import { moul } from './fonts';
 
-const fetcher = ([, token]) => authService.getProfile(token);
+const profileFetcher = ([, token]) => authService.getProfile(token);
+const notificationsFetcher = ([, token]) => notificationService.getNotifications(token);
 
 export default function InstructorDashboardLayout({ children, activeItem, pageTitle }) {
     const [showAdminPopup, setShowAdminPopup] = useState(false);
     const [showLogoutAlert, setShowLogoutAlert] = useState(false);
     const [showInstructorNotificationPopup, setShowInstructorNotificationPopup] = useState(false);
-    const [instructorNotifications, setInstructorNotifications] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
     const [navigatingTo, setNavigatingTo] = useState(null);
     const notificationPopupRef = useRef(null);
@@ -43,7 +44,16 @@ export default function InstructorDashboardLayout({ children, activeItem, pageTi
     // Fetch profile data using useSWR for caching and revalidation
     const { data: profile } = useSWR(
         token ? ['/api/profile', token] : null,
-        fetcher
+        profileFetcher
+    );
+
+    // Fetch notifications
+    const { data: instructorNotifications, mutate: mutateInstructorNotifications } = useSWR(
+        token ? ['/api/notifications', token] : null,
+        notificationsFetcher,
+        {
+            refreshInterval: 5000,
+        }
     );
 
     useEffect(() => {
@@ -86,17 +96,18 @@ export default function InstructorDashboardLayout({ children, activeItem, pageTi
         setShowInstructorNotificationPopup(prev => !prev);
     };
     
-    const handleMarkInstructorNotificationAsRead = (notificationId) => {
-        setInstructorNotifications(prev =>
-            prev.map(n => n.id === notificationId ? { ...n, isUnread: false } : n)
-        );
+    const handleMarkInstructorNotificationAsRead = async (notificationId) => {
+        await notificationService.markNotificationAsRead(notificationId, token);
+        mutateInstructorNotifications();
     };
 
-    const handleMarkAllInstructorNotificationsAsRead = () => {
-        setInstructorNotifications(prev => prev.map(n => ({ ...n, isUnread: false })));
+    const handleMarkAllInstructorNotificationsAsRead = async () => {
+        const unreadIds = instructorNotifications.filter(n => !n.read).map(n => n.notificationId);
+        await Promise.all(unreadIds.map(id => notificationService.markNotificationAsRead(id, token)));
+        mutateInstructorNotifications();
     };
 
-    const hasUnreadInstructorNotifications = instructorNotifications.some(n => n.isUnread);
+    const hasUnreadInstructorNotifications = instructorNotifications?.some(n => !n.read);
 
     const handleProfileNav = (path) => {
         if (isProfileNavigating) {
@@ -129,15 +140,6 @@ export default function InstructorDashboardLayout({ children, activeItem, pageTi
         document.addEventListener('click', handleClickOutside);
         return () => document.removeEventListener('click', handleClickOutside);
     }, [showAdminPopup, showInstructorNotificationPopup]);
-
-    useEffect(() => {
-        const mockInstructorNotifications = [
-            { id: 1, avatarUrl: '/images/kok.png', message: 'Your request for Room A1 has been approved by Admin.', timestamp: '5m', isUnread: true, type: 'request_approved', details: { adminName: 'Admin' } },
-            { id: 2, avatarUrl: '/images/kok.png', message: 'Your request for Room C2 has been denied due to a conflict.', timestamp: '1h', isUnread: true, type: 'request_denied', details: { adminName: 'Admin' } },
-            { id: 3, avatarUrl: '/images/kok.png', message: 'A new schedule has been published for your classes.', timestamp: '3h', isUnread: false, type: 'info', details: { adminName: 'Admin' } },
-        ];
-        setInstructorNotifications(mockInstructorNotifications);
-    }, []);
 
     useEffect(() => {
         if (isProfileNavigating) {

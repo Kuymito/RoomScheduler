@@ -12,16 +12,18 @@ import { usePathname, useRouter } from 'next/navigation';
 import { signOut, useSession } from 'next-auth/react';
 import useSWR from 'swr';
 import { authService } from '@/services/auth.service';
+import { notificationService } from '@/services/notification.service';
 import { moul } from './fonts';
 
 const TOPBAR_HEIGHT = '90px';
-const fetcher = ([, token]) => authService.getProfile(token);
+const profileFetcher = ([, token]) => authService.getProfile(token);
+const notificationsFetcher = ([, token]) => notificationService.getNotifications(token);
+const changeRequestsFetcher = ([, token]) => notificationService.getChangeRequests(token);
 
 export default function DashboardLayout({ children, activeItem, pageTitle }) {
     const [showAdminPopup, setShowAdminPopup] = useState(false);
     const [showLogoutAlert, setShowLogoutAlert] = useState(false);
     const [showNotificationPopup, setShowNotificationPopup] = useState(false);
-    const [notifications, setNotifications] = useState([]);
     const [isLoading, setIsLoading] = useState(false); 
     const [navigatingTo, setNavigatingTo] = useState(null);
     const notificationPopupRef = useRef(null);
@@ -44,7 +46,24 @@ export default function DashboardLayout({ children, activeItem, pageTitle }) {
     // Fetch profile data using useSWR for caching and revalidation
     const { data: profile } = useSWR(
         token ? ['/api/profile', token] : null,
-        fetcher
+        profileFetcher
+    );
+
+    // SWR hooks for fetching notifications and change requests
+    const { data: notifications, mutate: mutateNotifications } = useSWR(
+        token ? ['/api/notifications', token] : null,
+        notificationsFetcher,
+        {
+            refreshInterval: 5000, // Re-fetch every 5 seconds
+        }
+    );
+
+    const { data: changeRequests, mutate: mutateChangeRequests } = useSWR(
+        token ? ['/api/change-requests', token] : null,
+        changeRequestsFetcher,
+        {
+            refreshInterval: 5000,
+        }
     );
 
     useEffect(() => {
@@ -88,66 +107,31 @@ export default function DashboardLayout({ children, activeItem, pageTitle }) {
         }
         setShowNotificationPopup(prev => !prev); 
     };
-    
-    const mockAPICall = async (action, data) => {
-        console.log(`MOCK API CALL: ${action}`, data || '');
-        return { success: true, message: `${action} successful.` };
-    };
 
-    const handleMarkSingleAsRead = (notificationId) => {
-        setNotifications(prevNotifications =>
-            prevNotifications.map(n =>
-                n.id === notificationId ? { ...n, isUnread: false } : n
-            )
-        );
+    const handleMarkSingleAsRead = async (notificationId) => {
+        await notificationService.markNotificationAsRead(notificationId, token);
+        mutateNotifications();
     };
 
     const handleMarkAllRead = async () => {
-        try {
-            await mockAPICall("Mark all notifications as read");
-            setNotifications(prevNotifications =>
-                prevNotifications.map(n => ({ ...n, isUnread: false }))
-            );
-        } catch (error) {
-            console.error("Failed to mark all as read:", error);
-        }
+        const unreadIds = notifications.filter(n => !n.read).map(n => n.notificationId);
+        await Promise.all(unreadIds.map(id => notificationService.markNotificationAsRead(id, token)));
+        mutateNotifications();
     };
 
-    const handleApproveNotification = async (notificationId) => {
-        try {
-            await mockAPICall("Approve notification", { notificationId });
-            setNotifications(prevNotifications =>
-                prevNotifications.map(n => {
-                    if (n.id === notificationId) {
-                        const { requestorName, room, time } = n.details;
-                        return { ...n, message: `You approved the request from ${requestorName} for Room ${room} at ${time}.`, type: 'info_approved', isUnread: false };
-                    }
-                    return n;
-                })
-            );
-        } catch (error) {
-            console.error(`Failed to approve ${notificationId}:`, error);
-        }
+    const handleApproveNotification = async (requestId) => {
+        await notificationService.approveChangeRequest(requestId, token);
+        mutateChangeRequests();
+        mutateNotifications();
     };
 
-    const handleDenyNotification = async (notificationId) => {
-        try {
-            await mockAPICall("Deny notification", { notificationId });
-            setNotifications(prevNotifications =>
-                prevNotifications.map(n => {
-                    if (n.id === notificationId) {
-                        const { requestorName, room, time } = n.details;
-                        return { ...n, message: `You denied the request from ${requestorName} for Room ${room} at ${time}.`, type: 'info_denied', isUnread: false };
-                    }
-                    return n;
-                })
-            );
-        } catch (error) {
-            console.error(`Failed to deny ${notificationId}:`, error);
-        }
+    const handleDenyNotification = async (requestId) => {
+        await notificationService.denyChangeRequest(requestId, token);
+        mutateChangeRequests();
+        mutateNotifications();
     };
 
-    const hasUnreadNotifications = notifications.some(n => n.isUnread);
+    const hasUnreadNotifications = notifications?.some(n => !n.read);
 
     const handleProfileNav = (path) => {
         if (isProfileNavigating) return;
@@ -175,16 +159,6 @@ export default function DashboardLayout({ children, activeItem, pageTitle }) {
     }, [showAdminPopup, showNotificationPopup]);
 
     useEffect(() => {
-        const mockNotificationsData = [
-            { id: 1, avatarUrl: 'https://randomuser.me/api/portraits/women/60.jpg', message: 'Dr. Linda Keo is requesting room A1 at 7:00 - 10:00am for class 31/31 IT-morning', timestamp: '10m', isUnread: true, type: 'roomRequest', details: { requestorName: 'Dr. Linda Keo', room: 'A1', time: '7:00 - 10:00am', class: '31/31 IT-morning' } },
-            { id: 2, avatarUrl: 'https://randomuser.me/api/portraits/men/45.jpg', message: 'You have Approved Mr. Chan Keo request for a room change. The update has been successfully recorded.', timestamp: '1h', isUnread: false, type: 'info', details: { requestorName: 'Mr. Chan Keo' } },
-            { id: 3, avatarUrl: 'https://randomuser.me/api/portraits/women/33.jpg', message: 'You have Denied Mr. Tomoko Inoue request for a room change.', timestamp: '2h', isUnread: false, type: 'info', details: { requestorName: 'Mr. Tomoko Inoue' } },
-            { id: 4, avatarUrl: 'https://randomuser.me/api/portraits/men/78.jpg', message: 'Mr. Eric Sok submitted a new maintenance request for Projector in B2.', timestamp: '5h', isUnread: true, type: 'maintenanceRequest', details: { requestorName: 'Mr. Eric Sok' } },
-        ];
-        setNotifications(mockNotificationsData);
-    }, []);
-
-    useEffect(() => {
         if (isProfileNavigating) {
             setIsProfileNavigating(false);
         }
@@ -207,7 +181,16 @@ export default function DashboardLayout({ children, activeItem, pageTitle }) {
             <Sidebar isCollapsed={isSidebarCollapsed} activeItem={activeItem} onNavItemClick={handleNavItemClick} navigatingTo={navigatingTo} />
             <div className="flex flex-col flex-grow transition-all duration-300 ease-in-out" style={{ marginLeft: sidebarWidth, width: `calc(100% - ${sidebarWidth})`, height: '100vh', overflowY: 'auto' }}>
                 <div className="fixed top-0 bg-white dark:bg-gray-900 shadow-custom-medium p-5 flex justify-between items-center z-30 transition-all duration-300 ease-in-out" style={{ left: sidebarWidth, width: `calc(100% - ${sidebarWidth})`, height: TOPBAR_HEIGHT }}>
-                    <Topbar onToggleSidebar={toggleSidebar} isSidebarCollapsed={isSidebarCollapsed} onUserIconClick={handleUserIconClick} pageSubtitle={pageTitle} userIconRef={userIconRef} onNotificationIconClick={handleToggleNotificationPopup} notificationIconRef={notificationIconRef} hasUnreadNotifications={hasUnreadNotifications} />
+                    <Topbar 
+                        onToggleSidebar={toggleSidebar} 
+                        isSidebarCollapsed={isSidebarCollapsed} 
+                        onUserIconClick={handleUserIconClick} 
+                        pageSubtitle={pageTitle} 
+                        userIconRef={userIconRef} 
+                        onNotificationIconClick={handleToggleNotificationPopup} 
+                        notificationIconRef={notificationIconRef} 
+                        hasUnreadNotifications={hasUnreadNotifications} 
+                    />
                 </div>
                 <div className="flex flex-col flex-grow" style={{ paddingTop: TOPBAR_HEIGHT }}>
                     <main className="content-area flex-grow m-6">{children}</main>
@@ -225,7 +208,16 @@ export default function DashboardLayout({ children, activeItem, pageTitle }) {
                 />
             </div>
             <div ref={notificationPopupRef}>
-                <NotificationPopup show={showNotificationPopup} notifications={notifications} onMarkAllRead={handleMarkAllRead} onApprove={handleApproveNotification} onDeny={handleDenyNotification} onMarkAsRead={handleMarkSingleAsRead} anchorRef={notificationIconRef} />
+                <NotificationPopup 
+                    show={showNotificationPopup} 
+                    notifications={notifications} 
+                    changeRequests={changeRequests}
+                    onMarkAllRead={handleMarkAllRead} 
+                    onApprove={handleApproveNotification} 
+                    onDeny={handleDenyNotification} 
+                    onMarkAsRead={handleMarkSingleAsRead} 
+                    anchorRef={notificationIconRef} 
+                />
             </div>
             <LogoutAlert show={showLogoutAlert} onClose={handleCloseLogoutAlert} onConfirmLogout={handleConfirmLogout} />
         </div>
