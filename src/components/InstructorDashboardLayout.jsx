@@ -47,7 +47,7 @@ export default function InstructorDashboardLayout({ children, activeItem, pageTi
         profileFetcher
     );
 
-    // Fetch notifications
+    // Use SWR to fetch and manage notifications
     const { data: instructorNotifications, mutate: mutateInstructorNotifications } = useSWR(
         token ? ['/api/notifications', token] : null,
         notificationsFetcher,
@@ -102,9 +102,11 @@ export default function InstructorDashboardLayout({ children, activeItem, pageTi
     };
 
     const handleMarkAllInstructorNotificationsAsRead = async () => {
-        const unreadIds = instructorNotifications.filter(n => !n.read).map(n => n.notificationId);
-        await Promise.all(unreadIds.map(id => notificationService.markNotificationAsRead(id, token)));
-        mutateInstructorNotifications();
+        const unreadIds = instructorNotifications?.filter(n => !n.read).map(n => n.notificationId) || [];
+        if (unreadIds.length > 0) {
+            await Promise.all(unreadIds.map(id => notificationService.markNotificationAsRead(id, token)));
+            mutateInstructorNotifications();
+        }
     };
 
     const hasUnreadInstructorNotifications = instructorNotifications?.some(n => !n.read);

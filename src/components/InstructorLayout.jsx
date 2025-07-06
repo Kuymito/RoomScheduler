@@ -98,9 +98,11 @@ export default function InstructorLayout({ children, activeItem, pageTitle }) {
     };
 
     const handleMarkAllInstructorNotificationsAsRead = async () => {
-        const unreadIds = instructorNotifications.filter(n => !n.read).map(n => n.notificationId);
-        await Promise.all(unreadIds.map(id => notificationService.markNotificationAsRead(id, token)));
-        mutateInstructorNotifications();
+        const unreadIds = instructorNotifications?.filter(n => !n.read).map(n => n.notificationId) || [];
+        if (unreadIds.length > 0) {
+            await Promise.all(unreadIds.map(id => notificationService.markNotificationAsRead(id, token)));
+            mutateInstructorNotifications();
+        }
     };
 
     const hasUnreadInstructorNotifications = instructorNotifications?.some(n => !n.read);

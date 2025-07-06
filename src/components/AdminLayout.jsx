@@ -19,13 +19,19 @@ const profileFetcher = ([, token]) => authService.getProfile(token);
 const notificationsFetcher = ([, token]) => notificationService.getNotifications(token);
 const changeRequestsFetcher = ([, token]) => notificationService.getChangeRequests(token);
 
-
 export default function AdminLayout({ children, activeItem, pageTitle }) {
     const [showAdminPopup, setShowAdminPopup] = useState(false);
     const [showLogoutAlert, setShowLogoutAlert] = useState(false);
     const [showNotificationPopup, setShowNotificationPopup] = useState(false);
-    const [isProfileNavigating, setIsProfileNavigating] = useState(false);
-    const [isLoading, setIsLoading] = useState(false);
+    const [isLoading, setIsLoading] = useState(false); 
+    const [navigatingTo, setNavigatingTo] = useState(null);
+    const notificationPopupRef = useRef(null);
+    const notificationIconRef = useRef(null);
+    const adminPopupRef = useRef(null);
+    const userIconRef = useRef(null);
+    const router = useRouter();
+    const pathname = usePathname();
+    const [ isProfileNavigating, setIsProfileNavigating] = useState(false);
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
         if (typeof window !== 'undefined') {
             return localStorage.getItem('sidebarCollapsed') === 'true';
@@ -33,27 +39,21 @@ export default function AdminLayout({ children, activeItem, pageTitle }) {
         return false;
     });
 
-    const notificationPopupRef = useRef(null);
-    const notificationIconRef = useRef(null);
-    const adminPopupRef = useRef(null);
-    const userIconRef = useRef(null);
-    const router = useRouter();
-    const pathname = usePathname();
-    const [navigatingTo, setNavigatingTo] = useState(null);
-    
     const { data: session } = useSession();
     const token = session?.accessToken;
 
+    // Fetch profile data using useSWR for caching and revalidation
     const { data: profile } = useSWR(
         token ? ['/api/profile', token] : null,
         profileFetcher
     );
 
+    // Use SWR to fetch notifications and change requests
     const { data: notifications, mutate: mutateNotifications } = useSWR(
         token ? ['/api/notifications', token] : null,
         notificationsFetcher,
         {
-            refreshInterval: 5000, // Re-fetch every 5 seconds
+            refreshInterval: 5000,
         }
     );
 
@@ -65,44 +65,59 @@ export default function AdminLayout({ children, activeItem, pageTitle }) {
         }
     );
 
-    const toggleSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            localStorage.setItem('sidebarCollapsed', isSidebarCollapsed);
+        }
+    }, [isSidebarCollapsed]);
 
-    const handleUserIconClick = (event) => { 
+    const toggleSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
+    const handleUserIconClick = (event) => {
         event.stopPropagation();
         if (showNotificationPopup) {
             setShowNotificationPopup(false);
         }
         setShowAdminPopup(prev => !prev);
     };
-
-    const handleLogoutClick = () => {
-        setShowAdminPopup(false);
-        setShowLogoutAlert(true);
-    };
+    const handleLogoutClick = () => { setShowAdminPopup(false); setShowLogoutAlert(true); };
     const handleCloseLogoutAlert = () => setShowLogoutAlert(false);
-    const handleConfirmLogout = () => {
+
+    const handleConfirmLogout = () => { 
         setShowLogoutAlert(false);
         setIsLoading(true);
         signOut({ callbackUrl: '/api/auth/login' });
     };
+
+    const handleNavItemClick = (item) => {
+        if (pathname !== item.href) {
+            setNavigatingTo(item.id);
+            router.push(item.href);
+        }
+    };
     
+    useEffect(() => {
+        setNavigatingTo(null);
+    }, [pathname]);
+
     const handleToggleNotificationPopup = (event) => {
         event.stopPropagation();
         if (showAdminPopup) {
             setShowAdminPopup(false);
         }
-        setShowNotificationPopup(prev => !prev);
+        setShowNotificationPopup(prev => !prev); 
     };
-
+    
     const handleMarkSingleAsRead = async (notificationId) => {
         await notificationService.markNotificationAsRead(notificationId, token);
         mutateNotifications();
     };
 
     const handleMarkAllRead = async () => {
-        const unreadIds = notifications.filter(n => !n.read).map(n => n.notificationId);
-        await Promise.all(unreadIds.map(id => notificationService.markNotificationAsRead(id, token)));
-        mutateNotifications();
+        const unreadIds = notifications?.filter(n => !n.read).map(n => n.notificationId) || [];
+        if (unreadIds.length > 0) {
+            await Promise.all(unreadIds.map(id => notificationService.markNotificationAsRead(id, token)));
+            mutateNotifications();
+        }
     };
 
     const handleApproveNotification = async (requestId) => {
@@ -117,7 +132,7 @@ export default function AdminLayout({ children, activeItem, pageTitle }) {
         mutateNotifications();
     };
 
-    const hasUnreadNotifications = notifications?.some(n => !n.read);
+    const hasUnreadNotifications = notifications?.some(n => !n.read) || changeRequests?.some(cr => cr.status === 'PENDING');
 
     const handleProfileNav = (path) => {
         if (isProfileNavigating) return;
@@ -129,25 +144,7 @@ export default function AdminLayout({ children, activeItem, pageTitle }) {
         router.push(path);
     };
     
-    const handleNavItemClick = (item) => {
-        if (pathname !== item.href) {
-            setNavigatingTo(item.id);
-            router.push(item.href);
-        }
-    };
-
-    useEffect(() => {
-        setNavigatingTo(null);
-        setIsProfileNavigating(false);
-    }, [pathname]);
-
     const sidebarWidth = isSidebarCollapsed ? '80px' : '265px';
-
-    useEffect(() => {
-        if (typeof window !== 'undefined') {
-            localStorage.setItem('sidebarCollapsed', isSidebarCollapsed);
-        }
-    }, [isSidebarCollapsed]);
 
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -161,6 +158,12 @@ export default function AdminLayout({ children, activeItem, pageTitle }) {
         document.addEventListener('click', handleClickOutside);
         return () => document.removeEventListener('click', handleClickOutside);
     }, [showAdminPopup, showNotificationPopup]);
+
+    useEffect(() => {
+        if (isProfileNavigating) {
+            setIsProfileNavigating(false);
+        }
+    }, [pathname]);
 
     if (isLoading) {
         return (
@@ -205,7 +208,8 @@ export default function AdminLayout({ children, activeItem, pageTitle }) {
                     onApprove={handleApproveNotification} 
                     onDeny={handleDenyNotification} 
                     onMarkAsRead={handleMarkSingleAsRead} 
-                    anchorRef={notificationIconRef} 
+                    anchorRef={notificationIconRef}
+                    onClose={() => setShowNotificationPopup(false)}
                 />
             </div>
             <LogoutAlert show={showLogoutAlert} onClose={handleCloseLogoutAlert} onConfirmLogout={handleConfirmLogout} />

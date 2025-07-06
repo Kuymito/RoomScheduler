@@ -49,12 +49,12 @@ export default function DashboardLayout({ children, activeItem, pageTitle }) {
         profileFetcher
     );
 
-    // SWR hooks for fetching notifications and change requests
+    // Use SWR to fetch notifications and change requests
     const { data: notifications, mutate: mutateNotifications } = useSWR(
         token ? ['/api/notifications', token] : null,
         notificationsFetcher,
         {
-            refreshInterval: 5000, // Re-fetch every 5 seconds
+            refreshInterval: 5000,
         }
     );
 
@@ -107,16 +107,18 @@ export default function DashboardLayout({ children, activeItem, pageTitle }) {
         }
         setShowNotificationPopup(prev => !prev); 
     };
-
+    
     const handleMarkSingleAsRead = async (notificationId) => {
         await notificationService.markNotificationAsRead(notificationId, token);
         mutateNotifications();
     };
 
     const handleMarkAllRead = async () => {
-        const unreadIds = notifications.filter(n => !n.read).map(n => n.notificationId);
-        await Promise.all(unreadIds.map(id => notificationService.markNotificationAsRead(id, token)));
-        mutateNotifications();
+        const unreadIds = notifications?.filter(n => !n.read).map(n => n.notificationId) || [];
+        if (unreadIds.length > 0) {
+            await Promise.all(unreadIds.map(id => notificationService.markNotificationAsRead(id, token)));
+            mutateNotifications();
+        }
     };
 
     const handleApproveNotification = async (requestId) => {
@@ -181,16 +183,7 @@ export default function DashboardLayout({ children, activeItem, pageTitle }) {
             <Sidebar isCollapsed={isSidebarCollapsed} activeItem={activeItem} onNavItemClick={handleNavItemClick} navigatingTo={navigatingTo} />
             <div className="flex flex-col flex-grow transition-all duration-300 ease-in-out" style={{ marginLeft: sidebarWidth, width: `calc(100% - ${sidebarWidth})`, height: '100vh', overflowY: 'auto' }}>
                 <div className="fixed top-0 bg-white dark:bg-gray-900 shadow-custom-medium p-5 flex justify-between items-center z-30 transition-all duration-300 ease-in-out" style={{ left: sidebarWidth, width: `calc(100% - ${sidebarWidth})`, height: TOPBAR_HEIGHT }}>
-                    <Topbar 
-                        onToggleSidebar={toggleSidebar} 
-                        isSidebarCollapsed={isSidebarCollapsed} 
-                        onUserIconClick={handleUserIconClick} 
-                        pageSubtitle={pageTitle} 
-                        userIconRef={userIconRef} 
-                        onNotificationIconClick={handleToggleNotificationPopup} 
-                        notificationIconRef={notificationIconRef} 
-                        hasUnreadNotifications={hasUnreadNotifications} 
-                    />
+                    <Topbar onToggleSidebar={toggleSidebar} isSidebarCollapsed={isSidebarCollapsed} onUserIconClick={handleUserIconClick} pageSubtitle={pageTitle} userIconRef={userIconRef} onNotificationIconClick={handleToggleNotificationPopup} notificationIconRef={notificationIconRef} hasUnreadNotifications={hasUnreadNotifications} />
                 </div>
                 <div className="flex flex-col flex-grow" style={{ paddingTop: TOPBAR_HEIGHT }}>
                     <main className="content-area flex-grow m-6">{children}</main>
@@ -217,6 +210,7 @@ export default function DashboardLayout({ children, activeItem, pageTitle }) {
                     onDeny={handleDenyNotification} 
                     onMarkAsRead={handleMarkSingleAsRead} 
                     anchorRef={notificationIconRef} 
+                    onClose={() => setShowNotificationPopup(false)}
                 />
             </div>
             <LogoutAlert show={showLogoutAlert} onClose={handleCloseLogoutAlert} onConfirmLogout={handleConfirmLogout} />
