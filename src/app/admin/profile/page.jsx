@@ -17,6 +17,23 @@ const defaultUserIcon = ({ className }) => (
     </svg>
 );
 
+const formatPhoneNumber = (phone) => {
+    if (!phone || typeof phone !== 'string') return phone;
+    const cleaned = phone.replace(/\D/g, '');
+    if (cleaned.length === 3 || cleaned.length === 4) {
+        return cleaned;
+    } else if (cleaned.length === 5 || cleaned.length === 6) {
+        return `${cleaned.slice(0, 3)}-${cleaned.slice(3)}`;
+    } else if (cleaned.length === 7 || cleaned.length === 8) {
+        return `${cleaned.slice(0, 3)}-${cleaned.slice(3, 6)}-${cleaned.slice(6)}`;
+    } else if (cleaned.length === 9) {
+        return `${cleaned.slice(0, 3)}-${cleaned.slice(3, 6)}-${cleaned.slice(6)}`;
+    } else if (cleaned.length === 10) {
+        return `${cleaned.slice(0, 1)}-${cleaned.slice(1, 4)}-${cleaned.slice(4, 7)}-${cleaned.slice(7)}`;
+    }
+    return phone;
+};
+
 const ProfileContentSkeleton = () => (
     <div className='p-6 animate-pulse'>
         <div className="h-7 w-24 bg-slate-300 dark:bg-slate-600 rounded mb-4"></div>
@@ -374,7 +391,7 @@ const ProfileContent = () => {
                     <input
                       type="tel"
                       name="phoneNumber"
-                      value={currentDisplayData.phoneNumber}
+                      value={formatPhoneNumber(currentDisplayData.phoneNumber)}
                       onChange={handleGeneralInputChange}
                       readOnly={!isEditingGeneral}
                       className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs ${

@@ -18,6 +18,24 @@ const DefaultAvatarIcon = ({ className = "w-12 h-12" }) => ( <svg xmlns="http://
 
 const instructorFetcher = ([key, token]) => instructorService.getAllInstructors(token);
 
+// Helper function to format phone numbers
+const formatPhoneNumber = (phone) => {
+    if (!phone || typeof phone !== 'string') return phone;
+    const cleaned = phone.replace(/\D/g, '');
+    if (cleaned.length === 3 || cleaned.length === 4) {
+        return cleaned;
+    } else if (cleaned.length === 5 || cleaned.length === 6) {
+        return `${cleaned.slice(0, 3)}-${cleaned.slice(3)}`;
+    } else if (cleaned.length === 7 || cleaned.length === 8) {
+        return `${cleaned.slice(0, 3)}-${cleaned.slice(3, 6)}-${cleaned.slice(6)}`;
+    } else if (cleaned.length === 9) {
+        return `${cleaned.slice(0, 3)}-${cleaned.slice(3, 6)}-${cleaned.slice(6)}`;
+    } else if (cleaned.length === 10) {
+        return `${cleaned.slice(0, 1)}-${cleaned.slice(1, 4)}-${cleaned.slice(4, 7)}-${cleaned.slice(7)}`;
+    }
+    return phone;
+};
+
 export default function InstructorClientView({ initialInstructors, initialDepartments }) {
     const router = useRouter();
     const { data: session } = useSession();
@@ -247,7 +265,7 @@ export default function InstructorClientView({ initialInstructors, initialDepart
                                             </td>
                                             <td className="px-6 py-2"><div className="flex items-center gap-2">{data.profileImage ? <img src={data.profileImage} alt={data.name} className="w-8 h-8 rounded-full object-cover border border-gray-200 dark:border-gray-600"/> : <DefaultAvatarIcon className="size-8 rounded-full text-gray-400 bg-gray-100 dark:bg-gray-700 dark:text-gray-500" />} {data.name}</div></td>
                                             <td className="px-6 py-2 sm:table-cell hidden"> {data.email} </td>
-                                            <td className="px-6 py-2 lg:table-cell hidden"> {data.phone} </td>
+                                            <td className="px-6 py-2 lg:table-cell hidden"> {formatPhoneNumber(data.phone)} </td>
                                             <td className="px-6 py-2"> {data.majorStudied} </td>
                                             <td className="px-6 py-2 sm:table-cell hidden"> {data.qualifications} </td>
                                             <td className="px-6 py-2 capitalize"><span className={`px-2 py-0.5 rounded-full text-xs font-medium ${ data.status === 'active' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200' }`}>{data.status}</span></td>
