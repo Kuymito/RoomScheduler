@@ -23,7 +23,6 @@ const shiftMap = {
     'Weekend Shift (07:30:00 - 17:00:00, Weekend)': 5
 };
 
-// Map frontend day abbreviations to backend full uppercase names
 const clientDayToApiDay = {
     Mon: 'MONDAY',
     Tue: 'TUESDAY',
@@ -253,12 +252,29 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
     const handleNewInstructorDragStart = (e, instructor) => { setDraggedItem({ item: instructor, type: 'new' }); e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('application/json', JSON.stringify(instructor)); e.currentTarget.classList.add('opacity-60', 'scale-95'); };
     const handleNewInstructorDragEnd = (e) => { if (draggedItem?.type === 'new') setDraggedItem(null); e.currentTarget.classList.remove('opacity-60', 'scale-95'); setDragOverDay(null); };
     const handleScheduledInstructorDragStart = (e, instructor, originDay) => { setDraggedItem({ item: instructor, type: 'scheduled', originDay: originDay }); e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('application/json', JSON.stringify({ ...instructor, originDay })); };
-    const handleScheduledInstructorDragEnd = (e) => { if (draggedItem?.type === 'scheduled' && e.dataTransfer.dropEffect === 'none') { setSchedule(prevSchedule => ({ ...prevSchedule, [draggedItem.originDay]: null })); } setDraggedItem(null); setDragOverDay(null); };
+    
+    const handleScheduledInstructorDragEnd = (e) => {
+        if (draggedItem?.type === 'scheduled' && e.dataTransfer.dropEffect === 'none') {
+            // Unassign locally when dragged off
+            setSchedule(prevSchedule => ({ ...prevSchedule, [draggedItem.originDay]: null }));
+        }
+        setDraggedItem(null);
+        setDragOverDay(null);
+    };
+
     const handleDayDragOver = (e) => { e.preventDefault(); if (draggedItem) e.dataTransfer.dropEffect = 'move'; };
     const handleDayDragEnter = (e, day) => { e.preventDefault(); if (draggedItem) setDragOverDay(day); };
     const handleDayDragLeave = (e, day) => { if (e.currentTarget.contains(e.relatedTarget)) return; if (dragOverDay === day) setDragOverDay(null); };
     const handleDayDrop = (e, targetDay) => { e.preventDefault(); if (!draggedItem) return; const newSchedule = { ...schedule }; if (draggedItem.type === 'new') { newSchedule[targetDay] = { instructor: {id: draggedItem.item.id, name: draggedItem.item.name, profileImage: draggedItem.item.profileImage, degree: draggedItem.item.degree}, studyMode: 'in-class', }; } else if (draggedItem.type === 'scheduled') { const originDay = draggedItem.originDay; if (originDay === targetDay) { setDragOverDay(null); return; } const dataFromOriginDay = schedule[originDay]; const dataFromTargetDay = schedule[targetDay]; if (dataFromTargetDay?.instructor) { newSchedule[originDay] = { instructor: dataFromTargetDay.instructor, studyMode: dataFromTargetDay.studyMode}; newSchedule[targetDay] = { instructor: draggedItem.item, studyMode: dataFromOriginDay.studyMode}; } else { newSchedule[targetDay] = { instructor: draggedItem.item, studyMode: dataFromOriginDay.studyMode}; if (originDay) newSchedule[originDay] = null; } } setSchedule(newSchedule); setDragOverDay(null); };
-    const handleRemoveInstructorFromDay = (day) => { setSchedule(prevSchedule => ({ ...prevSchedule, [day]: null })); };
+    
+    const handleRemoveInstructorFromDay = (day) => {
+        // Just update the local state. The save function will handle the API call.
+        setSchedule(prevSchedule => ({
+            ...prevSchedule,
+            [day]: null,
+        }));
+    };
+
     const handleStudyModeChange = (day, newMode) => { setSchedule(prevSchedule => { if (prevSchedule[day]?.instructor) { return { ...prevSchedule, [day]: { ...prevSchedule[day], studyMode: newMode } }; } return prevSchedule; }); };
     
     const handleSaveSchedule = async () => {
@@ -270,25 +286,40 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
         setSaveStatus('saving');
         setSaveMessage('Saving schedule...');
 
-        const schedulePromises = Object.entries(schedule)
-            .filter(([, dayData]) => dayData && dayData.instructor)
-            .map(([day, dayData]) => {
+        const promises = [];
+
+        // Assignments and Updates
+        Object.entries(schedule).forEach(([day, dayData]) => {
+            if (dayData && dayData.instructor) {
                 const apiDay = clientDayToApiDay[day];
-                if (!apiDay) {
-                    console.error(`Invalid day mapping for: ${day}`);
-                    return Promise.reject(new Error(`Invalid day: ${day}`));
+                if (apiDay) {
+                    const payload = {
+                        classId: classData.id,
+                        instructorId: dayData.instructor.id,
+                        dayOfWeek: apiDay,
+                        online: dayData.studyMode === 'online',
+                    };
+                    promises.push(classService.assignInstructorToClass(payload, session.accessToken));
                 }
-                const payload = {
-                    classId: classData.id,
-                    instructorId: dayData.instructor.id,
-                    dayOfWeek: apiDay,
-                    online: dayData.studyMode === 'online',
-                };
-                return classService.assignInstructorToClass(payload, session.accessToken);
-            });
+            }
+        });
+
+        // Unassignments
+        Object.entries(initialScheduleForCheck).forEach(([day, dayData]) => {
+            if (dayData && dayData.instructor && (!schedule[day] || !schedule[day].instructor)) {
+                const apiDay = clientDayToApiDay[day];
+                if (apiDay) {
+                    const payload = {
+                        classId: classData.id,
+                        dayOfWeek: apiDay,
+                    };
+                    promises.push(classService.unassignInstructorFromClass(payload, session.accessToken));
+                }
+            }
+        });
 
         try {
-            await Promise.all(schedulePromises);
+            await Promise.all(promises);
             setSaveStatus('success');
             setSaveMessage('Schedule saved successfully!');
             setInitialScheduleForCheck(JSON.parse(JSON.stringify(schedule)));
