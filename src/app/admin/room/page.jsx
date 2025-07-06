@@ -60,11 +60,14 @@ async function fetchAndProcessRoomData() {
             };
         });
         
-        // Create a map of schedules for quick lookup: { "Monday": { "07:00:00-10:00:00": { roomId: className } } }
+        // Create a map of schedules for quick lookup: { "Monday": { "07:00-10:00": { roomId: className } } }
         const scheduleMap = {};
         apiSchedules.forEach(schedule => {
             const day = schedule.day;
-            const timeSlot = `${schedule.shift.startTime}-${schedule.shift.endTime}`;
+            // FIX: Remove seconds from start and end times to match the dropdown format
+            const startTime = schedule.shift.startTime.substring(0, 5);
+            const endTime = schedule.shift.endTime.substring(0, 5);
+            const timeSlot = `${startTime}-${endTime}`;
             
             if (!scheduleMap[day]) {
                 scheduleMap[day] = {};

@@ -8,12 +8,12 @@ import RequestChangeForm from "./RequestChangeForm";
 import InstructorRoomPageSkeleton from "./InstructorRoomPageSkeleton";
 import { scheduleService } from '@/services/schedule.service';
 
-// Fetcher for useSWR
-const scheduleFetcher = ([key, token]) => scheduleService.getAllSchedules(token);
+// The fetcher function for SWR, which will call your service
+const scheduleFetcher = ([, token]) => scheduleService.getAllSchedules(token);
 
 /**
- * This is the Client Component for the Instructor Room page.
- * It receives its initial data from props and handles all user interactions.
+ * Client Component for the Instructor Room page.
+ * It now uses useSWR for real-time schedule updates and has a layout consistent with the Admin view.
  */
 export default function InstructorRoomClientView({ initialAllRoomsData, buildingLayout, initialScheduleMap, initialInstructorClasses }) {
     // --- State Management ---
@@ -148,31 +148,30 @@ export default function InstructorRoomClientView({ initialAllRoomsData, building
       <RequestChangeForm isOpen={isFormOpen} onClose={() => setIsFormOpen(false)} onSave={handleSaveRequest} roomDetails={roomDetails} instructorClasses={instructorClasses} selectedDay={selectedDay} selectedTime={selectedTimeSlot}/>
       <div className="p-4 sm:p-6 min-h-full">
         <div className="mb-4 w-full"><h2 className="text-xl font-semibold text-slate-800 dark:text-white">Room</h2><hr className="border-t border-slate-300 dark:border-slate-700 mt-3" /></div>
-        <div className="flex flex-col gap-4 mb-4">
-          <div className="flex flex-col sm:flex-row items-center justify-between border-b dark:border-gray-600 pb-3 gap-4">
-              <div className="flex rounded-lg border border-gray-300 dark:border-gray-600 dark:text-gray-300 overflow-hidden w-full sm:w-auto">
-                  {WEEKDAYS.map(day => (<button key={day} onClick={() => handleDayChange(day)} className={`px-3.5 py-1.5 text-sm font-medium transition-colors w-full ${selectedDay === day ? 'bg-blue-600 text-white shadow' : 'border-r dark:border-r-gray-500 last:border-r-0 hover:bg-gray-100 dark:hover:bg-gray-700'}`}>{day.substring(0,3)}</button>))}
-              </div>
-              <div className="flex items-center gap-2 w-full sm:w-auto">
-                  <label htmlFor="time-select" className="text-sm font-medium dark:text-gray-300">Time:</label>
-                  <select id="time-select" value={selectedTimeSlot} onChange={handleTimeChange} className="p-2 text-sm border border-gray-300 rounded-md dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200 focus:ring-blue-500 focus:border-blue-500 w-full">
-                      {TIME_SLOTS.map(t => <option key={t} value={t}>{formatTimeSlot(t)}</option>)}
-                  </select>
-              </div>
-          </div>
-          <div className="flex items-center gap-2">
-                <select value={selectedBuilding} onChange={handleBuildingChange} className="text-sm font-semibold text-slate-700 bg-white border border-slate-300 dark:text-slate-200 dark:bg-slate-800 dark:border-slate-600 rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500">
-                    {Object.keys(buildings).map((building) => <option key={building} value={building}>{building}</option>)}
-                </select>
-                <hr className="flex-1 border-t border-slate-300 dark:border-slate-700" />
-          </div>
-        </div>
+        {error && <p className="text-red-500 text-center mb-4">{error}</p>}
         <div className="flex flex-col lg:flex-row gap-6">
             <div className="flex-1 min-w-0">
+                <div className="flex flex-col sm:flex-row items-center justify-between border-b dark:border-gray-600 pb-3 gap-4 mb-4">
+                    <div className="flex rounded-lg border border-gray-300 dark:border-gray-600 dark:text-gray-300 overflow-hidden w-full sm:w-auto">
+                        {WEEKDAYS.map(day => (<button key={day} onClick={() => handleDayChange(day)} className={`px-3.5 py-1.5 text-sm font-medium transition-colors w-full ${selectedDay === day ? 'bg-blue-600 text-white shadow' : 'border-r dark:border-r-gray-500 last:border-r-0 hover:bg-gray-100 dark:hover:bg-gray-700'}`}>{day.substring(0,3)}</button>))}
+                    </div>
+                    <div className="flex items-center gap-2 w-full sm:w-auto">
+                        <label htmlFor="time-select" className="text-sm font-medium dark:text-gray-300">Time:</label>
+                        <select id="time-select" value={selectedTimeSlot} onChange={handleTimeChange} className="p-2 text-sm border border-gray-300 rounded-md dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200 focus:ring-blue-500 focus:border-blue-500 w-full">
+                            {TIME_SLOTS.map(t => <option key={t} value={t}>{formatTimeSlot(t)}</option>)}
+                        </select>
+                    </div>
+                </div>
+                <div className="flex items-center gap-2 mb-3 sm:mb-4">
+                      <select value={selectedBuilding} onChange={handleBuildingChange} className="text-sm font-semibold text-slate-700 bg-white border border-slate-300 dark:text-slate-200 dark:bg-slate-800 dark:border-slate-600 rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500">
+                          {Object.keys(buildings).map((building) => <option key={building} value={building}>{building}</option>)}
+                      </select>
+                      <hr className="flex-1 border-t border-slate-300 dark:border-slate-700" />
+                </div>
                 <div className="space-y-4">
                     {floors.map(({ floor, rooms }) => (
                         <div key={floor} className="space-y-3">
-                            <div className="flex items-center gap-2 mb-2"><h4 className="text-xs sm:text-sm font-medium text-slate-600 dark:text-slate-400">Floor {floor}</h4><hr className="flex-1 border-t border-slate-300 dark:border-slate-700" /></div>
+                            <div className="flex items-center gap-2 mb-2"><h4 className="text-xs sm:text-sm font-medium text-slate-600 dark:text-slate-400 whitespace-nowrap">Floor {floor}</h4><hr className="flex-1 border-t border-slate-300 dark:border-slate-700" /></div>
                             <div className={`grid gap-3 sm:gap-4 ${getGridColumnClasses(selectedBuilding, floor)}`}>
                                 {rooms.map((roomName) => {
                                     const room = Object.values(allRoomsData).find(r => r.name === roomName);

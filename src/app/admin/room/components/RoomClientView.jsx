@@ -9,7 +9,7 @@ import { scheduleService } from '@/services/schedule.service';
 import RoomPageSkeleton from './RoomPageSkeleton'; // Import skeleton for loading state
 
 // The fetcher function for SWR, which will call your service
-const scheduleFetcher = ([key, token]) => scheduleService.getAllSchedules(token);
+const scheduleFetcher = ([, token]) => scheduleService.getAllSchedules(token);
 
 /**
  * Client Component for the Room Management page.
@@ -18,7 +18,8 @@ const scheduleFetcher = ([key, token]) => scheduleService.getAllSchedules(token)
 export default function RoomClientView({ initialAllRoomsData, buildingLayout, initialScheduleMap }) {
     // --- Constants and Helper Functions ---
     const WEEKDAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
-    const TIME_SLOTS = ['07:00:00-10:00:00', '10:30:00-13:30:00', '14:00:00-17:00:00', '17:30:00-20:30:00'];
+    // FIX: Removed seconds from time slots
+    const TIME_SLOTS = ['07:00-10:00', '10:30-13:30', '14:00-17:00', '17:30-20:30'];
     const getDayName = (date) => date.toLocaleDateString('en-US', { weekday: 'long' });
     const formatTimeSlot = (time) => time.replace('-', ' to ');
 
@@ -62,13 +63,15 @@ export default function RoomClientView({ initialAllRoomsData, buildingLayout, in
     // --- Effects ---
     // Update the schedule map whenever SWR re-fetches new data
     useEffect(() => {
-        // FIX: Check if apiSchedules is an array before using forEach
         if (apiSchedules && Array.isArray(apiSchedules)) {
             const newScheduleMap = {};
             apiSchedules.forEach(schedule => {
                 if (schedule && schedule.shift) {
                     const day = schedule.day;
-                    const timeSlot = `${schedule.shift.startTime}-${schedule.shift.endTime}`;
+                    // FIX: Remove seconds from start and end times to match the dropdown format
+                    const startTime = schedule.shift.startTime.substring(0, 5);
+                    const endTime = schedule.shift.endTime.substring(0, 5);
+                    const timeSlot = `${startTime}-${endTime}`;
                     if (!newScheduleMap[day]) newScheduleMap[day] = {};
                     if (!newScheduleMap[day][timeSlot]) newScheduleMap[day][timeSlot] = {};
                     newScheduleMap[day][timeSlot][schedule.roomId] = schedule.className;
@@ -264,7 +267,6 @@ export default function RoomClientView({ initialAllRoomsData, buildingLayout, in
                                     </button>
                                 </>
                             ) : ( <div className="text-center text-slate-500 dark:text-slate-400 w-full flex-grow flex items-center justify-center">Select an available room to view details.</div> )}
-                            {!roomDetails && !loading && ( <div className="w-full h-12 self-stretch"></div> )}
                         </div>
                     </div>
                 </div>
