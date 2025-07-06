@@ -18,6 +18,21 @@ const shiftIdToFullNameMap = {
     5: 'Weekend Shift (07:30:00 - 17:00:00, Weekend)'
 };
 
+// Helper to map full day names to abbreviated names
+const mapApiDayToClientDay = (apiDay) => {
+    const dayMap = {
+        MONDAY: 'Mon',
+        TUESDAY: 'Tue',
+        WEDNESDAY: 'Wed',
+        THURSDAY: 'Thur',
+        FRIDAY: 'Fri',
+        SATURDAY: 'Sat',
+        SUNDAY: 'Sun',
+    };
+    return dayMap[apiDay.toUpperCase()];
+};
+
+
 /**
  * Server-side data fetching function.
  * It fetches class details, all instructors, and all departments.
@@ -28,9 +43,9 @@ const fetchClassPageData = async (classId) => {
 
     if (!token) {
         console.error("Authentication token not found.");
-        return { classDetails: null, instructors: [], departments: [] };
+        return { classDetails: null, instructors: [], departments: [], initialSchedule: {} };
     }
-
+    
     try {
         const [classDetailsResponse, instructorsResponse, departmentsResponse] = await Promise.all([
             classService.getClassById(classId, token),
@@ -47,7 +62,6 @@ const fetchClassPageData = async (classId) => {
             degrees: classDetailsResponse.degreeName,
             faculty: classDetailsResponse.department?.name || 'N/A',
             semester: classDetailsResponse.semester,
-            // FIX: Use the map to find the full shift name based on the ID from the API
             shift: classDetailsResponse.shift ? shiftIdToFullNameMap[classDetailsResponse.shift.shiftId] : 'N/A',
             status: classDetailsResponse.archived ? 'Archived' : 'Active',
         };
@@ -61,11 +75,36 @@ const fetchClassPageData = async (classId) => {
 
         const formattedDepartments = departmentsResponse;
 
-        return { classDetails: formattedClassDetails, instructors: formattedInstructors, departments: formattedDepartments };
+        // Process the dailySchedule object from the API
+        const initialSchedule = {};
+        if (classDetailsResponse.dailySchedule) {
+            for (const apiDay in classDetailsResponse.dailySchedule) {
+                const clientDay = mapApiDayToClientDay(apiDay);
+                if (clientDay) {
+                    const scheduleInfo = classDetailsResponse.dailySchedule[apiDay];
+                    initialSchedule[clientDay] = {
+                        instructor: {
+                            id: scheduleInfo.instructor.instructorId,
+                            name: `${scheduleInfo.instructor.firstName} ${scheduleInfo.instructor.lastName}`,
+                            profileImage: scheduleInfo.instructor.profile,
+                            degree: scheduleInfo.instructor.degree,
+                        },
+                        studyMode: scheduleInfo.online ? 'online' : 'in-class',
+                    };
+                }
+            }
+        }
+
+        return { 
+            classDetails: formattedClassDetails, 
+            instructors: formattedInstructors, 
+            departments: formattedDepartments,
+            initialSchedule: initialSchedule // Pass the processed schedule
+        };
 
     } catch (error) {
         console.error(`Failed to fetch data for class ${classId}:`, error);
-        return { classDetails: null, instructors: [], departments: [] };
+        return { classDetails: null, instructors: [], departments: [], initialSchedule: {} };
     }
 };
 
@@ -74,7 +113,7 @@ const fetchClassPageData = async (classId) => {
  */
 export default async function ClassDetailsPage({ params }) {
     const classId = params.classId;
-    const { classDetails, instructors, departments } = await fetchClassPageData(classId);
+    const { classDetails, instructors, departments, initialSchedule } = await fetchClassPageData(classId);
 
     if (!classDetails) {
         notFound();
@@ -87,6 +126,7 @@ export default async function ClassDetailsPage({ params }) {
                     initialClassDetails={classDetails}
                     allInstructors={instructors}
                     allDepartments={departments}
+                    initialSchedule={initialSchedule} // Pass schedule data to client
                 />
             </Suspense>
         </AdminLayout>

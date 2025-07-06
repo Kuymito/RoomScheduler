@@ -127,10 +127,35 @@ const createClass = async (classData, token) => {
   }
 };
 
+/**
+ * Assigns an instructor to a class for a specific day.
+ * @param {object} assignmentData - The assignment data.
+ * @param {string} token - The authorization token.
+ * @returns {Promise<Object>} A promise that resolves to the API response.
+ */
+const assignInstructorToClass = async (assignmentData, token) => {
+    try {
+        const response = await axios.post(`${LOCAL_API_URL}/class/assign-instructor`, assignmentData, {
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+            },
+        });
+        return response.data;
+    } catch (error) {
+        console.error('Assign instructor service error:', {
+            message: error.message,
+            response: error.response ? error.response.data : 'No response',
+        });
+        throw new Error(error.response?.data?.message || 'Failed to assign instructor.');
+    }
+};
+
 
 export const classService = {
   getAllClasses,
   getClassById,
   patchClass,
   createClass,
+  assignInstructorToClass,
 };

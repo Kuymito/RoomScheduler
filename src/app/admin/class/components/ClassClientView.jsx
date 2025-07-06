@@ -8,7 +8,7 @@ import { useSession } from 'next-auth/react';
 import { classService } from '@/services/class.service';
 import { departmentService } from '@/services/department.service';
 import ClassPageSkeleton from './ClassPageSkeleton';
-import SuccessPopup from '../../profile/components/SuccessPopup'; // Import the success popup
+import SuccessPopup from '../../profile/components/SuccessPopup';
 
 // --- Reusable Icon and Spinner Components ---
 const Spinner = () => ( <svg className="animate-spin h-5 w-5 text-gray-500 dark:text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> );
@@ -19,12 +19,21 @@ const ArchiveIcon = ({ className = "w-[14px] h-[14px]" }) => ( <svg className={c
 const classFetcher = ([key, token]) => classService.getAllClasses(token);
 const departmentFetcher = ([key, token]) => departmentService.getAllDepartments(token);
 
-export default function ClassClientView({ initialClasses }) {
+// Mapping from shiftId to the full descriptive name used in the UI.
+const shiftIdToFullNameMap = {
+    1: 'Morning Shift',
+    2: 'Noon Shift',
+    3: 'Afternoon Shift',
+    4: 'Evening Shift',
+    5: 'Weekend Shift'
+};
+
+export default function ClassClientView({ initialClasses, initialDepartments }) {
     const router = useRouter();
     const { data: session } = useSession();
     const [isLoading, setIsLoading] = useState(true);
 
-    // Fetch classes list
+    // SWR hook for classes
     const { data: classes, error: classesError, mutate: mutateClasses } = useSWR(
         session?.accessToken ? ['/api/v1/class', session.accessToken] : null,
         classFetcher,
@@ -36,13 +45,16 @@ export default function ClassClientView({ initialClasses }) {
         }
     );
 
-    // Fetch departments list concurrently
+    // SWR hook for departments
     const { data: departments, error: departmentsError } = useSWR(
         session?.accessToken ? ['/api/department', session.accessToken] : null,
-        departmentFetcher
+        departmentFetcher,
+        {
+            fallbackData: initialDepartments
+        }
     );
 
-    const [classData, setClassData] = useState(initialClasses);
+    const [classData, setClassData] = useState([]);
     const [isPending, startTransition] = useTransition();
     const [rowLoadingId, setRowLoadingId] = useState(null);
     const [showCreatePopup, setShowCreatePopup] = useState(false);
@@ -56,6 +68,7 @@ export default function ClassClientView({ initialClasses }) {
     const [sortDirection, setSortDirection] = useState('asc');
     const [searchTexts, setSearchTexts] = useState({ name: '', generation: '', group: '', major: '', degrees: '', faculty: '', semester: '', shift: '' });
 
+    // This useEffect is now the single source of truth for formatting data for the view
     useEffect(() => {
         if (classes) {
             const formattedData = classes.map(item => ({
@@ -67,7 +80,7 @@ export default function ClassClientView({ initialClasses }) {
                 degrees: item.degreeName,
                 faculty: item.department?.name || 'N/A',
                 semester: item.semester,
-                shift: item.shift?.name || 'N/A',
+                shift: item.shift ? shiftIdToFullNameMap[item.shift.shiftId] || 'N/A' : 'N/A',
                 status: item.archived ? 'archived' : 'active',
             }));
             setClassData(formattedData);
@@ -81,12 +94,11 @@ export default function ClassClientView({ initialClasses }) {
         }
         try {
             await classService.createClass(newClassPayload, session.accessToken);
-            mutateClasses(); // Revalidate the class list to show the new entry
+            mutateClasses(); 
             setSuccessPopupMessage(`Class "${newClassPayload.className}" has been created successfully.`);
             setShowSuccessPopup(true);
         } catch (error) {
             console.error("Failed to create class:", error);
-            // Optionally, show an error message to the user
         }
     };
 
@@ -159,6 +171,7 @@ export default function ClassClientView({ initialClasses }) {
 
     const goToNextPage = () => setCurrentPage((prev) => Math.min(prev + 1, totalPages));
     const goToPreviousPage = () => setCurrentPage((prev) => Math.max(prev - 1, 1));
+    const goToPage = (pageNumber) => setCurrentPage(pageNumber);
     const handleItemsPerPageChange = (e) => {
         setItemsPerPage(Number(e.target.value));
         setCurrentPage(1);
@@ -320,7 +333,7 @@ export default function ClassClientView({ initialClasses }) {
                 </div>
                 <ul className="inline-flex -space-x-px rtl:space-x-reverse text-xs h-8">
                     <li><button onClick={goToPreviousPage} disabled={currentPage === 1} className="flex items-center justify-center px-3 h-8 ms-0 leading-tight text-gray-500 bg-white border border-gray-300 rounded-s-lg hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white disabled:opacity-50">Previous</button></li>
-                    {getPageNumbers().map((pageNumber) => (<li key={pageNumber}><button onClick={() => {}} className={`flex items-center justify-center px-3 h-8 leading-tight border border-gray-300 ${currentPage === pageNumber ? 'text-blue-600 bg-blue-50 dark:bg-gray-700 dark:text-white' : 'text-gray-500 bg-white hover:bg-gray-100 dark:bg-gray-800 dark:hover:bg-gray-700'}`}>{pageNumber}</button></li>))}
+                    {getPageNumbers().map((pageNumber) => (<li key={pageNumber}><button onClick={() => goToPage(pageNumber)} className={`flex items-center justify-center px-3 h-8 leading-tight border border-gray-300 ${currentPage === pageNumber ? 'text-blue-600 bg-blue-50 dark:bg-gray-700 dark:text-white' : 'text-gray-500 bg-white hover:bg-gray-100 dark:bg-gray-800 dark:hover:bg-gray-700'}`}>{pageNumber}</button></li>))}
                     <li><button onClick={goToNextPage} disabled={currentPage === totalPages} className="flex items-center justify-center px-3 h-8 leading-tight text-gray-500 bg-white border border-gray-300 rounded-e-lg hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white disabled:opacity-50">Next</button></li>
                 </ul>
             </nav>
@@ -328,7 +341,7 @@ export default function ClassClientView({ initialClasses }) {
                 isOpen={showCreatePopup} 
                 onClose={() => setShowCreatePopup(false)} 
                 onSave={handleSaveNewClass}
-                departments={departments}
+                departments={departments || []}
                 departmentsError={departmentsError}
             />
         </div>

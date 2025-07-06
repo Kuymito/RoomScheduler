@@ -4,13 +4,12 @@ import ClassPageSkeleton from './components/ClassPageSkeleton';
 import ClassClientView from './components/ClassClientView';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
-import axios from 'axios'; // Import axios for direct fetching
-
-// The external API URL to be used by the server component directly.
-const EXTERNAL_API_URL = "https://jaybird-new-previously.ngrok-free.app/api/v1";
+import { classService } from '@/services/class.service';
+import { departmentService } from '@/services/department.service';
 
 /**
- * An async Server Component to fetch the data directly from the external API.
+ * An async Server Component to fetch the raw data for classes and departments.
+ * The client component will handle all formatting and display logic.
  */
 async function ClassData() {
     const session = await getServerSession(authOptions);
@@ -18,37 +17,23 @@ async function ClassData() {
 
     if (!token) {
         console.error("No access token found in session. User is not authenticated.");
-        return <ClassClientView initialClasses={[]} />; 
+        // Pass empty arrays to the client component if not authenticated
+        return <ClassClientView initialClasses={[]} initialDepartments={[]} />; 
     }
 
     try {
-        // Fetch directly from the external API, bypassing the internal proxy route.
-        const response = await axios.get(`${EXTERNAL_API_URL}/class`, {
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'ngrok-skip-browser-warning': 'true'
-            }
-        });
+        // Fetch both classes and departments data in parallel
+        const [apiClasses, apiDepartments] = await Promise.all([
+            classService.getAllClasses(token),
+            departmentService.getAllDepartments(token)
+        ]);
         
-        const apiData = response.data.payload;
-        
-        const formattedData = apiData.map(item => ({
-            id: item.classId,
-            name: item.className,
-            generation: item.generation,
-            group: item.groupName,
-            major: item.majorName,
-            degrees: item.degreeName,
-            faculty: item.department?.name || 'N/A',
-            semester: item.semester,
-            shift: item.shift?.name || 'N/A',
-            status: item.archived ? 'archived' : 'active',
-        }));
-
-        return <ClassClientView initialClasses={formattedData} />;
+        // Pass the raw API data directly to the client component
+        return <ClassClientView initialClasses={apiClasses} initialDepartments={apiDepartments} />;
     } catch (error) {
-        console.error("Failed to fetch class data in page.jsx:", error.message);
-        return <ClassClientView initialClasses={[]} />; 
+        console.error("Failed to fetch class or department data in page.jsx:", error.message);
+        // Pass empty arrays on error to prevent crashing the client
+        return <ClassClientView initialClasses={[]} initialDepartments={[]} />; 
     }
 }
 
