@@ -1,10 +1,7 @@
 import axios from 'axios';
 
-// Detect if running on the server or client to select the correct base URL.
-const isServer = typeof window === 'undefined';
-
-// Define the correct, full base URL for all API requests.
-const API_URL =  "https://jaybird-new-previously.ngrok-free.app/api/v1" ;
+// Define the base URL for all API requests.
+const API_URL = "https://jaybird-new-previously.ngrok-free.app/api/v1";
 
 /**
  * Creates the authorization headers for an API request.
@@ -13,8 +10,7 @@ const API_URL =  "https://jaybird-new-previously.ngrok-free.app/api/v1" ;
  */
 const getAuthHeaders = (token) => ({
     'Authorization': `Bearer ${token}`,
-    // This header is only necessary for direct server-to-server requests to bypass the ngrok warning page.
-     'ngrok-skip-browser-warning': 'true'
+    'ngrok-skip-browser-warning': 'true'
 });
 
 /**
@@ -31,8 +27,6 @@ const handleError = (context, error) => {
     throw new Error(error.response?.data?.message || `Failed operation: ${context}.`);
 };
 
-// --- API Functions with Correctly Formatted URLs ---
-
 /**
  * Fetches all notifications for the current user.
  * @param {string} token - The authorization token.
@@ -48,13 +42,41 @@ const getNotifications = async (token) => {
 };
 
 /**
+ * Fetches all change requests for the admin.
+ * @param {string} token - The authorization token.
+ * @returns {Promise<Array>} A promise that resolves to an array of change request objects.
+ */
+const getChangeRequests = async (token) => {
+    try {
+        const response = await axios.get(`${API_URL}/change-requests`, { headers: getAuthHeaders(token) });
+        return response.data.payload || [];
+    } catch (error) {
+        handleError("Get change requests", error);
+    }
+};
+
+/**
+ * Submits a change request.
+ * @param {object} requestData - The data for the change request.
+ * @param {string} token - The authorization token.
+ * @returns {Promise<any>} The response from the API.
+ */
+const submitChangeRequest = async (requestData, token) => {
+    try {
+        const response = await axios.post(`${API_URL}/change-requests`, requestData, { headers: getAuthHeaders(token) });
+        return response.data;
+    } catch (error) {
+        handleError("Submit change request", error);
+    }
+};
+
+/**
  * Approves a change request.
  * @param {string|number} changeRequestId - The ID of the change request to approve.
  * @param {string} token - The authorization token.
  */
 const approveChangeRequest = async (changeRequestId, token) => {
     try {
-        // Correct URL: https://.../api/v1/change-requests/{id}/approve
         await axios.post(`${API_URL}/change-requests/${changeRequestId}/approve`, {}, { headers: getAuthHeaders(token) });
     } catch (error) {
         handleError("Approve change request", error);
@@ -68,7 +90,6 @@ const approveChangeRequest = async (changeRequestId, token) => {
  */
 const denyChangeRequest = async (changeRequestId, token) => {
     try {
-        // Correct URL: https://.../api/v1/change-requests/{id}/deny
         await axios.post(`${API_URL}/change-requests/${changeRequestId}/deny`, {}, { headers: getAuthHeaders(token) });
     } catch (error) {
         handleError("Deny change request", error);
@@ -82,7 +103,6 @@ const denyChangeRequest = async (changeRequestId, token) => {
  */
 const markNotificationAsRead = async (notificationId, token) => {
     try {
-        // Correct URL: https://.../api/v1/notifications/{id}/read
         await axios.post(`${API_URL}/notifications/${notificationId}/read`, {}, { headers: getAuthHeaders(token) });
     } catch (error) {
         handleError("Mark notification as read", error);
@@ -91,6 +111,8 @@ const markNotificationAsRead = async (notificationId, token) => {
 
 export const notificationService = {
     getNotifications,
+    getChangeRequests,
+    submitChangeRequest,
     approveChangeRequest,
     denyChangeRequest,
     markNotificationAsRead

@@ -59,8 +59,7 @@ const NotificationPopup = ({ show, notifications = [], onMarkAllRead, onApprove,
         </div>
       </div>
 
-      {/* Changed overflow-y-auto to overflow-y-scroll to always reserve scrollbar space */}
-      <div className="flex flex-col flex-1 overflow-y-scroll dark:bg-gray-800 border-t border-gray-200 dark:border-slate-600 rounded-b-lg">
+      <div className="flex flex-col flex-1 overflow-y-scroll max-h-96 dark:bg-gray-800 border-t border-gray-200 dark:border-slate-600 rounded-b-lg">
         {notifications && notifications.length > 0 ? (
           notifications.map(notification => (
             <NotificationItem
