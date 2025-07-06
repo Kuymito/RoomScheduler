@@ -3,6 +3,13 @@
 import { useState } from 'react';
 
 // --- HELPER COMPONENTS (from your original file) ---
+
+const DefaultAvatarIcon = ({ className = "w-12 h-12" }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={`${className} text-gray-400 bg-gray-100 dark:bg-gray-700 dark:text-gray-500 p-1 rounded-full`}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
+    </svg>
+);
+
 const InfoField = ({ label, value }) => (
     <div className="form-group flex-1 min-w-[200px]">
         <label className="form-label block font-semibold text-xs text-num-dark-text dark:text-white mb-1">{label}</label>
@@ -15,19 +22,33 @@ const InfoField = ({ label, value }) => (
     </div>
 );
 
-const ScheduledInstructorCard = ({ instructor }) => (
-     <div className="flex flex-col items-center space-y-1">
-        <img
-            src={instructor.avatar || `https://ui-avatars.com/api/?name=${instructor.name.replace(' ', '+')}&background=random`} 
-            alt={instructor.name}
-            className="w-12 h-12 rounded-full object-cover"
-        />
-        <div>
-            <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">{instructor.name}</p>
-            <p className="text-xs text-gray-500 dark:text-gray-400">{instructor.role}</p>
+const ScheduledInstructorCard = ({ instructor }) => {
+    const [imageError, setImageError] = useState(false);
+
+    const handleImageError = () => {
+        setImageError(true);
+    };
+
+    return (
+         <div className="flex flex-col items-center space-y-1">
+            {instructor.avatar && !imageError ? (
+                <img
+                    src={instructor.avatar}
+                    alt={instructor.name}
+                    className="w-12 h-12 rounded-full object-cover"
+                    onError={handleImageError}
+                />
+            ) : (
+                <DefaultAvatarIcon className="w-12 h-12" />
+            )}
+            <div>
+                <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">{instructor.name}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">{instructor.role}</p>
+            </div>
         </div>
-    </div>
-);
+    );
+};
+
 
  const StudyModeTag = ({ mode }) => {
     const isOnline = mode === 'Online';
