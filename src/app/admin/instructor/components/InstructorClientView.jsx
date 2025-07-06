@@ -6,7 +6,6 @@ import { useRouter } from 'next/navigation';
 import useSWR from 'swr';
 import { useSession } from 'next-auth/react';
 import { instructorService } from '@/services/instructor.service';
-import { departmentService } from '@/services/department.service';
 import InstructorPageSkeleton from './InstructorPageSkeleton';
 import SuccessPopup from '../../profile/components/SuccessPopup';
 
@@ -18,9 +17,8 @@ const DefaultAvatarIcon = ({ className = "w-12 h-12" }) => ( <svg xmlns="http://
 <path strokeLinecap="round" strokeLinejoin="round" d="M17.982 18.725A7.488 7.488 0 0 0 12 15.75a7.488 7.488 0 0 0-5.982 2.975m11.963 0a9 9 0 1 0-11.963 0m11.963 0A8.966 8.966 0 0 1 12 21a8.966 8.966 0 0 1-5.982-2.275M15 9.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" /></svg> );
 
 const instructorFetcher = ([key, token]) => instructorService.getAllInstructors(token);
-const departmentFetcher = ([key, token]) => departmentService.getAllDepartments(token);
 
-export default function InstructorClientView({ initialInstructors }) {
+export default function InstructorClientView({ initialInstructors, initialDepartments }) {
     const router = useRouter();
     const { data: session } = useSession();
     const [isLoading, setIsLoading] = useState(true);
@@ -36,12 +34,10 @@ export default function InstructorClientView({ initialInstructors }) {
         }
     );
 
-    const { data: departments, error: departmentsError } = useSWR(
-        session?.accessToken ? ['/api/department', session.accessToken] : null,
-        departmentFetcher
-    );
+    const departments = initialDepartments;
+    const departmentsError = !initialDepartments;
 
-    const [instructorData, setInstructorData] = useState(initialInstructors);
+    const [instructorData, setInstructorData] = useState([]);
     const [isPending, startTransition] = useTransition();
     const [rowLoadingId, setRowLoadingId] = useState(null);
     const [showCreateInstructorPopup, setShowCreateInstructorPopup] = useState(false);
@@ -80,16 +76,14 @@ export default function InstructorClientView({ initialInstructors }) {
     const handleSaveNewInstructor = async (newInstructorData) => {
         if (!session?.accessToken) {
             console.error("Cannot create instructor: not authenticated.");
-            // Optionally show an error message to the user
             return;
         }
         try {
             await instructorService.createInstructor(newInstructorData, session.accessToken);
-            mutateInstructors(); // Re-fetch the instructor list
+            mutateInstructors();
             setShowSuccessPopup(true);
         } catch (error) {
             console.error("Failed to create instructor:", error);
-            // Optionally show an error message to the user
         }
     };
 

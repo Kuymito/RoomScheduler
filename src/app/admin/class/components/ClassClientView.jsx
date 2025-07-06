@@ -6,7 +6,6 @@ import { useRouter } from 'next/navigation';
 import useSWR from 'swr';
 import { useSession } from 'next-auth/react';
 import { classService } from '@/services/class.service';
-import { departmentService } from '@/services/department.service';
 import ClassPageSkeleton from './ClassPageSkeleton';
 import SuccessPopup from '../../profile/components/SuccessPopup';
 
@@ -15,9 +14,8 @@ const Spinner = () => ( <svg className="animate-spin h-5 w-5 text-gray-500 dark:
 const EditIcon = ({ className = "w-[14px] h-[14px]" }) => ( <svg className={className} width="14" height="14" viewBox="0 0 17 17" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M8.06671 2.125H4.95837C3.00254 2.125 2.12504 3.0025 2.12504 4.95833V12.0417C2.12504 13.9975 3.00254 14.875 4.95837 14.875H12.0417C13.9975 14.875 14.875 13.9975 14.875 12.0417V8.93333" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/><path d="M10.6579 3.2658L6.28042 7.64327C6.10542 7.81827 5.93042 8.15055 5.89125 8.3928L5.64958 10.112C5.56625 10.7037 6.01958 11.157 6.61125 11.0737L8.33042 10.832C8.57292 10.7928 8.90542 10.6178 9.08042 10.4428L13.4579 6.0653C14.2662 5.25705 14.5796 4.26827 13.4579 3.14662C12.3362 2.03205 11.3479 2.45705 10.6579 3.2658Z" stroke="currentColor" strokeWidth="1.2" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round"/><path d="M9.8999 4.02502C10.2716 5.66752 11.0583 6.45419 12.7008 6.82585" stroke="currentColor" strokeWidth="1.2" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round"/></svg> );
 const ArchiveIcon = ({ className = "w-[14px] h-[14px]" }) => ( <svg className={className} width="14" height="14" viewBox="0 0 17 17" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M14.1667 5.66667V12.0417C14.1667 13.9975 13.2892 14.875 11.3334 14.875H5.66671C3.71087 14.875 2.83337 13.9975 2.83337 12.0417V5.66667" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/><path d="M14.875 2.125H2.125L2.12504 5.66667H14.875V2.125Z" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/><path d="M7.79163 8.5H9.20829" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/></svg> );
 
-// Define fetchers for SWR
+// Define fetcher for SWR
 const classFetcher = ([key, token]) => classService.getAllClasses(token);
-const departmentFetcher = ([key, token]) => departmentService.getAllDepartments(token);
 
 // Mapping from shiftId to the full descriptive name used in the UI.
 const shiftIdToFullNameMap = {
@@ -33,7 +31,6 @@ export default function ClassClientView({ initialClasses, initialDepartments }) 
     const { data: session } = useSession();
     const [isLoading, setIsLoading] = useState(true);
 
-    // SWR hook for classes
     const { data: classes, error: classesError, mutate: mutateClasses } = useSWR(
         session?.accessToken ? ['/api/v1/class', session.accessToken] : null,
         classFetcher,
@@ -45,14 +42,8 @@ export default function ClassClientView({ initialClasses, initialDepartments }) 
         }
     );
 
-    // SWR hook for departments
-    const { data: departments, error: departmentsError } = useSWR(
-        session?.accessToken ? ['/api/department', session.accessToken] : null,
-        departmentFetcher,
-        {
-            fallbackData: initialDepartments
-        }
-    );
+    const departments = initialDepartments;
+    const departmentsError = !initialDepartments;
 
     const [classData, setClassData] = useState([]);
     const [isPending, startTransition] = useTransition();
@@ -68,7 +59,6 @@ export default function ClassClientView({ initialClasses, initialDepartments }) 
     const [sortDirection, setSortDirection] = useState('asc');
     const [searchTexts, setSearchTexts] = useState({ name: '', generation: '', group: '', major: '', degrees: '', faculty: '', semester: '', shift: '' });
 
-    // This useEffect is now the single source of truth for formatting data for the view
     useEffect(() => {
         if (classes) {
             const formattedData = classes.map(item => ({
