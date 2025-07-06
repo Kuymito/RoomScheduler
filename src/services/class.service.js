@@ -175,6 +175,42 @@ const unassignInstructorFromClass = async (unassignmentData, token) => {
     }
 };
 
+/**
+ * Fetches classes assigned to the currently authenticated instructor.
+ * @param {string} token - The authorization token for the request.
+ * @returns {Promise<Array>} A promise that resolves to an array of class objects.
+ */
+const getAssignedClasses = async (token) => {
+  if (!token) {
+    throw new Error("Authentication token is required to fetch assigned classes.");
+  }
+
+  const isServer = typeof window === 'undefined';
+  const url = isServer ? `${SERVER_API_URL}/class/my-classes` : `${LOCAL_API_URL}/class/my-classes`;
+
+  try {
+    const response = await axios.get(url, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        ...(isServer && { 'ngrok-skip-browser-warning': 'true' })
+      }
+    });
+
+    if (response.data && Array.isArray(response.data.payload)) {
+        return response.data.payload;
+    }
+    console.error("Invalid data structure for assigned classes from API", response.data);
+    throw new Error('Invalid data structure for assigned classes from API');
+  } catch (error) {
+    console.error("Get assigned classes service error:", {
+      message: error.message,
+      code: error.code,
+      response: error.response ? error.response.data : 'No response data'
+    });
+    throw new Error(error.response?.data?.message || "Failed to fetch assigned classes.");
+  }
+};
+
 export const classService = {
   getAllClasses,
   getClassById,
@@ -182,4 +218,5 @@ export const classService = {
   createClass,
   assignInstructorToClass,
   unassignInstructorFromClass,
+  getAssignedClasses,
 };

@@ -20,10 +20,17 @@ const login = async (email, password) => {
 };
 
 const getProfile = async (token) => {
+    const isServer = typeof window === 'undefined';
+    // Use the correct URL based on the environment
+    const url = isServer ? `${SERVER_API_URL}/auth/profile` : `${LOCAL_API_URL}/profile`;
+
     try {
-        // The API call remains the same
-        const response = await axios.get(`${LOCAL_API_URL}/profile`, {
-            headers: { 'Authorization': `Bearer ${token}` }
+        const response = await axios.get(url, {
+            headers: { 
+                'Authorization': `Bearer ${token}`,
+                // Add ngrok header only on server-side calls
+                ...(isServer && { 'ngrok-skip-browser-warning': 'true' })
+            }
         });
 
         // The key is to access response.data directly now, not response.data.payload

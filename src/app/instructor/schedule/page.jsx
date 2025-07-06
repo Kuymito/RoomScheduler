@@ -2,38 +2,60 @@ import { Suspense } from 'react';
 import InstructorLayout from '@/components/InstructorLayout';
 import SchedulePageSkeleton from './components/SchedulePageSkeleton';
 import InstructorScheduleClientView from './components/InstructorScheduleClientView';
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import { scheduleService } from '@/services/schedule.service';
+import { authService } from '@/services/auth.service';
 
 // --- SERVER-SIDE DATA FETCHING ---
-const fetchScheduleData = async () => {
-  // In a real app, this would be a database query for a specific instructor's schedule
-  const scheduleData = {
-    'Monday': {
-        '07:00 - 10:00': { subject: '32/27 IT', year: 'Year 2', semester: 'Semester 1', timeDisplay: '07:00 - 10:00' },
-        '17:30 - 20:30': { subject: '32/34 MG', year: 'Year 2', semester: 'Semester 1', timeDisplay: '17:30 - 20:30' },
-    },
-    'Tuesday': {},
-    'Wednesday': {
-        '10:30 - 13:30': { subject: '33/29 FA', year: 'Year 1', semester: 'Semester 1', timeDisplay: '10:30 - 13:30' },
-    },
-    'Thursday': {
-        '14:00 - 17:00': { subject: '32/98 law', year: 'Year 2', semester: 'Semester 1', timeDisplay: '14:00 - 17:00' },
-    },
-    'Friday': {
-        '07:00 - 10:00': { subject: '31/35 MG', year: 'Year 3', semester: 'Semester 1', timeDisplay: '07:00 - 10:00' },
-        '17:30 - 20:30': { subject: '30/11 IT', year: 'Year 4', semester: 'Semester 2', timeDisplay: '17:30 - 20:30' },
-    },
-    'Saturday': {},
-    'Sunday': {},
-  };
-  
-  const instructorDetails = {
-      instructorName: "Keo Linda",
-      publicDate: "2025-06-22 13:11:46"
-  };
+const fetchInstructorScheduleData = async () => {
+  const session = await getServerSession(authOptions);
+  const token = session?.accessToken;
 
-  // Simulate network delay
-  await new Promise(resolve => setTimeout(resolve, 500)); 
-  return { scheduleData, instructorDetails };
+  if (!token) {
+    console.error("Instructor Schedule Page: Not authenticated.");
+    return { scheduleData: {}, instructorDetails: {} };
+  }
+  
+  try {
+    // Fetch schedule and profile data in parallel
+    const [scheduleResponse, profileResponse] = await Promise.all([
+        scheduleService.getMySchedule(token),
+        authService.getProfile(token)
+    ]);
+    
+    const scheduleData = {};
+    const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+    daysOfWeek.forEach(day => scheduleData[day] = {});
+
+    scheduleResponse.forEach(item => {
+        const timeSlot = `${item.shift.startTime.substring(0, 5)} - ${item.shift.endTime.substring(0, 5)}`;
+        const days = item.day.split(',').map(d => d.trim());
+        
+        days.forEach(apiDay => {
+            const dayName = apiDay.charAt(0).toUpperCase() + apiDay.slice(1).toLowerCase();
+            if (scheduleData[dayName]) {
+                scheduleData[dayName][timeSlot] = {
+                    subject: item.className,
+                    generation: `Generation ${item.year}`, // Renamed 'year' to 'generation'
+                    semester: item.semester,
+                    timeDisplay: timeSlot
+                };
+            }
+        });
+    });
+
+    const instructorDetails = {
+        instructorName: profileResponse ? `${profileResponse.firstName} ${profileResponse.lastName}` : "Instructor",
+        publicDate: new Date().toISOString().replace('T', ' ').substring(0, 19)
+    };
+
+    return { scheduleData, instructorDetails };
+
+  } catch (error) {
+      console.error("Failed to fetch instructor schedule data:", error);
+      return { scheduleData: {}, instructorDetails: { instructorName: "Instructor", publicDate: new Date().toISOString().replace('T', ' ').substring(0, 19) } };
+  }
 };
 
 /**
@@ -41,7 +63,7 @@ const fetchScheduleData = async () => {
  */
 export default async function InstructorSchedulePage() {
     // Data is fetched on the server before the page is sent to the client.
-    const { scheduleData, instructorDetails } = await fetchScheduleData();
+    const { scheduleData, instructorDetails } = await fetchInstructorScheduleData();
 
     return (
         <InstructorLayout activeItem="schedule" pageTitle="Schedule">

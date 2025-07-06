@@ -64,7 +64,25 @@ export const getAllSchedules = async (token) => {
     }
 };
 
+/**
+ * Fetches the schedule for the currently authenticated instructor.
+ * @param {string} [token] - Optional token for server-side calls.
+ * @returns {Promise<Array>} A promise that resolves to an array of schedule objects for the instructor.
+ */
+export const getMySchedule = async (token) => {
+    try {
+        const headers = await getAuthHeaders(token);
+        const response = await axios.get(`${API_BASE_URL}/schedule/my-schedule`, { headers });
+        return handleResponse(response);
+    } catch (error) {
+        console.error("getMySchedule service error:", error.message);
+        throw error;
+    }
+};
+
+
 // Export the service object
 export const scheduleService = {
   getAllSchedules,
+  getMySchedule,
 };
