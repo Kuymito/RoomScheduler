@@ -1,4 +1,3 @@
-// src/components/InstructorDashboardLayout.jsx
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -9,14 +8,36 @@ import LogoutAlert from '@/components/LogoutAlert';
 import Footer from '@/components/Footer';
 import InstructorNotificationPopup from '@/app/instructor/notification/InstructorNotificationPopup';
 import { usePathname, useRouter } from 'next/navigation';
-import { signOut } from 'next-auth/react';
+import { signOut, useSession } from 'next-auth/react'; // <-- ADDED useSession
+import useSWR from 'swr'; // <-- ADDED useSWR
 import { moul } from './fonts';
+import { notificationService } from '@/services/notification.service'; // <-- ADDED notificationService
+
+// --- Helper function to format date strings into relative time ---
+const formatDistanceToNow = (dateString) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const seconds = Math.round((now - date) / 1000);
+    const minutes = Math.round(seconds / 60);
+    const hours = Math.round(minutes / 60);
+    const days = Math.round(hours / 24);
+
+    if (seconds < 60) return `${seconds}s ago`;
+    if (minutes < 60) return `${minutes}m ago`;
+    if (hours < 24) return `${hours}h ago`;
+    return `${days}d ago`;
+};
+const TOPBAR_HEIGHT = '90px';
+
+// --- Fetcher function for SWR ---
+const notificationsFetcher = (url, token) => notificationService.getNotifications(token);
 
 export default function InstructorDashboardLayout({ children, activeItem, pageTitle }) {
+    const { data: session } = useSession(); // <-- ADDED to get user session and token
     const [showAdminPopup, setShowAdminPopup] = useState(false);
     const [showLogoutAlert, setShowLogoutAlert] = useState(false);
     const [showInstructorNotificationPopup, setShowInstructorNotificationPopup] = useState(false);
-    const [instructorNotifications, setInstructorNotifications] = useState([]);
+    // REMOVED: const [instructorNotifications, setInstructorNotifications] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
     const [navigatingTo, setNavigatingTo] = useState(null);
     const notificationPopupRef = useRef(null);
@@ -32,6 +53,29 @@ export default function InstructorDashboardLayout({ children, activeItem, pageTi
         }
         return false;
     });
+    
+    // --- API-DRIVEN NOTIFICATION LOGIC ---
+    // Replaces the useEffect with mock data
+    const { data: rawNotifications, mutate: mutateNotifications } = useSWR(
+        session?.accessToken ? ['/api/v1/notifications', session.accessToken] : null,
+        notificationsFetcher,
+        {
+            revalidateOnFocus: true,
+            revalidateOnReconnect: true,
+        }
+    );
+    
+    // Map the raw API data to the format your component expects
+    const instructorNotifications = rawNotifications?.map(n => ({
+        id: n.notificationId,
+        avatarUrl: '/images/kok.png', // Default avatar
+        message: n.message,
+        timestamp: formatDistanceToNow(n.createdAt),
+        isUnread: !n.read,
+        type: n.message.includes('approved') ? 'request_approved' : n.message.includes('denied') ? 'request_denied' : 'info',
+        details: { adminName: 'Admin' } // Placeholder details
+    })).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)) || [];
+
 
     useEffect(() => {
         if (typeof window !== 'undefined') {
@@ -73,14 +117,44 @@ export default function InstructorDashboardLayout({ children, activeItem, pageTi
         setShowInstructorNotificationPopup(prev => !prev);
     };
     
-    const handleMarkInstructorNotificationAsRead = (notificationId) => {
-        setInstructorNotifications(prev =>
-            prev.map(n => n.id === notificationId ? { ...n, isUnread: false } : n)
-        );
+    // --- CORRECTED "MARK AS READ" LOGIC ---
+    const handleMarkInstructorNotificationAsRead = async (notificationId) => {
+        try {
+            // Optimistically update the local SWR cache
+            mutateNotifications(
+                (currentRawNotifications) => currentRawNotifications.map(n => 
+                    n.notificationId === notificationId ? { ...n, read: true } : n
+                ),
+                false // Don't revalidate yet
+            );
+            // Call the API
+            await notificationService.markNotificationAsRead(notificationId, session.accessToken);
+            await mutateNotifications(); // Re-fetch to confirm
+        } catch (error) {
+            console.error("Failed to mark notification as read:", error);
+            await mutateNotifications(); // Revert on error
+        }
     };
 
-    const handleMarkAllInstructorNotificationsAsRead = () => {
-        setInstructorNotifications(prev => prev.map(n => ({ ...n, isUnread: false })));
+    const handleMarkAllInstructorNotificationsAsRead = async () => {
+        const unreadIds = rawNotifications?.filter(n => !n.read).map(n => n.notificationId) || [];
+        if (unreadIds.length === 0) return;
+
+        try {
+            // Optimistically update the local cache
+            mutateNotifications(
+                (currentRawNotifications) => currentRawNotifications.map(n => ({ ...n, read: true })),
+                false // Don't revalidate yet
+            );
+            // Call the API for all unread items
+            await Promise.all(
+                unreadIds.map(id => notificationService.markNotificationAsRead(id, session.accessToken))
+            );
+            await mutateNotifications(); // Re-fetch to confirm
+        } catch (error) {
+            console.error("Failed to mark all notifications as read:", error);
+            await mutateNotifications(); // Revert on error
+        }
     };
 
     const hasUnreadInstructorNotifications = instructorNotifications.some(n => n.isUnread);
@@ -98,7 +172,6 @@ export default function InstructorDashboardLayout({ children, activeItem, pageTi
     };
     
     const sidebarWidth = isSidebarCollapsed ? '80px' : '265px';
-    const TOPBAR_HEIGHT = '90px'; 
 
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -117,14 +190,7 @@ export default function InstructorDashboardLayout({ children, activeItem, pageTi
         return () => document.removeEventListener('click', handleClickOutside);
     }, [showAdminPopup, showInstructorNotificationPopup]);
 
-    useEffect(() => {
-        const mockInstructorNotifications = [
-            { id: 1, avatarUrl: '/images/kok.png', message: 'Your request for Room A1 has been approved by Admin.', timestamp: '5m', isUnread: true, type: 'request_approved', details: { adminName: 'Admin' } },
-            { id: 2, avatarUrl: '/images/kok.png', message: 'Your request for Room C2 has been denied due to a conflict.', timestamp: '1h', isUnread: true, type: 'request_denied', details: { adminName: 'Admin' } },
-            { id: 3, avatarUrl: '/images/kok.png', message: 'A new schedule has been published for your classes.', timestamp: '3h', isUnread: false, type: 'info', details: { adminName: 'Admin' } },
-        ];
-        setInstructorNotifications(mockInstructorNotifications);
-    }, []);
+    // REMOVED: useEffect hook with mock notifications
 
     useEffect(() => {
         if (isProfileNavigating) {

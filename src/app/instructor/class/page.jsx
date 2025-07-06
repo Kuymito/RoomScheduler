@@ -32,7 +32,7 @@ const fetchInstructorClassData = async () => {
       degrees: item.degreeName,
       faculty: item.department?.name || 'N/A',
       semester: item.semester,
-      shift: item.shift?.name || 'N/A',
+      shift: `${item.shift.startTime.slice(0, 5)} - ${item.shift.endTime.slice(0, 5)}`,
       status: item.archived ? 'archived' : 'active',
     }));
   } catch (error) {
