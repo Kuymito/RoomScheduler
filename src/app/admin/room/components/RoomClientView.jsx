@@ -18,7 +18,6 @@ const scheduleFetcher = ([, token]) => scheduleService.getAllSchedules(token);
 export default function RoomClientView({ initialAllRoomsData, buildingLayout, initialScheduleMap }) {
     // --- Constants and Helper Functions ---
     const WEEKDAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
-    // FIX: Removed seconds from time slots
     const TIME_SLOTS = ['07:00-10:00', '10:30-13:30', '14:00-17:00', '17:30-20:30'];
     const getDayName = (date) => date.toLocaleDateString('en-US', { weekday: 'long' });
     const formatTimeSlot = (time) => time.replace('-', ' to ');
@@ -67,19 +66,23 @@ export default function RoomClientView({ initialAllRoomsData, buildingLayout, in
             const newScheduleMap = {};
             apiSchedules.forEach(schedule => {
                 if (schedule && schedule.shift) {
-                    const day = schedule.day;
-                    // FIX: Remove seconds from start and end times to match the dropdown format
-                    const startTime = schedule.shift.startTime.substring(0, 5);
-                    const endTime = schedule.shift.endTime.substring(0, 5);
-                    const timeSlot = `${startTime}-${endTime}`;
-                    if (!newScheduleMap[day]) newScheduleMap[day] = {};
-                    if (!newScheduleMap[day][timeSlot]) newScheduleMap[day][timeSlot] = {};
-                    newScheduleMap[day][timeSlot][schedule.roomId] = schedule.className;
+                    const days = schedule.day.split(',').map(d => d.trim());
+                    const timeSlot = `${schedule.shift.startTime.substring(0, 5)}-${schedule.shift.endTime.substring(0, 5)}`;
+
+                    days.forEach(apiDay => {
+                        const dayName = apiDay.charAt(0).toUpperCase() + apiDay.slice(1).toLowerCase();
+                        if (!newScheduleMap[dayName]) {
+                            newScheduleMap[dayName] = {};
+                        }
+                        if (!newScheduleMap[dayName][timeSlot]) {
+                            newScheduleMap[dayName][timeSlot] = {};
+                        }
+                        newScheduleMap[dayName][timeSlot][schedule.roomId] = schedule.className;
+                    });
                 }
             });
             setScheduleMap(newScheduleMap);
         } else if (apiSchedules) {
-            // This handles the initial load where apiSchedules is already a map.
             setScheduleMap(apiSchedules);
         }
     }, [apiSchedules]);

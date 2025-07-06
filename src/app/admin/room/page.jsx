@@ -63,20 +63,22 @@ async function fetchAndProcessRoomData() {
         // Create a map of schedules for quick lookup: { "Monday": { "07:00-10:00": { roomId: className } } }
         const scheduleMap = {};
         apiSchedules.forEach(schedule => {
-            const day = schedule.day;
-            // FIX: Remove seconds from start and end times to match the dropdown format
-            const startTime = schedule.shift.startTime.substring(0, 5);
-            const endTime = schedule.shift.endTime.substring(0, 5);
-            const timeSlot = `${startTime}-${endTime}`;
-            
-            if (!scheduleMap[day]) {
-                scheduleMap[day] = {};
-            }
-            if (!scheduleMap[day][timeSlot]) {
-                scheduleMap[day][timeSlot] = {};
-            }
-            // Map the room ID to the class name for the specific day and time
-            scheduleMap[day][timeSlot][schedule.roomId] = schedule.className;
+            // Split the comma-separated day string into an array
+            const days = schedule.day.split(',').map(d => d.trim());
+            const timeSlot = `${schedule.shift.startTime.substring(0, 5)}-${schedule.shift.endTime.substring(0, 5)}`;
+
+            // Iterate over each day and create an entry in the schedule map
+            days.forEach(apiDay => {
+                const dayName = apiDay.charAt(0).toUpperCase() + apiDay.slice(1).toLowerCase();
+                
+                if (!scheduleMap[dayName]) {
+                    scheduleMap[dayName] = {};
+                }
+                if (!scheduleMap[dayName][timeSlot]) {
+                    scheduleMap[dayName][timeSlot] = {};
+                }
+                scheduleMap[dayName][timeSlot][schedule.roomId] = schedule.className;
+            });
         });
 
         // Sort floors in descending order for each building

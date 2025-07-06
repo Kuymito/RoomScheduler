@@ -8,12 +8,12 @@ import RequestChangeForm from "./RequestChangeForm";
 import InstructorRoomPageSkeleton from "./InstructorRoomPageSkeleton";
 import { scheduleService } from '@/services/schedule.service';
 
-// The fetcher function for SWR, which will call your service
-const scheduleFetcher = ([, token]) => scheduleService.getAllSchedules(token);
+// Fetcher for useSWR
+const scheduleFetcher = ([key, token]) => scheduleService.getAllSchedules(token);
 
 /**
- * Client Component for the Instructor Room page.
- * It now uses useSWR for real-time schedule updates and has a layout consistent with the Admin view.
+ * This is the Client Component for the Instructor Room page.
+ * It receives its initial data from props and handles all user interactions.
  */
 export default function InstructorRoomClientView({ initialAllRoomsData, buildingLayout, initialScheduleMap, initialInstructorClasses }) {
     // --- State Management ---
@@ -53,11 +53,19 @@ export default function InstructorRoomClientView({ initialAllRoomsData, building
             const newScheduleMap = {};
             apiSchedules.forEach(schedule => {
                 if (schedule && schedule.shift) {
-                    const day = schedule.day;
-                    const timeSlot = `${schedule.shift.startTime}-${schedule.shift.endTime}`;
-                    if (!newScheduleMap[day]) newScheduleMap[day] = {};
-                    if (!newScheduleMap[day][timeSlot]) newScheduleMap[day][timeSlot] = {};
-                    newScheduleMap[day][timeSlot][schedule.roomId] = schedule.className;
+                    const days = schedule.day.split(',').map(d => d.trim());
+                    const timeSlot = `${schedule.shift.startTime.substring(0, 5)}-${schedule.shift.endTime.substring(0, 5)}`;
+                    
+                    days.forEach(apiDay => {
+                        const dayName = apiDay.charAt(0).toUpperCase() + apiDay.slice(1).toLowerCase();
+                        if (!newScheduleMap[dayName]) {
+                            newScheduleMap[dayName] = {};
+                        }
+                        if (!newScheduleMap[dayName][timeSlot]) {
+                            newScheduleMap[dayName][timeSlot] = {};
+                        }
+                        newScheduleMap[dayName][timeSlot][schedule.roomId] = schedule.className;
+                    });
                 }
             });
             setScheduleMap(newScheduleMap);
@@ -148,7 +156,6 @@ export default function InstructorRoomClientView({ initialAllRoomsData, building
       <RequestChangeForm isOpen={isFormOpen} onClose={() => setIsFormOpen(false)} onSave={handleSaveRequest} roomDetails={roomDetails} instructorClasses={instructorClasses} selectedDay={selectedDay} selectedTime={selectedTimeSlot}/>
       <div className="p-4 sm:p-6 min-h-full">
         <div className="mb-4 w-full"><h2 className="text-xl font-semibold text-slate-800 dark:text-white">Room</h2><hr className="border-t border-slate-300 dark:border-slate-700 mt-3" /></div>
-        {error && <p className="text-red-500 text-center mb-4">{error}</p>}
         <div className="flex flex-col lg:flex-row gap-6">
             <div className="flex-1 min-w-0">
                 <div className="flex flex-col sm:flex-row items-center justify-between border-b dark:border-gray-600 pb-3 gap-4 mb-4">

@@ -39,11 +39,11 @@ async function fetchAllRoomsAndSchedules() {
     }
 
     try {
-        // Fetch rooms, schedules, and instructor's assigned classes in parallel
+        // Fetch rooms, schedules, and instructor's classes in parallel
         const [apiRooms, apiSchedules, apiInstructorClasses] = await Promise.all([
             getAllRooms(token),
             scheduleService.getAllSchedules(token),
-            classService.getAssignedClasses(token) // Use the correct service to get only assigned classes
+            classService.getAssignedClasses(token) // Assuming this fetches classes for the logged-in instructor
         ]);
 
         const roomsDataMap = {};
@@ -75,14 +75,22 @@ async function fetchAllRoomsAndSchedules() {
             };
         });
 
-        // Create a schedule map for quick lookup: { "Monday": { "07:00:00-10:00:00": { roomId: className } } }
+        // Create a schedule map for quick lookup: { "Monday": { "07:00-10:00": { roomId: className } } }
         const scheduleMap = {};
         apiSchedules.forEach(schedule => {
-            const day = schedule.day;
-            const timeSlot = `${schedule.shift.startTime}-${schedule.shift.endTime}`;
-            if (!scheduleMap[day]) scheduleMap[day] = {};
-            if (!scheduleMap[day][timeSlot]) scheduleMap[day][timeSlot] = {};
-            scheduleMap[day][timeSlot][schedule.roomId] = schedule.className;
+            const days = schedule.day.split(',').map(d => d.trim());
+            const timeSlot = `${schedule.shift.startTime.substring(0, 5)}-${schedule.shift.endTime.substring(0, 5)}`;
+            
+            days.forEach(apiDay => {
+                const dayName = apiDay.charAt(0).toUpperCase() + apiDay.slice(1).toLowerCase();
+                if (!scheduleMap[dayName]) {
+                    scheduleMap[dayName] = {};
+                }
+                if (!scheduleMap[dayName][timeSlot]) {
+                    scheduleMap[dayName][timeSlot] = {};
+                }
+                scheduleMap[dayName][timeSlot][schedule.roomId] = schedule.className;
+            });
         });
         
         // Format instructor classes for the request form dropdown
