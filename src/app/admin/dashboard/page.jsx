@@ -1,35 +1,132 @@
 import { Suspense } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import DashboardSkeleton from './components/DashboardSkeleton';
-import DashboardClientContent from './components/DashboardClientContent'; // Import the new client component
+import DashboardClientContent from './components/DashboardClientContent';
+import { classService } from '@/services/class.service';
+import { scheduleService } from '@/services/schedule.service';
+import { getAllRooms } from '@/services/room.service';
+import { getServerSession }from 'next-auth/next';
+import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import { revalidatePath } from 'next/cache';
 
-// Mock data fetching functions (ideally move to a central file like `@/lib/data`)
 const fetchDashboardStats = async () => {
-  // Artificial delay removed
+  const session = await getServerSession(authOptions);
+  const token = session?.accessToken;
+
+  if (!token) {
+    return {
+      classAssign: 0,
+      expired: 0,
+      unassignedClass: 0,
+      onlineClass: 0,
+    };
+  }
+
+  const classes = await classService.getAllClasses(token);
+
+  let assigned = 0;
+  let unassigned = 0;
+  let expired = 0;
+  let online = 0;
+
+  const currentDate = new Date();
+  // Calculate the date 4 years ago
+  const fourYearsAgo = new Date(currentDate);
+  fourYearsAgo.setFullYear(currentDate.getFullYear() - 4);
+  // Subtract 2 months from that date to get the expiry threshold
+  const expiryThreshold = new Date(fourYearsAgo);
+  expiryThreshold.setMonth(expiryThreshold.getMonth() - 2);
+
+
+  classes.forEach(cls => {
+    if (cls.dailySchedule && Object.values(cls.dailySchedule).some(day => day && day.instructor)) {
+      assigned++;
+    } else {
+      unassigned++;
+    }
+
+    // FIX: Check if createdAt is not null before comparing dates.
+    if (cls.createdAt && new Date(cls.createdAt) < expiryThreshold) {
+      expired++;
+    }
+
+    if (cls.online) {
+      online++;
+    }
+  });
+
   return {
-    classAssign: 65,
-    expired: 15,
-    unassignedClass: 16,
-    onlineClass: 28,
+    classAssign: assigned,
+    expired: expired,
+    unassignedClass: unassigned,
+    onlineClass: online,
   };
 };
 
+
 const fetchChartData = async (timeSlot) => {
   console.log(`Fetching server chart data for: ${timeSlot}`);
-  let dataPoints;
-  switch (timeSlot) {
-    case '07:00 - 10:00': dataPoints = [23, 60, 32, 55, 13, 45, 48]; break;
-    case '10:00 - 13:00': dataPoints = [45, 22, 50, 30, 65, 25, 40]; break;
-    case '13:00 - 16:00': dataPoints = [30, 55, 18, 48, 33, 60, 22]; break;
-    case '16:00 - 19:00': dataPoints = [15, 35, 40, 20, 50, 30, 55]; break;
-    default: dataPoints = [10, 20, 30, 40, 50, 60, 70];
+  const session = await getServerSession(authOptions);
+  const token = session?.accessToken;
+
+  if (!token) {
+    return {
+      labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+      data: [0, 0, 0, 0, 0, 0, 0],
+    };
   }
-  // Artificial delay removed
-  return {
-    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-    data: dataPoints,
-  };
+
+  try {
+    const [allRooms, allSchedules] = await Promise.all([
+      getAllRooms(token),
+      scheduleService.getAllSchedules(token)
+    ]);
+
+    const totalRoomCount = allRooms.length;
+    const selectedStartTime = timeSlot.split(' - ')[0] + ':00';
+
+    const occupiedRoomsByDay = {
+      MONDAY: new Set(),
+      TUESDAY: new Set(),
+      WEDNESDAY: new Set(),
+      THURSDAY: new Set(),
+      FRIDAY: new Set(),
+      SATURDAY: new Set(),
+      SUNDAY: new Set()
+    };
+
+    const relevantSchedules = allSchedules.filter(
+      schedule => schedule.shift && schedule.shift.startTime === selectedStartTime
+    );
+
+    relevantSchedules.forEach(schedule => {
+      if (schedule.dayDetails && schedule.roomId) {
+        schedule.dayDetails.forEach(dayDetail => {
+          if (occupiedRoomsByDay[dayDetail.dayOfWeek] && !dayDetail.online) {
+            occupiedRoomsByDay[dayDetail.dayOfWeek].add(schedule.roomId);
+          }
+        });
+      }
+    });
+
+    const daysOrder = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'];
+    const dataPoints = daysOrder.map(day => {
+      const occupiedCount = occupiedRoomsByDay[day].size;
+      return totalRoomCount - occupiedCount;
+    });
+
+    return {
+      labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+      data: dataPoints,
+    };
+
+  } catch (error) {
+    console.error("Failed to fetch chart data:", error);
+    return {
+      labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+      data: [0, 0, 0, 0, 0, 0, 0],
+    };
+  }
 };
 
 // This is the primary content component, rendered on the server.
