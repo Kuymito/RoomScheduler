@@ -50,26 +50,40 @@ export default function RoomClientView({ initialAllRoomsData, buildingLayout, in
             revalidateOnReconnect: true,
         }
     );
+    
 
     // --- Effects ---
     useEffect(() => {
-        if (apiSchedules && Array.isArray(apiSchedules)) {
+        if (apiSchedules?.payload && Array.isArray(apiSchedules.payload)) {
             const newScheduleMap = {};
-            apiSchedules.forEach(schedule => {
-                if (schedule && schedule.shift) {
-                    const timeSlot = `${schedule.shift.startTime}-${schedule.shift.endTime}`;
-                    const days = schedule.day.split(',').map(d => d.trim().toUpperCase());
-                    days.forEach(day => {
-                        const dayKey = day.charAt(0) + day.slice(1).toLowerCase();
-                        if (!newScheduleMap[dayKey]) newScheduleMap[dayKey] = {};
-                        if (!newScheduleMap[dayKey][timeSlot]) newScheduleMap[dayKey][timeSlot] = {};
-                        newScheduleMap[dayKey][timeSlot][schedule.roomId] = schedule.className;
-                    });
+            apiSchedules.payload.forEach(schedule => {
+                // Skip if schedule or required fields are missing
+                if (!schedule || !schedule.shift || !schedule.dayDetails) {
+                    console.warn("Invalid schedule entry:", schedule);
+                    return;
                 }
+    
+                const timeSlot = `${schedule.shift.startTime}-${schedule.shift.endTime}`;
+                
+                // Process dayDetails instead of schedule.day
+                schedule.dayDetails.forEach(dayDetail => {
+                    if (!dayDetail?.dayOfWeek) return; // Skip if dayOfWeek is missing
+                    
+                    const dayKey = dayDetail.dayOfWeek.charAt(0).toUpperCase() + 
+                                  dayDetail.dayOfWeek.slice(1).toLowerCase();
+                    
+                    if (!newScheduleMap[dayKey]) newScheduleMap[dayKey] = {};
+                    if (!newScheduleMap[dayKey][timeSlot]) newScheduleMap[dayKey][timeSlot] = {};
+                    
+                    // Store class info if roomId exists
+                    if (schedule.roomId) {
+                        newScheduleMap[dayKey][timeSlot][schedule.roomId] = schedule.className;
+                    }
+                });
             });
             setScheduleMap(newScheduleMap);
         }
-    }, [apiSchedules]);
+    }, [apiSchedules]); 
     
     // --- Event Handlers ---
     const resetSelection = () => { setSelectedRoomId(null); setRoomDetails(null); setIsEditing(false); };

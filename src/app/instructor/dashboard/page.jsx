@@ -23,43 +23,50 @@ const fetchDashboardData = async () => {
     }
 
     try {
-        const [myClasses, mySchedules] = await Promise.all([
+        const [myClassesResponse, mySchedulesResponse] = await Promise.all([
             classService.getMyClasses(token),
             scheduleService.getMySchedules(token)
         ]);
-
-        // --- THIS IS THE FIX ---
-        // De-duplicate the schedules received from the API.
-        const uniqueSchedules = Array.from(new Map(mySchedules.map(schedule => {
-            // Create a unique key for each schedule based on its core properties
-            const key = `${schedule.classId}-${schedule.day}-${schedule.shift.shiftId}`;
-            return [key, schedule];
-        })).values());
-        // -------------------------
-
-        const classAssignCount = myClasses.length;
-        const onlineClassCount = myClasses.filter(cls => cls.isOnline).length;
-        const today = new Date().toLocaleDateString('en-US', { weekday: 'long' }).toUpperCase();
         
-        const classesTodayCount = uniqueSchedules.filter(schedule => 
-            schedule.day.toUpperCase().split(',').map(d => d.trim()).includes(today)
-        ).length;
+        // --- FIX 1: Use the direct array response from the service ---
+        // Checks if the response is an array, otherwise defaults to an empty one.
+        const myClasses = Array.isArray(myClassesResponse) ? myClassesResponse : [];
+        const mySchedules = Array.isArray(mySchedulesResponse) ? mySchedulesResponse : [];
 
+        // --- Stat Calculation ---
+
+        // 1. "Class Assign" is the total number of classes taught by the instructor.
+        const classAssignCount = myClasses.length;
+
+        // 2. "Class Today" is the number of unique classes happening today.
+        const today = new Date().toLocaleDateString('en-US', { weekday: 'long' }).toUpperCase();
+        const schedulesToday = mySchedules.filter(schedule => 
+            schedule.dayDetails && schedule.dayDetails.some(d => d.dayOfWeek.toUpperCase() === today)
+        );
+        const classesTodayCount = new Set(schedulesToday.map(s => s.classId)).size;
+
+        // 3. "Online Class" is the number of unique classes that have at least one online session.
+        const schedulesWithOnlineDays = mySchedules.filter(schedule => 
+            schedule.dayDetails && schedule.dayDetails.some(d => d.online)
+        );
+        const onlineClassCount = new Set(schedulesWithOnlineDays.map(s => s.classId)).size;
+        
+        // --- Schedule Table Items Creation ---
         const scheduleItems = [];
-        uniqueSchedules.forEach(schedule => {
-            const scheduleDays = schedule.day.split(',').map(d => d.trim());
-
-            scheduleDays.forEach((day, index) => {
-                scheduleItems.push({
-                    id: `${schedule.scheduleId}-${index}`, 
-                    classNum: schedule.className,
-                    major: schedule.majorName || 'N/A',
-                    date: day.charAt(0) + day.slice(1).toLowerCase(), 
-                    session: schedule.isOnline ? 'Online' : 'In Class',
-                    shift: `${schedule.shift.startTime.slice(0, 5)} - ${schedule.shift.endTime.slice(0, 5)}`,
-                    room: schedule.roomName || 'Unavailable'
+        mySchedules.forEach(schedule => {
+            if (schedule.dayDetails) {
+                schedule.dayDetails.forEach(dayDetail => {
+                    scheduleItems.push({
+                        id: `${schedule.scheduleId}-${dayDetail.dayOfWeek}`, 
+                        classNum: schedule.className,
+                        major: schedule.majorName || 'N/A',
+                        date: dayDetail.dayOfWeek.charAt(0) + dayDetail.dayOfWeek.slice(1).toLowerCase(), 
+                        session: dayDetail.online ? 'Online' : 'In Class',
+                        shift: `${schedule.shift.startTime.slice(0, 5)} - ${schedule.shift.endTime.slice(0, 5)}`,
+                        room: schedule.roomName || 'Unavailable'
+                    });
                 });
-            });
+            }
         });
 
         const dashboardStats = {
@@ -73,7 +80,7 @@ const fetchDashboardData = async () => {
         return { dashboardStats, scheduleItems };
 
     } catch (error) {
-        console.error("Failed to fetch dashboard data:", error.message);
+        console.error("Failed to fetch instructor dashboard data:", error.message);
         return {
             dashboardStats: { classAssign: 0, ClassToday: 0, onlineClass: 0, currentDate: '', academicYear: '' },
             scheduleItems: []

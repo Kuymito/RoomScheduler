@@ -131,9 +131,9 @@ const ClassCreatePopup = ({ isOpen, onClose, onSave, departments, shifts }) => {
                         <div className="col-span-2">
                             <label htmlFor="shiftId" className="block text-xs font-medium text-gray-700 dark:text-gray-300">Shift</label>
                             <select id="shiftId" name="shiftId" value={formData.shiftId} onChange={handleInputChange} className="mt-1 block w-full p-2 text-xs border border-gray-300 rounded-md shadow-sm dark:bg-gray-700 dark:border-gray-600" required>
-                                {shifts?.map(shift => (
-                                    <option key={shift.shiftId} value={shift.shiftId}>{shift.name} ({shift.startTime} - {shift.endTime})</option>
-                                ))}
+                            <option key={shifts.shiftId} value={shifts.shiftId}>
+                                {shifts.name || `Shift ${shifts.shiftId}`} ({shifts.startTime} - {shifts.endTime})
+                            </option>
                             </select>
                         </div>
                     </div>

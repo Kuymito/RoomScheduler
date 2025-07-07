@@ -16,15 +16,39 @@ import { roomService } from '@/services/room.service'; // Import room service
  */
 const fetchDashboardStats = async (token) => {
     try {
-        const [allClasses, allSchedules] = await Promise.all([
-            classService.getAllClasses(token),
-            scheduleService.getAllSchedules(token)
+        const [schedulesResponse, allClasses] = await Promise.all([
+            scheduleService.getAllSchedules(token),
+            classService.getAllClasses(token)
         ]);
-        const assignedClassIds = new Set(allSchedules.map(schedule => schedule.classId));
+
+        // --- THE FIX ---
+        // The service returns an array directly, so we use it.
+        const allSchedules = Array.isArray(schedulesResponse) ? schedulesResponse : [];
+
+        // The rest of the logic from before is correct
+        const assignedClassIds = new Set();
+        const unassignedClassIds = new Set();
+        const onlineClassIds = new Set();
+
+        for (const schedule of allSchedules) {
+            const classId = schedule.classId;
+            const hasDays = schedule.dayDetails && schedule.dayDetails.length > 0;
+
+            if (hasDays) {
+                assignedClassIds.add(classId);
+            } else {
+                unassignedClassIds.add(classId);
+            }
+
+            if (hasDays && schedule.dayDetails.some(day => day.online === true)) {
+                onlineClassIds.add(classId);
+            }
+        }
+
         return {
             classAssign: assignedClassIds.size,
-            unassignedClass: allClasses.filter(c => !assignedClassIds.has(c.classId)).length,
-            onlineClass: allClasses.filter(c => c.online).length,
+            unassignedClass: unassignedClassIds.size,
+            onlineClass: onlineClassIds.size,
             expired: allClasses.filter(c => c.archived).length,
         };
     } catch (error) {
@@ -32,7 +56,6 @@ const fetchDashboardStats = async (token) => {
         return { classAssign: 0, expired: 0, unassignedClass: 0, onlineClass: 0 };
     }
 };
-
 /**
  * **[UPDATED LOGIC]**
  * Fetches all rooms and schedules to calculate the number of AVAILABLE rooms.
@@ -43,28 +66,37 @@ const fetchDashboardStats = async (token) => {
 const fetchChartData = async (timeSlot, token) => {
     console.log(`Fetching server chart data for available rooms: ${timeSlot}`);
     try {
-        // Fetch all rooms and all schedules in parallel
-        const [allRooms, allSchedules] = await Promise.all([
+        const [allRooms, schedulesResponse] = await Promise.all([
             roomService.getAllRooms(token),
             scheduleService.getAllSchedules(token)
         ]);
 
+        // --- FIX 1: Access the array directly from the response ---
+        const allSchedules = Array.isArray(schedulesResponse) ? schedulesResponse : [];
         const totalRoomCount = allRooms.length;
         const [startTime] = timeSlot.split(' - ');
         
-        // Filter schedules for the selected time slot
         const relevantSchedules = allSchedules.filter(s => s.shift.startTime === startTime);
 
-        // Count how many rooms are OCCUPIED each day
         const dailyOccupiedCounts = { Mon: 0, Tue: 0, Wed: 0, Thu: 0, Fri: 0, Sat: 0, Sun: 0 };
+
         relevantSchedules.forEach(schedule => {
-            const day = schedule.day.substring(0, 3);
-            if (day in dailyOccupiedCounts) {
-                dailyOccupiedCounts[day]++;
+            if (schedule.roomId !== null && schedule.dayDetails) {
+                schedule.dayDetails.forEach(dayDetail => {
+                    if (!dayDetail.online) {
+                        // --- FIX 2: Correctly format the day abbreviation to match the keys ---
+                        // Converts "TUESDAY" to "Tue", "WEDNESDAY" to "Wed", etc.
+                        const dayOfWeek = dayDetail.dayOfWeek;
+                        const dayAbbr = dayOfWeek.charAt(0).toUpperCase() + dayOfWeek.substring(1, 3).toLowerCase();
+                        
+                        if (dayAbbr in dailyOccupiedCounts) {
+                            dailyOccupiedCounts[dayAbbr]++;
+                        }
+                    }
+                });
             }
         });
 
-        // Calculate AVAILABLE rooms by subtracting occupied from total
         const dailyAvailableCounts = {
             Mon: totalRoomCount - dailyOccupiedCounts.Mon,
             Tue: totalRoomCount - dailyOccupiedCounts.Tue,
@@ -87,7 +119,6 @@ const fetchChartData = async (timeSlot, token) => {
         };
     }
 };
-
 /**
  * The primary server component for the dashboard.
  */

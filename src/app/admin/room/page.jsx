@@ -27,20 +27,24 @@ async function fetchAndProcessRoomData() {
 
         const roomsDataMap = {};
         const populatedLayout = {};
+        const scheduleMap = {};
 
+        // 1. First process all rooms
         apiRooms.forEach(room => {
             const { roomId, roomName, buildingName, floor, capacity, type, equipment } = room;
 
             if (!populatedLayout[buildingName]) {
                 populatedLayout[buildingName] = [];
             }
+            
             let floorObj = populatedLayout[buildingName].find(f => f.floor === floor);
             if (!floorObj) {
                 floorObj = { floor: floor, rooms: [] };
                 populatedLayout[buildingName].push(floorObj);
             }
+            
             if (!floorObj.rooms.includes(roomName)) {
-                 floorObj.rooms.push(roomName);
+                floorObj.rooms.push(roomName);
             }
 
             roomsDataMap[roomId] = {
@@ -50,26 +54,48 @@ async function fetchAndProcessRoomData() {
                 floor: floor,
                 capacity: capacity,
                 type: type,
-                equipment: typeof equipment === 'string' ? equipment.split(',').map(e => e.trim()).filter(Boolean) : (Array.isArray(equipment) ? equipment : []),
+                equipment: typeof equipment === 'string' 
+                    ? equipment.split(',').map(e => e.trim()).filter(Boolean) 
+                    : (Array.isArray(equipment) ? equipment : []),
+                // Initialize all rooms as available by default
+                isAvailable: true
             };
         });
 
-        const scheduleMap = {};
-        apiSchedules.forEach(schedule => {
-            const timeSlot = `${schedule.shift.startTime}-${schedule.shift.endTime}`;
-            
-            // Split the day string by comma and trim whitespace, then format correctly
-            const days = schedule.day.split(',').map(d => d.trim().toUpperCase());
+        // 2. Then process schedules to mark occupied rooms
+        if (apiSchedules?.payload) {
+            apiSchedules.payload.forEach(schedule => {
+                // Skip if missing critical data
+                if (!schedule?.shift || !schedule?.dayDetails || !schedule.roomId) return;
 
-            days.forEach(day => {
-                // Convert "TUESDAY" to "Tuesday" to match frontend state
-                const dayKey = day.charAt(0) + day.slice(1).toLowerCase(); 
-                if (!scheduleMap[dayKey]) scheduleMap[dayKey] = {};
-                if (!scheduleMap[dayKey][timeSlot]) scheduleMap[dayKey][timeSlot] = {};
-                scheduleMap[dayKey][timeSlot][schedule.roomId] = schedule.className;
+                const timeSlot = `${schedule.shift.startTime}-${schedule.shift.endTime}`;
+                
+                schedule.dayDetails.forEach(dayDetail => {
+                    if (!dayDetail?.dayOfWeek) return;
+                    
+                    // Format day name (e.g., "Monday")
+                    const dayKey = dayDetail.dayOfWeek.charAt(0).toUpperCase() + 
+                                  dayDetail.dayOfWeek.slice(1).toLowerCase();
+                    
+                    // Initialize schedule map structure if needed
+                    if (!scheduleMap[dayKey]) scheduleMap[dayKey] = {};
+                    if (!scheduleMap[dayKey][timeSlot]) scheduleMap[dayKey][timeSlot] = {};
+                    
+                    // Mark the room as occupied in this time slot
+                    scheduleMap[dayKey][timeSlot][schedule.roomId] = {
+                        className: schedule.className,
+                        isOccupied: true
+                    };
+                    
+                    // Also update the room's general availability if needed
+                    if (roomsDataMap[schedule.roomId]) {
+                        roomsDataMap[schedule.roomId].isAvailable = false;
+                    }
+                });
             });
-        });
+        }
 
+        // Sort floors in descending order
         for (const building in populatedLayout) {
             populatedLayout[building].sort((a, b) => b.floor - a.floor);
         }
@@ -81,11 +107,10 @@ async function fetchAndProcessRoomData() {
         };
 
     } catch (error) {
-        console.error("Failed to fetch or process room/schedule data on server:", error.message);
+        console.error("Failed to fetch or process room/schedule data on server:", error);
         return { initialAllRoomsData: {}, buildingLayout: {}, scheduleMap: {} };
     }
 }
-
 /**
  * Main page component for Admin Room Management.
  */

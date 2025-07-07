@@ -1,56 +1,62 @@
 import axios from 'axios';
 import { getSession } from 'next-auth/react';
 
-const API_BASE_URL = 'https://jaybird-new-previously.ngrok-free.app/api/v1';
+const API_URL = 'https://jaybird-new-previously.ngrok-free.app/api/v1';
 
-const getAuthHeaders = async (token) => {
-    let authToken = token;
-    if (!authToken) {
+const getAuthenticationHeaders = async (token) => {
+    let authenticationToken = token;
+    if (!authenticationToken) {
         const session = await getSession();
-        authToken = session?.accessToken;
+        authenticationToken = session?.accessToken;
     }
-    if (!authToken) {
-        console.warn('Authentication token not found in session.');
+    if (!authenticationToken) {
+        console.warn('Authentication token was not found.');
     }
     return {
         'Content-Type': 'application/json',
         'accept': '*/*',
-        ...(authToken && { 'Authorization': `Bearer ${authToken}` }),
+        ...(authenticationToken && { 'Authorization': `Bearer ${authenticationToken}` }),
         'ngrok-skip-browser-warning': 'true'
     };
 };
 
-const handleResponse = (response) => {
+const handleApiResponse = (response) => {
     if (response.status >= 200 && response.status < 300) {
-        return response.data?.payload || [];
+        const responseData = response.data;
+        if (responseData && Array.isArray(responseData.payload)) {
+            return responseData.payload;
+        }
+        if (Array.isArray(responseData)) {
+            return responseData;
+        }
+        return responseData || {};
     }
     const errorData = response.data || { message: 'An unknown error occurred' };
     throw new Error(errorData.message || `HTTP Error: ${response.status}`);
 };
 
-export const getAllRooms = async (token) => {
+const getAllRooms = async (token) => {
     try {
-        const headers = await getAuthHeaders(token);
-        const response = await axios.get(`${API_BASE_URL}/room`, { headers });
-        return handleResponse(response);
+        const headers = await getAuthenticationHeaders(token);
+        const response = await axios.get(`${API_URL}/room`, { headers });
+        return handleApiResponse(response);
     } catch (error) {
         console.error("getAllRooms service error:", error.message);
         throw error;
     }
 };
 
-export const updateRoom = async (roomId, roomUpdateDto, token) => {
+const updateRoom = async (roomId, roomUpdateDto, token) => {
     try {
-        const headers = await getAuthHeaders(token);
-        const response = await axios.patch(`${API_BASE_URL}/room/${roomId}`, roomUpdateDto, { headers });
-        return handleResponse(response);
+        const headers = await getAuthenticationHeaders(token);
+        const response = await axios.patch(`${API_URL}/room/${roomId}`, roomUpdateDto, { headers });
+        return handleApiResponse(response);
     } catch (error) {
         console.error(`updateRoom service error for room ${roomId}:`, error.message);
         throw error;
     }
 };
 
-// --- FIX: Add this export block ---
 // This bundles your functions into the roomService object that your page expects.
 export const roomService = {
   getAllRooms,

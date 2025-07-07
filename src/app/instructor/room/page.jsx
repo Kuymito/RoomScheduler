@@ -7,7 +7,7 @@ import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import { roomService } from '@/services/room.service';
 import { scheduleService } from '@/services/schedule.service';
 import { classService } from '@/services/class.service';
-import { shiftService } from '@/services/shift.service'; // Import the new shift service
+import { shiftService } from '@/services/shift.service';
 
 const baseBuildingLayout = {
     "Building A": [ { floor: 3, rooms: [] }, { floor: 2, rooms: [] }, { floor: 1, rooms: [] } ],
@@ -24,22 +24,18 @@ async function fetchAllRoomsAndSchedules() {
 
     if (!token) {
         console.error("Instructor Room Page: Not authenticated.");
-        return { 
-            initialAllRoomsData: {}, 
-            buildingLayout: baseBuildingLayout, 
-            initialScheduleMap: {}, 
-            initialInstructorClasses: [],
-            allShifts: [] // Always return the correct shape
-        };
+        return { initialAllRoomsData: {}, buildingLayout: baseBuildingLayout, initialScheduleMap: {}, initialInstructorClasses: [], allShifts: [] };
     }
 
     try {
-        const [apiRooms, apiSchedules, apiInstructorClasses, apiShifts] = await Promise.all([
+        const [apiRooms, apiSchedulesResponse, apiInstructorClasses, apiShifts] = await Promise.all([
             roomService.getAllRooms(token),
             scheduleService.getAllSchedules(token),
             classService.getMyClasses(token),
-            shiftService.getAllShifts(token) // Fetch all shifts
+            shiftService.getAllShifts(token)
         ]);
+        
+        const apiSchedules = Array.isArray(apiSchedulesResponse) ? apiSchedulesResponse : (apiSchedulesResponse.payload || []);
 
         const roomsDataMap = {};
         const populatedLayout = JSON.parse(JSON.stringify(baseBuildingLayout));
@@ -47,38 +43,45 @@ async function fetchAllRoomsAndSchedules() {
         apiRooms.forEach(room => {
             const { roomId, roomName, buildingName, floor, capacity, type, equipment } = room;
             if (populatedLayout[buildingName]) {
-                let floorObj = populatedLayout[buildingName].find(f => f.floor === floor);
-                if (!floorObj) {
-                    floorObj = { floor: floor, rooms: [] };
-                    populatedLayout[buildingName].push(floorObj);
+                let floorObject = populatedLayout[buildingName].find(layoutFloor => layoutFloor.floor === floor);
+                if (!floorObject) {
+                    floorObject = { floor: floor, rooms: [] };
+                    populatedLayout[buildingName].push(floorObject);
                 }
-                if (!floorObj.rooms.includes(roomName)) {
-                     floorObj.rooms.push(roomName);
+                if (!floorObject.rooms.includes(roomName)) {
+                     floorObject.rooms.push(roomName);
                 }
             }
             roomsDataMap[roomId] = {
                 id: roomId, name: roomName, building: buildingName, floor: floor,
                 capacity: capacity, type: type,
-                equipment: typeof equipment === 'string' ? equipment.split(',').map(e => e.trim()).filter(Boolean) : (Array.isArray(equipment) ? equipment : []),
+                equipment: typeof equipment === 'string' ? equipment.split(',').map(item => item.trim()).filter(Boolean) : (Array.isArray(equipment) ? equipment : []),
             };
         });
-
+        
+        // --- THIS IS THE FIX ---
+        // The logic is updated to process the 'dayDetails' array.
         const scheduleMap = {};
         apiSchedules.forEach(schedule => {
-            const timeSlot = `${schedule.shift.startTime}-${schedule.shift.endTime}`;
-            const days = schedule.day.split(',').map(d => d.trim().toUpperCase());
-            days.forEach(day => {
-                const dayKey = day.charAt(0) + day.slice(1).toLowerCase();
-                if (!scheduleMap[dayKey]) scheduleMap[dayKey] = {};
-                if (!scheduleMap[dayKey][timeSlot]) scheduleMap[dayKey][timeSlot] = {};
-                scheduleMap[dayKey][timeSlot][schedule.roomId] = schedule.className;
-            });
+            if (schedule && schedule.shift && schedule.dayDetails) {
+                const timeSlot = `${schedule.shift.startTime}-${schedule.shift.endTime}`;
+                
+                schedule.dayDetails.forEach(dayDetail => {
+                    // Only map physical classes to the room availability grid
+                    if (!dayDetail.online && schedule.roomId) {
+                        const dayKey = dayDetail.dayOfWeek.toUpperCase();
+                        if (!scheduleMap[dayKey]) scheduleMap[dayKey] = {};
+                        if (!scheduleMap[dayKey][timeSlot]) scheduleMap[dayKey][timeSlot] = {};
+                        scheduleMap[dayKey][timeSlot][schedule.roomId] = schedule.className;
+                    }
+                });
+            }
         });
         
-        const formattedClasses = apiInstructorClasses.map(cls => ({
-            id: cls.classId,
-            name: cls.className,
-            shift: `${cls.shift.startTime}-${cls.shift.endTime}`,
+        const formattedClasses = apiInstructorClasses.map(classObject => ({
+            id: classObject.classId,
+            name: classObject.className,
+            shift: `${classObject.shift.startTime}-${classObject.shift.endTime}`,
         }));
 
         for (const building in populatedLayout) {

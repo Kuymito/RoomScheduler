@@ -1,12 +1,14 @@
 import axios from 'axios';
+import { getSession } from 'next-auth/react'; // Import getSession
 
 // Define a single, consistent API_URL for all backend requests.
 const API_URL = "https://jaybird-new-previously.ngrok-free.app/api/v1";
 
-const getAuthHeaders = (token) => ({
+const getAuthHeaders = (token, contentType = 'application/json') => ({
     'Authorization': `Bearer ${token}`,
     // This header is necessary to bypass the ngrok warning page.
-    'ngrok-skip-browser-warning': 'true'
+    'ngrok-skip-browser-warning': 'true',
+    'Content-Type': contentType,
 });
 
 const handleError = (context, error) => {
@@ -34,23 +36,14 @@ const login = async (credentials) => {
     }
 };
 
-/**
- * Fetches the user's profile information.
- * @param {string} token - The authorization token.
- * @returns {Promise<Object>} The user's profile data.
- */
 const getProfile = async (token) => {
     try {
         const response = await axios.get(`${API_URL}/auth/profile`, { headers: getAuthHeaders(token) });
         
-        // --- THIS IS THE FIX ---
-        // Check if response.data exists and return it directly.
-        // This matches the structure of your API response.
         if (response.data) {
             return response.data;
         }
 
-        // If there's no data, something went wrong.
         throw new Error('No profile data received from API');
         
     } catch (error) {
@@ -58,11 +51,66 @@ const getProfile = async (token) => {
     }
 };
 
+
 /**
- * Sends a request to generate a password reset OTP.
- * @param {string} email - The user's email address.
+ * Updates the currently authenticated instructor's profile using a JSON payload.
+ * @param {Object} profileData - An object containing the instructor's profile fields.
+ * @param {string} token - The authorization token.
  * @returns {Promise<Object>} The API response.
  */
+const updateProfile = async (profileData, token) => {
+    try {
+        let authToken = token;
+        // --- THIS IS THE FIX ---
+        // If a token is not provided, attempt to get it directly from the session.
+        if (!authToken) {
+            const session = await getSession();
+            authToken = session?.accessToken;
+        }
+
+        // Now, perform the validation on the token we have.
+        if (typeof authToken !== 'string' || !authToken) {
+            throw new Error("Authentication token is invalid or missing. Please sign in again.");
+        }
+
+        // Decode the token to get the instructor ID from its claims.
+        const tokenPayload = JSON.parse(atob(authToken.split('.')[1]));
+        const instructorId = tokenPayload.instructorId;
+
+        if (!instructorId) {
+            throw new Error("Instructor ID could not be found in the token.");
+        }
+
+        // Create the plain JavaScript object that matches the required JSON structure.
+        const payload = {
+            firstName: profileData.firstName,
+            lastName: profileData.lastName,
+            email: profileData.email,
+            phone: profileData.phoneNumber,
+            degree: profileData.degree,
+            major: profileData.major,
+            address: profileData.address,
+            departmentId: profileData.departmentId,
+            profile: profileData.avatarUrl
+        };
+        
+        // Use the correct endpoint with the instructor's ID in the URL.
+        const response = await axios.patch(
+            `${API_URL}/instructors/${instructorId}`, // The endpoint now includes the ID.
+            payload,
+            { 
+                headers: getAuthHeaders(authToken, 'application/json')
+            }
+        );
+        
+        return response.data;
+
+    } catch (error) {
+        handleError("Update profile", error);
+    }
+};
+
+
 const forgotPassword = async (email) => {
     try {
         const response = await axios.post(`${API_URL}/otp/generate`, { email }, {
@@ -77,12 +125,6 @@ const forgotPassword = async (email) => {
     }
 };
 
-/**
- * Verifies the provided OTP for a given email.
- * @param {string} email - The user's email.
- * @param {string} otp - The one-time password.
- * @returns {Promise<Object>} An object indicating success or failure.
- */
 const verifyOtp = async (email, otp) => {
     try {
         const response = await axios.post(`${API_URL}/otp/validate`, { email, otp }, {
@@ -98,11 +140,6 @@ const verifyOtp = async (email, otp) => {
     }
 };
 
-/**
- * Resets the user's password using a verified OTP.
- * @param {object} resetData - Contains email, otp, and newPassword.
- * @returns {Promise<Object>} The API response.
- */
 const resetPassword = async ({ email, otp, newPassword }) => {
     try {
         const response = await axios.post(`${API_URL}/auth/reset-password-with-otp`, {
@@ -118,18 +155,9 @@ const resetPassword = async ({ email, otp, newPassword }) => {
     }
 };
 
-/**
- * Changes the currently logged-in user's password.
- * @param {string} currentPassword - The user's current password.
- * @param {string} newPassword - The new password.
- * @param {string} token - The authorization token.
- * @returns {Promise<Object>} The API response.
- */
 const changePassword = async (currentPassword, newPassword, token) => {
     try {
-        // The payload object matches the required structure.
         const payload = { currentPassword, newPassword };
-
         const response = await axios.post(
             `${API_URL}/auth/change-password`,
             payload,
@@ -144,6 +172,7 @@ const changePassword = async (currentPassword, newPassword, token) => {
 export const authService = {
     login,
     getProfile,
+    updateProfile, // The updated function
     forgotPassword,
     verifyOtp,
     resetPassword,

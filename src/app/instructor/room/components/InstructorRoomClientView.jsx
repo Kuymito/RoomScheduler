@@ -2,53 +2,66 @@
 
 import { useState, useEffect, useMemo } from "react";
 import useSWR from 'swr';
+import React from 'react';
 import { useSession } from 'next-auth/react';
 import SuccessAlert from "./RequestSuccessComponent";
 import RequestChangeForm from "./RequestChangeForm";
 import InstructorRoomPageSkeleton from "./InstructorRoomPageSkeleton";
 import { scheduleService } from '@/services/schedule.service';
 import { changeRequestService } from '@/services/changeRequest.service';
-import { shiftService } from '@/services/shift.service';
 
 const scheduleFetcher = ([key, token]) => scheduleService.getAllSchedules(token);
-const shiftsFetcher = ([, token]) => shiftService.getAllShifts(token);
 
-export default function InstructorRoomClientView({ initialAllRoomsData, buildingLayout, initialScheduleMap, initialInstructorClasses, allShifts: initialAllShifts }) {
-    const [allRoomsData, setAllRoomsData] = useState(initialAllRoomsData);
-    const [buildings, setBuildings] = useState(buildingLayout);
+export default function InstructorRoomClientView({ 
+    initialAllRoomsData, 
+    buildingLayout, 
+    initialScheduleMap, 
+    initialInstructorClasses, 
+    allShifts: initialAllShifts 
+}) {
+    
+    // Data-fetching hooks are at the top
+    const { data: session } = useSession();
+    const { 
+        data: apiSchedules, 
+        error: scheduleError, 
+        isLoading: isScheduleLoading 
+    } = useSWR(
+        session?.accessToken ? ['/api/v1/schedule', session.accessToken] : null,
+        scheduleFetcher,
+        { revalidateOnFocus: true }
+    );
+    
+    const allShifts = initialAllShifts || [];
+
+    // State hooks are declared after data fetching
+    const [allRoomsData] = useState(initialAllRoomsData);
+    const [buildings] = useState(buildingLayout);
     const [scheduleMap, setScheduleMap] = useState(initialScheduleMap);
     const [instructorClasses] = useState(initialInstructorClasses);
-    
-    const [selectedDay, setSelectedDay] = useState(() => new Date().toLocaleDateString('en-US', { weekday: 'long' }));
-    
-    // --- THIS IS THE FIX ---
-    // 1. Derive the time slots from the 'allShifts' prop based on the selected day.
-    const timeSlots = useMemo(() => {
-        if (!initialAllShifts || initialAllShifts.length === 0) {
-            return [];
-        }
+    const [selectedDay, setSelectedDay] = useState(null); // Initialize as null
 
-        const isWeekend = selectedDay === 'Saturday' || selectedDay === 'Sunday';
-        
-        const filteredShifts = initialAllShifts.filter(shift => {
-            if (isWeekend) {
-                return shift.scheduleType === 'Weekend';
-            }
-            return shift.scheduleType === 'Weekday';
-        });
-
-        const sortedShifts = [...filteredShifts].sort((a, b) => a.startTime.localeCompare(b.startTime));
-        return sortedShifts.map(shift => `${shift.startTime}-${shift.endTime}`);
-    }, [initialAllShifts, selectedDay]);
-    
-    // 2. Initialize state with the dynamically created TIME_SLOTS.
-    const [selectedTimeSlot, setSelectedTimeSlot] = useState(timeSlots[0] || ''); 
-    
-    // 3. Update selectedTimeSlot when the day changes.
+    // Set the current day on the client-side after initial render
     useEffect(() => {
-        setSelectedTimeSlot(timeSlots[0] || '');
-    }, [timeSlots]);
+        const today = new Date().toLocaleDateString('en-US', { weekday: 'long' });
+        setSelectedDay(today);
+    }, []); // Empty dependency array ensures this runs only once
 
+    const timeSlots = useMemo(() => {
+        if (!allShifts || allShifts.length === 0 || !selectedDay) return [];
+        const isWeekend = selectedDay === 'Saturday' || selectedDay === 'Sunday';
+        const filteredShifts = allShifts.filter(shift => isWeekend ? shift.scheduleType === 'Weekend' : shift.scheduleType === 'Weekday');
+        const sortedShifts = [...filteredShifts].sort((shiftA, shiftB) => shiftA.startTime.localeCompare(shiftB.startTime));
+        return sortedShifts.map(shift => `${shift.startTime}-${shift.endTime}`);
+    }, [allShifts, selectedDay]);
+    
+    const [selectedTimeSlot, setSelectedTimeSlot] = useState(''); 
+    
+    useEffect(() => {
+        if (timeSlots.length > 0) {
+            setSelectedTimeSlot(timeSlots[0]);
+        }
+    }, [timeSlots]);
 
     const [selectedBuilding, setSelectedBuilding] = useState(Object.keys(buildingLayout)[0] || "");
     const [selectedRoomId, setSelectedRoomId] = useState(null);
@@ -58,30 +71,22 @@ export default function InstructorRoomClientView({ initialAllRoomsData, building
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [error, setError] = useState('');
 
-    const { data: session } = useSession();
-    
-    const { data: apiSchedules, error: scheduleError, isLoading: isScheduleLoading } = useSWR(
-        session?.accessToken ? ['/api/v1/schedule', session.accessToken] : null,
-        scheduleFetcher,
-        { revalidateOnFocus: true }
-    );
-    
-    const { data: allShifts, error: shiftsError } = useSWR(
-        session?.accessToken ? ['/api/v1/shifts', session.accessToken] : null,
-        shiftsFetcher,
-        { fallbackData: initialAllShifts }
-    );
-    
     useEffect(() => {
-        if (apiSchedules && Array.isArray(apiSchedules)) {
+        const schedulesData = Array.isArray(apiSchedules) ? apiSchedules : (apiSchedules?.payload || []);
+        
+        if (schedulesData.length > 0) {
             const newScheduleMap = {};
-            apiSchedules.forEach(schedule => {
-                if (schedule && schedule.shift) {
-                    const day = schedule.day.toUpperCase();
+            schedulesData.forEach(schedule => {
+                if (schedule?.shift && schedule.dayDetails) {
                     const timeSlot = `${schedule.shift.startTime}-${schedule.shift.endTime}`;
-                    if (!newScheduleMap[day]) newScheduleMap[day] = {};
-                    if (!newScheduleMap[day][timeSlot]) newScheduleMap[day][timeSlot] = {};
-                    newScheduleMap[day][timeSlot][schedule.roomId] = schedule.className;
+                    schedule.dayDetails.forEach(dayDetail => {
+                        if (!dayDetail.online && schedule.roomId) {
+                            const dayKey = dayDetail.dayOfWeek.toUpperCase();
+                            if (!newScheduleMap[dayKey]) newScheduleMap[dayKey] = {};
+                            if (!newScheduleMap[dayKey][timeSlot]) newScheduleMap[dayKey][timeSlot] = {};
+                            newScheduleMap[dayKey][timeSlot][schedule.roomId] = schedule.className;
+                        }
+                    });
                 }
             });
             setScheduleMap(newScheduleMap);
@@ -94,13 +99,13 @@ export default function InstructorRoomClientView({ initialAllRoomsData, building
             return;
         }
 
-        const timeParts = selectedTimeSlot.split('-');
+        const [startTime, endTime] = selectedTimeSlot.split('-');
         const selectedShift = allShifts.find(shift => 
-            shift.startTime === timeParts[0] && shift.endTime === timeParts[1]
+            shift.startTime === startTime && shift.endTime === endTime
         );
 
         if (!selectedShift) {
-            alert("Critical Error: Could not find a matching shift ID for the selected time slot. Please contact support.");
+            alert("Critical Error: Could not find a matching shift ID for the selected time slot.");
             return;
         }
 
@@ -116,17 +121,29 @@ export default function InstructorRoomClientView({ initialAllRoomsData, building
         try {
             await changeRequestService.createChangeRequest(payload, session.accessToken);
             setShowSuccessAlert(true);
-        } catch (err) {
-            alert(`Failed to submit request: ${err.message}`);
+        } catch (requestError) {
+            alert(`Failed to submit request: ${requestError.message}`);
         } finally {
             setIsFormOpen(false);
         }
     };
     
-    const resetSelection = () => { setSelectedRoomId(null); setRoomDetails(null); };
-    const handleDayChange = (day) => { setSelectedDay(day); resetSelection(); };
-    const handleTimeChange = (event) => { setSelectedTimeSlot(event.target.value); resetSelection(); };
-    const handleBuildingChange = (event) => { setSelectedBuilding(event.target.value); resetSelection(); };
+    const resetSelection = () => {
+        setSelectedRoomId(null);
+        setRoomDetails(null);
+    };
+    const handleDayChange = (day) => {
+        setSelectedDay(day);
+        resetSelection();
+    };
+    const handleTimeChange = (event) => {
+        setSelectedTimeSlot(event.target.value);
+        resetSelection();
+    };
+    const handleBuildingChange = (event) => {
+        setSelectedBuilding(event.target.value);
+        resetSelection();
+    };
 
     const handleRoomClick = async (roomId) => {
         const isOccupied = scheduleMap[selectedDay.toUpperCase()]?.[selectedTimeSlot]?.[roomId];
@@ -140,14 +157,16 @@ export default function InstructorRoomClientView({ initialAllRoomsData, building
             const room = allRoomsData[roomId];
             if (!room) throw new Error("Room not found");
             setRoomDetails(room);
-        } catch (err) {
+        } catch (fetchError) {
             setError("Error setting room details.");
         } finally {
             setLoading(false);
         }
     };
 
-    const handleRequest = () => { if (roomDetails) setIsFormOpen(true); };
+    const handleRequest = () => {
+        if (roomDetails) setIsFormOpen(true);
+    };
 
     const floors = buildings[selectedBuilding] || [];
     const WEEKDAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
@@ -176,12 +195,14 @@ export default function InstructorRoomClientView({ initialAllRoomsData, building
         return "";
     };
 
-    if (isScheduleLoading) {
+    // --- THIS IS THE FIX ---
+    // This guard clause prevents rendering until the selectedDay is set on the client.
+    if (isScheduleLoading || !selectedDay) {
         return <InstructorRoomPageSkeleton />;
     }
 
-    if (scheduleError || shiftsError) {
-        return <div className="p-6 text-center text-red-500">Failed to load necessary data: {scheduleError?.message || shiftsError?.message}</div>;
+    if (scheduleError) {
+        return <div className="p-6 text-center text-red-500">Failed to load schedule data: {scheduleError?.message}</div>;
     }
 
     return (
@@ -198,7 +219,7 @@ export default function InstructorRoomClientView({ initialAllRoomsData, building
                         <div className="flex items-center gap-2 w-full sm:w-auto">
                             <label htmlFor="time-select" className="text-sm font-medium dark:text-gray-300">Time:</label>
                             <select id="time-select" value={selectedTimeSlot} onChange={handleTimeChange} className="p-2 text-sm border border-gray-300 rounded-md dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200 focus:ring-blue-500 focus:border-blue-500 w-full">
-                                {timeSlots.map(t => <option key={t} value={t}>{formatTimeSlot(t)}</option>)}
+                                {timeSlots.map(time => <option key={time} value={time}>{formatTimeSlot(time)}</option>)}
                             </select>
                         </div>
                     </div>
@@ -217,9 +238,9 @@ export default function InstructorRoomClientView({ initialAllRoomsData, building
                                     <div className="flex items-center gap-2 mb-2"><h4 className="text-xs sm:text-sm font-medium text-slate-600 dark:text-slate-400">Floor {floor}</h4><hr className="flex-1 border-t border-slate-300 dark:border-slate-700" /></div>
                                     <div className={`grid gap-3 sm:gap-4 ${getGridColumnClasses(selectedBuilding, floor)}`}>
                                         {rooms.map((roomName) => {
-                                            const room = Object.values(allRoomsData).find(r => r.name === roomName);
+                                            const room = Object.values(allRoomsData).find(roomObject => roomObject.name === roomName);
                                             if (!room) return null;
-                                            const scheduledClass = scheduleMap[selectedDay.toUpperCase()]?.[selectedTimeSlot]?.[room.id];
+                                            const scheduledClass = selectedDay ? scheduleMap[selectedDay.toUpperCase()]?.[selectedTimeSlot]?.[room.id] : undefined;
                                             const isOccupied = !!scheduledClass;
                                             const isSelected = selectedRoomId === room.id;
                                             return (

@@ -48,7 +48,7 @@ const ProfileContentSkeleton = () => (
             </div>
         </div>
     </div>
-);
+);  
 
 const fetcher = ([, token]) => authService.getProfile(token);
 
@@ -62,8 +62,7 @@ const ProfileContent = () => {
     const [profileData, setProfileData] = useState(null);
     const [editableProfileData, setEditableProfileData] = useState(null);
     const [imagePreviewUrl, setImagePreviewUrl] = useState(null);
-    const [imageFile, setImageFile] = useState(null);
-    const [isUploading, setIsUploading] = useState(false);
+    const [isUploading, setIsUploading] = useState(false); 
     const fileInputRef = useRef(null);
     const [isEditingGeneral, setIsEditingGeneral] = useState(false);
     const [isEditingPassword, setIsEditingPassword] = useState(false);
@@ -88,7 +87,10 @@ const ProfileContent = () => {
                 address: profileResponse.address || "Not Provided",
                 avatarUrl: profileResponse.profile,
                 degree: profileResponse.degree || "Not Provided",
+                // --- THIS IS THE FIX ---
+                // Use the 'department' property from the API response.
                 department: profileResponse.department || "N/A",
+                departmentId: profileResponse.departmentId,
                 major: profileResponse.major || "Not Provided",
              };
             setProfileData(initialData);
@@ -102,13 +104,23 @@ const ProfileContent = () => {
         setEditableProfileData(previousState => ({ ...previousState, [name]: value }));
     };
 
+    /**
+     * Reads the selected image file and converts it to a Base64 data URL.
+     */
     const handleFileChange = (event) => {
         const file = event.target.files[0];
         if (file) {
-            setImageFile(file);
+            setIsUploading(true); // Indicate that processing has started
             const reader = new FileReader();
             reader.onloadend = () => {
-                setImagePreviewUrl(reader.result);
+                const base64String = reader.result;
+                setImagePreviewUrl(base64String);
+                setEditableProfileData(previousState => ({ ...previousState, avatarUrl: base64String }));
+                setIsUploading(false); // Processing is finished
+            };
+            reader.onerror = () => {
+                console.error("Error reading file");
+                setIsUploading(false);
             };
             reader.readAsDataURL(file);
         }
@@ -133,7 +145,6 @@ const ProfileContent = () => {
         if (section === 'general') {
             setEditableProfileData({ ...profileData });
             setImagePreviewUrl(profileData.avatarUrl);
-            setImageFile(null);
             setIsEditingGeneral(false);
         } else if (section === 'password') {
             setNewPassword('');
@@ -144,23 +155,29 @@ const ProfileContent = () => {
         }
     };
 
-    const handleSaveClick = async (section) => {
-        setLoading(true);
-        setError(null);
-        setModalError(null);
 
+    const handleSaveClick = async (section) => {
         if (section === 'general') {
+            setLoading(true);
+            setError(null);
+    
+            // --- THIS IS THE FIX ---
+            // 1. Check for a valid session and token BEFORE making the API call.
+            if (!session?.accessToken) {
+                setError("Your session has expired. Please log out and sign in again.");
+                setLoading(false);
+                return; // Stop the function here
+            }
+    
             try {
-                if (!session?.accessToken) {
-                    throw new Error("You are not authenticated.");
-                }
-                await authService.updateProfile(editableProfileData, imageFile, session.accessToken);
+                // 2. Pass the confirmed valid token to the service.
+                await authService.updateProfile(editableProfileData, session.accessToken);
+    
                 setShowSuccessPopup(true);
                 setIsEditingGeneral(false);
-                setImageFile(null);
-                mutate();
-            } catch (updateError) {
-                setError(updateError.message || "Failed to update profile.");
+                mutate(); // Re-fetch profile data
+            } catch (err) {
+                setError(err.message || "Failed to update profile.");
             } finally {
                 setLoading(false);
             }

@@ -32,6 +32,7 @@ export default function ClassClientView({ initialClasses }) {
         }
     );
     
+    
     // --- THIS IS THE FIX ---
     // Initialize state for the data needed by the popup.
     const [departments, setDepartments] = useState([]);
@@ -72,18 +73,30 @@ export default function ClassClientView({ initialClasses }) {
     useEffect(() => {
         const fetchDataForPopup = async () => {
             if (session?.accessToken) {
+                
+                // We will fetch departments and shifts separately to debug.
                 try {
-                    const [deptsData, shiftsData] = await Promise.all([
-                        departmentService.getAllDepartments(session.accessToken),
-                        classService.getAllShifts(session.accessToken)
-                    ]);
-                    setDepartments(deptsData);
-                    setShifts(shiftsData);
-                } catch (err) {
-                    toast.error("Failed to load data needed for the create form.");
+                    console.log("Attempting to fetch departments...");
+                    const deptsResponse = await departmentService.getAllDepartments(session.accessToken);
+                    setDepartments(deptsResponse.payload || []);
+                    console.log("Departments fetched successfully.");
+                } catch (departmentError) {
+                    console.error("🔴 FAILED TO FETCH DEPARTMENTS:", departmentError);
+                    toast.error("Could not load department data.");
+                }
+    
+                try {
+                    console.log("Attempting to fetch shifts...");
+                    const shiftsData = await classService.getAllShifts(session.accessToken);
+                    setShifts(shiftsData || []); // The service should return the array directly
+                    console.log("Shifts fetched successfully.");
+                } catch (shiftError) {
+                    console.error("🔴 FAILED TO FETCH SHIFTS:", shiftError);
+                    toast.error("Could not load shift data.");
                 }
             }
         };
+    
         fetchDataForPopup();
     }, [session]);
 

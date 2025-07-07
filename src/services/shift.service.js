@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'https://jaybird-new-previously.ngrok-free.app/api/v1';
+const API_URL = 'https://jaybird-new-previously.ngrok-free.app/api/v1';
 
 const getAuthHeaders = (token) => {
     if (!token) throw new Error('Authentication token not found');
@@ -27,22 +27,20 @@ const handleError = (context, error) => {
  * @returns {Promise<Array>} A promise that resolves to an array of shift objects.
  */
 const getAllShifts = async (token) => {
-    try {
-        const headers = getAuthHeaders(token);
-        const response = await axios.get(`${API_BASE_URL}/shifts`, { headers });
-        
-        // --- THIS IS THE FIX ---
-        // The API returns a direct array, not an object with a payload.
-        // We check if the response data is an array and return it.
-        if (Array.isArray(response.data)) {
-            return response.data;
-        }
-        // If the structure is ever different, fall back to the payload property.
-        return response.data.payload || [];
+    // By removing the try/catch, any error from axios will now be caught by the component.
+    const response = await axios.get(`${API_URL}/shifts`, { 
+        headers: getAuthHeaders(token) 
+    });
 
-    } catch (error) {
-        handleError("Get all shifts", error);
+    // This logic correctly checks for a payload or a direct array.
+    if (response.data && Array.isArray(response.data.payload)) {
+        return response.data.payload;
     }
+    if (Array.isArray(response.data)) {
+        return response.data;
+    }
+
+    return [];
 };
 
 export const shiftService = {
