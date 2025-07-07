@@ -68,13 +68,36 @@ const fetchSchedulePageData = async () => {
             return cls;
         });
 
+        // UPDATED: Correctly process schedule data from the API's `dayDetails` array
         const scheduleMap = {};
+        const dayApiToAbbrMap = {
+            MONDAY: 'Mo',
+            TUESDAY: 'Tu',
+            WEDNESDAY: 'We',
+            THURSDAY: 'Th',
+            FRIDAY: 'Fr',
+            SATURDAY: 'Sa',
+            SUNDAY: 'Su'
+        };
+
         schedules.forEach(schedule => {
-            const day = schedule.day;
-            const timeSlot = schedule.shift.name;
-            if (!scheduleMap[day]) scheduleMap[day] = {};
-            if (!scheduleMap[day][timeSlot]) scheduleMap[day][timeSlot] = {};
-            scheduleMap[day][timeSlot][schedule.roomId] = schedule.classId;
+            if (schedule && schedule.dayDetails && Array.isArray(schedule.dayDetails) && schedule.shift) {
+                const timeSlotName = shiftNameMap[schedule.shift.startTime];
+                if (timeSlotName) {
+                    schedule.dayDetails.forEach(dayDetail => {
+                        const dayAbbr = dayApiToAbbrMap[dayDetail.dayOfWeek.toUpperCase()];
+                        if (dayAbbr) {
+                            if (!scheduleMap[dayAbbr]) {
+                                scheduleMap[dayAbbr] = {};
+                            }
+                            if (!scheduleMap[dayAbbr][timeSlotName]) {
+                                scheduleMap[dayAbbr][timeSlotName] = {};
+                            }
+                            scheduleMap[dayAbbr][timeSlotName][schedule.roomId] = schedule.classId;
+                        }
+                    });
+                }
+            }
         });
 
         const buildingLayout = {};

@@ -96,6 +96,9 @@ export default function ScheduleClientView({ initialClasses, initialRooms, initi
         '32': 'bg-indigo-500',
         '33': 'bg-violet-500',
     };
+    
+    const GREEN_DOT_COLOR = 'bg-green-500';
+    const RED_DOT_COLOR = 'bg-red-500';
 
     const showToast = (message) => {
         setToastMessage(message);
@@ -146,6 +149,38 @@ export default function ScheduleClientView({ initialClasses, initialRooms, initi
     const currentGrid = useMemo(() => {
         return buildingLayout[selectedBuilding] ?? {};
     }, [buildingLayout, selectedBuilding]);
+    
+    const { availableRoomsCount, unavailableRoomsCount } = useMemo(() => {
+        if (!selectedBuilding || !buildingLayout[selectedBuilding]) {
+            return { availableRoomsCount: 0, unavailableRoomsCount: 0 };
+        }
+
+        const roomsInBuilding = Object.values(buildingLayout[selectedBuilding]).flat();
+        const totalRoomsInBuilding = roomsInBuilding.length;
+
+        const timeSchedule = schedules[selectedDay]?.[selectedTime] || {};
+
+        const unavailableRoomIds = new Set();
+
+        roomsInBuilding.forEach(room => {
+            // If occupied at the selected time
+            if (timeSchedule[room.roomId]) {
+                unavailableRoomIds.add(room.roomId);
+            }
+            // If permanently unavailable
+            if (room.status === 'unavailable') {
+                unavailableRoomIds.add(room.roomId);
+            }
+        });
+        
+        const finalUnavailableCount = unavailableRoomIds.size;
+
+        return {
+            availableRoomsCount: totalRoomsInBuilding - finalUnavailableCount,
+            unavailableRoomsCount: finalUnavailableCount,
+        };
+    }, [selectedBuilding, selectedDay, selectedTime, schedules, buildingLayout]);
+
 
     const handleDragStartFromList = (e, classData) => setDraggedItem({ item: classData, type: 'new' });
     const handleDragStartFromGrid = (e, classData, roomId) => setDraggedItem({ item: classData, type: 'scheduled', origin: { day: selectedDay, time: selectedTime, roomId } });
@@ -353,6 +388,17 @@ export default function ScheduleClientView({ initialClasses, initialRooms, initi
                                 </div>
                             </div>
                         ))}
+                    </div>
+                    <div className="mt-auto pt-4 border-t border-gray-200 dark:border-gray-700 flex flex-wrap justify-between items-center gap-3">
+                        <div className="text-xs text-gray-600 dark:text-gray-400 space-y-0.5">
+                            <p><span className={`inline-block w-2.5 h-2.5 ${GREEN_DOT_COLOR} rounded-full mr-1.5 align-middle`}></span> Available Rooms: {availableRoomsCount}</p>
+                            <p><span className={`inline-block w-2.5 h-2.5 ${RED_DOT_COLOR} rounded-full mr-1.5 align-middle`}></span> Unavailable Rooms: {unavailableRoomsCount}</p>
+                        </div>
+                        <button
+                            onClick={() => alert('Download PDF functionality to be implemented.')}
+                            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-md text-sm transition-colors">
+                            Download PDF
+                        </button>
                     </div>
                 </div>
             </div>

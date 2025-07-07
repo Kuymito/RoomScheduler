@@ -23,7 +23,10 @@ export default function InstructorRoomClientView({ initialAllRoomsData, building
     const [instructorClasses] = useState(initialInstructorClasses);
     
     const [selectedDay, setSelectedDay] = useState(() => new Date().toLocaleDateString('en-US', { weekday: 'long' }));
-    const [selectedTimeSlot, setSelectedTimeSlot] = useState('07:00-10:00');
+    // UPDATED: Use shift names consistent with the schedule page
+    const TIME_SLOTS = ['Morning Shift', 'Noon Shift', 'Afternoon Shift', 'Evening Shift', 'Weekend Shift'];
+    const [selectedTimeSlot, setSelectedTimeSlot] = useState(TIME_SLOTS[0]);
+    
     const [selectedBuilding, setSelectedBuilding] = useState(Object.keys(buildingLayout)[0] || "");
 
     const [selectedRoomId, setSelectedRoomId] = useState(null);
@@ -90,8 +93,17 @@ export default function InstructorRoomClientView({ initialAllRoomsData, building
     const handleTimeChange = (event) => { setSelectedTimeSlot(event.target.value); resetSelection(); };
     const handleBuildingChange = (event) => { setSelectedBuilding(event.target.value); resetSelection(); };
 
+    const shiftNameToTimeRange = {
+        'Morning Shift': '07:00-10:00',
+        'Noon Shift': '10:30-13:30',
+        'Afternoon Shift': '14:00-17:00',
+        'Evening Shift': '17:30-20:30',
+        'Weekend Shift': '07:30-17:00'
+    };
+
     const handleRoomClick = async (roomId) => {
-        const isOccupied = scheduleMap[selectedDay]?.[selectedTimeSlot]?.[roomId];
+        const timeRange = shiftNameToTimeRange[selectedTimeSlot];
+        const isOccupied = scheduleMap[selectedDay]?.[timeRange]?.[roomId];
         if (isOccupied) return; // Prevent clicking occupied rooms
 
         setSelectedRoomId(roomId);
@@ -118,9 +130,7 @@ export default function InstructorRoomClientView({ initialAllRoomsData, building
     // --- Derived Data and Constants ---
     const floors = buildings[selectedBuilding] || [];
     const WEEKDAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
-    const TIME_SLOTS = ['07:00-10:00', '10:30-13:30', '14:00-17:00', '17:30-20:30'];
-    const formatTimeSlot = (time) => time.replace('-', ' to ');
-
+    
     const textLabelRoom = "font-medium text-base leading-7 text-slate-700 dark:text-slate-300 tracking-[-0.01em]";
     const textValueRoomDisplay = "font-medium text-base leading-7 text-slate-900 dark:text-slate-100 tracking-[-0.01em]";
     const textLabelDefault = "font-medium text-sm leading-6 text-slate-700 dark:text-slate-300 tracking-[-0.01em]";
@@ -155,7 +165,7 @@ export default function InstructorRoomClientView({ initialAllRoomsData, building
     return (
     <>
       {showSuccessAlert && ( <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 "><SuccessAlert show={showSuccessAlert} title="Request was sent Successfully" messageLine1={`Room ${roomDetails?.name || ""} Your request was sent Successfully`} messageLine2="" confirmButtonText="Close" onConfirm={() => setShowSuccessAlert(false)} onClose={() => setShowSuccessAlert(false)}/></div>)}
-      <RequestChangeForm isOpen={isFormOpen} onClose={() => setIsFormOpen(false)} onSave={handleSaveRequest} roomDetails={roomDetails} instructorClasses={instructorClasses} selectedDay={selectedDay} selectedTime={selectedTimeSlot}/>
+      <RequestChangeForm isOpen={isFormOpen} onClose={() => setIsFormOpen(false)} onSave={handleSaveRequest} roomDetails={roomDetails} instructorClasses={instructorClasses} selectedDay={selectedDay} selectedTime={shiftNameToTimeRange[selectedTimeSlot]}/>
       <div className="p-4 sm:p-6 min-h-full">
         <div className="mb-4 w-full"><h2 className="text-xl font-semibold text-slate-800 dark:text-white">Room</h2><hr className="border-t border-slate-300 dark:border-slate-700 mt-3" /></div>
         <div className="flex flex-col lg:flex-row gap-6">
@@ -167,7 +177,7 @@ export default function InstructorRoomClientView({ initialAllRoomsData, building
                     <div className="flex items-center gap-2 w-full sm:w-auto">
                         <label htmlFor="time-select" className="text-sm font-medium dark:text-gray-300">Time:</label>
                         <select id="time-select" value={selectedTimeSlot} onChange={handleTimeChange} className="p-2 text-sm border border-gray-300 rounded-md dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200 focus:ring-blue-500 focus:border-blue-500 w-full">
-                            {TIME_SLOTS.map(t => <option key={t} value={t}>{formatTimeSlot(t)}</option>)}
+                            {TIME_SLOTS.map(t => <option key={t} value={t}>{t}</option>)}
                         </select>
                     </div>
                 </div>
@@ -186,7 +196,8 @@ export default function InstructorRoomClientView({ initialAllRoomsData, building
                                     const room = Object.values(allRoomsData).find(r => r.name === roomName);
                                     if (!room) return null;
                                     const isSelected = selectedRoomId === room.id;
-                                    const scheduledClass = scheduleMap[selectedDay]?.[selectedTimeSlot]?.[room.id];
+                                    const timeRange = shiftNameToTimeRange[selectedTimeSlot];
+                                    const scheduledClass = scheduleMap[selectedDay]?.[timeRange]?.[room.id];
                                     const isOccupied = !!scheduledClass;
                                     return (
                                         <div key={room.id} className={`h-[90px] sm:h-[100px] border rounded-md flex flex-col transition-all duration-150 shadow-sm ${getRoomColSpan(selectedBuilding, room.name)} ${isOccupied ? 'cursor-not-allowed bg-slate-50 dark:bg-slate-800/50 opacity-70' : 'cursor-pointer hover:shadow-md bg-white dark:bg-slate-800'} ${isSelected ? "border-blue-500 ring-2 ring-blue-500 dark:border-blue-500" : isOccupied ? "border-slate-200 dark:border-slate-700" : "border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600"}`}

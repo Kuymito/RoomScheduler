@@ -18,9 +18,16 @@ const scheduleFetcher = ([, token]) => scheduleService.getAllSchedules(token);
 export default function RoomClientView({ initialAllRoomsData, buildingLayout, initialScheduleMap }) {
     // --- Constants and Helper Functions ---
     const WEEKDAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
-    const TIME_SLOTS = ['07:00-10:00', '10:30-13:30', '14:00-17:00', '17:30-20:30'];
+    // UPDATED: Use shift names consistent with the schedule page
+    const TIME_SLOTS = ['Morning Shift', 'Noon Shift', 'Afternoon Shift', 'Evening Shift', 'Weekend Shift'];
+    const shiftNameToTimeRange = {
+        'Morning Shift': '07:00-10:00',
+        'Noon Shift': '10:30-13:30',
+        'Afternoon Shift': '14:00-17:00',
+        'Evening Shift': '17:30-20:30',
+        'Weekend Shift': '07:30-17:00'
+    };
     const getDayName = (date) => date.toLocaleDateString('en-US', { weekday: 'long' });
-    const formatTimeSlot = (time) => time.replace('-', ' to ');
 
     // --- Style Constants ---
     const textLabelRoom = "font-medium text-base leading-7 text-slate-700 dark:text-slate-300 tracking-[-0.01em]";
@@ -205,7 +212,7 @@ export default function RoomClientView({ initialAllRoomsData, buildingLayout, in
                             <div className="flex items-center gap-2 w-full sm:w-auto">
                                 <label htmlFor="time-select" className="text-sm font-medium dark:text-gray-300">Time:</label>
                                 <select id="time-select" value={selectedTimeSlot} onChange={handleTimeChange} className="p-2 text-sm border border-gray-300 rounded-md dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200 focus:ring-blue-500 focus:border-blue-500 w-full">
-                                    {TIME_SLOTS.map(t => <option key={t} value={t}>{formatTimeSlot(t)}</option>)}
+                                    {TIME_SLOTS.map(t => <option key={t} value={t}>{t}</option>)}
                                 </select>
                             </div>
                         </div>
@@ -224,7 +231,8 @@ export default function RoomClientView({ initialAllRoomsData, buildingLayout, in
                                             const room = Object.values(allRoomsData).find(r => r.name === roomName);
                                             if (!room) return null;
                                             const isSelected = selectedRoomId === room.id;
-                                            const scheduledClass = scheduleMap[selectedDay]?.[selectedTimeSlot]?.[room.id];
+                                            const timeRange = shiftNameToTimeRange[selectedTimeSlot];
+                                            const scheduledClass = scheduleMap[selectedDay]?.[timeRange]?.[room.id];
                                             const isOccupied = !!scheduledClass;
                                             return (
                                                 <div key={room.id} className={`h-[90px] sm:h-[100px] border rounded-md flex flex-col transition-all duration-150 shadow-sm cursor-pointer ${getRoomColSpan(selectedBuilding, room.name)} ${isOccupied ? 'bg-slate-50 dark:bg-slate-800/50' : 'hover:shadow-md bg-white dark:bg-slate-800'} ${isSelected ? "border-blue-500 ring-2 ring-blue-500 dark:border-blue-500" : isOccupied ? "border-slate-200 dark:border-slate-700" : "border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600"}`}
