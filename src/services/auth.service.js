@@ -116,6 +116,38 @@ const changePassword = async (currentPassword, newPassword, token) => {
   }
 };
 
+/**
+ * Resets a specific instructor's password (Admin action).
+ * @param {string|number} instructorId - The ID of the instructor whose password is to be reset.
+ * @param {string} newPassword - The new password to set.
+ * @param {string} token - The admin's authorization token.
+ * @returns {Promise<Object>} The response from the API.
+ */
+const resetInstructorPassword = async (instructorId, newPassword, token) => {
+  // Always call the local, non-conflicting API route from the client.
+  const url = `${LOCAL_API_URL}/instructors/${instructorId}/reset-password`;
+    
+  try {
+    const response = await axios.patch(url, 
+      { newPassword }, 
+      {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        }
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error(`Reset instructor password service error for ID ${instructorId}:`, {
+      message: error.message,
+      code: error.code,
+      response: error.response ? error.response.data : 'No response data'
+    });
+    throw new Error(error.response?.data?.message || `Failed to reset password for instructor ${instructorId}.`);
+  }
+};
+
 export const authService = {
   login,
   getProfile,
@@ -123,4 +155,5 @@ export const authService = {
   verifyOtp,
   resetPassword,
   changePassword,
+  resetInstructorPassword,
 };
