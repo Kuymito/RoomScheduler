@@ -42,7 +42,7 @@ async function ClassData() {
  */
 export default function AdminClassPage() {
     return (
-        <AdminLayout activeItem="class" pageTitle="Class Management">
+        <AdminLayout activeItem="class" pageTitle="Class">
             <Suspense fallback={<ClassPageSkeleton />}>
                 <ClassData />
             </Suspense>

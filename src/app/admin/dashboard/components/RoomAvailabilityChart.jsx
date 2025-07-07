@@ -16,7 +16,8 @@ const defaultChartLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const defaultChartValues = [15, 30, 25, 45, 20, 35, 50]; 
 
 export default function RoomAvailabilityChart({ chartData, selectedTimeSlot, setSelectedTimeSlot }) {
-  const timeSlots = ['07:00 - 10:00', '10:00 - 13:00', '13:00 - 16:00', '16:00 - 19:00'];
+  // UPDATED: Use descriptive shift names to match the room page
+  const timeSlots = ['Morning Shift', 'Noon Shift', 'Afternoon Shift', 'Evening Shift', 'Weekend Shift'];
   const [isDarkMode, setIsDarkMode] = useState(false);
   const currentLabels = chartData?.labels || defaultChartLabels;
   const currentDataValues = chartData?.data || defaultChartValues;

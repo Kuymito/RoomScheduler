@@ -128,7 +128,7 @@ export default async function InstructorRoomPage() {
     const { initialAllRoomsData, buildingLayout, initialScheduleMap, initialInstructorClasses } = await fetchAllRoomsAndSchedules();
 
     return (
-        <InstructorLayout activeItem="room" pageTitle="Room Availability">
+        <InstructorLayout activeItem="room" pageTitle="Room">
             <Suspense fallback={<InstructorRoomPageSkeleton />}>
                 <InstructorRoomClientView
                     initialAllRoomsData={initialAllRoomsData}

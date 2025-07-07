@@ -9,7 +9,7 @@ import InstructorClassPageSkeleton from './components/InstructorClassPageSkeleto
  */
 export default function InstructorClassPage() {
     return (
-        <InstructorLayout activeItem="class" pageTitle="Class Management">
+        <InstructorLayout activeItem="class" pageTitle="Class">
             <Suspense fallback={<InstructorClassPageSkeleton />}>
                 {/* The Client Component will now handle its own data fetching via useSWR */}
                 <InstructorClassClientView />

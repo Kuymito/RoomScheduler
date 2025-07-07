@@ -9,10 +9,20 @@ const RoomAvailabilityChart = dynamic(() => import('./RoomAvailabilityChart'), {
   ssr: false, // Chart libraries often need browser APIs, so disable SSR for it.
 });
 
+// Mapping from descriptive shift names to the time range format the server action expects.
+const shiftNameToTimeRange = {
+    'Morning Shift': '07:00 - 10:00',
+    'Noon Shift': '10:30 - 13:30',
+    'Afternoon Shift': '14:00 - 17:00',
+    'Evening Shift': '17:30 - 20:30',
+    'Weekend Shift': '07:30 - 17:00'
+};
+
 // This Client Component manages the interactive state of the chart.
 export default function RoomAvailabilityWrapper({ initialChartData, updateChartAction }) {
   const [chartData, setChartData] = useState(initialChartData);
-  const [selectedTimeSlot, setSelectedTimeSlot] = useState('07:00 - 10:00');
+  // UPDATED: Initial state now uses the descriptive name.
+  const [selectedTimeSlot, setSelectedTimeSlot] = useState('Morning Shift');
   
   // useTransition allows updating state without blocking the UI.
   const [isPending, startTransition] = useTransition();
@@ -20,10 +30,12 @@ export default function RoomAvailabilityWrapper({ initialChartData, updateChartA
 
   const handleTimeSlotChange = (newTimeSlot) => {
     setSelectedTimeSlot(newTimeSlot);
-    // startTransition will call the server action to fetch new data.
-    // The UI remains responsive while the data is being fetched.
+    
+    // Convert the descriptive name back to the time range for the server action.
+    const timeRangeForApi = shiftNameToTimeRange[newTimeSlot] || '07:00 - 10:00';
+
     startTransition(async () => {
-      const newChartData = await updateChartAction(newTimeSlot);
+      const newChartData = await updateChartAction(timeRangeForApi);
       setChartData(newChartData);
     });
   };
@@ -43,7 +55,7 @@ export default function RoomAvailabilityWrapper({ initialChartData, updateChartA
       <RoomAvailabilityChart
         chartData={chartData}
         selectedTimeSlot={selectedTimeSlot}
-        setSelectedTimeSlot={handleTimeSlotChange} // Note: Prop name might need to match chart component
+        setSelectedTimeSlot={handleTimeSlotChange}
       />
     </div>
   );

@@ -43,7 +43,7 @@ async function InstructorData() {
  */
 export default async function AdminInstructorsPage() {
     return (
-        <AdminLayout activeItem="instructor" pageTitle="Instructor Management">
+        <AdminLayout activeItem="instructor" pageTitle="Instructor">
             <Suspense fallback={<InstructorPageSkeleton />}>
                 <InstructorData />
             </Suspense>

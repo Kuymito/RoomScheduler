@@ -104,7 +104,7 @@ export default async function AdminRoomPage() {
     const { initialAllRoomsData, buildingLayout, scheduleMap } = await fetchAndProcessRoomData();
 
     return (
-        <AdminLayout activeItem="room" pageTitle="Management">
+        <AdminLayout activeItem="room" pageTitle="Room">
             <Suspense fallback={<RoomPageSkeleton />}>
                 <RoomClientView 
                     initialAllRoomsData={initialAllRoomsData} 
