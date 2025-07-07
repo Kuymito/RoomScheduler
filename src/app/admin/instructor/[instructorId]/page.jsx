@@ -64,8 +64,13 @@ export default async function InstructorDetailsPage({ params }) {
         notFound();
     }
 
+    const breadcrumbs = [
+        { label: "Instructor Management", href: "/admin/instructor" },
+        { label: `Instructor: ${instructor.name}` }
+    ];
+
     return (
-        <AdminLayout activeItem="instructor" pageTitle="Instructor Details">
+        <AdminLayout activeItem="instructor" breadcrumbs={breadcrumbs}>
             <Suspense fallback={<InstructorDetailSkeleton />}>
                 <InstructorDetailClientView 
                     initialInstructor={instructor}

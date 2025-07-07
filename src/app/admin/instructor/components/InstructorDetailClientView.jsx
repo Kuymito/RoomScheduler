@@ -62,6 +62,7 @@ export default function InstructorDetailClientView({ initialInstructor, allDepar
             major: editableInstructorDetails.major,
             address: editableInstructorDetails.address,
             departmentId: selectedDepartment.departmentId,
+            profile: imagePreviewUrl || ""
         };
 
         try {
@@ -295,7 +296,6 @@ export default function InstructorDetailClientView({ initialInstructor, allDepar
 
                         <div className="form-row flex gap-3 mb-2 flex-wrap">
                             {renderPasswordField("New Password", "newPassword", newPassword, handleNewPasswordChange, "new")}
-                            {/* FIX: The `onChange` prop was being passed a string instead of a function */}
                             {renderPasswordField("Confirm New Password", "confirmNewPassword", confirmNewPassword, handleConfirmPasswordChange, "confirm", passwordMismatchError )}
                         </div>
                         <div className="form-actions flex justify-end items-center gap-3 mt-4">

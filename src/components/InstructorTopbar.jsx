@@ -1,9 +1,10 @@
 'use client';
 
 import React from 'react';
+import Link from 'next/link';
 import ThemeToggle from './ThemeToggle'; // Assuming ThemeToggle is in the same directory or adjust path
 
-const InstructorTopbar = ({ onToggleSidebar, isSidebarCollapsed, onUserIconClick, pageSubtitle, userIconRef, onNotificationIconClick, notificationIconRef, hasUnreadNotifications, }) => {
+const InstructorTopbar = ({ onToggleSidebar, isSidebarCollapsed, onUserIconClick, breadcrumbs, userIconRef, onNotificationIconClick, notificationIconRef, hasUnreadNotifications, }) => {
   return (
     <div className="flex justify-between items-center w-full h-full"> 
       <div className="topbar-content-left flex items-center">
@@ -17,7 +18,20 @@ const InstructorTopbar = ({ onToggleSidebar, isSidebarCollapsed, onUserIconClick
         </div>
         <div className="page-title font-medium text-xl text-black dark:text-white">
           National University of Management
-          <p className="dashboard text-sm font-normal text-blue-600 mt-1">{pageSubtitle}</p>
+          <div className="dashboard text-sm font-normal text-blue-600 mt-1 flex items-center">
+            {breadcrumbs.map((crumb, index) => (
+              <React.Fragment key={index}>
+                {crumb.href ? (
+                  <Link href={crumb.href} className="hover:underline text-blue-600">
+                    {crumb.label}
+                  </Link>
+                ) : (
+                  <span className="text-blue-700 dark:text-gray-400">{crumb.label}</span>
+                )}
+                {index < breadcrumbs.length - 1 && <span className="mx-2 text-gray-400">&gt;</span>}
+              </React.Fragment>
+            ))}
+          </div>
         </div>
       </div>
       <div className="topbar-icons flex items-center gap-4">

@@ -65,11 +65,8 @@ export default function RoomClientView({ initialAllRoomsData, buildingLayout, in
         if (apiSchedules && Array.isArray(apiSchedules)) {
             const newScheduleMap = {};
             apiSchedules.forEach(schedule => {
-                // FIX: Check for the new `dayDetails` array structure
                 if (schedule && schedule.dayDetails && Array.isArray(schedule.dayDetails) && schedule.shift) {
                     const timeSlot = `${schedule.shift.startTime.substring(0, 5)}-${schedule.shift.endTime.substring(0, 5)}`;
-
-                    // Iterate over the `dayDetails` array instead of splitting a string
                     schedule.dayDetails.forEach(dayDetail => {
                         const dayName = dayDetail.dayOfWeek.charAt(0).toUpperCase() + dayDetail.dayOfWeek.slice(1).toLowerCase();
                         if (!newScheduleMap[dayName]) {
@@ -84,7 +81,6 @@ export default function RoomClientView({ initialAllRoomsData, buildingLayout, in
             });
             setScheduleMap(newScheduleMap);
         } else if (apiSchedules) {
-            // Handle cases where the initial data might still be in the old format
             setScheduleMap(apiSchedules);
         }
     }, [apiSchedules]);
@@ -105,8 +101,7 @@ export default function RoomClientView({ initialAllRoomsData, buildingLayout, in
     const handleBuildingChange = (event) => { setSelectedBuilding(event.target.value); resetSelection(); };
     
     const handleRoomClick = (roomId) => {
-        const className = scheduleMap[selectedDay]?.[selectedTimeSlot]?.[roomId];
-        if (className) return;
+        // Allow selecting any room to view its details, regardless of status
         setSelectedRoomId(roomId);
         setIsEditing(false);
         setLoading(true);
@@ -232,8 +227,8 @@ export default function RoomClientView({ initialAllRoomsData, buildingLayout, in
                                             const scheduledClass = scheduleMap[selectedDay]?.[selectedTimeSlot]?.[room.id];
                                             const isOccupied = !!scheduledClass;
                                             return (
-                                                <div key={room.id} className={`h-[90px] sm:h-[100px] border rounded-md flex flex-col transition-all duration-150 shadow-sm ${getRoomColSpan(selectedBuilding, room.name)} ${isOccupied ? 'cursor-not-allowed bg-slate-50 dark:bg-slate-800/50 opacity-70' : 'cursor-pointer hover:shadow-md bg-white dark:bg-slate-800'} ${isSelected ? "border-blue-500 ring-2 ring-blue-500 dark:border-blue-500" : isOccupied ? "border-slate-200 dark:border-slate-700" : "border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600"}`}
-                                                    onClick={() => !isOccupied && handleRoomClick(room.id)}>
+                                                <div key={room.id} className={`h-[90px] sm:h-[100px] border rounded-md flex flex-col transition-all duration-150 shadow-sm cursor-pointer ${getRoomColSpan(selectedBuilding, room.name)} ${isOccupied ? 'bg-slate-50 dark:bg-slate-800/50' : 'hover:shadow-md bg-white dark:bg-slate-800'} ${isSelected ? "border-blue-500 ring-2 ring-blue-500 dark:border-blue-500" : isOccupied ? "border-slate-200 dark:border-slate-700" : "border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600"}`}
+                                                    onClick={() => handleRoomClick(room.id)}>
                                                     <div className={`h-[30px] rounded-t-md flex items-center justify-center px-2 relative border-b ${isSelected ? 'border-b-transparent' : 'border-slate-200 dark:border-slate-600'} ${isOccupied ? 'bg-slate-100 dark:bg-slate-700/60' : 'bg-slate-50 dark:bg-slate-700'}`}>
                                                         <div className={`absolute left-2 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full ${isSelected ? 'bg-blue-500' : isOccupied ? 'bg-red-500' : 'bg-green-500'}`}></div>
                                                         <span className={`ml-3 text-xs sm:text-sm font-medium ${isSelected ? 'text-blue-700 dark:text-blue-300' : isOccupied ? 'text-slate-500 dark:text-slate-400' : 'text-slate-700 dark:text-slate-300'}`}>{room.name}</span>

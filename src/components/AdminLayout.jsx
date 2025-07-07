@@ -9,7 +9,7 @@ import LogoutAlert from '@/components/LogoutAlert';
 import Footer from '@/components/Footer';
 import NotificationPopup from '@/app/admin/notification/AdminNotificationPopup';
 import { signOut, useSession } from 'next-auth/react';
-import useSWR from 'swr';
+import useSWR, { mutate } from 'swr';
 import { authService } from '@/services/auth.service';
 import { notificationService } from '@/services/notification.service';
 import { moul } from './fonts';
@@ -19,7 +19,7 @@ const profileFetcher = ([, token]) => authService.getProfile(token);
 const notificationsFetcher = ([, token]) => notificationService.getNotifications(token);
 const changeRequestsFetcher = ([, token]) => notificationService.getChangeRequests(token);
 
-export default function AdminLayout({ children, activeItem, pageTitle }) {
+export default function AdminLayout({ children, activeItem, pageTitle, breadcrumbs }) {
     const [showAdminPopup, setShowAdminPopup] = useState(false);
     const [showLogoutAlert, setShowLogoutAlert] = useState(false);
     const [showNotificationPopup, setShowNotificationPopup] = useState(false);
@@ -42,13 +42,11 @@ export default function AdminLayout({ children, activeItem, pageTitle }) {
     const { data: session } = useSession();
     const token = session?.accessToken;
 
-    // Fetch profile data using useSWR for caching and revalidation
     const { data: profile } = useSWR(
         token ? ['/api/profile', token] : null,
         profileFetcher
     );
 
-    // Use SWR to fetch notifications and change requests
     const { data: notifications, mutate: mutateNotifications } = useSWR(
         token ? ['/api/notifications', token] : null,
         notificationsFetcher,
@@ -64,6 +62,8 @@ export default function AdminLayout({ children, activeItem, pageTitle }) {
             refreshInterval: 5000,
         }
     );
+
+    const finalBreadcrumbs = breadcrumbs || [{ label: pageTitle }];
 
     useEffect(() => {
         if (typeof window !== 'undefined') {
@@ -124,12 +124,14 @@ export default function AdminLayout({ children, activeItem, pageTitle }) {
         await notificationService.approveChangeRequest(requestId, token);
         mutateChangeRequests();
         mutateNotifications();
+        mutate(['/api/v1/schedule', token]);
     };
 
     const handleDenyNotification = async (requestId) => {
         await notificationService.denyChangeRequest(requestId, token);
         mutateChangeRequests();
         mutateNotifications();
+        mutate(['/api/v1/schedule', token]);
     };
 
     const hasUnreadNotifications = notifications?.some(n => !n.read) || changeRequests?.some(cr => cr.status === 'PENDING');
@@ -182,7 +184,7 @@ export default function AdminLayout({ children, activeItem, pageTitle }) {
             <Sidebar isCollapsed={isSidebarCollapsed} activeItem={activeItem} onNavItemClick={handleNavItemClick} navigatingTo={navigatingTo} />
             <div className="flex flex-col flex-grow transition-all duration-300 ease-in-out" style={{ marginLeft: sidebarWidth, width: `calc(100% - ${sidebarWidth})`, height: '100vh', overflowY: 'auto' }}>
                 <div className="fixed top-0 bg-white dark:bg-gray-900 shadow-custom-medium p-5 flex justify-between items-center z-30 transition-all duration-300 ease-in-out" style={{ left: sidebarWidth, width: `calc(100% - ${sidebarWidth})`, height: TOPBAR_HEIGHT }}>
-                    <Topbar onToggleSidebar={toggleSidebar} isSidebarCollapsed={isSidebarCollapsed} onUserIconClick={handleUserIconClick} pageSubtitle={pageTitle} userIconRef={userIconRef} onNotificationIconClick={handleToggleNotificationPopup} notificationIconRef={notificationIconRef} hasUnreadNotifications={hasUnreadNotifications} />
+                    <Topbar onToggleSidebar={toggleSidebar} isSidebarCollapsed={isSidebarCollapsed} onUserIconClick={handleUserIconClick} breadcrumbs={finalBreadcrumbs} userIconRef={userIconRef} onNotificationIconClick={handleToggleNotificationPopup} notificationIconRef={notificationIconRef} hasUnreadNotifications={hasUnreadNotifications} />
                 </div>
                 <div className="flex flex-col flex-grow" style={{ paddingTop: TOPBAR_HEIGHT }}>
                     <main className="content-area flex-grow p-3 m-6 bg-white dark:bg-gray-900 rounded-lg shadow-md">{children}</main>

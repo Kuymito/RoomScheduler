@@ -10,7 +10,7 @@ import Footer from '@/components/Footer';
 import InstructorNotificationPopup from '@/app/instructor/notification/InstructorNotificationPopup';
 import { usePathname, useRouter } from 'next/navigation';
 import { signOut, useSession } from 'next-auth/react';
-import useSWR from 'swr';
+import useSWR, { mutate } from 'swr';
 import { authService } from '@/services/auth.service';
 import { notificationService } from '@/services/notification.service';
 import { moul } from './fonts';
@@ -41,13 +41,11 @@ export default function InstructorDashboardLayout({ children, activeItem, pageTi
     const { data: session } = useSession();
     const token = session?.accessToken;
 
-    // Fetch profile data using useSWR for caching and revalidation
     const { data: profile } = useSWR(
         token ? ['/api/profile', token] : null,
         profileFetcher
     );
 
-    // Use SWR to fetch and manage notifications
     const { data: instructorNotifications, mutate: mutateInstructorNotifications } = useSWR(
         token ? ['/api/notifications', token] : null,
         notificationsFetcher,
@@ -55,6 +53,8 @@ export default function InstructorDashboardLayout({ children, activeItem, pageTi
             refreshInterval: 5000,
         }
     );
+
+    const breadcrumbs = [{ label: pageTitle }];
 
     useEffect(() => {
         if (typeof window !== 'undefined') {
@@ -99,6 +99,7 @@ export default function InstructorDashboardLayout({ children, activeItem, pageTi
     const handleMarkInstructorNotificationAsRead = async (notificationId) => {
         await notificationService.markNotificationAsRead(notificationId, token);
         mutateInstructorNotifications();
+        mutate(['/api/v1/schedule', token]);
     };
 
     const handleMarkAllInstructorNotificationsAsRead = async () => {
@@ -106,6 +107,7 @@ export default function InstructorDashboardLayout({ children, activeItem, pageTi
         if (unreadIds.length > 0) {
             await Promise.all(unreadIds.map(id => notificationService.markNotificationAsRead(id, token)));
             mutateInstructorNotifications();
+            mutate(['/api/v1/schedule', token]);
         }
     };
 
@@ -206,7 +208,7 @@ export default function InstructorDashboardLayout({ children, activeItem, pageTi
                         onToggleSidebar={toggleSidebar}
                         isSidebarCollapsed={isSidebarCollapsed}
                         onUserIconClick={handleUserIconClick}
-                        pageSubtitle={pageTitle}
+                        breadcrumbs={breadcrumbs}
                         userIconRef={userIconRef}
                         onNotificationIconClick={handleToggleInstructorNotificationPopup}
                         notificationIconRef={notificationIconRef}

@@ -9,7 +9,7 @@ import LogoutAlert from '@/components/LogoutAlert';
 import Footer from '@/components/Footer';
 import InstructorNotificationPopup from '@/app/instructor/notification/InstructorNotificationPopup';
 import { signOut, useSession } from 'next-auth/react';
-import useSWR from 'swr';
+import useSWR, { mutate } from 'swr';
 import { authService } from '@/services/auth.service';
 import { notificationService } from '@/services/notification.service';
 import { moul } from './fonts';
@@ -18,7 +18,7 @@ const TOPBAR_HEIGHT = '90px';
 const profileFetcher = ([, token]) => authService.getProfile(token);
 const notificationsFetcher = ([, token]) => notificationService.getNotifications(token);
 
-export default function InstructorLayout({ children, activeItem, pageTitle }) {
+export default function InstructorLayout({ children, activeItem, pageTitle, breadcrumbs }) {
     const [showAdminPopup, setShowAdminPopup] = useState(false);
     const [showLogoutAlert, setShowLogoutAlert] = useState(false);
     const [showInstructorNotificationPopup, setShowInstructorNotificationPopup] = useState(false);
@@ -54,6 +54,8 @@ export default function InstructorLayout({ children, activeItem, pageTitle }) {
             refreshInterval: 5000,
         }
     );
+
+    const finalBreadcrumbs = breadcrumbs || [{ label: pageTitle }];
 
     const toggleSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
 
@@ -95,6 +97,7 @@ export default function InstructorLayout({ children, activeItem, pageTitle }) {
     const handleMarkInstructorNotificationAsRead = async (notificationId) => {
         await notificationService.markNotificationAsRead(notificationId, token);
         mutateInstructorNotifications();
+        mutate(['/api/v1/schedule', token]);
     };
 
     const handleMarkAllInstructorNotificationsAsRead = async () => {
@@ -102,6 +105,7 @@ export default function InstructorLayout({ children, activeItem, pageTitle }) {
         if (unreadIds.length > 0) {
             await Promise.all(unreadIds.map(id => notificationService.markNotificationAsRead(id, token)));
             mutateInstructorNotifications();
+            mutate(['/api/v1/schedule', token]);
         }
     };
 
@@ -150,7 +154,7 @@ export default function InstructorLayout({ children, activeItem, pageTitle }) {
         }
         setNavigatingTo(null);
     }, [pathname]);
-
+    
     if (isLoading) {
         return (
             <div className="min-h-screen w-screen flex flex-col items-center justify-center bg-[#E0E4F3] text-center p-6">
@@ -207,7 +211,7 @@ export default function InstructorLayout({ children, activeItem, pageTitle }) {
                         onToggleSidebar={toggleSidebar}
                         isSidebarCollapsed={isSidebarCollapsed}
                         onUserIconClick={handleUserIconClick}
-                        pageSubtitle={pageTitle}
+                        breadcrumbs={finalBreadcrumbs}
                         userIconRef={userIconRef}
                         onNotificationIconClick={handleToggleInstructorNotificationPopup}
                         notificationIconRef={notificationIconRef}

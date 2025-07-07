@@ -110,10 +110,14 @@ export default async function InstructorClassDetailsPage({ params }) {
         notFound();
     }
 
+    const breadcrumbs = [
+        { label: "Class Management", href: "/instructor/class" },
+        { label: `Class: ${classDetails.name}` }
+    ];
+
     return (
-        <InstructorLayout activeItem="class" pageTitle="Class Details">
+        <InstructorLayout activeItem="class" breadcrumbs={breadcrumbs}>
             <Suspense fallback={<InstructorClassDetailSkeleton />}>
-                {/* Render the Client Component, passing all server-fetched data as props. */}
                 <InstructorClassDetailClientView
                     initialClassDetails={classDetails}
                     initialSchedule={schedule}

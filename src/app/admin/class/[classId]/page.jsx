@@ -119,14 +119,19 @@ export default async function ClassDetailsPage({ params }) {
         notFound();
     }
 
+    const breadcrumbs = [
+        { label: "Class Management", href: "/admin/class" },
+        { label: `Class: ${classDetails.name}` }
+    ];
+
     return (
-        <AdminLayout activeItem="class" pageTitle={`Class: ${classDetails.name}`}>
+        <AdminLayout activeItem="class" breadcrumbs={breadcrumbs}>
             <Suspense fallback={<ClassDetailSkeleton />}>
                 <ClassDetailClientView 
                     initialClassDetails={classDetails}
                     allInstructors={instructors}
                     allDepartments={departments}
-                    initialSchedule={initialSchedule} // Pass schedule data to client
+                    initialSchedule={initialSchedule}
                 />
             </Suspense>
         </AdminLayout>

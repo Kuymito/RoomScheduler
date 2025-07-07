@@ -270,9 +270,8 @@ const RoomSchedulePage = () => {
     };
 
     const handleConfirmSwap = () => {
-        // Delay the state update to allow drag events to finish
         setTimeout(modalState.onConfirm, 0);
-        handleCancelSwap(); // Close modal immediately
+        handleCancelSwap();
     };
 
     // --- Drag and Drop Handlers ---
@@ -286,13 +285,11 @@ const RoomSchedulePage = () => {
         dragGhost.style.height = '80px';
         document.body.appendChild(dragGhost);
         e.dataTransfer.setDragImage(dragGhost, 20, 20);
-        // This attribute is the key to the cursor style
         document.body.setAttribute('data-dragging', 'true');
         setTimeout(() => document.body.removeChild(dragGhost), 0);
     }, []);
 
     const handleDragEnd = useCallback(() => {
-        // This function must run reliably to clean up the cursor
         document.body.removeAttribute('data-dragging');
         setDraggedItemInfo(null);
         setDragOverCell(null);
@@ -346,18 +343,15 @@ const RoomSchedulePage = () => {
         };
 
         if (targetItem) {
-            // This is a SWAP action, trigger modal
             setModalState({
                 isOpen: true,
                 details: {
                     from: { classData: draggedItem, day: origin.day, time: origin.timeSlot },
                     to: { classData: targetItem, day: targetDay, time: targetTimeSlot }
                 },
-                onConfirm: performMoveOrSwap, // Correctly assign the function
+                onConfirm: performMoveOrSwap,
             });
         } else {
-            // This is a simple MOVE action
-            // ✨ FIX: Delay the state update to allow drag events to finish
             setTimeout(performMoveOrSwap, 0);
         }
 
@@ -368,11 +362,9 @@ const RoomSchedulePage = () => {
     return (
         <div className='p-4 sm:p-6'>
             <style jsx global>{`
-                /* The not-allowed cursor is applied when this attribute is present */
                 body[data-dragging] * {
                     cursor: not-allowed !important;
                 }
-                /* Override the cursor for the item being dragged */
                 body[data-dragging] [draggable="true"] {
                     cursor: move !important;
                 }
@@ -414,10 +406,16 @@ const RoomSchedulePage = () => {
     );
 };
 
-export default function AdminSchedulePage() {
+export default function AdminScheduleRoomDetailPage() {
     const { roomId } = useParams();
+
+    const breadcrumbs = [
+        { label: "Schedule Management", href: "/admin/schedule" },
+        { label: `Room: ${roomId}` }
+    ];
+
     return (
-        <AdminLayout activeItem="schedule" pageTitle={`Schedule Management of Room ${roomId}`}>
+        <AdminLayout activeItem="schedule" breadcrumbs={breadcrumbs}>
             <RoomSchedulePage />
         </AdminLayout>
     );
