@@ -36,13 +36,21 @@ const profileFetcher = ([, token]) => authService.getProfile(token);
 
 // --- UI COMPONENTS ---
 const ScheduleItemCard = ({ item }) => (
-  <div className={`${SCHEDULE_ITEM_BG_COLOR} p-2 h-full w-full flex flex-col text-xs rounded-md shadow-sm border border-green-200 dark:border-green-800/60`}>
-    <div className="flex justify-between items-start">
-      <span className="font-semibold text-[13px] text-gray-800 dark:text-gray-200">{item.subject}</span>
+  <div className={`${SCHEDULE_ITEM_BG_COLOR} p-2.5 h-full w-full flex flex-col text-xs rounded-lg shadow-sm border border-green-200 dark:border-green-800/60 hover:shadow-md hover:border-green-300 dark:hover:border-green-700 transition-all duration-200`}>
+    <div className="flex justify-between items-start mb-2">
+      <span className="font-semibold text-[13px] text-gray-800 dark:text-gray-200 truncate pr-2">{item.subject}</span>
     </div>
-    <div className="text-gray-700 dark:text-gray-300 text-[11px]">{item.generation}</div>
-    <div className="text-gray-700 dark:text-gray-300 text-[11px]">{item.timeDisplay}</div>
-    <div className="mt-auto text-right text-gray-500 dark:text-gray-400 text-[11px]">{item.semester}</div>
+    <div className="text-gray-600 dark:text-gray-300 text-[11px] truncate mb-2">{item.generation}</div>
+    
+    <div className="mt-auto space-y-1">
+        <div className="flex items-center justify-end text-gray-500 dark:text-gray-400 text-[11px]">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.414-1.415L11 9.586V6z" clipRule="evenodd" />
+            </svg>
+            <span>{item.timeDisplay}</span>
+        </div>
+        <div className="text-right text-gray-500 dark:text-gray-400 text-[11px]">{item.semester}</div>
+    </div>
   </div>
 );
 
@@ -153,7 +161,8 @@ export default function InstructorScheduleClientView() {
         <h2 className="text-xl font-medium text-gray-700 dark:text-gray-300 mb-4">{instructorDetails.instructorName}</h2>
 
         <div className="overflow-x-auto">
-          <div className="grid grid-cols-[minmax(100px,1.5fr)_repeat(7,minmax(120px,2fr))] border border-gray-300 dark:border-gray-600 rounded-md min-w-[900px]">
+          {/* FIX: Adjusted grid columns for better responsiveness and added min-w */}
+          <div className="grid grid-cols-[minmax(140px,1fr)_repeat(7,minmax(120px,2fr))] border border-gray-300 dark:border-gray-600 rounded-md min-w-[1200px]">
             {/* Header Row */}
             <div className="font-semibold text-sm text-gray-700 dark:text-gray-300 p-3 text-center border-r border-b border-gray-300 dark:border-gray-600 dark:bg-gray-700 sticky top-0 z-10">Time</div>
             {DAYS_OF_WEEK.map(day => (
@@ -165,7 +174,8 @@ export default function InstructorScheduleClientView() {
             {/* Data Rows */}
             {TIME_SLOTS.map(timeSlot => (
               <React.Fragment key={timeSlot}>
-                <div className={`p-3 text-sm font-medium text-gray-600 dark:text-gray-400 text-center border-r border-gray-300 dark:border-gray-600 ${timeSlot !== TIME_SLOTS[TIME_SLOTS.length - 1] ? 'border-b dark:border-b-gray-600' : ''} ${ROW_CONFIG[timeSlot].heightClass} flex items-center justify-center dark:bg-gray-700/50`}>
+                {/* FIX: Added whitespace-nowrap to prevent time from wrapping */}
+                <div className={`p-3 text-sm font-medium text-gray-600 dark:text-gray-400 text-center border-r border-gray-300 dark:border-gray-600 ${timeSlot !== TIME_SLOTS[TIME_SLOTS.length - 1] ? 'border-b dark:border-b-gray-600' : ''} ${ROW_CONFIG[timeSlot].heightClass} flex items-center justify-center dark:bg-gray-700/50 whitespace-nowrap`}>
                   {timeSlot}
                 </div>
                 {DAYS_OF_WEEK.map(day => {

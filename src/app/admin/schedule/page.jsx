@@ -137,7 +137,7 @@ export default async function AdminSchedulePage() {
     const { initialClasses, initialRooms, initialSchedules, buildingLayout, constants } = await fetchSchedulePageData();
 
     return (
-        <AdminLayout activeItem="schedule" pageTitle="Schedule Management">
+        <AdminLayout activeItem="schedule" pageTitle="Schedule">
             <Suspense fallback={
                 <div className='p-6 flex flex-col lg:flex-row gap-6 h-[calc(100vh-100px)]'>
                     <ClassListSkeleton />
