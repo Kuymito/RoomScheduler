@@ -65,8 +65,8 @@ export default async function InstructorDetailsPage({ params }) {
     }
 
     const breadcrumbs = [
-        { label: "Instructor Management", href: "/admin/instructor" },
-        { label: `Instructor: ${instructor.name}` }
+        { label: "Instructor", href: "/admin/instructor" },
+        { label: `${instructor.name}` }
     ];
 
     return (

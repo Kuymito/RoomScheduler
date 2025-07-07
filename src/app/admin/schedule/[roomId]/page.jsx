@@ -410,8 +410,8 @@ export default function AdminScheduleRoomDetailPage() {
     const { roomId } = useParams();
 
     const breadcrumbs = [
-        { label: "Schedule Management", href: "/admin/schedule" },
-        { label: `Room: ${roomId}` }
+        { label: "Schedule", href: "/admin/schedule" },
+        { label: `${roomId}` }
     ];
 
     return (

@@ -120,8 +120,8 @@ export default async function ClassDetailsPage({ params }) {
     }
 
     const breadcrumbs = [
-        { label: "Class Management", href: "/admin/class" },
-        { label: `Class: ${classDetails.name}` }
+        { label: "Class", href: "/admin/class" },
+        { label: `${classDetails.name}` }
     ];
 
     return (
