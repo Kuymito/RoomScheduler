@@ -65,12 +65,13 @@ export default function RoomClientView({ initialAllRoomsData, buildingLayout, in
         if (apiSchedules && Array.isArray(apiSchedules)) {
             const newScheduleMap = {};
             apiSchedules.forEach(schedule => {
-                if (schedule && schedule.shift) {
-                    const days = schedule.day.split(',').map(d => d.trim());
+                // FIX: Check for the new `dayDetails` array structure
+                if (schedule && schedule.dayDetails && Array.isArray(schedule.dayDetails) && schedule.shift) {
                     const timeSlot = `${schedule.shift.startTime.substring(0, 5)}-${schedule.shift.endTime.substring(0, 5)}`;
 
-                    days.forEach(apiDay => {
-                        const dayName = apiDay.charAt(0).toUpperCase() + apiDay.slice(1).toLowerCase();
+                    // Iterate over the `dayDetails` array instead of splitting a string
+                    schedule.dayDetails.forEach(dayDetail => {
+                        const dayName = dayDetail.dayOfWeek.charAt(0).toUpperCase() + dayDetail.dayOfWeek.slice(1).toLowerCase();
                         if (!newScheduleMap[dayName]) {
                             newScheduleMap[dayName] = {};
                         }
@@ -83,6 +84,7 @@ export default function RoomClientView({ initialAllRoomsData, buildingLayout, in
             });
             setScheduleMap(newScheduleMap);
         } else if (apiSchedules) {
+            // Handle cases where the initial data might still be in the old format
             setScheduleMap(apiSchedules);
         }
     }, [apiSchedules]);

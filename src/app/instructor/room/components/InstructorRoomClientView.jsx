@@ -9,7 +9,7 @@ import InstructorRoomPageSkeleton from "./InstructorRoomPageSkeleton";
 import { scheduleService } from '@/services/schedule.service';
 
 // Fetcher for useSWR
-const scheduleFetcher = ([key, token]) => scheduleService.getAllSchedules(token);
+const scheduleFetcher = ([, token]) => scheduleService.getAllSchedules(token);
 
 /**
  * This is the Client Component for the Instructor Room page.
@@ -52,12 +52,13 @@ export default function InstructorRoomClientView({ initialAllRoomsData, building
         if (apiSchedules && Array.isArray(apiSchedules)) {
             const newScheduleMap = {};
             apiSchedules.forEach(schedule => {
-                if (schedule && schedule.shift) {
-                    const days = schedule.day.split(',').map(d => d.trim());
+                // FIX: Check for the new `dayDetails` array structure
+                if (schedule && schedule.dayDetails && Array.isArray(schedule.dayDetails) && schedule.shift) {
                     const timeSlot = `${schedule.shift.startTime.substring(0, 5)}-${schedule.shift.endTime.substring(0, 5)}`;
                     
-                    days.forEach(apiDay => {
-                        const dayName = apiDay.charAt(0).toUpperCase() + apiDay.slice(1).toLowerCase();
+                    // Iterate over the `dayDetails` array instead of splitting a string
+                    schedule.dayDetails.forEach(dayDetail => {
+                        const dayName = dayDetail.dayOfWeek.charAt(0).toUpperCase() + dayDetail.dayOfWeek.slice(1).toLowerCase();
                         if (!newScheduleMap[dayName]) {
                             newScheduleMap[dayName] = {};
                         }
@@ -70,6 +71,7 @@ export default function InstructorRoomClientView({ initialAllRoomsData, building
             });
             setScheduleMap(newScheduleMap);
         } else if (apiSchedules) {
+            // Handle cases where the initial data might still be in the old format
             setScheduleMap(apiSchedules);
         }
     }, [apiSchedules]);
@@ -82,7 +84,7 @@ export default function InstructorRoomClientView({ initialAllRoomsData, building
         resetSelection();
     }, [initialAllRoomsData, buildingLayout]);
 
-    // --- Handlers ---
+    // --- Event Handlers ---
     const resetSelection = () => { setSelectedRoomId(null); setRoomDetails(null); };
     const handleDayChange = (day) => { setSelectedDay(day); resetSelection(); };
     const handleTimeChange = (event) => { setSelectedTimeSlot(event.target.value); resetSelection(); };
@@ -183,18 +185,19 @@ export default function InstructorRoomClientView({ initialAllRoomsData, building
                                 {rooms.map((roomName) => {
                                     const room = Object.values(allRoomsData).find(r => r.name === roomName);
                                     if (!room) return null;
+                                    const isSelected = selectedRoomId === room.id;
                                     const scheduledClass = scheduleMap[selectedDay]?.[selectedTimeSlot]?.[room.id];
                                     const isOccupied = !!scheduledClass;
-                                    const isSelected = selectedRoomId === room.id;
                                     return (
-                                        <div key={room.id} onClick={() => handleRoomClick(room.id)} className={`h-[90px] sm:h-[100px] border rounded-md flex flex-col transition-all duration-150 shadow-sm ${getRoomColSpan(selectedBuilding, room.name)} ${isOccupied ? 'cursor-not-allowed bg-slate-50 dark:bg-slate-800/50 opacity-70' : 'cursor-pointer hover:shadow-md bg-white dark:bg-slate-800'} ${isSelected ? "border-blue-500 ring-2 ring-blue-500 dark:border-blue-500" : isOccupied ? "border-slate-200 dark:border-slate-700" : "border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600"}`}>
+                                        <div key={room.id} className={`h-[90px] sm:h-[100px] border rounded-md flex flex-col transition-all duration-150 shadow-sm ${getRoomColSpan(selectedBuilding, room.name)} ${isOccupied ? 'cursor-not-allowed bg-slate-50 dark:bg-slate-800/50 opacity-70' : 'cursor-pointer hover:shadow-md bg-white dark:bg-slate-800'} ${isSelected ? "border-blue-500 ring-2 ring-blue-500 dark:border-blue-500" : isOccupied ? "border-slate-200 dark:border-slate-700" : "border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600"}`}
+                                            onClick={() => !isOccupied && handleRoomClick(room.id)}>
                                             <div className={`h-[30px] rounded-t-md flex items-center justify-center px-2 relative border-b ${isSelected ? 'border-b-transparent' : 'border-slate-200 dark:border-slate-600'} ${isOccupied ? 'bg-slate-100 dark:bg-slate-700/60' : 'bg-slate-50 dark:bg-slate-700'}`}>
                                                 <div className={`absolute left-2 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full ${isSelected ? 'bg-blue-500' : isOccupied ? 'bg-red-500' : 'bg-green-500'}`}></div>
-                                                <span className={`ml-3 text-xs sm:text-sm font-medium ${isSelected ? "text-blue-700 dark:text-blue-300" : isOccupied ? "text-slate-500 dark:text-slate-400" : "text-slate-700 dark:text-slate-300"}`}>{room?.name || roomName}</span>
+                                                <span className={`ml-3 text-xs sm:text-sm font-medium ${isSelected ? 'text-blue-700 dark:text-blue-300' : isOccupied ? 'text-slate-500 dark:text-slate-400' : 'text-slate-700 dark:text-slate-300'}`}>{room.name}</span>
                                             </div>
                                             <div className={`flex-1 rounded-b-md p-2 flex flex-col justify-center items-center ${isOccupied ? 'bg-slate-50 dark:bg-slate-800/50' : 'bg-white dark:bg-slate-800'}`}>
                                                 <span className={`text-xs ${isOccupied ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}`}>{isOccupied ? scheduledClass : 'Available'}</span>
-                                                <span className={`text-xs text-slate-500 dark:text-slate-400 ${isSelected ? "text-slate-600 dark:text-slate-300" : ""} mt-1`}>Capacity: {room?.capacity}</span>
+                                                <span className={`text-xs text-slate-500 dark:text-slate-400 ${isSelected ? "text-slate-600 dark:text-slate-300" : ""} mt-1`}>Capacity: {room.capacity}</span>
                                             </div>
                                         </div>
                                     );
@@ -204,6 +207,7 @@ export default function InstructorRoomClientView({ initialAllRoomsData, building
                     ))}
                 </div>
             </div>
+            {/* Details Panel */}
             <div className="w-full lg:w-[320px] shrink-0">
                 <div className="flex items-center gap-2 mb-3 sm:mb-4"><h3 className="text-sm sm:text-base font-semibold text-slate-700 dark:text-slate-300">Details</h3><hr className="flex-1 border-t border-slate-300 dark:border-slate-700" /></div>
                 <div className="flex flex-col items-start gap-6 w-full min-h-[420px] bg-white dark:bg-slate-800 p-4 rounded-lg shadow-lg">

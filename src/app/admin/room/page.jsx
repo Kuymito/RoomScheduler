@@ -63,22 +63,21 @@ async function fetchAndProcessRoomData() {
         // Create a map of schedules for quick lookup: { "Monday": { "07:00-10:00": { roomId: className } } }
         const scheduleMap = {};
         apiSchedules.forEach(schedule => {
-            // Split the comma-separated day string into an array
-            const days = schedule.day.split(',').map(d => d.trim());
-            const timeSlot = `${schedule.shift.startTime.substring(0, 5)}-${schedule.shift.endTime.substring(0, 5)}`;
-
-            // Iterate over each day and create an entry in the schedule map
-            days.forEach(apiDay => {
-                const dayName = apiDay.charAt(0).toUpperCase() + apiDay.slice(1).toLowerCase();
+            // FIX: Use the new `dayDetails` array from the API response
+            if (schedule && schedule.dayDetails && Array.isArray(schedule.dayDetails) && schedule.shift) {
+                const timeSlot = `${schedule.shift.startTime.substring(0, 5)}-${schedule.shift.endTime.substring(0, 5)}`;
                 
-                if (!scheduleMap[dayName]) {
-                    scheduleMap[dayName] = {};
-                }
-                if (!scheduleMap[dayName][timeSlot]) {
-                    scheduleMap[dayName][timeSlot] = {};
-                }
-                scheduleMap[dayName][timeSlot][schedule.roomId] = schedule.className;
-            });
+                schedule.dayDetails.forEach(dayDetail => {
+                    const dayName = dayDetail.dayOfWeek.charAt(0).toUpperCase() + dayDetail.dayOfWeek.slice(1).toLowerCase();
+                    if (!scheduleMap[dayName]) {
+                        scheduleMap[dayName] = {};
+                    }
+                    if (!scheduleMap[dayName][timeSlot]) {
+                        scheduleMap[dayName][timeSlot] = {};
+                    }
+                    scheduleMap[dayName][timeSlot][schedule.roomId] = schedule.className;
+                });
+            }
         });
 
         // Sort floors in descending order for each building

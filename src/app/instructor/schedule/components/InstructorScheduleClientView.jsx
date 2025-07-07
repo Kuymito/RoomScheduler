@@ -75,20 +75,22 @@ export default function InstructorScheduleClientView() {
 
         if (scheduleResponse) {
             scheduleResponse.forEach(item => {
-                const timeSlot = `${item.shift.startTime.substring(0, 5)} - ${item.shift.endTime.substring(0, 5)}`;
-                const days = item.day.split(',').map(d => d.trim());
-                
-                days.forEach(apiDay => {
-                    const dayName = apiDay.charAt(0).toUpperCase() + apiDay.slice(1).toLowerCase();
-                    if (scheduleData[dayName]) {
-                        scheduleData[dayName][timeSlot] = {
-                            subject: item.className,
-                            generation: `Generation ${item.year}`,
-                            semester: item.semester,
-                            timeDisplay: timeSlot
-                        };
-                    }
-                });
+                // FIX: Use the new `dayDetails` array structure
+                if (item && item.dayDetails && Array.isArray(item.dayDetails) && item.shift) {
+                    const timeSlot = `${item.shift.startTime.substring(0, 5)} - ${item.shift.endTime.substring(0, 5)}`;
+                    
+                    item.dayDetails.forEach(dayDetail => {
+                        const dayName = dayDetail.dayOfWeek.charAt(0).toUpperCase() + dayDetail.dayOfWeek.slice(1).toLowerCase();
+                        if (scheduleData[dayName]) {
+                            scheduleData[dayName][timeSlot] = {
+                                subject: item.className,
+                                generation: `Generation ${item.year}`,
+                                semester: item.semester,
+                                timeDisplay: timeSlot
+                            };
+                        }
+                    });
+                }
             });
         }
 
