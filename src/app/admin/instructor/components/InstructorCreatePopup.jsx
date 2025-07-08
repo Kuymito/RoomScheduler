@@ -12,11 +12,7 @@ const DefaultAvatarIcon = ({ className = "w-full h-full" }) => (
 const InstructorCreatePopup = ({ isOpen, onClose, onSave, departments, departmentsError }) => {
     // Define options for select fields.
     const qualificationOptions = ['Master', 'PhD', 'Doctor'];
-    const majorOptions = useMemo(() => {
-        if (!departments) return [];
-        return departments.map(dep => dep.name);
-    }, [departments]);
-
+    
     // Refs for the popup and the hidden file input.
     const popupRef = useRef(null);
     const fileInputRef = useRef(null);
@@ -28,7 +24,7 @@ const InstructorCreatePopup = ({ isOpen, onClose, onSave, departments, departmen
         email: '',
         phone: '',
         degree: qualificationOptions[0],
-        major: majorOptions[0] || '',
+        major: '', // Changed from dropdown to text input, so default is empty string
         address: '',
         departmentId: departments?.[0]?.departmentId || '',
         password: '',
@@ -87,7 +83,7 @@ const InstructorCreatePopup = ({ isOpen, onClose, onSave, departments, departmen
         e.preventDefault();
 
         // Basic validation to ensure all required fields are filled.
-        if (!newInstructor.firstName.trim() || !newInstructor.lastName.trim() || !newInstructor.email.trim() || !newInstructor.phone.trim() || !newInstructor.major || !newInstructor.degree || !newInstructor.address.trim() || !newInstructor.departmentId || !newInstructor.password) {
+        if (!newInstructor.firstName.trim() || !newInstructor.lastName.trim() || !newInstructor.email.trim() || !newInstructor.phone.trim() || !newInstructor.major.trim() || !newInstructor.degree || !newInstructor.address.trim() || !newInstructor.departmentId || !newInstructor.password) {
             alert('Please fill in all required fields.');
             return;
         }
@@ -201,11 +197,16 @@ const InstructorCreatePopup = ({ isOpen, onClose, onSave, departments, departmen
                         </div>
                         <div>
                             <label htmlFor="major" className="block mb-2 text-xs font-medium text-gray-700 dark:text-gray-300">Major</label>
-                            <select id="major" name="major" value={newInstructor.major} onChange={handleInputChange} className="bg-gray-50 border border-gray-300 text-gray-900 dark:text-gray-400 text-xs rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600" required>
-                                {departmentsError && <option value="">Error loading majors</option>}
-                                {!departments && !departmentsError && <option value="">Loading...</option>}
-                                {majorOptions.map(option => (<option key={option} value={option}>{option}</option>))}
-                            </select>
+                            <input
+                                type="text"
+                                id="major"
+                                name="major"
+                                value={newInstructor.major}
+                                onChange={handleInputChange}
+                                className="bg-gray-50 border border-gray-300 text-gray-900 text-xs rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600"
+                                placeholder="e.g., Computer Science"
+                                required
+                            />
                         </div>
                         <div>
                             <label htmlFor="departmentId" className="block mb-2 text-xs font-medium text-gray-700 dark:text-gray-300">Department</label>
