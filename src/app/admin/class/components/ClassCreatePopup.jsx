@@ -4,11 +4,11 @@ import React, { useState, useRef, useEffect, useMemo } from 'react';
 
 // Shift mapping to convert display names to IDs
 const shiftMap = {
-    'Morning Shift (07:00:00 - 10:00:00, Weekday)': 1,
-    'Noon Shift (10:30:00 - 13:30:00, Weekday)': 2,
-    'Afternoon Shift (14:00:00 - 17:00:00, Weekday)': 3,
-    'Evening Shift (17:30:00 - 20:30:00, Weekday)': 4,
-    'Weekend Shift (07:30:00 - 17:00:00, Weekend)': 5
+    'Morning Shift': 1,
+    'Noon Shift': 2,
+    'Afternoon Shift': 3,
+    'Evening Shift': 4,
+    'Weekend Shift': 5
 };
 
 const ClassCreatePopup = ({ isOpen, onClose, onSave, departments, departmentsError, existingClasses }) => {
@@ -189,7 +189,7 @@ const ClassCreatePopup = ({ isOpen, onClose, onSave, departments, departmentsErr
                             </select>
                         </div>
                         <div className="col-span-2">
-                            <label htmlFor="departmentId" className="block text-xs font-medium text-gray-700 dark:text-gray-300">Department</label>
+                            <label htmlFor="departmentId" className="block text-xs font-medium text-gray-700 dark:text-gray-300">Department / Faculty</label>
                             <select id="departmentId" name="departmentId" value={newClass.departmentId} onChange={handleInputChange} className={`mt-1 block w-full p-2 text-xs border rounded-md shadow-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white ${getErrorClass('departmentId')}`} required>
                                 {departmentsError && <option value="">Error loading departments</option>}
                                 {!departments && !departmentsError && <option value="">Loading...</option>}

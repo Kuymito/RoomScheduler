@@ -235,7 +235,7 @@ const InstructorCreatePopup = ({ isOpen, onClose, onSave, departments, departmen
                             />
                         </div>
                         <div>
-                            <label htmlFor="departmentId" className="block mb-2 text-xs font-medium text-gray-700 dark:text-gray-300">Department</label>
+                            <label htmlFor="departmentId" className="block mb-2 text-xs font-medium text-gray-700 dark:text-gray-300">Department / Faculty</label>
                             <select id="departmentId" name="departmentId" value={newInstructor.departmentId} onChange={handleInputChange} className="bg-gray-50 border border-gray-300 text-gray-900 dark:text-gray-400 text-xs rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600" required>
                                 {departmentsError && <option value="">Error loading departments</option>}
                                 {!departments && !departmentsError && <option value="">Loading...</option>}
