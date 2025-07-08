@@ -9,7 +9,7 @@ const DefaultAvatarIcon = ({ className = "w-full h-full" }) => (
     </svg>
 );
 
-const InstructorCreatePopup = ({ isOpen, onClose, onSave, departments, departmentsError }) => {
+const InstructorCreatePopup = ({ isOpen, onClose, onSave, departments, departmentsError, existingInstructors }) => {
     // Define options for select fields.
     const qualificationOptions = ['Master', 'PhD', 'Doctor'];
     const majorOptions = useMemo(() => {
@@ -28,7 +28,7 @@ const InstructorCreatePopup = ({ isOpen, onClose, onSave, departments, departmen
         email: '',
         phone: '',
         degree: qualificationOptions[0],
-        major: majorOptions[0] || '',
+        major: '',
         address: '',
         departmentId: departments?.[0]?.departmentId || '',
         password: '',
@@ -38,12 +38,14 @@ const InstructorCreatePopup = ({ isOpen, onClose, onSave, departments, departmen
 
     const [newInstructor, setNewInstructor] = useState(getInitialState());
     const [imagePreviewUrl, setImagePreviewUrl] = useState(null);
+    const [formError, setFormError] = useState({ fields: [], message: '' });
 
     // Effect to reset the form state whenever the popup is opened or department data changes.
     useEffect(() => {
         if (isOpen) {
             setNewInstructor(getInitialState());
-            setImagePreviewUrl(null); // Reset the image preview as well.
+            setImagePreviewUrl(null);
+            setFormError({ fields: [], message: '' });
         }
     }, [isOpen, departments]);
 
@@ -51,6 +53,9 @@ const InstructorCreatePopup = ({ isOpen, onClose, onSave, departments, departmen
     const handleInputChange = (e) => {
         const { name, value } = e.target;
         setNewInstructor(prev => ({ ...prev, [name]: value }));
+        if (formError.fields.includes(name)) {
+            setFormError({ fields: [], message: '' });
+        }
     };
 
     // Handles the file selection for the profile image.
@@ -59,7 +64,6 @@ const InstructorCreatePopup = ({ isOpen, onClose, onSave, departments, departmen
         if (file) {
             const reader = new FileReader();
             reader.onloadend = () => {
-                // Store the base64 result for the API payload and preview.
                 setNewInstructor(prev => ({ ...prev, profile: reader.result }));
                 setImagePreviewUrl(reader.result);
             };
@@ -76,7 +80,6 @@ const InstructorCreatePopup = ({ isOpen, onClose, onSave, departments, departmen
     const handleRemoveImage = () => {
         setNewInstructor(prev => ({ ...prev, profile: null }));
         setImagePreviewUrl(null);
-        // Reset the file input so the same file can be re-selected.
         if(fileInputRef.current) {
             fileInputRef.current.value = "";
         }
@@ -85,18 +88,31 @@ const InstructorCreatePopup = ({ isOpen, onClose, onSave, departments, departmen
     // Handles the form submission.
     const handleSubmit = (e) => {
         e.preventDefault();
+        setFormError({ fields: [], message: '' });
 
-        // Basic validation to ensure all required fields are filled.
+        // --- DUPLICATE EMAIL CHECK ---
+        const isDuplicateEmail = existingInstructors.some(
+            (inst) => inst.email.toLowerCase() === newInstructor.email.toLowerCase().trim()
+        );
+
+        if (isDuplicateEmail) {
+            setFormError({
+                fields: ['email'],
+                message: `An instructor with the email "${newInstructor.email}" already exists.`
+            });
+            return; // Stop submission
+        }
+        // --- END DUPLICATE EMAIL CHECK ---
+
         if (!newInstructor.firstName.trim() || !newInstructor.lastName.trim() || !newInstructor.email.trim() || !newInstructor.phone.trim() || !newInstructor.major || !newInstructor.degree || !newInstructor.address.trim() || !newInstructor.departmentId || !newInstructor.password) {
             alert('Please fill in all required fields.');
             return;
         }
 
-        // Construct the payload for the API call.
         const payload = {
             ...newInstructor,
             departmentId: Number(newInstructor.departmentId),
-            profile: newInstructor.profile || '', // API expects a string (base64 or empty).
+            profile: newInstructor.profile || '',
         };
 
         onSave(payload);
@@ -121,6 +137,12 @@ const InstructorCreatePopup = ({ isOpen, onClose, onSave, departments, departmen
     if (!isOpen) {
         return null;
     }
+
+    const getErrorClass = (fieldName) => {
+        return formError.fields.includes(fieldName) 
+            ? 'border-red-500 ring-1 ring-red-500 focus:border-red-500' 
+            : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500';
+    };
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
@@ -183,7 +205,7 @@ const InstructorCreatePopup = ({ isOpen, onClose, onSave, departments, departmen
                         </div>
                         <div className="col-span-2">
                             <label htmlFor="email" className="block mb-2 text-xs font-medium text-gray-700 dark:text-gray-300">Email</label>
-                            <input type="email" id="email" name="email" value={newInstructor.email} onChange={handleInputChange} className="bg-gray-50 border border-gray-300 text-gray-900 text-xs rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600" placeholder="john.doe@example.com" required />
+                            <input type="email" id="email" name="email" value={newInstructor.email} onChange={handleInputChange} className={`bg-gray-50 border text-gray-900 text-xs rounded-lg block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 ${getErrorClass('email')}`} placeholder="john.doe@example.com" required />
                         </div>
                         <div className="col-span-2">
                             <label htmlFor="password" className="block mb-2 text-xs font-medium text-gray-700 dark:text-gray-300">Password</label>
@@ -201,14 +223,19 @@ const InstructorCreatePopup = ({ isOpen, onClose, onSave, departments, departmen
                         </div>
                         <div>
                             <label htmlFor="major" className="block mb-2 text-xs font-medium text-gray-700 dark:text-gray-300">Major</label>
-                            <select id="major" name="major" value={newInstructor.major} onChange={handleInputChange} className="bg-gray-50 border border-gray-300 text-gray-900 dark:text-gray-400 text-xs rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600" required>
-                                {departmentsError && <option value="">Error loading majors</option>}
-                                {!departments && !departmentsError && <option value="">Loading...</option>}
-                                {majorOptions.map(option => (<option key={option} value={option}>{option}</option>))}
-                            </select>
+                            <input
+                                type="text"
+                                id="major"
+                                name="major"
+                                value={newInstructor.major}
+                                onChange={handleInputChange}
+                                className="bg-gray-50 border border-gray-300 text-gray-900 text-xs rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600"
+                                placeholder="e.g., Computer Science"
+                                required
+                            />
                         </div>
                         <div>
-                            <label htmlFor="departmentId" className="block mb-2 text-xs font-medium text-gray-700 dark:text-gray-300">Department</label>
+                            <label htmlFor="departmentId" className="block mb-2 text-xs font-medium text-gray-700 dark:text-gray-300">Department / Faculty</label>
                             <select id="departmentId" name="departmentId" value={newInstructor.departmentId} onChange={handleInputChange} className="bg-gray-50 border border-gray-300 text-gray-900 dark:text-gray-400 text-xs rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600" required>
                                 {departmentsError && <option value="">Error loading departments</option>}
                                 {!departments && !departmentsError && <option value="">Loading...</option>}
@@ -220,8 +247,12 @@ const InstructorCreatePopup = ({ isOpen, onClose, onSave, departments, departmen
                             <input id="address" name="address" value={newInstructor.address} onChange={handleInputChange} className="bg-gray-50 border border-gray-300 text-gray-900 text-xs rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600" placeholder="123 Main Street, City, Country" required />
                         </div>
                     </div>
-
-                    <div className="flex justify-end gap-2 pt-4">
+                    {formError.message && (
+                        <div className="text-red-500 text-xs text-center mb-4">
+                            {formError.message}
+                        </div>
+                    )}
+                    <div className="flex justify-end gap-2 pt-2">
                         <button type="button" onClick={onClose} className="px-4 py-2 text-xs font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600">Cancel</button>
                         <button type="submit" className="px-4 py-2 text-xs font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700">Create Instructor</button>
                     </div>
