@@ -6,7 +6,9 @@ import Image from 'next/image';
 import { useSession } from 'next-auth/react';
 import useSWR from 'swr';
 import { authService } from '@/services/auth.service';
-import SuccessPopup from '@/app/instructor/profile/components/SuccessPopup'; // Import the new component
+import { instructorService } from '@/services/instructor.service';
+import { departmentService } from '@/services/department.service';
+import SuccessPopup from '@/app/instructor/profile/components/SuccessPopup';
 
 // --- Icon Components ---
 const EyeOpenIcon = ({ className = "h-5 w-5" }) => ( <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className}><path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" /></svg> );
@@ -17,23 +19,15 @@ const defaultUserIcon = ({ className }) => (
     </svg>
 );
 
+// --- Helper Functions ---
 const formatPhoneNumber = (phone) => {
     if (!phone || typeof phone !== 'string') return phone;
     const cleaned = phone.replace(/\D/g, '');
-    if (cleaned.length === 3 || cleaned.length === 4) {
-        return cleaned;
-    } else if (cleaned.length === 5 || cleaned.length === 6) {
-        return `${cleaned.slice(0, 3)}-${cleaned.slice(3)}`;
-    } else if (cleaned.length === 7 || cleaned.length === 8) {
-        return `${cleaned.slice(0, 3)}-${cleaned.slice(3, 6)}-${cleaned.slice(6)}`;
-    } else if (cleaned.length === 9) {
-        return `${cleaned.slice(0, 3)}-${cleaned.slice(3, 6)}-${cleaned.slice(6)}`;
-    } else if (cleaned.length === 10) {
-        return `${cleaned.slice(0, 1)}-${cleaned.slice(1, 4)}-${cleaned.slice(4, 7)}-${cleaned.slice(7)}`;
-    }
+    if (cleaned.length <= 10) return cleaned.replace(/(\d{3})(\d{3})(\d{4})/, '$1-$2-$3');
     return phone;
 };
 
+// --- Skeleton Component ---
 const ProfileContentSkeleton = () => (
     <div className='p-6 animate-pulse'>
         <div className="h-7 w-24 bg-slate-300 dark:bg-slate-600 rounded mb-4"></div>
@@ -66,16 +60,26 @@ const ProfileContentSkeleton = () => (
     </div>
 );
 
-const fetcher = ([, token]) => authService.getProfile(token);
+// --- SWR Fetchers ---
+const profileFetcher = ([, token]) => authService.getProfile(token);
+const departmentsFetcher = ([, token]) => departmentService.getAllDepartments(token);
 
+// --- Main Profile Content Component ---
 const ProfileContent = () => {
     const { data: session, status: sessionStatus } = useSession();
     
+    // Fetch profile data
     const { data: profileResponse, error: profileError, mutate } = useSWR(
         session?.accessToken ? ['/api/profile', session.accessToken] : null,
-        fetcher
+        profileFetcher
     );
     
+    // Fetch all departments for the dropdown
+    const { data: allDepartments, error: departmentsError } = useSWR(
+        session?.accessToken ? ['/api/departments', session.accessToken] : null,
+        departmentsFetcher
+    );
+
     const [profileData, setProfileData] = useState(null);
     const [editableProfileData, setEditableProfileData] = useState(null);
     const [imagePreviewUrl, setImagePreviewUrl] = useState(null);
@@ -90,20 +94,24 @@ const ProfileContent = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [showSuccessPopup, setShowSuccessPopup] = useState(false);
+    const [successMessage, setSuccessMessage] = useState('');
     const [emptyPasswordError, setEmptyPasswordError] = useState({ current: false, new: false, confirm: false });
     const [passwordVisibility, setPasswordVisibility] = useState({ current: false, new: false, confirm: false });
+    
+    const degreeOptions = ['Master', 'PhD', 'Doctor'];
 
     useEffect(() => {
         if (profileResponse) {
              const initialData = {
-                firstName: profileResponse.firstName || "NA",
-                lastName: profileResponse.lastName || "NA",
-                email: profileResponse.email || "NA",
-                phoneNumber: profileResponse.phone || "NA",
-                address: profileResponse.address || "NA",
+                firstName: profileResponse.firstName || "N/A",
+                lastName: profileResponse.lastName || "N/A",
+                email: profileResponse.email || "N/A",
+                phoneNumber: profileResponse.phone || "N/A",
+                address: profileResponse.address || "N/A",
                 avatarUrl: profileResponse.profile,
                 degree: profileResponse.degree || "N/A",
                 department: profileResponse.department || "N/A",
+                departmentId: profileResponse.departmentId,
                 major: profileResponse.major || "N/A",
             };
             setProfileData(initialData);
@@ -114,7 +122,16 @@ const ProfileContent = () => {
 
     const handleGeneralInputChange = (e) => {
         const { name, value } = e.target;
-        setEditableProfileData(prev => ({ ...prev, [name]: value }));
+        setEditableProfileData(prev => {
+            const newState = { ...prev, [name]: value };
+            if (name === 'department' && allDepartments) {
+                const selectedDept = allDepartments.find(d => d.name === value);
+                if (selectedDept) {
+                    newState.departmentId = selectedDept.departmentId;
+                }
+            }
+            return newState;
+        });
     };
 
     const handleFileChange = (e) => {
@@ -158,10 +175,38 @@ const ProfileContent = () => {
 
     const handleSaveClick = async (section) => {
         if (section === 'general') {
-             console.log("Saving general info:", editableProfileData);
-             setProfileData({ ...editableProfileData });
-             setIsEditingGeneral(false);
-             setShowSuccessPopup(true);
+            setLoading(true);
+            setError(null);
+    
+            if (!session?.user?.id || !session?.accessToken) {
+                setError("Authentication error or user ID not found. Please log in again.");
+                setLoading(false);
+                return;
+            }
+    
+            const payload = {
+                firstName: editableProfileData.firstName,
+                lastName: editableProfileData.lastName,
+                phone: editableProfileData.phoneNumber,
+                address: editableProfileData.address,
+                degree: editableProfileData.degree,
+                major: editableProfileData.major,
+                departmentId: editableProfileData.departmentId,
+                profile: imagePreviewUrl,
+            };
+    
+            try {
+                await instructorService.updateInstructor(session.user.id, payload, session.accessToken);
+                mutate();
+                setProfileData({ ...editableProfileData, avatarUrl: imagePreviewUrl });
+                setIsEditingGeneral(false);
+                setSuccessMessage("Your profile has been updated successfully.");
+                setShowSuccessPopup(true);
+            } catch (err) {
+                setError(err.message || "Failed to update profile. Please try again.");
+            } finally {
+                setLoading(false);
+            }
         } else if (section === 'password') {
             setLoading(true);
             setError(null);
@@ -191,12 +236,12 @@ const ProfileContent = () => {
                     throw new Error("You are not authenticated.");
                 }
                 await authService.changePassword(currentPassword, newPassword, session.accessToken);
+                setSuccessMessage("Your password has been changed successfully.");
                 setShowSuccessPopup(true);
                 setCurrentPassword('');
                 setNewPassword('');
                 setConfirmNewPassword('');
                 setIsEditingPassword(false);
-                mutate();
             } catch (err) {
                 setError(err.message || "An unexpected error occurred.");
             } finally {
@@ -207,10 +252,8 @@ const ProfileContent = () => {
 
     const handleCurrentPasswordChange = (e) => {
         setCurrentPassword(e.target.value);
-        if (emptyPasswordError.current) {
-            setEmptyPasswordError(prev => ({ ...prev, current: false }));
-            setError(null);
-        }
+        if (emptyPasswordError.current) setEmptyPasswordError(prev => ({ ...prev, current: false }));
+        if (error) setError(null);
     };
     
     const handleNewPasswordChange = (e) => {
@@ -218,6 +261,7 @@ const ProfileContent = () => {
         if(passwordMismatchError || emptyPasswordError.new) {
             setPasswordMismatchError(false);
             setEmptyPasswordError(p => ({...p, new: false}));
+            if (error) setError(null);
         }
     };
 
@@ -226,10 +270,55 @@ const ProfileContent = () => {
          if(passwordMismatchError || emptyPasswordError.confirm) {
             setPasswordMismatchError(false);
             setEmptyPasswordError(p => ({...p, confirm: false}));
+            if (error) setError(null);
         }
     };
 
     const togglePasswordVisibility = (field) => { setPasswordVisibility(prev => ({ ...prev, [field]: !prev[field] })) };
+
+    const renderTextField = (label, name, value, isEditing) => (
+        <div className="form-group flex-1 min-w-[200px]">
+            <label className="form-label block font-semibold text-xs text-gray-700 dark:text-gray-300 mb-1">{label}</label>
+            <input
+                type="text"
+                name={name}
+                value={value}
+                onChange={handleGeneralInputChange}
+                readOnly={!isEditing}
+                className={`form-input w-full py-2 px-3 border dark:border-gray-700 dark:text-gray-400 rounded-md font-medium text-xs ${
+                    !isEditing ? "bg-gray-100 dark:bg-gray-800" : "bg-white dark:bg-gray-600 "
+                }`}
+            />
+        </div>
+    );
+    
+    const renderSelectField = (label, name, value, options, isEditing) => (
+        <div className="form-group flex-1 min-w-[200px]">
+            <label className="form-label block font-semibold text-xs text-gray-700 dark:text-gray-300 mb-1">{label}</label>
+            {isEditing ? (
+                <select
+                    name={name}
+                    value={value}
+                    onChange={handleGeneralInputChange}
+                    disabled={loading}
+                    className="form-input w-full py-2 px-3 border rounded-md font-medium text-xs bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white"
+                >
+                    {options?.map(option => {
+                        const optionValue = typeof option === 'object' ? option.name : option;
+                        const optionKey = typeof option === 'object' ? option.departmentId : option;
+                        return <option key={optionKey} value={optionValue}>{optionValue}</option>;
+                    })}
+                </select>
+            ) : (
+                <input
+                    type="text"
+                    value={value}
+                    readOnly
+                    className="form-input w-full py-2 px-3 border rounded-md font-medium text-xs bg-gray-100 dark:bg-gray-800 border-gray-300 dark:border-gray-700 text-gray-500 dark:text-gray-400"
+                />
+            )}
+        </div>
+    );
 
     const renderPasswordField = (label, name, value, onChange, fieldName, isReadOnly = false, hasError = false) => (
         <div className="form-group flex-1 min-w-[200px]">
@@ -258,12 +347,12 @@ const ProfileContent = () => {
     );
     
 
-    if (sessionStatus === 'loading' || !profileData) {
+    if (sessionStatus === 'loading' || !profileData || !allDepartments) {
         return <ProfileContentSkeleton />;
     }
 
-    if (profileError) {
-        return <div className="p-6 text-red-500 text-center">Error loading profile: {profileError.message}</div>
+    if (profileError || departmentsError) {
+        return <div className="p-6 text-red-500 text-center">Error loading data. Please try refreshing the page.</div>
     }
 
     const currentDisplayData = isEditingGeneral ? editableProfileData : profileData;
@@ -274,7 +363,7 @@ const ProfileContent = () => {
           show={showSuccessPopup}
           onClose={() => setShowSuccessPopup(false)}
           title="Success"
-          message="Your profile has been updated successfully."
+          message={successMessage}
         />
         <div className="section-title font-semibold text-lg text-gray-800 dark:text-gray-200 mb-4">
           Profile
@@ -338,119 +427,14 @@ const ProfileContent = () => {
                 General Information
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 dark:text-gray-300">
-                <div className="form-group ">
-                  <label className="form-label block font-semibold text-xs text-gray-700 dark:text-gray-300 mb-1 ">
-                    First Name
-                  </label>
-                  <input
-                    type="text"
-                    name="firstName"
-                    value={currentDisplayData.firstName}
-                    onChange={handleGeneralInputChange}
-                    readOnly={!isEditingGeneral}
-                    className={`form-input w-full py-2 px-3 border dark:border-gray-700 dark:text-gray-400 rounded-md font-medium text-xs ${
-                      !isEditingGeneral
-                        ? "bg-gray-100 dark:bg-gray-800"
-                        : "bg-white dark:bg-gray-600 "
-                    }`}
-                  />
-                </div>
-                <div className="form-group">
-                  <label className="form-label block font-semibold text-xs text-gray-700 dark:text-gray-300 mb-1">
-                    Last Name
-                  </label>
-                  <input
-                    type="text"
-                    name="lastName"
-                    value={currentDisplayData.lastName}
-                    onChange={handleGeneralInputChange}
-                    readOnly={!isEditingGeneral}
-                    className={`form-input w-full py-2 px-3 border dark:border-gray-700 rounded-md font-medium text-xs ${
-                      !isEditingGeneral
-                        ? "bg-gray-100 dark:bg-gray-800"
-                        : "bg-white dark:bg-gray-600"
-                    }`}
-                  />
-                </div>
-                <div className="form-group">
-                  <label className="form-label block font-semibold text-xs text-gray-700 dark:text-gray-300 mb-1">
-                    Email
-                  </label>
-                  <input
-                    type="email"
-                    name="email"
-                    value={currentDisplayData.email}
-                    readOnly
-                    className={`form-input w-full py-2 px-3 border dark:border-gray-700 rounded-md font-medium text-xs bg-gray-100 dark:bg-gray-800`}
-                  />
-                </div>
-                <div className="form-group">
-                  <label className="form-label block font-semibold text-xs text-gray-700 dark:text-gray-300 mb-1">
-                    Phone Number
-                  </label>
-                  <input
-                    type="tel"
-                    name="phoneNumber"
-                    value={formatPhoneNumber(currentDisplayData.phoneNumber)}
-                    onChange={handleGeneralInputChange}
-                    readOnly={!isEditingGeneral}
-                    className={`form-input w-full py-2 px-3 border dark:border-gray-700 rounded-md font-medium text-xs ${
-                      !isEditingGeneral
-                        ? "bg-gray-100 dark:bg-gray-800"
-                        : "bg-white dark:bg-gray-600"
-                    }`}
-                  />
-                </div>
-                <div className="form-group">
-                  <label className="form-label block font-semibold text-xs text-gray-700 dark:text-gray-300 mb-1">
-                    Degree
-                  </label>
-                  <input
-                    type="text"
-                    name="degree"
-                    value={currentDisplayData.degree}
-                    onChange={handleGeneralInputChange}
-                    readOnly={!isEditingGeneral}
-                    className={`form-input w-full py-2 px-3 border dark:border-gray-700 rounded-md font-medium text-xs ${
-                      !isEditingGeneral
-                        ? "bg-gray-100 dark:bg-gray-800"
-                        : "bg-white dark:bg-gray-600"
-                    }`}
-                  />
-                </div>
-                <div className="form-group">
-                  <label className="form-label block font-semibold text-xs text-gray-700 dark:text-gray-300 mb-1">
-                    Major
-                  </label>
-                  <input
-                    type="text"
-                    name="major"
-                    value={currentDisplayData.major}
-                    onChange={handleGeneralInputChange}
-                    readOnly={!isEditingGeneral}
-                    className={`form-input w-full py-2 px-3 border dark:border-gray-700 rounded-md font-medium text-xs ${
-                      !isEditingGeneral
-                        ? "bg-gray-100 dark:bg-gray-800"
-                        : "bg-white dark:bg-gray-600"
-                    }`}
-                  />
-                </div>
+                {renderTextField("First Name", "firstName", currentDisplayData.firstName, isEditingGeneral)}
+                {renderTextField("Last Name", "lastName", currentDisplayData.lastName, isEditingGeneral)}
+                {renderTextField("Email", "email", currentDisplayData.email, false)}
+                {renderTextField("Phone Number", "phoneNumber", formatPhoneNumber(currentDisplayData.phoneNumber), isEditingGeneral)}
+                {renderSelectField("Degree", "degree", currentDisplayData.degree, degreeOptions, isEditingGeneral)}
+                {renderTextField("Major", "major", currentDisplayData.major, isEditingGeneral)}
                 <div className="form-group md:col-span-2">
-                  <label className="form-label block font-semibold text-xs text-gray-700 dark:text-gray-300 mb-1 ">
-                    Department
-                  </label>
-                  <input
-                    type="text"
-                    name="department"
-                    value={currentDisplayData.department}
-                    onChange={handleGeneralInputChange}
-                    readOnly={!isEditingGeneral}
-                    className={`form-input w-full py-2 px-3 border dark:border-gray-700 rounded-md font-medium text-xs ${
-                      !isEditingGeneral
-                        ? "bg-gray-100 dark:bg-gray-800"
-                        : "bg-white dark:bg-gray-600"
-                    }`}
-                  />
+                  {renderSelectField("Department", "department", currentDisplayData.department, allDepartments, isEditingGeneral)}
                 </div>
               </div>
               <div className="form-actions flex justify-end items-center gap-3 mt-4">
@@ -465,8 +449,9 @@ const ProfileContent = () => {
                     <button
                       onClick={() => handleSaveClick("general")}
                       className="save-button bg-blue-600 hover:bg-blue-700 shadow-custom-light rounded-md text-white text-xs py-2 px-3 font-semibold"
+                      disabled={loading}
                     >
-                      Save Changes
+                      {loading ? 'Saving...' : 'Save Changes'}
                     </button>
                   </>
                 ) : (
@@ -484,18 +469,7 @@ const ProfileContent = () => {
               <div className="section-title font-semibold text-sm text-gray-800 dark:text-gray-200 mb-3">
                 Password Information
               </div>
-              {/* <div className="space-y-4">
-                             <div className="flex gap-3 flex-wrap">
-                                {renderPasswordField("Current Password", "currentPassword", currentPassword, handleCurrentPasswordChange, "current", !isEditingPassword, emptyPasswordError.current)}
-                                {renderPasswordField("New Password", "newPassword", newPassword, handleNewPasswordChange, "new", !isEditingPassword, emptyPasswordError.new || passwordMismatchError)}
-                            </div>
-                            <div className="flex gap-3 flex-wrap">
-                                {renderPasswordField("Confirm New Password", "confirmNewPassword", confirmNewPassword, handleConfirmPasswordChange, "confirm", !isEditingPassword, emptyPasswordError.confirm || passwordMismatchError)}
-                            </div>
-                        </div> */}
-
               <div className="space-y-4">
-                {/* current password */}
                 <div className="flex gap-3 flex-wrap">
                   {renderPasswordField(
                     "Current Password",
@@ -507,8 +481,6 @@ const ProfileContent = () => {
                     emptyPasswordError.current
                   )}
                 </div>
-
-                {/* New & Confirm password */}
                 <div className="flex gap-3 flex-wrap">
                   {renderPasswordField(
                     "New Password",

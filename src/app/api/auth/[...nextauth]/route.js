@@ -3,8 +3,15 @@ import NextAuth from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import { authService } from '@/services/auth.service';
 
+/**
+ * Decodes a JWT token without verifying its signature.
+ * @param {string} token - The JWT token.
+ * @returns {object|null} The decoded payload or null if decoding fails.
+ */
 function decodeJwt(token) {
   try {
+    // The token is split into three parts: header, payload, and signature.
+    // The payload is the second part, which is base64url encoded.
     return JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString());
   } catch (error) {
     console.error("Failed to decode JWT:", error);
@@ -39,35 +46,38 @@ export const authOptions = {
             console.log("Decoded JWT Payload:", decodedPayload);
 
             const userRole = decodedPayload.roles && decodedPayload.roles[0];
+            // FIX: Use a specific user/instructor ID from the token payload.
+            // Assuming the backend includes a 'userId' or 'instructorId' claim.
+            const userId = decodedPayload.userId || decodedPayload.instructorId;
 
             if (!userRole) {
               console.error("Role not found in JWT payload's 'roles' array!");
               return null;
             }
             
-            // --- UPDATED NAME HANDLING ---
+            if (!userId) {
+                console.error("User ID ('userId' or 'instructorId') not found in JWT payload!");
+                // Fallback to 'sub' but log a warning, as the numeric ID is preferred.
+                console.warn("Falling back to 'sub' claim for user ID. This may not be the correct numeric ID for API calls.");
+            }
+
             let userName;
-            
-            // Priority 1: Use firstName and lastName if available
             if (decodedPayload.firstName) {
                 userName = decodedPayload.firstName;
                 if (decodedPayload.lastName) {
                     userName += ` ${decodedPayload.lastName}`;
                 }
-            } 
-            // Priority 2: Use the 'name' field if available and not empty
-            else if (decodedPayload.name) {
+            } else if (decodedPayload.name) {
                 userName = decodedPayload.name;
-            } 
-            // Priority 3: Fallback to the email, but strip the domain part
-            else {
+            } else {
                 userName = credentials.email.split('@')[0];
             }
 
             return {
-              id: decodedPayload.sub,
-              name: userName, // Use the constructed or cleaned-up name
-              email: decodedPayload.sub,
+              // Use the numeric ID from the token if available, otherwise fallback to 'sub'
+              id: userId || decodedPayload.sub,
+              name: userName,
+              email: decodedPayload.sub, // 'sub' usually holds the email/username
               role: userRole,
               accessToken: accessToken,
             };
@@ -85,6 +95,8 @@ export const authOptions = {
   },
   callbacks: {
     async jwt({ token, user }) {
+      // When a user signs in, the `user` object is passed.
+      // We persist the custom properties to the token.
       if (user) {
         token.accessToken = user.accessToken;
         token.id = user.id;
@@ -95,6 +107,7 @@ export const authOptions = {
       return token;
     },
     async session({ session, token }) {
+      // The session callback receives the token and populates the session object.
       if (token) {
         session.accessToken = token.accessToken;
         session.user = {
