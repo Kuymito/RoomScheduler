@@ -333,6 +333,7 @@ export default function ClassClientView({ initialClasses, initialDepartments }) 
                 onSave={handleSaveNewClass}
                 departments={departments || []}
                 departmentsError={departmentsError}
+                existingClasses={classData}
             />
         </div>
     );

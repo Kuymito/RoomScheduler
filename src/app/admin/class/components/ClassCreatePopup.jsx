@@ -11,7 +11,7 @@ const shiftMap = {
     'Weekend Shift (07:30:00 - 17:00:00, Weekend)': 5
 };
 
-const ClassCreatePopup = ({ isOpen, onClose, onSave, departments, departmentsError }) => {
+const ClassCreatePopup = ({ isOpen, onClose, onSave, departments, departmentsError, existingClasses }) => {
     // --- State and Options ---
     const generationOptions = ['30', '31', '32', '33', '34', '35'];
     const degreesOptions = ['Bachelor', 'Master', 'PhD', 'Doctor'];
@@ -41,11 +41,13 @@ const ClassCreatePopup = ({ isOpen, onClose, onSave, departments, departmentsErr
     });
 
     const [newClass, setNewClass] = useState(getInitialState());
+    const [formError, setFormError] = useState({ fields: [], message: '' });
 
     // Effect to reset form state when departments load or when the popup opens
     useEffect(() => {
         if (isOpen) {
             setNewClass(getInitialState());
+            setFormError({ fields: [], message: '' }); // Reset errors when popup opens
         }
     }, [isOpen, departments]);
 
@@ -53,10 +55,29 @@ const ClassCreatePopup = ({ isOpen, onClose, onSave, departments, departmentsErr
     const handleInputChange = (e) => {
         const { name, value } = e.target;
         setNewClass(prev => ({ ...prev, [name]: value }));
+        // Clear errors for the field being edited
+        if (formError.fields.includes(name)) {
+            setFormError({ fields: [], message: '' });
+        }
     };
 
     const handleSubmit = (e) => {
         e.preventDefault();
+        setFormError({ fields: [], message: '' }); // Clear previous errors
+
+        // --- DUPLICATE CHECK ---
+        const isDuplicate = existingClasses.some(
+            (cls) => cls.generation === newClass.generation && cls.group === newClass.groupName
+        );
+
+        if (isDuplicate) {
+            setFormError({
+                fields: ['generation', 'groupName'],
+                message: `A class with Generation ${newClass.generation} and Group ${newClass.groupName} already exists.`
+            });
+            return; // Stop the submission
+        }
+        // --- END DUPLICATE CHECK ---
 
         // Construct the payload for the API from the current state
         const payload = {
@@ -74,15 +95,15 @@ const ClassCreatePopup = ({ isOpen, onClose, onSave, departments, departmentsErr
 
         // Basic validation
         if (!payload.groupName) {
-            alert('Please provide a Group name.');
+            setFormError({ fields: ['groupName'], message: 'Please provide a Group name.' });
             return;
         }
         if (!payload.departmentId) {
-            alert('Please select a department.');
+            setFormError({ fields: ['departmentId'], message: 'Please select a department.' });
             return;
         }
         if (!payload.shiftId) {
-            alert('Please select a shift.');
+            setFormError({ fields: ['shiftId'], message: 'Please select a shift.' });
             return;
         }
 
@@ -111,13 +132,19 @@ const ClassCreatePopup = ({ isOpen, onClose, onSave, departments, departmentsErr
         return null;
     }
 
+    const getErrorClass = (fieldName) => {
+        return formError.fields.includes(fieldName) 
+            ? 'border-red-500 ring-1 ring-red-500 focus:border-red-500' 
+            : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500';
+    };
+
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
             <div ref={popupRef} className="relative p-5 bg-white rounded-lg shadow-lg max-w-lg w-full dark:bg-gray-800 dark:text-white">
                 <h2 className="text-mb font-bold mb-3">Create New Class</h2>
                 <hr className="border-t-2 border-gray-200 mb-5" />
                 <form onSubmit={handleSubmit} className="space-y-3">
-                    <div className="grid grid-cols-2 gap-3 mb-16">
+                    <div className="grid grid-cols-2 gap-3 mb-4 max-h-[60vh] overflow-y-auto pr-2">
                         <div className="col-span-2">
                             <label htmlFor="className" className="block mb-2 text-xs font-medium text-gray-900 dark:text-white">Name (Optional)</label>
                             <input
@@ -133,13 +160,13 @@ const ClassCreatePopup = ({ isOpen, onClose, onSave, departments, departmentsErr
 
                         <div>
                             <label htmlFor="generation" className="block text-xs font-medium text-gray-700 dark:text-gray-300">Generation</label>
-                            <select id="generation" name="generation" value={newClass.generation} onChange={handleInputChange} className="mt-1 block w-full p-2 text-xs border border-gray-300 rounded-md shadow-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white" required>
+                            <select id="generation" name="generation" value={newClass.generation} onChange={handleInputChange} className={`mt-1 block w-full p-2 text-xs border rounded-md shadow-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white ${getErrorClass('generation')}`} required>
                                 {generationOptions.map(option => (<option key={option} value={option}>{option}</option>))}
                             </select>
                         </div>
                         <div>
                             <label htmlFor="groupName" className="block text-xs font-medium text-gray-700 dark:text-gray-300">Group</label>
-                            <input type="text" id="groupName" name="groupName" value={newClass.groupName} onChange={handleInputChange} className="mt-1 block w-full p-2 text-xs border border-gray-300 rounded-md shadow-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white" placeholder="01" required />
+                            <input type="text" id="groupName" name="groupName" value={newClass.groupName} onChange={handleInputChange} className={`mt-1 block w-full p-2 text-xs border rounded-md shadow-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white ${getErrorClass('groupName')}`} placeholder="01" required />
                         </div>
                         <div>
                             <label htmlFor="degree" className="block text-xs font-medium text-gray-700 dark:text-gray-300">Degree</label>
@@ -163,7 +190,7 @@ const ClassCreatePopup = ({ isOpen, onClose, onSave, departments, departmentsErr
                         </div>
                         <div className="col-span-2">
                             <label htmlFor="departmentId" className="block text-xs font-medium text-gray-700 dark:text-gray-300">Department</label>
-                            <select id="departmentId" name="departmentId" value={newClass.departmentId} onChange={handleInputChange} className="mt-1 block w-full p-2 text-xs border border-gray-300 rounded-md shadow-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white" required>
+                            <select id="departmentId" name="departmentId" value={newClass.departmentId} onChange={handleInputChange} className={`mt-1 block w-full p-2 text-xs border rounded-md shadow-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white ${getErrorClass('departmentId')}`} required>
                                 {departmentsError && <option value="">Error loading departments</option>}
                                 {!departments && !departmentsError && <option value="">Loading...</option>}
                                 {departments && departments.map(dep => (<option key={dep.departmentId} value={dep.departmentId}>{dep.name}</option>))}
@@ -171,12 +198,17 @@ const ClassCreatePopup = ({ isOpen, onClose, onSave, departments, departmentsErr
                         </div>
                         <div className="col-span-2">
                             <label htmlFor="shiftId" className="block text-xs font-medium text-gray-700 dark:text-gray-300">Shift</label>
-                            <select id="shiftId" name="shiftId" value={newClass.shiftId} onChange={handleInputChange} className="mt-1 block w-full p-2 text-xs border border-gray-300 rounded-md shadow-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white" required>
+                            <select id="shiftId" name="shiftId" value={newClass.shiftId} onChange={handleInputChange} className={`mt-1 block w-full p-2 text-xs border rounded-md shadow-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white ${getErrorClass('shiftId')}`} required>
                                 {shiftOptions.map(shiftName => (<option key={shiftMap[shiftName]} value={shiftMap[shiftName]}>{shiftName}</option>))}
                             </select>
                         </div>
                     </div>
-                    <div className="flex justify-end gap-2">
+                    {formError.message && (
+                        <div className="text-red-500 text-xs text-center mb-4">
+                            {formError.message}
+                        </div>
+                    )}
+                    <div className="flex justify-end gap-2 pt-16">
                         <button type="button" onClick={onClose} className="px-4 py-2 text-xs font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600">Cancel</button>
                         <button type="submit" className="px-4 py-2 text-xs font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700">Create Class</button>
                     </div>
