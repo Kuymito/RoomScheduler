@@ -138,6 +138,24 @@ export default function RoomClientView({ initialAllRoomsData, buildingLayout }) 
         }
     };
 
+    const getGridColumnClasses = (building, floorNumber) => {
+        switch (building) {
+            case "Building A": return "xl:grid-cols-5 lg:grid-cols-3 md:grid-cols-2 grid-cols-[repeat(auto-fit,minmax(160px,1fr))]";
+            case "Building B": return floorNumber === 2 ? "grid-cols-5" : "xl:grid-cols-5 lg:grid-cols-3 md:grid-cols-2 grid-cols-[repeat(auto-fit,minmax(160px,1fr))]";
+            case "Building C": case "Building F": return "xl:grid-cols-4 lg:grid-cols-2 md:grid-cols-2 grid-cols-[repeat(auto-fit,minmax(160px,1fr))]";
+            case "Building D": return "grid-cols-1";
+            case "Building E": return floorNumber === 1 ? "xl:grid-cols-6 lg:grid-cols-3 md:grid-cols-2 grid-cols-[repeat(auto-fit,minmax(160px,1fr))]" : "xl:grid-cols-5 lg:grid-cols-3 md:grid-cols-2 grid-cols-[repeat(auto-fit,minmax(160px,1fr))]";
+            default: return "grid-cols-[repeat(auto-fit,minmax(160px,1fr))]";
+        }
+    };
+
+    const getRoomColSpan = (building, roomName) => {
+        if (building === "Building A" && roomName === "Conference Room") return "col-span-2";
+        if (building === "Building B" && roomName === "Conference Room") return "col-span-4";
+        if (building === "Building D" && roomName?.includes("Library")) return "col-span-full";
+        return "";
+    };
+
     const floors = buildings[selectedBuilding] || [];
 
     return (
@@ -158,13 +176,13 @@ export default function RoomClientView({ initialAllRoomsData, buildingLayout }) 
                             {floors.map(({ floor, rooms }) => (
                                 <div key={floor} className="space-y-3">
                                     <div className="flex items-center gap-2 mb-2"><h4 className="text-xs sm:text-sm font-medium text-slate-600 dark:text-slate-400 whitespace-nowrap">Floor {floor}</h4><hr className="flex-1 border-t border-slate-300 dark:border-slate-700" /></div>
-                                    <div className={`grid gap-3 sm:gap-4 grid-cols-[repeat(auto-fit,minmax(160px,1fr))]`}>
+                                    <div className={`grid gap-3 sm:gap-4 ${getGridColumnClasses(selectedBuilding, floor)}`}>
                                         {rooms.map((roomName) => {
                                             const room = Object.values(allRoomsData).find(r => r.name === roomName);
                                             if (!room) return null;
                                             const isSelected = selectedRoomId === room.id;
                                             return (
-                                                <div key={room.id} className={`h-[90px] sm:h-[100px] border rounded-md flex flex-col transition-all duration-150 shadow-sm cursor-pointer hover:shadow-md bg-white dark:bg-slate-800 ${isSelected ? "border-blue-500 ring-2 ring-blue-500 dark:border-blue-500" : "border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600"}`}
+                                                <div key={room.id} className={`h-[90px] sm:h-[100px] border rounded-md flex flex-col transition-all duration-150 shadow-sm cursor-pointer hover:shadow-md bg-white dark:bg-slate-800 ${getRoomColSpan(selectedBuilding, room.name)} ${isSelected ? "border-blue-500 ring-2 ring-blue-500 dark:border-blue-500" : "border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600"}`}
                                                     onClick={() => handleRoomClick(room.id)}>
                                                     <div className={`h-[30px] rounded-t-md flex items-center justify-center px-2 relative border-b ${isSelected ? 'border-b-transparent' : 'border-slate-200 dark:border-slate-600'} bg-slate-50 dark:bg-slate-700`}>
                                                         <span className={`text-xs sm:text-sm font-medium ${isSelected ? 'text-blue-700 dark:text-blue-300' : 'text-slate-700 dark:text-slate-300'}`}>{room.name}</span>
