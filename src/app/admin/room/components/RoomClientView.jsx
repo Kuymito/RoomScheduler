@@ -27,6 +27,7 @@ export default function RoomClientView({ initialAllRoomsData, buildingLayout }) 
     const [editableRoomDetails, setEditableRoomDetails] = useState(null);
     const [showSuccessAlert, setShowSuccessAlert] = useState(false);
     const [error, setError] = useState('');
+    const [formError, setFormError] = useState({ field: '', message: '' });
 
     // --- Effects ---
     // Update main state when initial props change
@@ -47,6 +48,7 @@ export default function RoomClientView({ initialAllRoomsData, buildingLayout }) 
         setIsEditing(false);
         setLoading(true);
         setError('');
+        setFormError({ field: '', message: '' });
         try {
             const data = allRoomsData[roomId];
             if (!data) throw new Error("Room data not found.");
@@ -60,8 +62,9 @@ export default function RoomClientView({ initialAllRoomsData, buildingLayout }) 
     };
 
     const handleEditToggle = () => {
-        if (isEditing) handleSaveChanges();
-        else if (roomDetails) {
+        if (isEditing) {
+            handleSaveChanges();
+        } else if (roomDetails) {
             setIsEditing(true);
             setEditableRoomDetails({
                 ...roomDetails,
@@ -70,8 +73,34 @@ export default function RoomClientView({ initialAllRoomsData, buildingLayout }) 
         }
     };
 
+    const validateRoomName = (newName) => {
+        const trimmedName = newName.trim();
+        if (!trimmedName) {
+            setFormError({ field: 'name'});
+            return false;
+        }
+
+        const isDuplicate = Object.values(allRoomsData).some(
+            (room) => room.id !== selectedRoomId && room.name.toLowerCase() === trimmedName.toLowerCase()
+        );
+
+        if (isDuplicate) {
+            setFormError({ field: 'name'});
+            return false;
+        }
+
+        setFormError({ field: '', message: '' });
+        return true;
+    };
+
     const handleInputChange = (event) => {
         const { name, value } = event.target;
+
+        // Clear error message when user starts typing in the problematic field
+        if (name === 'name' && formError.field === 'name') {
+            setFormError({ field: '', message: '' });
+        }
+
         setEditableRoomDetails((prev) => ({
             ...prev,
             [name]: (name === 'capacity') ? parseInt(value, 10) || 0 : value,
@@ -80,6 +109,12 @@ export default function RoomClientView({ initialAllRoomsData, buildingLayout }) 
 
     const handleSaveChanges = async () => {
         if (!editableRoomDetails) return;
+
+        // Validation is now only performed on save.
+        if (!validateRoomName(editableRoomDetails.name)) {
+            return;
+        }
+
         setLoading(true);
         setError('');
         const roomUpdateDto = {
@@ -152,7 +187,23 @@ export default function RoomClientView({ initialAllRoomsData, buildingLayout }) 
                             {loading && !isEditing ? ( <div className="text-center text-slate-500 dark:text-slate-400 w-full flex-grow flex items-center justify-center">Loading...</div> ) : roomDetails ? (
                                 <>
                                     <div className="w-full border border-slate-200 dark:border-slate-700 rounded-md bg-white dark:bg-slate-800">
-                                        <div className="flex items-center self-stretch w-full min-h-[56px] border-b border-slate-200 dark:border-slate-700"><div className="p-3 sm:p-4 w-[120px]"><span className={textLabelRoom}>Room</span></div><div className="px-2 sm:px-3 flex-1 py-2">{isEditing && editableRoomDetails ? (<div className={`flex flex-col items-start self-stretch ${inputContainerSizeDefault}`}><input type="text" name="name" value={editableRoomDetails.name} onChange={handleInputChange} className={inputStyle} /></div>) : (<span className={textValueRoomDisplay}>{roomDetails.name}</span>)}</div></div>
+                                        <div className="flex items-center self-stretch w-full min-h-[56px] border-b border-slate-200 dark:border-slate-700"><div className="p-3 sm:p-4 w-[120px]"><span className={textLabelRoom}>Room</span></div>
+                                            <div className="px-2 sm:px-3 flex-1 py-2">
+                                                {isEditing && editableRoomDetails ? (
+                                                    <div className="flex flex-col">
+                                                        <input
+                                                            type="text"
+                                                            name="name"
+                                                            value={editableRoomDetails.name}
+                                                            onChange={handleInputChange}
+                                                            className={`${inputStyle} ${formError.field === 'name' ? 'border-red-500 ring-1 ring-red-500' : ''}`}
+                                                        />
+                                                    </div>
+                                                ) : (
+                                                    <span className={textValueRoomDisplay}>{roomDetails.name}</span>
+                                                )}
+                                            </div>
+                                        </div>
                                         <div className="flex items-center self-stretch w-full min-h-[56px] border-b border-slate-200 dark:border-slate-700"><div className="p-3 sm:p-4 w-[120px]"><span className={textLabelDefault}>Building</span></div><div className="px-2 sm:px-3 flex-1 py-2"><span className={textValueDefaultDisplay}>{roomDetails.building}</span></div></div>
                                         <div className="flex items-center self-stretch w-full min-h-[56px] border-b border-slate-200 dark:border-slate-700"><div className="p-3 sm:p-4 w-[120px]"><span className={textLabelDefault}>Floor</span></div><div className="px-2 sm:px-3 flex-1 py-2"><span className={textValueDefaultDisplay}>{roomDetails.floor}</span></div></div>
                                         <div className="flex items-center self-stretch w-full min-h-[56px] border-b border-slate-200 dark:border-slate-700"><div className="p-3 sm:p-4 w-[120px]"><span className={textLabelDefault}>Capacity</span></div><div className="px-2 sm:px-3 flex-1 py-2">{isEditing && editableRoomDetails ? (<div className={`flex flex-col items-start self-stretch ${inputContainerSizeDefault}`}><input type="number" name="capacity" value={editableRoomDetails.capacity} onChange={handleInputChange} className={inputStyle} /></div>) : (<span className={textValueDefaultDisplay}>{roomDetails.capacity}</span>)}</div></div>
@@ -162,7 +213,7 @@ export default function RoomClientView({ initialAllRoomsData, buildingLayout }) 
                                     <button
                                         className="flex justify-center items-center py-3 px-6 gap-2 w-full h-12 bg-blue-600 hover:bg-blue-700 shadow-md rounded-md text-white font-semibold text-sm self-stretch disabled:opacity-60"
                                         onClick={handleEditToggle}
-                                        disabled={loading && isEditing}>
+                                        disabled={(loading && isEditing) || !!formError.field}>
                                         {loading && isEditing ? "Saving..." : isEditing ? "Save Changes" : "Edit Room"}
                                     </button>
                                 </>

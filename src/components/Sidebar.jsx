@@ -18,7 +18,6 @@ const AdminAvatarIcon = ({ className }) => (
     </svg>
 );
 
-// FIX: Updated NavItem to remove legacyBehavior and pass props directly to Link
 const NavItem = ({ href, icon: Icon, label, isActive, isCollapsed, onClick, isNavigating }) => (
     <Link
         href={href}
@@ -34,14 +33,9 @@ const NavItem = ({ href, icon: Icon, label, isActive, isCollapsed, onClick, isNa
     </Link>
 );
 
-const fetcher = (...args) => fetch(...args).then(res => res.json());
-
-const Sidebar = ({ isCollapsed, activeItem, onNavItemClick, navigatingTo }) => {
-    // Fetch session data directly in the Sidebar component
-    const { data: session, error, isLoading } = useSWR('/api/auth/session', fetcher);
-    
-    // The user object is nested in the session data
-    const user = session?.user;
+const Sidebar = ({ isCollapsed, activeItem, onNavItemClick, navigatingTo, profile, isProfileLoading }) => {
+    const user = profile;
+    const isLoading = isProfileLoading;
 
     const navItemsData = [
         { id: 'dashboard', href: '/admin/dashboard', icon: DashboardIcon, label: 'Dashboard' },
@@ -64,6 +58,14 @@ const Sidebar = ({ isCollapsed, activeItem, onNavItemClick, navigatingTo }) => {
                 <div className={`profile-avatar rounded-full mb-2.5 flex justify-center items-center ${isCollapsed ? 'w-10 h-10' : 'w-20 h-20'}`}>
                     {isLoading ? (
                          <div className={`rounded-full bg-gray-300 dark:bg-gray-600 animate-pulse ${isCollapsed ? 'h-10 w-10' : 'h-[70px] w-[70px]'}`}></div>
+                    ) : user?.profile ? (
+                        <Image
+                            src={user.profile}
+                            alt={user.name || "Admin Avatar"}
+                            width={isCollapsed ? 40 : 80}
+                            height={isCollapsed ? 40 : 80}
+                            className={`rounded-full object-cover`}
+                        />
                     ) : (
                         <AdminAvatarIcon className={`text-gray-700 dark:text-gray-400 ${isCollapsed ? 'h-16 w-16' : 'h-22 w-22'}`} />
                     )}
@@ -77,7 +79,7 @@ const Sidebar = ({ isCollapsed, activeItem, onNavItemClick, navigatingTo }) => {
                     ) : (
                         <>
                             <div className="profile-name text-center font-semibold text-base text-black dark:text-white mb-1 whitespace-nowrap">
-                                { user?.name || 'Admin'}
+                                { user?.firstName ? `${user.firstName} ${user.lastName}` : 'Admin'}
                             </div>
                             <div className="profile-email text-center text-[10px] text-num-gray dark:text-gray-200 whitespace-nowrap">
                                 {user?.email || 'admin@example.com'}
