@@ -3,14 +3,13 @@ import AdminLayout from '@/components/AdminLayout';
 import RoomPageSkeleton from './components/RoomPageSkeleton';
 import RoomClientView from './components/RoomClientView';
 import { getAllRooms } from '@/services/room.service';
-import { scheduleService } from '@/services/schedule.service';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 
 /**
- * Fetches and processes both room and schedule data on the server.
- * This function now combines data from two endpoints to build the full picture.
- * @returns {Promise<{initialAllRoomsData: object, buildingLayout: object, scheduleMap: object}>}
+ * Fetches and processes room data on the server.
+ * This function now only fetches room data.
+ * @returns {Promise<{initialAllRoomsData: object, buildingLayout: object}>}
  */
 async function fetchAndProcessRoomData() {
     const session = await getServerSession(authOptions);
@@ -18,15 +17,11 @@ async function fetchAndProcessRoomData() {
 
     if (!token) {
         console.error("Admin Room Page: Not authenticated.");
-        return { initialAllRoomsData: {}, buildingLayout: {}, scheduleMap: {} };
+        return { initialAllRoomsData: {}, buildingLayout: {} };
     }
 
     try {
-        // Fetch rooms and schedules in parallel for efficiency
-        const [apiRooms, apiSchedules] = await Promise.all([
-            getAllRooms(token),
-            scheduleService.getAllSchedules(token)
-        ]);
+        const apiRooms = await getAllRooms(token);
         
         const roomsDataMap = {};
         const populatedLayout = {};
@@ -60,26 +55,6 @@ async function fetchAndProcessRoomData() {
             };
         });
         
-        // Create a map of schedules for quick lookup: { "Monday": { "07:00-10:00": { roomId: className } } }
-        const scheduleMap = {};
-        apiSchedules.forEach(schedule => {
-            // FIX: Use the new `dayDetails` array from the API response
-            if (schedule && schedule.dayDetails && Array.isArray(schedule.dayDetails) && schedule.shift) {
-                const timeSlot = `${schedule.shift.startTime.substring(0, 5)}-${schedule.shift.endTime.substring(0, 5)}`;
-                
-                schedule.dayDetails.forEach(dayDetail => {
-                    const dayName = dayDetail.dayOfWeek.charAt(0).toUpperCase() + dayDetail.dayOfWeek.slice(1).toLowerCase();
-                    if (!scheduleMap[dayName]) {
-                        scheduleMap[dayName] = {};
-                    }
-                    if (!scheduleMap[dayName][timeSlot]) {
-                        scheduleMap[dayName][timeSlot] = {};
-                    }
-                    scheduleMap[dayName][timeSlot][schedule.roomId] = schedule.className;
-                });
-            }
-        });
-
         // Sort floors in descending order for each building
         for (const building in populatedLayout) {
             populatedLayout[building].sort((a, b) => b.floor - a.floor);
@@ -88,12 +63,11 @@ async function fetchAndProcessRoomData() {
         return { 
             initialAllRoomsData: roomsDataMap, 
             buildingLayout: populatedLayout,
-            scheduleMap: scheduleMap 
         };
 
     } catch (error) {
-        console.error("Failed to fetch or process room/schedule data on server:", error.message);
-        return { initialAllRoomsData: {}, buildingLayout: {}, scheduleMap: {} };
+        console.error("Failed to fetch or process room data on server:", error.message);
+        return { initialAllRoomsData: {}, buildingLayout: {} };
     }
 }
 
@@ -101,7 +75,7 @@ async function fetchAndProcessRoomData() {
  * Main page component for Admin Room Management. This is a Server Component.
  */
 export default async function AdminRoomPage() {
-    const { initialAllRoomsData, buildingLayout, scheduleMap } = await fetchAndProcessRoomData();
+    const { initialAllRoomsData, buildingLayout } = await fetchAndProcessRoomData();
 
     return (
         <AdminLayout activeItem="room" pageTitle="Room">
@@ -109,7 +83,6 @@ export default async function AdminRoomPage() {
                 <RoomClientView 
                     initialAllRoomsData={initialAllRoomsData} 
                     buildingLayout={buildingLayout} 
-                    initialScheduleMap={scheduleMap}
                 />
             </Suspense>
         </AdminLayout>

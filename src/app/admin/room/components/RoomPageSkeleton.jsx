@@ -37,14 +37,6 @@ const RoomPageSkeleton = () => {
                 {/* Left Panel (Room List) Skeleton */}
                 <div className="flex-1 min-w-0">
                     {/* Controls Skeleton */}
-                    <div className="flex flex-col sm:flex-row items-center justify-between border-b dark:border-gray-700/50 pb-3 gap-4 mb-4">
-                        <div className="flex rounded-lg bg-slate-200 dark:bg-slate-700 overflow-hidden w-full sm:w-auto h-9">
-                            {/* Simulate 7 day buttons */}
-                            {[...Array(7)].map((_, i) => <div key={i} className="w-12 h-full bg-slate-300 dark:bg-slate-600/50 border-r border-slate-200 dark:border-slate-700"></div>)}
-                        </div>
-                        <div className="h-9 w-full sm:w-48 bg-slate-200 dark:bg-slate-700 rounded-md"></div>
-                    </div>
-
                     <div className="flex items-center gap-2 mb-3 sm:mb-4">
                         <div className="h-10 w-40 bg-slate-200 dark:bg-slate-700 rounded-md"></div>
                         <div className="flex-1 h-px bg-slate-300 dark:bg-slate-700" />
