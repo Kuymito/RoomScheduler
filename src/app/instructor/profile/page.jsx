@@ -9,6 +9,7 @@ import { authService } from '@/services/auth.service';
 import { instructorService } from '@/services/instructor.service';
 import { departmentService } from '@/services/department.service';
 import SuccessPopup from '@/app/instructor/profile/components/SuccessPopup';
+import axios from 'axios';
 
 // --- Icon Components ---
 const EyeOpenIcon = ({ className = "h-5 w-5" }) => ( <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className}><path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" /></svg> );
@@ -84,6 +85,7 @@ const ProfileContent = () => {
     const [editableProfileData, setEditableProfileData] = useState(null);
     const [imagePreviewUrl, setImagePreviewUrl] = useState(null);
     const [isUploading, setIsUploading] = useState(false);
+    const [profileImageFile, setProfileImageFile] = useState(null);
     const fileInputRef = useRef(null);
     const [isEditingGeneral, setIsEditingGeneral] = useState(false);
     const [isEditingPassword, setIsEditingPassword] = useState(false);
@@ -110,7 +112,7 @@ const ProfileContent = () => {
                 address: profileResponse.address || "N/A",
                 avatarUrl: profileResponse.profile,
                 degree: profileResponse.degree || "N/A",
-                department: profileResponse.department || "N/A",
+                department: profileResponse.departmentName, // Use departmentName
                 departmentId: profileResponse.departmentId,
                 major: profileResponse.major || "N/A",
             };
@@ -137,6 +139,7 @@ const ProfileContent = () => {
     const handleFileChange = (e) => {
         const file = e.target.files[0];
         if (file) {
+            setProfileImageFile(file);
             const reader = new FileReader();
             reader.onloadend = () => {
                 setImagePreviewUrl(reader.result);
@@ -162,6 +165,7 @@ const ProfileContent = () => {
         if (section === 'general') {
             setEditableProfileData({ ...profileData });
             setImagePreviewUrl(profileData.avatarUrl);
+            setProfileImageFile(null);
             setIsEditingGeneral(false);
         } else if (section === 'password') {
             setCurrentPassword('');
@@ -183,6 +187,24 @@ const ProfileContent = () => {
                 setLoading(false);
                 return;
             }
+
+            let finalImageUrl = profileData.avatarUrl;
+            if (profileImageFile) {
+                setIsUploading(true);
+                const formData = new FormData();
+                formData.append('file', profileImageFile);
+                try {
+                    const response = await axios.post('/api/upload', formData);
+                    finalImageUrl = response.data.url;
+                } catch (uploadError) {
+                    setError('Image upload failed. Please try again.');
+                    setLoading(false);
+                    setIsUploading(false);
+                    return;
+                } finally {
+                    setIsUploading(false);
+                }
+            }
     
             const payload = {
                 firstName: editableProfileData.firstName,
@@ -192,16 +214,16 @@ const ProfileContent = () => {
                 degree: editableProfileData.degree,
                 major: editableProfileData.major,
                 departmentId: editableProfileData.departmentId,
-                profile: imagePreviewUrl,
+                profile: finalImageUrl,
             };
     
             try {
                 await instructorService.updateInstructor(session.user.id, payload, session.accessToken);
-                mutate();
-                setProfileData({ ...editableProfileData, avatarUrl: imagePreviewUrl });
-                setIsEditingGeneral(false);
+                mutate(); // Re-fetch profile data
                 setSuccessMessage("Your profile has been updated successfully.");
                 setShowSuccessPopup(true);
+                setIsEditingGeneral(false);
+                setProfileImageFile(null);
             } catch (err) {
                 setError(err.message || "Failed to update profile. Please try again.");
             } finally {
@@ -470,6 +492,7 @@ const ProfileContent = () => {
                 Password Information
               </div>
               <div className="space-y-4">
+                {/* current password */}
                 <div className="flex gap-3 flex-wrap">
                   {renderPasswordField(
                     "Current Password",
@@ -481,6 +504,8 @@ const ProfileContent = () => {
                     emptyPasswordError.current
                   )}
                 </div>
+
+                {/* New & Confirm password */}
                 <div className="flex gap-3 flex-wrap">
                   {renderPasswordField(
                     "New Password",
@@ -505,6 +530,7 @@ const ProfileContent = () => {
               <div className="form-actions flex justify-end items-center gap-3 mt-4">
                 {isEditingPassword ? (
                   <>
+                    {" "}
                     <button
                       onClick={() => handleCancelClick("password")}
                       className="back-button bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 shadow-custom-light rounded-md text-gray-800 dark:text-white border-none py-2 px-3 font-semibold text-xs cursor-pointer"
@@ -518,7 +544,7 @@ const ProfileContent = () => {
                       disabled={loading}
                     >
                       {loading ? "Saving..." : "Save Password"}
-                    </button>
+                    </button>{" "}
                   </>
                 ) : (
                   <button
