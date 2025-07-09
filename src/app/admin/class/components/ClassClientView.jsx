@@ -123,10 +123,29 @@ export default function ClassClientView({ initialClasses, initialDepartments }) 
         });
     };
 
-    const toggleClassStatus = (id) => {
-        setClassData(prevData =>
-            prevData.map(item => item.id === id ? { ...item, status: item.status === 'active' ? 'archived' : 'active' } : item)
+    const toggleClassStatus = async (id) => {
+        const classToUpdate = classData.find(item => item.id === id);
+        if (!classToUpdate) return;
+
+        // Optimistic UI update
+        const originalData = [...classData];
+        const updatedData = classData.map(item =>
+            item.id === id ? { ...item, status: item.status === 'active' ? 'archived' : 'active' } : item
         );
+        setClassData(updatedData);
+
+        const isArchived = classToUpdate.status === 'active';
+
+        try {
+            await classService.patchClass(id, { isArchived }, session.accessToken);
+            // Re-fetch the data to ensure consistency with the server
+            mutateClasses();
+        } catch (error) {
+            console.error("Failed to update class status:", error);
+            // Revert the UI change if the API call fails
+            setClassData(originalData);
+            // Optionally, show an error message to the user
+        }
     };
 
     const filteredAndSortedData = useMemo(() => {
@@ -333,6 +352,7 @@ export default function ClassClientView({ initialClasses, initialDepartments }) 
                 onSave={handleSaveNewClass}
                 departments={departments || []}
                 departmentsError={departmentsError}
+                existingClasses={classData}
             />
         </div>
     );

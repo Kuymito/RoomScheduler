@@ -22,17 +22,7 @@ const instructorFetcher = ([key, token]) => instructorService.getAllInstructors(
 const formatPhoneNumber = (phone) => {
     if (!phone || typeof phone !== 'string') return phone;
     const cleaned = phone.replace(/\D/g, '');
-    if (cleaned.length === 3 || cleaned.length === 4) {
-        return cleaned;
-    } else if (cleaned.length === 5 || cleaned.length === 6) {
-        return `${cleaned.slice(0, 3)}-${cleaned.slice(3)}`;
-    } else if (cleaned.length === 7 || cleaned.length === 8) {
-        return `${cleaned.slice(0, 3)}-${cleaned.slice(3, 6)}-${cleaned.slice(6)}`;
-    } else if (cleaned.length === 9) {
-        return `${cleaned.slice(0, 3)}-${cleaned.slice(3, 6)}-${cleaned.slice(6)}`;
-    } else if (cleaned.length === 10) {
-        return `${cleaned.slice(0, 1)}-${cleaned.slice(1, 4)}-${cleaned.slice(4, 7)}-${cleaned.slice(7)}`;
-    }
+    if (cleaned.length <= 10) return cleaned.replace(/(\d{3})(\d{3})(\d{4})/, '$1-$2-$3');
     return phone;
 };
 
@@ -315,6 +305,7 @@ export default function InstructorClientView({ initialInstructors, initialDepart
                 onSave={handleSaveNewInstructor}
                 departments={departments || []}
                 departmentsError={departmentsError}
+                existingInstructors={instructorData}
             />
         </div>
     );

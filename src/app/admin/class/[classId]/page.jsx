@@ -11,11 +11,11 @@ import { departmentService } from '@/services/department.service';
 
 // Mapping from shiftId to the full descriptive name used in the UI dropdown.
 const shiftIdToFullNameMap = {
-    1: 'Morning Shift (07:00:00 - 10:00:00, Weekday)',
-    2: 'Noon Shift (10:30:00 - 13:30:00, Weekday)',
-    3: 'Afternoon Shift (14:00:00 - 17:00:00, Weekday)',
-    4: 'Evening Shift (17:30:00 - 20:30:00, Weekday)',
-    5: 'Weekend Shift (07:30:00 - 17:00:00, Weekend)'
+    1: 'Morning Shift',
+    2: 'Noon Shift',
+    3: 'Afternoon Shift',
+    4: 'Evening Shift',
+    5: 'Weekend Shift'
 };
 
 // Helper to map full day names to abbreviated names

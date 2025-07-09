@@ -7,10 +7,10 @@ import { useSession } from 'next-auth/react';
 import { instructorService } from '@/services/instructor.service';
 import { authService } from '@/services/auth.service';
 import SuccessPopup from '../../profile/components/SuccessPopup';
+import axios from 'axios';
 
 
 // --- Options (can be passed as props or kept here) ---
-const majorOptions = ['Computer Science', 'Information Technology', 'Information Systems', 'Software Engineering', 'Artificial Intelligence', 'Data Science', 'Machine Learning', 'Data Analytics', 'Robotics'];
 const degreeOptions = [ 'Master', 'PhD', 'Doctor'];
 
 
@@ -19,6 +19,7 @@ const DefaultAvatarIcon = ({ className = "w-28 h-28" }) => ( <svg xmlns="http://
 <path strokeLinecap="round" strokeLinejoin="round" d="M17.982 18.725A7.488 7.488 0 0 0 12 15.75a7.488 7.488 0 0 0-5.982 2.975m11.963 0a9 9 0 1 0-11.963 0m11.963 0A8.966 8.966 0 0 1 12 21a8.966 8.966 0 0 1-5.982-2.275M15 9.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" /></svg> );
 const EyeOpenIcon = () => ( <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-5"><path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" /></svg> );
 const EyeClosedIcon = () => ( <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-5"><path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 0 0 1.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.451 10.451 0 0 1 12 4.5c4.756 0 8.773 3.162 10.065 7.498a10.522 10.522 0 0 1-4.293 5.774M6.228 6.228 3 3m3.228 3.228 3.65 3.65m7.894 7.894L21 21m-3.228-3.228-3.65-3.65m0 0a3 3 0 1 0-4.243-4.243m4.242 4.242L9.88 9.88" /></svg> );
+
 
 export default function InstructorDetailClientView({ initialInstructor, allDepartments }) {
     const router = useRouter();
@@ -30,6 +31,7 @@ export default function InstructorDetailClientView({ initialInstructor, allDepar
     const [error, setError] = useState(null);
     const [successMessage, setSuccessMessage] = useState(null);
     const [imagePreviewUrl, setImagePreviewUrl] = useState(initialInstructor.profileImage || null);
+    const [profileImageFile, setProfileImageFile] = useState(null);
     const fileInputRef = useRef(null);
     const [isEditingGeneral, setIsEditingGeneral] = useState(false);
     const [isEditingPassword, setIsEditingPassword] = useState(false);
@@ -43,6 +45,25 @@ export default function InstructorDetailClientView({ initialInstructor, allDepar
         setLoading(true);
         setError(null);
         setSuccessMessage(null);
+
+        let finalImageUrl = instructorDetails.profileImage;
+
+        if (profileImageFile) {
+            setIsUploading(true);
+            const formData = new FormData();
+            formData.append('file', profileImageFile);
+            try {
+                const response = await axios.post('/api/upload', formData);
+                finalImageUrl = response.data.url;
+            } catch (uploadError) {
+                setError('Image upload failed. Please try again.');
+                setLoading(false);
+                setIsUploading(false);
+                return;
+            } finally {
+                setIsUploading(false);
+            }
+        }
 
         const selectedDepartment = allDepartments.find(
             (dep) => dep.name === editableInstructorDetails.department
@@ -63,17 +84,38 @@ export default function InstructorDetailClientView({ initialInstructor, allDepar
             major: editableInstructorDetails.major,
             address: editableInstructorDetails.address,
             departmentId: selectedDepartment.departmentId,
-            profile: imagePreviewUrl || ""
+            profile: finalImageUrl || ""
         };
 
         try {
             if (!session?.accessToken) {
                 throw new Error("Authentication token not found.");
             }
-            await instructorService.updateInstructor(instructorDetails.id, payload, session.accessToken);
+            const response = await instructorService.updateInstructor(instructorDetails.id, payload, session.accessToken);
             
-            const updatedDetails = { ...editableInstructorDetails, profileImage: imagePreviewUrl };
-            setInstructorDetails(updatedDetails);
+            const updatedDataFromServer = response.payload;
+
+            const formattedUpdatedDetails = {
+                id: updatedDataFromServer.instructorId,
+                name: `${updatedDataFromServer.firstName} ${updatedDataFromServer.lastName}`,
+                firstName: updatedDataFromServer.firstName,
+                lastName: updatedDataFromServer.lastName,
+                email: updatedDataFromServer.email,
+                phone: updatedDataFromServer.phone,
+                major: updatedDataFromServer.major,
+                degree: updatedDataFromServer.degree,
+                department: updatedDataFromServer.departmentName,
+                departmentId: updatedDataFromServer.departmentId,
+                status: updatedDataFromServer.archived ? 'archived' : 'active',
+                profileImage: updatedDataFromServer.profile || null,
+                address: updatedDataFromServer.address,
+            };
+
+            setInstructorDetails(formattedUpdatedDetails);
+            setEditableInstructorDetails(formattedUpdatedDetails);
+            setImagePreviewUrl(formattedUpdatedDetails.profileImage);
+            setProfileImageFile(null);
+            
             setIsEditingGeneral(false);
             setSuccessMessage("General information updated successfully!");
         } catch (err) {
@@ -150,6 +192,7 @@ export default function InstructorDetailClientView({ initialInstructor, allDepar
         if (section === 'general') {
             setEditableInstructorDetails({ ...instructorDetails });
             setImagePreviewUrl(instructorDetails.profileImage);
+            setProfileImageFile(null);
             setIsEditingGeneral(false);
         } else if (section === 'password') {
             setNewPassword('');
@@ -168,12 +211,13 @@ export default function InstructorDetailClientView({ initialInstructor, allDepar
     const handleFileChange = (e) => {
         const file = e.target.files[0];
         if (file) {
+            setProfileImageFile(file);
             const reader = new FileReader();
             reader.onloadend = () => {
                 setImagePreviewUrl(reader.result);
-                if (!isEditingGeneral) setIsEditingGeneral(true);
             };
             reader.readAsDataURL(file);
+            if (!isEditingGeneral) setIsEditingGeneral(true);
         }
     };
 
@@ -266,7 +310,7 @@ export default function InstructorDetailClientView({ initialInstructor, allDepar
                                 <h2 className="text-sm font-semibold text-gray-900 dark:text-white">{currentData.name}</h2>
                                 <p className="text-xs text-gray-500 dark:text-gray-400">Instructor</p>
                             </div>
-                            <button type="button" onClick={handleUploadButtonClick} disabled={isUploading} className="w-full rounded-md mt-2 px-3 py-2 text-xs font-semibold text-white shadow-sm ring-1 ring-inset bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed dark:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600">
+                            <button type="button" onClick={handleUploadButtonClick} disabled={isUploading || !isEditingGeneral} className="w-full rounded-md mt-2 px-3 py-2 text-xs font-semibold text-white shadow-sm ring-1 ring-inset bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed dark:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600">
                                 {isUploading ? 'Uploading...' : 'Upload Photo'}
                             </button>
                             <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" className="sr-only" />
@@ -279,8 +323,11 @@ export default function InstructorDetailClientView({ initialInstructor, allDepar
                         <div className="section-title font-semibold text-sm text-num-dark-text dark:text-white mb-3">General Information</div>
                         <div className="form-row flex gap-3 mb-2 flex-wrap">{renderTextField("First Name", "firstName", currentData.firstName, isEditingGeneral)}{renderTextField("Last Name", "lastName", currentData.lastName, isEditingGeneral)}</div>
                         <div className="form-row flex gap-3 mb-2 flex-wrap">{renderTextField("Email", "email", currentData.email, isEditingGeneral, { type: 'email' })}{renderTextField("Phone Number", "phone", currentData.phone, isEditingGeneral, { type: 'tel' })}</div>
-                        <div className="form-row flex gap-3 mb-2 flex-wrap">{renderSelectField("Major", "major", currentData.major, majorOptions, isEditingGeneral)}{renderSelectField("Degree", "degree", currentData.degree, degreeOptions, isEditingGeneral)}</div>
-                        <div className="form-row flex gap-3 mb-2 flex-wrap">{renderSelectField("Faculty / Department", "department", currentData.department, allDepartments, isEditingGeneral, 'departmentId', 'name')}{renderTextField("Address", "address", currentData.address, isEditingGeneral)}</div>
+                        <div className="form-row flex gap-3 mb-2 flex-wrap">
+                            {renderTextField("Major", "major", currentData.major, isEditingGeneral)}
+                            {renderSelectField("Degree", "degree", currentData.degree, degreeOptions, isEditingGeneral)}
+                        </div>
+                        <div className="form-row flex gap-3 mb-2 flex-wrap">{renderSelectField("Department / Faculty", "department", currentData.department, allDepartments, isEditingGeneral, 'departmentId', 'name')}{renderTextField("Address", "address", currentData.address, isEditingGeneral)}</div>
                         <div className="form-actions flex justify-end items-center gap-3 mt-4">
                             {isEditingGeneral ? ( <> <button onClick={() => handleCancelClick('general')} className="back-button bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 shadow-custom-light rounded-md text-gray-800 dark:text-white border-none py-2 px-3 font-semibold text-xs cursor-pointer" disabled={loading}>Cancel</button><button onClick={() => handleSaveClick('general')} className="save-button bg-blue-600 hover:bg-blue-700 shadow-custom-light rounded-md text-white border-none py-2 px-3 font-semibold text-xs cursor-pointer" disabled={loading}>{loading ? "Saving..." : "Save Changes"}</button> </> ) : ( <> <button onClick={() => handleEditClick('general')} className="save-button bg-blue-600 hover:bg-blue-700 shadow-custom-light rounded-md text-white border-none py-2 px-3 font-semibold text-xs cursor-pointer" disabled={loading}>Edit Profile</button> </> )}
                         </div>
