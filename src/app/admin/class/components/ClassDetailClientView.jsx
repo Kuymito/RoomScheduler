@@ -116,6 +116,9 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
 
     const degreeFilterOptions = ['All', ...degreesOptions];
 
+    // New: Determine if the class is a weekend shift
+    const isWeekendShift = classData.shift?.includes('Weekend');
+
     const availableInstructors = useMemo(() => {
         if (!allInstructors || !Array.isArray(allInstructors)) return [];
         const assignedInstructorIds = new Set(Object.values(schedule).filter(day => day?.instructor).map(day => day.instructor.id));
@@ -254,7 +257,6 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
     
     const handleScheduledInstructorDragEnd = (e) => {
         if (draggedItem?.type === 'scheduled' && e.dataTransfer.dropEffect === 'none') {
-            // Unassign locally when dragged off
             setSchedule(prevSchedule => ({ ...prevSchedule, [draggedItem.originDay]: null }));
         }
         setDraggedItem(null);
@@ -264,14 +266,42 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
     const handleDayDragOver = (e) => { e.preventDefault(); if (draggedItem) e.dataTransfer.dropEffect = 'move'; };
     const handleDayDragEnter = (e, day) => { e.preventDefault(); if (draggedItem) setDragOverDay(day); };
     const handleDayDragLeave = (e, day) => { if (e.currentTarget.contains(e.relatedTarget)) return; if (dragOverDay === day) setDragOverDay(null); };
-    const handleDayDrop = (e, targetDay) => { e.preventDefault(); if (!draggedItem) return; const newSchedule = { ...schedule }; if (draggedItem.type === 'new') { newSchedule[targetDay] = { instructor: {id: draggedItem.item.id, name: draggedItem.item.name, profileImage: draggedItem.item.profileImage, degree: draggedItem.item.degree}, studyMode: 'in-class', }; } else if (draggedItem.type === 'scheduled') { const originDay = draggedItem.originDay; if (originDay === targetDay) { setDragOverDay(null); return; } const dataFromOriginDay = schedule[originDay]; const dataFromTargetDay = schedule[targetDay]; if (dataFromTargetDay?.instructor) { newSchedule[originDay] = { instructor: dataFromTargetDay.instructor, studyMode: dataFromTargetDay.studyMode}; newSchedule[targetDay] = { instructor: draggedItem.item, studyMode: dataFromOriginDay.studyMode}; } else { newSchedule[targetDay] = { instructor: draggedItem.item, studyMode: dataFromOriginDay.studyMode}; if (originDay) newSchedule[originDay] = null; } } setSchedule(newSchedule); setDragOverDay(null); };
+    
+    const handleDayDrop = (e, targetDay) => {
+        e.preventDefault();
+        if (!draggedItem) return;
+
+        const isTargetWeekend = targetDay === 'Sat' || targetDay === 'Sun';
+        if ((isWeekendShift && !isTargetWeekend) || (!isWeekendShift && isTargetWeekend)) {
+            setDragOverDay(null);
+            return;
+        }
+
+        const newSchedule = { ...schedule };
+        if (draggedItem.type === 'new') {
+            newSchedule[targetDay] = { instructor: {id: draggedItem.item.id, name: draggedItem.item.name, profileImage: draggedItem.item.profileImage, degree: draggedItem.item.degree}, studyMode: 'in-class', };
+        } else if (draggedItem.type === 'scheduled') {
+            const originDay = draggedItem.originDay;
+            if (originDay === targetDay) {
+                setDragOverDay(null);
+                return;
+            }
+            const dataFromOriginDay = schedule[originDay];
+            const dataFromTargetDay = schedule[targetDay];
+            if (dataFromTargetDay?.instructor) {
+                newSchedule[originDay] = { instructor: dataFromTargetDay.instructor, studyMode: dataFromTargetDay.studyMode};
+                newSchedule[targetDay] = { instructor: draggedItem.item, studyMode: dataFromOriginDay.studyMode};
+            } else {
+                newSchedule[targetDay] = { instructor: draggedItem.item, studyMode: dataFromOriginDay.studyMode};
+                if (originDay) newSchedule[originDay] = null;
+            }
+        }
+        setSchedule(newSchedule);
+        setDragOverDay(null);
+    };
     
     const handleRemoveInstructorFromDay = (day) => {
-        // Just update the local state. The save function will handle the API call.
-        setSchedule(prevSchedule => ({
-            ...prevSchedule,
-            [day]: null,
-        }));
+        setSchedule(prevSchedule => ({ ...prevSchedule, [day]: null, }));
     };
 
     const handleStudyModeChange = (day, newMode) => { setSchedule(prevSchedule => { if (prevSchedule[day]?.instructor) { return { ...prevSchedule, [day]: { ...prevSchedule[day], studyMode: newMode } }; } return prevSchedule; }); };
@@ -287,31 +317,21 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
 
         const promises = [];
 
-        // Assignments and Updates
         Object.entries(schedule).forEach(([day, dayData]) => {
             if (dayData && dayData.instructor) {
                 const apiDay = clientDayToApiDay[day];
                 if (apiDay) {
-                    const payload = {
-                        classId: classData.id,
-                        instructorId: dayData.instructor.id,
-                        dayOfWeek: apiDay,
-                        online: dayData.studyMode === 'online',
-                    };
+                    const payload = { classId: classData.id, instructorId: dayData.instructor.id, dayOfWeek: apiDay, online: dayData.studyMode === 'online', };
                     promises.push(classService.assignInstructorToClass(payload, session.accessToken));
                 }
             }
         });
 
-        // Unassignments
         Object.entries(initialScheduleForCheck).forEach(([day, dayData]) => {
             if (dayData && dayData.instructor && (!schedule[day] || !schedule[day].instructor)) {
                 const apiDay = clientDayToApiDay[day];
                 if (apiDay) {
-                    const payload = {
-                        classId: classData.id,
-                        dayOfWeek: apiDay,
-                    };
+                    const payload = { classId: classData.id, dayOfWeek: apiDay, };
                     promises.push(classService.unassignInstructorFromClass(payload, session.accessToken));
                 }
             }
@@ -412,14 +432,54 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
                     <div id="weeklySchedulePanel" className='flex-1 p-4 sm:p-6 bg-white border border-num-gray-light dark:bg-gray-800 dark:border-gray-700 shadow-custom-light rounded-lg flex flex-col'>
                         <h3 className="text-base sm:text-lg font-semibold mb-6 text-num-dark-text dark:text-gray-100 border-b dark:border-gray-600 pb-2">Weekly Class Schedule - {classData.name}</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-7 gap-1">
-                            {daysOfWeek.map((day) => (
-                                <div key={day} onDragOver={handleDayDragOver} onDragEnter={(e) => handleDayDragEnter(e, day)} onDragLeave={(e) => handleDayDragLeave(e, day)} onDrop={(e) => handleDayDrop(e, day)}
-                                    className={`p-1 rounded-lg min-h-[220px] flex flex-col justify-start items-center group border-2 transition-all duration-200 ease-in-out ${dragOverDay === day && draggedItem ? 'bg-emerald-50 dark:bg-emerald-800 border-emerald-400 dark:border-emerald-500 ring-1 ring-emerald-300' : 'bg-gray-50 dark:bg-gray-800 border-dashed border-gray-300 dark:border-gray-600 hover:border-gray-400'}`}>
-                                    <h4 className="text-sm sm:text-base font-semibold text-gray-700 dark:text-gray-200 mb-3 select-none pt-1">{day}</h4>
-                                    {schedule[day]?.instructor ? (<ScheduledInstructorCard instructorData={schedule[day]} day={day} onDragStart={handleScheduledInstructorDragStart} onDragEnd={handleScheduledInstructorDragEnd} onRemove={handleRemoveInstructorFromDay} studyMode={schedule[day].studyMode} onStudyModeChange={handleStudyModeChange}/>) : 
-                                    (<div className="flex-grow flex items-center justify-center text-xs text-gray-400 dark:text-gray-500 italic select-none px-2 text-center">Drag instructor here</div>)}
-                                </div>
-                            ))}
+                            {daysOfWeek.map((day) => {
+                                const isDayWeekend = day === 'Sat' || day === 'Sun';
+                                const isValidDropTarget = (isWeekendShift && isDayWeekend) || (!isWeekendShift && !isDayWeekend);
+
+                                return (
+                                    <div 
+                                        key={day} 
+                                        onDragOver={isValidDropTarget ? handleDayDragOver : null} 
+                                        onDragEnter={isValidDropTarget ? (e) => handleDayDragEnter(e, day) : null} 
+                                        onDragLeave={isValidDropTarget ? (e) => handleDayDragLeave(e, day) : null} 
+                                        onDrop={isValidDropTarget ? (e) => handleDayDrop(e, day) : null}
+                                        className={`p-1 rounded-lg min-h-[220px] flex flex-col justify-start items-center group border-2 transition-all duration-200 ease-in-out 
+                                            ${!isValidDropTarget 
+                                                ? 'bg-gray-200 dark:bg-gray-900 cursor-not-allowed opacity-60' 
+                                                : dragOverDay === day && draggedItem 
+                                                    ? 'bg-emerald-50 dark:bg-emerald-800 border-emerald-400 dark:border-emerald-500 ring-1 ring-emerald-300' 
+                                                    : 'bg-gray-50 dark:bg-gray-800 border-dashed border-gray-300 dark:border-gray-600 hover:border-gray-400'
+                                            }`
+                                        }
+                                    >
+                                        <h4 className="text-sm sm:text-base font-semibold text-gray-700 dark:text-gray-200 mb-3 select-none pt-1">{day}</h4>
+                                        
+                                        {!isValidDropTarget && (
+                                            <div className="flex-grow flex items-center justify-center text-xs text-gray-400 dark:text-gray-500 italic select-none px-2 text-center">
+                                                Not available for this shift
+                                            </div>
+                                        )}
+
+                                        {isValidDropTarget && (
+                                            schedule[day]?.instructor ? (
+                                                <ScheduledInstructorCard 
+                                                    instructorData={schedule[day]} 
+                                                    day={day} 
+                                                    onDragStart={handleScheduledInstructorDragStart} 
+                                                    onDragEnd={handleScheduledInstructorDragEnd} 
+                                                    onRemove={handleRemoveInstructorFromDay} 
+                                                    studyMode={schedule[day].studyMode} 
+                                                    onStudyModeChange={handleStudyModeChange}
+                                                />
+                                            ) : (
+                                                <div className="flex-grow flex items-center justify-center text-xs text-gray-400 dark:text-gray-500 italic select-none px-2 text-center">
+                                                    Drag instructor here
+                                                </div>
+                                            )
+                                        )}
+                                    </div>
+                                );
+                            })}
                         </div>
                         <div className="mt-auto pt-6 border-t border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row justify-between items-center gap-4">
                             <div className="flex flex-col items-start gap-1 w-full sm:w-auto">
