@@ -26,10 +26,34 @@ const formatPhoneNumber = (phone) => {
     return phone;
 };
 
+const ErrorToast = ({ message, onClose }) => {
+    if (!message) return null;
+  
+    useEffect(() => {
+      const timer = setTimeout(() => {
+        onClose();
+      }, 5000); // Auto-dismiss after 5 seconds
+  
+      return () => clearTimeout(timer);
+    }, [message, onClose]);
+  
+    return (
+      <div className="fixed top-24 right-6 bg-red-500 text-white py-3 px-5 rounded-lg shadow-lg z-50 animate-fade-in-scale">
+        <div className="flex items-center justify-between">
+          <p className="font-semibold">{message}</p>
+          <button onClick={onClose} className="ml-4 text-white hover:text-red-100">
+            &#x2715;
+          </button>
+        </div>
+      </div>
+    );
+};
+
 export default function InstructorClientView({ initialInstructors, initialDepartments }) {
     const router = useRouter();
     const { data: session } = useSession();
     const [isLoading, setIsLoading] = useState(true);
+    const [toastMessage, setToastMessage] = useState('');
 
     const { data: instructors, error: instructorsError, mutate: mutateInstructors } = useSWR(
         session?.accessToken ? ['/api/v1/instructors', session.accessToken] : null,
@@ -119,10 +143,47 @@ export default function InstructorClientView({ initialInstructors, initialDepart
         setCurrentPage(1);
     };
     
-    const toggleInstructorStatus = (id) => {
-        setInstructorData(prevData =>
-            prevData.map(item => item.id === id ? { ...item, status: item.status === 'active' ? 'archived' : 'active' } : item)
+    const toggleInstructorStatus = async (id) => {
+        const instructorToUpdate = instructorData.find(item => item.id === id);
+        if (!instructorToUpdate) return;
+
+        // If instructor is active, check schedule before archiving
+        if (instructorToUpdate.status === 'active') {
+            try {
+                const schedule = await instructorService.getInstructorSchedule(id, session.accessToken);
+                if (schedule && schedule.length > 0) {
+                    setToastMessage("Cannot archive instructor with an active schedule.");
+                    return; // Stop the archiving process
+                }
+            } catch (error) {
+                setToastMessage(`Error checking schedule: ${error.message}`);
+                return;
+            }
+        }
+
+        // Optimistic UI update
+        const originalData = [...instructorData];
+        const updatedData = instructorData.map(item =>
+            item.id === id ? { ...item, status: item.status === 'active' ? 'archived' : 'active' } : item
         );
+        setInstructorData(updatedData);
+
+        const isArchiving = instructorToUpdate.status === 'active';
+
+        try {
+            if (!session?.accessToken) {
+                throw new Error("Authentication token not found.");
+            }
+            // Call the new service function
+            await instructorService.archiveInstructor(id, isArchiving, session.accessToken);
+            // Re-fetch the data to ensure consistency with the server
+            mutateInstructors();
+        } catch (error) {
+            console.error("Failed to update instructor status:", error);
+            // Revert the UI change if the API call fails
+            setInstructorData(originalData);
+            setToastMessage(`Failed to update status: ${error.message}`);
+        }
     };
 
     const filteredInstructorData = useMemo(() => {
@@ -184,6 +245,7 @@ export default function InstructorClientView({ initialInstructors, initialDepart
 
     return (
         <div className="p-6 dark:text-white">
+            <ErrorToast message={toastMessage} onClose={() => setToastMessage('')} />
             <SuccessPopup
                 show={showSuccessPopup}
                 onClose={() => setShowSuccessPopup(false)}
@@ -286,14 +348,14 @@ export default function InstructorClientView({ initialInstructors, initialDepart
                 </span>
                 <div className="flex items-center gap-2 text-xs">
                     <label htmlFor="items-per-page" className="text-xs font-normal text-gray-500 dark:text-gray-400">Items per page:</label>
-                    <select id="items-per-page" className="bg-gray-50 text-xs border border-gray-300 text-gray-900 rounded-full focus:ring-blue-500 focus:border-blue-500 px-2 py-1 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" value={itemsPerPage} onChange={handleItemsPerPageChange}>
+                    <select id="items-per-page" className="bg-gray-50 text-xs border border-gray-300 text-gray-900 rounded-full focus:ring-blue-500 focus:border-blue-500 px-2 py-1 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white" value={itemsPerPage} onChange={handleItemsPerPageChange}>
                         {itemsPerPageOptions.map(option => (<option key={option} value={option}>{option}</option>))}
                     </select>
                 </div>
                 <ul className="inline-flex -space-x-px rtl:space-x-reverse text-xs h-8">
                     <li><button onClick={goToPreviousPage} disabled={currentPage === 1 || isPending} className="flex items-center justify-center px-3 h-8 ms-0 leading-tight text-gray-500 bg-white border border-gray-300 rounded-s-lg hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white disabled:opacity-50 disabled:cursor-not-allowed">Previous</button></li>
                     {getPageNumbers().map((pageNumber) => (
-                        <li key={pageNumber}><button onClick={() => goToPage(pageNumber)} disabled={isPending} className={`flex items-center justify-center px-3 h-8 leading-tight border border-gray-300 ${currentPage === pageNumber ? 'text-blue-600 bg-blue-50 hover:bg-blue-100 hover:text-blue-700 dark:bg-gray-700 dark:text-white' : 'text-gray-500 bg-white hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white'} disabled:opacity-50 disabled:cursor-not-allowed`}>{pageNumber}</button></li>
+                        <li key={pageNumber}><button onClick={() => goToPage(pageNumber)} disabled={isPending} className={`flex items-center justify-center px-3 h-8 leading-tight border border-gray-300 ${currentPage === pageNumber ? 'text-blue-600 bg-blue-50 hover:bg-blue-100 hover:text-blue-700 dark:bg-gray-700 dark:text-white' : 'text-gray-500 bg-white hover:bg-gray-100 dark:bg-gray-800 dark:hover:bg-gray-700'} disabled:opacity-50 disabled:cursor-not-allowed`}>{pageNumber}</button></li>
                     ))}
                     <li><button onClick={goToNextPage} disabled={currentPage === totalPages || isPending} className="flex items-center justify-center px-3 h-8 leading-tight text-gray-500 bg-white border border-gray-300 rounded-e-lg hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white disabled:opacity-50 disabled:cursor-not-allowed">Next</button></li>
                 </ul>

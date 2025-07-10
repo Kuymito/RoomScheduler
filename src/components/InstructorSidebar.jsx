@@ -65,7 +65,7 @@ const InstructorSidebar = ({ isCollapsed, activeItem, onNavItemClick, navigating
             </div>
             <hr className="border-t border-num-gray-light dark:border-gray-700" />
             <div className="profile-info flex flex-col items-center my-7 overflow-hidden">
-                <div className={`profile-avatar rounded-full mb-2.5 flex justify-center items-center ${isCollapsed ? 'w-10 h-10' : 'w-20 h-20'}`}>
+                <div className={`profile-avatar rounded-full mb-4 flex justify-center items-center ${isCollapsed ? 'w-10 h-10' : 'w-20 h-20'}`}>
                     {isLoading ? (
                          <div className={`rounded-full bg-gray-300 dark:bg-gray-600 animate-pulse ${isCollapsed ? 'h-10 w-10' : 'h-[70px] w-[70px]'}`}></div>
                     ) : user?.profile ? (

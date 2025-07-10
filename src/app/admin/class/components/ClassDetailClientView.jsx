@@ -7,6 +7,7 @@ import html2canvas from 'html2canvas';
 import { classService } from '@/services/class.service';
 import { useSession } from 'next-auth/react';
 import SuccessPopup from '../../profile/components/SuccessPopup';
+import SuccessPopup from '../../profile/components/SuccessPopup';
 
 const DefaultAvatarIcon = ({ className = "w-9 h-9" }) => (
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1} stroke="currentColor" className={className}>
@@ -15,11 +16,11 @@ const DefaultAvatarIcon = ({ className = "w-9 h-9" }) => (
 );
 
 const shiftMap = {
-    'Morning Shift (07:00:00 - 10:00:00, Weekday)': 1,
-    'Noon Shift (10:30:00 - 13:30:00, Weekday)': 2,
-    'Afternoon Shift (14:00:00 - 17:00:00, Weekday)': 3,
-    'Evening Shift (17:30:00 - 20:30:00, Weekday)': 4,
-    'Weekend Shift (07:30:00 - 17:00:00, Weekend)': 5
+    'Morning Shift': 1,
+    'Noon Shift': 2,
+    'Afternoon Shift': 3,
+    'Evening Shift': 4,
+    'Weekend Shift': 5
 };
 
 const clientDayToApiDay = {
@@ -31,6 +32,35 @@ const clientDayToApiDay = {
     Sat: 'SATURDAY',
     Sun: 'SUNDAY',
 };
+
+// --- Integrated Error Toast Component ---
+const ErrorToast = ({ show, message, onClose }) => {
+    useEffect(() => {
+        if (show) {
+            const timer = setTimeout(() => {
+                onClose();
+            }, 5000); // Auto-close after 5 seconds
+            return () => clearTimeout(timer);
+        }
+    }, [show, onClose]);
+
+    if (!show) return null;
+
+    return (
+        <div className="fixed top-24 right-6 bg-red-500 text-white py-3 px-5 rounded-lg shadow-lg z-50 animate-fade-in-scale">
+            <div className="flex items-center justify-between">
+                <p className="font-semibold mr-4">{message}</p>
+                <button onClick={onClose} className="-mr-1 p-1 rounded-full text-white hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-white">
+                    <span className="sr-only">Close</span>
+                    <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+    );
+};
+
 
 const ScheduledInstructorCard = ({ instructorData, day, onDragStart, onDragEnd, onRemove, studyMode, onStudyModeChange }) => {
     if (!instructorData || !instructorData.instructor) return null;
@@ -95,6 +125,7 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
     const [isNameManuallySet, setIsNameManuallySet] = useState(false);
     const [showSuccessPopup, setShowSuccessPopup] = useState(false);
     const [successPopupMessage, setSuccessPopupMessage] = useState('');
+    const [errorToast, setErrorToast] = useState({ show: false, message: '' });
     
     const daysOfWeek = useMemo(() => ['Mon', 'Tue', 'Wed', 'Thur', 'Fri', 'Sat', 'Sun'], []);
     
@@ -129,6 +160,8 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
     const statusOptions = ['Active', 'Archived'];
 
     const degreeFilterOptions = ['All', ...degreesOptions];
+
+    const isWeekendShift = classData.shift?.includes('Weekend');
 
     const availableInstructors = useMemo(() => {
         if (!allInstructors || !Array.isArray(allInstructors)) return [];
@@ -293,7 +326,39 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
     const handleDayDragOver = (e) => { e.preventDefault(); if (draggedItem) e.dataTransfer.dropEffect = 'move'; };
     const handleDayDragEnter = (e, day) => { e.preventDefault(); if (draggedItem) setDragOverDay(day); };
     const handleDayDragLeave = (e, day) => { if (e.currentTarget.contains(e.relatedTarget)) return; if (dragOverDay === day) setDragOverDay(null); };
-    const handleDayDrop = (e, targetDay) => { e.preventDefault(); if (!draggedItem) return; const newSchedule = { ...schedule }; if (draggedItem.type === 'new') { newSchedule[targetDay] = { instructor: {id: draggedItem.item.id, name: draggedItem.item.name, profileImage: draggedItem.item.profileImage, degree: draggedItem.item.degree}, studyMode: 'in-class', }; } else if (draggedItem.type === 'scheduled') { const originDay = draggedItem.originDay; if (originDay === targetDay) { setDragOverDay(null); return; } const dataFromOriginDay = schedule[originDay]; const dataFromTargetDay = schedule[targetDay]; if (dataFromTargetDay?.instructor) { newSchedule[originDay] = { instructor: dataFromTargetDay.instructor, studyMode: dataFromTargetDay.studyMode}; newSchedule[targetDay] = { instructor: draggedItem.item, studyMode: dataFromOriginDay.studyMode}; } else { newSchedule[targetDay] = { instructor: draggedItem.item, studyMode: dataFromOriginDay.studyMode}; if (originDay) newSchedule[originDay] = null; } } setSchedule(newSchedule); setDragOverDay(null); };
+    
+    const handleDayDrop = (e, targetDay) => {
+        e.preventDefault();
+        if (!draggedItem) return;
+    
+        const isTargetWeekend = targetDay === 'Sat' || targetDay === 'Sun';
+        if ((isWeekendShift && !isTargetWeekend) || (!isWeekendShift && isTargetWeekend)) {
+            setDragOverDay(null);
+            return;
+        }
+    
+        const newSchedule = { ...schedule };
+        if (draggedItem.type === 'new') {
+            newSchedule[targetDay] = { instructor: {id: draggedItem.item.id, name: draggedItem.item.name, profileImage: draggedItem.item.profileImage, degree: draggedItem.item.degree}, studyMode: 'in-class', };
+        } else if (draggedItem.type === 'scheduled') {
+            const originDay = draggedItem.originDay;
+            if (originDay === targetDay) {
+                setDragOverDay(null);
+                return;
+            }
+            const dataFromOriginDay = schedule[originDay];
+            const dataFromTargetDay = schedule[targetDay];
+            if (dataFromTargetDay?.instructor) { // Swap
+                newSchedule[originDay] = { instructor: dataFromTargetDay.instructor, studyMode: dataFromTargetDay.studyMode};
+                newSchedule[targetDay] = { instructor: draggedItem.item, studyMode: dataFromOriginDay.studyMode};
+            } else { // Move
+                newSchedule[targetDay] = { instructor: draggedItem.item, studyMode: dataFromOriginDay.studyMode};
+                if (originDay) newSchedule[originDay] = null;
+            }
+        }
+        setSchedule(newSchedule);
+        setDragOverDay(null);
+    };
     
     const handleRemoveInstructorFromDay = (day) => {
         setSchedule(prevSchedule => ({
@@ -312,19 +377,19 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
         setIsSaving(true);
         setSaveStatus('saving');
         setSaveMessage('Saving schedule...');
+        setErrorToast({ show: false, message: '' }); // Reset error toast
 
         const promises = [];
+        const originalSchedule = JSON.parse(JSON.stringify(initialScheduleForCheck));
 
         Object.entries(schedule).forEach(([day, dayData]) => {
-            if (dayData && dayData.instructor) {
+            const originalDayData = originalSchedule[day];
+            const hasChanged = JSON.stringify(dayData) !== JSON.stringify(originalDayData);
+
+            if (dayData && dayData.instructor && hasChanged) {
                 const apiDay = clientDayToApiDay[day];
                 if (apiDay) {
-                    const payload = {
-                        classId: classData.id,
-                        instructorId: dayData.instructor.id,
-                        dayOfWeek: apiDay,
-                        online: dayData.studyMode === 'online',
-                    };
+                    const payload = { classId: classData.id, instructorId: dayData.instructor.id, dayOfWeek: apiDay, online: dayData.studyMode === 'online', };
                     promises.push(classService.assignInstructorToClass(payload, session.accessToken));
                 }
             }
@@ -334,10 +399,7 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
             if (dayData && dayData.instructor && (!schedule[day] || !schedule[day].instructor)) {
                 const apiDay = clientDayToApiDay[day];
                 if (apiDay) {
-                    const payload = {
-                        classId: classData.id,
-                        dayOfWeek: apiDay,
-                    };
+                    const payload = { classId: classData.id, dayOfWeek: apiDay, };
                     promises.push(classService.unassignInstructorFromClass(payload, session.accessToken));
                 }
             }
@@ -348,10 +410,15 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
             setSaveStatus('success');
             setSaveMessage('Schedule saved successfully!');
             setInitialScheduleForCheck(JSON.parse(JSON.stringify(schedule)));
+            // Success is handled by the main success popup, so no success toast needed here.
         } catch (error) {
             console.error('Failed to save schedule:', error);
             setSaveStatus('error');
             setSaveMessage(error.message || 'An error occurred while saving.');
+            setErrorToast({ show: true, message: error.message || 'An error occurred while saving.' });
+            
+            // Revert schedule to original state on error
+            setSchedule(originalSchedule);
         } finally {
             setIsSaving(false);
             setTimeout(() => {
@@ -477,6 +544,11 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
                 </div>
             )}
 
+            <ErrorToast
+                show={errorToast.show}
+                message={errorToast.message}
+                onClose={() => setErrorToast({ ...errorToast, show: false })}
+            />
             <SuccessPopup
                 show={showSuccessPopup}
                 onClose={() => setShowSuccessPopup(false)}
@@ -546,14 +618,54 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
                     <div id="weeklySchedulePanel" className='flex-1 p-4 sm:p-6 bg-white border border-num-gray-light dark:bg-gray-800 dark:border-gray-700 shadow-custom-light rounded-lg flex flex-col'>
                         <h3 className="text-base sm:text-lg font-semibold mb-6 text-num-dark-text dark:text-gray-100 border-b dark:border-gray-600 pb-2">Weekly Class Schedule - {classData.name}</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-7 gap-1">
-                            {daysOfWeek.map((day) => (
-                                <div key={day} onDragOver={handleDayDragOver} onDragEnter={(e) => handleDayDragEnter(e, day)} onDragLeave={(e) => handleDayDragLeave(e, day)} onDrop={(e) => handleDayDrop(e, day)}
-                                    className={`p-1 rounded-lg min-h-[220px] flex flex-col justify-start group border-2 transition-all duration-200 ease-in-out ${dragOverDay === day && draggedItem ? 'bg-emerald-50 dark:bg-emerald-800 border-emerald-400 dark:border-emerald-500 ring-1 ring-emerald-300' : 'bg-gray-50 dark:bg-gray-800 border-dashed border-gray-300 dark:border-gray-600 hover:border-gray-400'}`}>
-                                    <h4 className="text-sm sm:text-base text-center font-semibold text-gray-700 dark:text-gray-200 mb-3 select-none pt-1">{day}</h4>
-                                    {schedule[day]?.instructor ? (<ScheduledInstructorCard instructorData={schedule[day]} day={day} onDragStart={handleScheduledInstructorDragStart} onDragEnd={handleScheduledInstructorDragEnd} onRemove={handleRemoveInstructorFromDay} studyMode={schedule[day].studyMode} onStudyModeChange={handleStudyModeChange}/>) : 
-                                    (<div className="flex-grow flex items-center justify-center text-xs text-gray-400 dark:text-gray-500 italic select-none px-2 text-center">Drag instructor here</div>)}
-                                </div>
-                            ))}
+                            {daysOfWeek.map((day) => {
+                                const isDayWeekend = day === 'Sat' || day === 'Sun';
+                                const isValidDropTarget = (isWeekendShift && isDayWeekend) || (!isWeekendShift && !isDayWeekend);
+
+                                return (
+                                    <div 
+                                        key={day} 
+                                        onDragOver={isValidDropTarget ? handleDayDragOver : null} 
+                                        onDragEnter={isValidDropTarget ? (e) => handleDayDragEnter(e, day) : null} 
+                                        onDragLeave={isValidDropTarget ? (e) => handleDayDragLeave(e, day) : null} 
+                                        onDrop={isValidDropTarget ? (e) => handleDayDrop(e, day) : null}
+                                        className={`p-1 rounded-lg min-h-[220px] flex flex-col justify-start group border-2 transition-all duration-200 ease-in-out 
+                                            ${!isValidDropTarget 
+                                                ? 'bg-gray-200 dark:bg-gray-900 cursor-not-allowed opacity-60' 
+                                                : dragOverDay === day && draggedItem 
+                                                    ? 'bg-emerald-50 dark:bg-emerald-800 border-emerald-400 dark:border-emerald-500 ring-1 ring-emerald-300' 
+                                                    : 'bg-gray-50 dark:bg-gray-800 border-dashed border-gray-300 dark:border-gray-600 hover:border-gray-400'
+                                            }`
+                                        }
+                                    >
+                                        <h4 className="text-sm sm:text-base text-center font-semibold text-gray-700 dark:text-gray-200 mb-3 select-none pt-1">{day}</h4>
+                                        
+                                        {!isValidDropTarget && (
+                                            <div className="flex-grow flex items-center justify-center text-xs text-gray-400 dark:text-gray-500 italic select-none px-2 text-center">
+                                                Not available for this shift
+                                            </div>
+                                        )}
+
+                                        {isValidDropTarget && (
+                                            schedule[day]?.instructor ? (
+                                                <ScheduledInstructorCard 
+                                                    instructorData={schedule[day]} 
+                                                    day={day} 
+                                                    onDragStart={handleScheduledInstructorDragStart} 
+                                                    onDragEnd={handleScheduledInstructorDragEnd} 
+                                                    onRemove={handleRemoveInstructorFromDay} 
+                                                    studyMode={schedule[day].studyMode} 
+                                                    onStudyModeChange={handleStudyModeChange}
+                                                />
+                                            ) : (
+                                                <div className="flex-grow flex items-center justify-center text-xs text-gray-400 dark:text-gray-500 italic select-none px-2 text-center">
+                                                    Drag instructor here
+                                                </div>
+                                            )
+                                        )}
+                                    </div>
+                                );
+                            })}
                         </div>
                         <div className="mt-auto pt-6 border-t border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row justify-between items-center gap-4">
                             <div className="flex flex-col items-start gap-1 w-full sm:w-auto">
