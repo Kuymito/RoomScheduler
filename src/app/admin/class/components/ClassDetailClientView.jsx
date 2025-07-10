@@ -6,7 +6,8 @@ import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { classService } from '@/services/class.service';
 import { useSession } from 'next-auth/react';
-import SuccessPopup from '../../profile/components/SuccessPopup'; // Import the SuccessPopup component
+import SuccessPopup from '../../profile/components/SuccessPopup';
+import Toast from './Toast'; // Import the new Toast component
 
 // --- Reusable Components & Constants ---
 const DefaultAvatarIcon = ({ className = "w-9 h-9" }) => (
@@ -15,11 +16,11 @@ const DefaultAvatarIcon = ({ className = "w-9 h-9" }) => (
 );
 
 const shiftMap = {
-    'Morning Shift (07:00:00 - 10:00:00, Weekday)': 1,
-    'Noon Shift (10:30:00 - 13:30:00, Weekday)': 2,
-    'Afternoon Shift (14:00:00 - 17:00:00, Weekday)': 3,
-    'Evening Shift (17:30:00 - 20:30:00, Weekday)': 4,
-    'Weekend Shift (07:30:00 - 17:00:00, Weekend)': 5
+    'Morning Shift': 1,
+    'Noon Shift': 2,
+    'Afternoon Shift': 3,
+    'Evening Shift': 4,
+    'Weekend Shift': 5
 };
 
 const clientDayToApiDay = {
@@ -84,6 +85,7 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
     const [isNameManuallySet, setIsNameManuallySet] = useState(false);
     const [showSuccessPopup, setShowSuccessPopup] = useState(false);
     const [successPopupMessage, setSuccessPopupMessage] = useState('');
+    const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
     
     const daysOfWeek = useMemo(() => ['Mon', 'Tue', 'Wed', 'Thur', 'Fri', 'Sat', 'Sun'], []);
     
@@ -116,7 +118,6 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
 
     const degreeFilterOptions = ['All', ...degreesOptions];
 
-    // New: Determine if the class is a weekend shift
     const isWeekendShift = classData.shift?.includes('Weekend');
 
     const availableInstructors = useMemo(() => {
@@ -270,13 +271,13 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
     const handleDayDrop = (e, targetDay) => {
         e.preventDefault();
         if (!draggedItem) return;
-
+    
         const isTargetWeekend = targetDay === 'Sat' || targetDay === 'Sun';
         if ((isWeekendShift && !isTargetWeekend) || (!isWeekendShift && isTargetWeekend)) {
             setDragOverDay(null);
             return;
         }
-
+    
         const newSchedule = { ...schedule };
         if (draggedItem.type === 'new') {
             newSchedule[targetDay] = { instructor: {id: draggedItem.item.id, name: draggedItem.item.name, profileImage: draggedItem.item.profileImage, degree: draggedItem.item.degree}, studyMode: 'in-class', };
@@ -288,10 +289,10 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
             }
             const dataFromOriginDay = schedule[originDay];
             const dataFromTargetDay = schedule[targetDay];
-            if (dataFromTargetDay?.instructor) {
+            if (dataFromTargetDay?.instructor) { // Swap
                 newSchedule[originDay] = { instructor: dataFromTargetDay.instructor, studyMode: dataFromTargetDay.studyMode};
                 newSchedule[targetDay] = { instructor: draggedItem.item, studyMode: dataFromOriginDay.studyMode};
-            } else {
+            } else { // Move
                 newSchedule[targetDay] = { instructor: draggedItem.item, studyMode: dataFromOriginDay.studyMode};
                 if (originDay) newSchedule[originDay] = null;
             }
@@ -314,11 +315,17 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
         setIsSaving(true);
         setSaveStatus('saving');
         setSaveMessage('Saving schedule...');
+        setToast({ show: false, message: '', type: 'success' });
 
         const promises = [];
+        const originalSchedule = JSON.parse(JSON.stringify(initialScheduleForCheck));
 
+        // Determine assignments to add/update
         Object.entries(schedule).forEach(([day, dayData]) => {
-            if (dayData && dayData.instructor) {
+            const originalDayData = originalSchedule[day];
+            const hasChanged = JSON.stringify(dayData) !== JSON.stringify(originalDayData);
+
+            if (dayData && dayData.instructor && hasChanged) {
                 const apiDay = clientDayToApiDay[day];
                 if (apiDay) {
                     const payload = { classId: classData.id, instructorId: dayData.instructor.id, dayOfWeek: apiDay, online: dayData.studyMode === 'online', };
@@ -327,7 +334,8 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
             }
         });
 
-        Object.entries(initialScheduleForCheck).forEach(([day, dayData]) => {
+        // Determine assignments to remove
+        Object.entries(originalSchedule).forEach(([day, dayData]) => {
             if (dayData && dayData.instructor && (!schedule[day] || !schedule[day].instructor)) {
                 const apiDay = clientDayToApiDay[day];
                 if (apiDay) {
@@ -342,10 +350,14 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
             setSaveStatus('success');
             setSaveMessage('Schedule saved successfully!');
             setInitialScheduleForCheck(JSON.parse(JSON.stringify(schedule)));
+            setToast({ show: true, message: 'Schedule saved successfully!', type: 'success' });
         } catch (error) {
             console.error('Failed to save schedule:', error);
             setSaveStatus('error');
             setSaveMessage(error.message || 'An error occurred while saving.');
+            setToast({ show: true, message: error.message || 'An error occurred while saving.', type: 'error' });
+            
+            setSchedule(originalSchedule);
         } finally {
             setIsSaving(false);
             setTimeout(() => {
@@ -366,6 +378,12 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
     
     return (
         <div className='p-6 dark:text-white'>
+            <Toast
+                show={toast.show}
+                message={toast.message}
+                type={toast.type}
+                onClose={() => setToast({ ...toast, show: false })}
+            />
             <SuccessPopup
                 show={showSuccessPopup}
                 onClose={() => setShowSuccessPopup(false)}

@@ -1,3 +1,5 @@
+// src/services/instructor.service.js
+
 import axios from 'axios';
 
 // Detect if the code is running on the server or the client.
@@ -143,6 +145,31 @@ const archiveInstructor = async (instructorId, isArchived, token) => {
   }
 };
 
+/**
+ * Fetches the schedule for a specific instructor.
+ * @param {string|number} instructorId - The ID of the instructor.
+ * @param {string} token - The authorization token.
+ * @returns {Promise<Array>} A promise that resolves to an array of schedule objects.
+ */
+const getInstructorSchedule = async (instructorId, token) => {
+  try {
+    const response = await axios.get(`${API_URL}/schedule/instructor/${instructorId}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        ...(isServer && { 'ngrok-skip-browser-warning': 'true' })
+      }
+    });
+    return response.data.payload || [];
+  } catch (error) {
+    console.error(`Get instructor schedule service error for ID ${instructorId}:`, {
+      message: error.message,
+      code: error.code,
+      response: error.response ? error.response.data : 'No response data'
+    });
+    throw new Error(error.response?.data?.message || `Failed to fetch schedule for instructor ${instructorId}.`);
+  }
+};
+
 
 export const instructorService = {
   getAllInstructors,
@@ -150,4 +177,5 @@ export const instructorService = {
   createInstructor,
   updateInstructor,
   archiveInstructor, // Added the new archive function
+  getInstructorSchedule, // Added the new schedule function
 };
