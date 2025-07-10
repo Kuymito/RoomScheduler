@@ -1,5 +1,5 @@
 import { Suspense } from 'react';
-import { notFound } from 'next/navigation';
+import { redirect } from 'next/navigation';
 import InstructorLayout from '@/components/InstructorLayout';
 import InstructorClassDetailSkeleton from '../components/InstructorClassDetailSkeleton';
 import InstructorClassDetailClientView from '../components/InstructorClassDetailClientView';
@@ -105,9 +105,9 @@ export default async function InstructorClassDetailsPage({ params }) {
     // Fetch data in parallel on the server
     const { classDetails, schedule } = await fetchInstructorClassDetails(classId);
     
-    // If class doesn't exist for this instructor, show a 404 page
+    // If class doesn't exist for this instructor, redirect to the class list page.
     if (!classDetails) {
-        notFound();
+        redirect('/instructor/class');
     }
 
     const breadcrumbs = [
