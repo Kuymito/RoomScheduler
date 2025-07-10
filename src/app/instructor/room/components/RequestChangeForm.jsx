@@ -21,7 +21,7 @@ const getNextDateForDay = (day) => {
 };
 
 // --- Custom Calendar Component ---
-const CustomDatePicker = ({ selectedDate, onDateChange, minDate }) => {
+const CustomDatePicker = ({ selectedDate, onDateChange, minDate, maxDate }) => {
     const [viewDate, setViewDate] = useState(selectedDate || new Date());
 
     const firstDayOfMonth = new Date(viewDate.getFullYear(), viewDate.getMonth(), 1);
@@ -52,6 +52,10 @@ const CustomDatePicker = ({ selectedDate, onDateChange, minDate }) => {
         if (minDate && newDate < minDate && !isSameDay(newDate, minDate)) {
              return; // Don't allow selection of past dates
         }
+        // FIX: Prevent selection of dates beyond the maximum allowed date
+        if (maxDate && newDate > maxDate) {
+            return;
+        }
         onDateChange(newDate);
     };
 
@@ -80,7 +84,11 @@ const CustomDatePicker = ({ selectedDate, onDateChange, minDate }) => {
                     const date = new Date(viewDate.getFullYear(), viewDate.getMonth(), day);
                     const isSelected = isSameDay(date, selectedDate);
                     const isToday = isSameDay(date, today);
-                    const isDisabled = minDate && date < minDate && !isSameDay(date, minDate);
+                    
+                    // FIX: Disable dates before minDate and after maxDate
+                    const isBeforeMin = minDate && date < minDate && !isSameDay(date, minDate);
+                    const isAfterMax = maxDate && date > maxDate;
+                    const isDisabled = isBeforeMin || isAfterMax;
 
                     return (
                         <div key={index} className="flex justify-center items-center">
@@ -110,6 +118,11 @@ const RequestChangeForm = ({ isOpen, onClose, onSave, roomDetails, instructorCla
     const { data: session } = useSession();
     const today = new Date();
     today.setHours(0, 0, 0, 0);
+
+    // FIX: Calculate the maximum selectable date (30 days from today)
+    const maxDate = new Date();
+    maxDate.setDate(today.getDate() + 30);
+    maxDate.setHours(23, 59, 59, 999); // Set to the end of the 30th day
 
     const timeSlotToShiftIdMap = {
         '07:00-10:00': 1,
@@ -255,6 +268,7 @@ const RequestChangeForm = ({ isOpen, onClose, onSave, roomDetails, instructorCla
                                     selectedDate={requestData.date}
                                     onDateChange={handleDateChange}
                                     minDate={today}
+                                    maxDate={maxDate} // Pass the maxDate prop
                                 />
                             )}
                         </div>
