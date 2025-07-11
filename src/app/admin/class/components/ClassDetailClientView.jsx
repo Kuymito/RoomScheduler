@@ -61,7 +61,7 @@ const ErrorToast = ({ show, message, onClose }) => {
 };
 
 
-const ScheduledInstructorCard = ({ instructorData, day, onDragStart, onDragEnd, onRemove, studyMode, onStudyModeChange }) => {
+const ScheduledInstructorCard = ({ instructorData, classDetails, day, onDragStart, onDragEnd, onRemove, studyMode, onStudyModeChange }) => {
     if (!instructorData || !instructorData.instructor) return null;
     const { instructor } = instructorData;
     const studyModes = [ { value: 'in-class', label: 'In Class' }, { value: 'online', label: 'Online' } ];
@@ -82,7 +82,7 @@ const ScheduledInstructorCard = ({ instructorData, day, onDragStart, onDragEnd, 
     }
 
     return (
-        <div className="w-full flex flex-col">
+        <div className="w-full flex flex-col flex-grow">
             <div className="mb-5 w-full relative">
                 <label htmlFor={`studyMode-${day}`} className="sr-only">Study Mode for {day}</label>
                 <select
@@ -98,7 +98,7 @@ const ScheduledInstructorCard = ({ instructorData, day, onDragStart, onDragEnd, 
                     {studyModes.find(m => m.value === studyMode)?.label}
                 </div>
             </div>
-            <div draggable onDragStart={(e) => onDragStart(e, instructor, day)} onDragEnd={onDragEnd} className={`${baseCardClasses} ${colorCardClasses}`}>
+            <div draggable onDragStart={(e) => onDragStart(e, instructor, day)} onDragEnd={onDragEnd} className={`${baseCardClasses} ${colorCardClasses} flex-grow`}>
                 {instructor.profileImage ? (<img src={instructor.profileImage} alt={instructor.name} className="w-10 h-10 rounded-full object-cover border-2 border-white dark:border-gray-400 mb-1" onError={(e) => { e.currentTarget.style.display = 'none'; const sibling = e.currentTarget.nextSibling; if(sibling) sibling.style.display = 'flex'; }}/>) : null}
                 {!instructor.profileImage && <DefaultAvatarIcon className={`w-10 h-10 flex-shrink-0 flex items-center justify-center mb-1`} /> }
                 <p className={`text-sm font-semibold truncate w-full scheduled-instructor-name ${cardTextColorClasses}`}>{instructor.name}</p>
@@ -407,14 +407,12 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
             setSaveStatus('success');
             setSaveMessage('Schedule saved successfully!');
             setInitialScheduleForCheck(JSON.parse(JSON.stringify(schedule)));
-            // Success is handled by the main success popup, so no success toast needed here.
         } catch (error) {
             console.error('Failed to save schedule:', error);
             setSaveStatus('error');
             setSaveMessage(error.message || 'An error occurred while saving.');
             setErrorToast({ show: true, message: error.message || 'An error occurred while saving.' });
             
-            // Revert schedule to original state on error
             setSchedule(originalSchedule);
         } finally {
             setIsSaving(false);
@@ -599,8 +597,8 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
                             {availableInstructors.length > 0 ? availableInstructors.map((instructor) => (
                                 <div key={instructor.id} draggable onDragStart={(e) => handleNewInstructorDragStart(e, instructor)} onDragEnd={handleNewInstructorDragEnd} className="p-2 bg-sky-50 dark:bg-sky-700 dark:hover:bg-sky-600 border border-sky-200 dark:border-sky-600 rounded-md shadow-sm hover:shadow-md cursor-grab active:cursor-grabbing transition-all flex items-center gap-3 group">
                                     {instructor.profileImage ? (<img src={instructor.profileImage} alt={instructor.name} className="w-10 h-10 rounded-full object-cover border border-gray-200 dark:border-gray-600 flex-shrink-0" onError={(e) => { e.currentTarget.style.display = 'none'; }}/>) : (<DefaultAvatarIcon className={`w-10 h-10 flex-shrink-0`} /> )}
-                                    <div className="flex-grow min-w-0 truncate">
-                                        <p className="text-sm font-medium text-sky-800 dark:text-sky-100 group-hover:text-sky-900 dark:group-hover:text-white">{instructor.name}</p>
+                                    <div className="flex-grow min-w-0">
+                                        <p className="text-sm font-medium text-sky-800 dark:text-sky-100 group-hover:text-sky-900 dark:group-hover:text-white truncate">{instructor.name}</p>
                                         {instructor.degree && (<p className="text-xs text-gray-500 dark:text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300">{instructor.degree}</p>)}
                                     </div>
                                 </div>)) : 
@@ -641,7 +639,8 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
                                         {isValidDropTarget && (
                                             schedule[day]?.instructor ? (
                                                 <ScheduledInstructorCard 
-                                                    instructorData={schedule[day]} 
+                                                    instructorData={schedule[day]}
+                                                    classDetails={classData}
                                                     day={day} 
                                                     onDragStart={handleScheduledInstructorDragStart} 
                                                     onDragEnd={handleScheduledInstructorDragEnd} 
