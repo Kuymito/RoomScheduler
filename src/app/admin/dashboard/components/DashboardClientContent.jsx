@@ -30,7 +30,7 @@ const getAcademicYear = () => {
  *
  * @param {object} props - The props received from the Server Component.
  * @param {object} props.dashboardStats - Statistics like classAssign, expired, etc.
- * @param {object} props.initialChartData - Initial data for the chart.
+ * @param {object} props.initialChartData - Initial data for the chart, including totalRoomCount.
  * @param {function} props.updateChartAction - Server Action to fetch updated chart data.
  */
 export default function DashboardClientContent({ dashboardStats, initialChartData, updateChartAction }) {

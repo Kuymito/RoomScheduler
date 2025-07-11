@@ -5,7 +5,7 @@ import dynamic from 'next/dynamic';
 
 // Lazy-load the chart component to reduce the initial JavaScript bundle size.
 const RoomAvailabilityChart = dynamic(() => import('./RoomAvailabilityChart'), {
-  loading: () => <div className="h-80 w-full rounded-lg bg-gray-200 dark:bg-gray-700 animate-pulse" />,
+  loading: () => <div className="h-96 w-full rounded-lg bg-gray-200 dark:bg-gray-700 animate-pulse" />,
   ssr: false, // Chart libraries often need browser APIs, so disable SSR for it.
 });
 
@@ -20,8 +20,8 @@ const shiftNameToTimeRange = {
 
 // This Client Component manages the interactive state of the chart.
 export default function RoomAvailabilityWrapper({ initialChartData, updateChartAction }) {
+  // The state now holds the entire chart data object, including labels, data, and totalRoomCount
   const [chartData, setChartData] = useState(initialChartData);
-  // UPDATED: Initial state now uses the descriptive name.
   const [selectedTimeSlot, setSelectedTimeSlot] = useState('Morning Shift');
   
   // useTransition allows updating state without blocking the UI.
@@ -35,6 +35,7 @@ export default function RoomAvailabilityWrapper({ initialChartData, updateChartA
     const timeRangeForApi = shiftNameToTimeRange[newTimeSlot] || '07:00 - 10:00';
 
     startTransition(async () => {
+      // The server action now returns the full object with the updated total room count
       const newChartData = await updateChartAction(timeRangeForApi);
       setChartData(newChartData);
     });
@@ -53,7 +54,8 @@ export default function RoomAvailabilityWrapper({ initialChartData, updateChartA
 
       {/* The lazy-loaded chart component receives data and state handlers. */}
       <RoomAvailabilityChart
-        chartData={chartData}
+        chartData={{ labels: chartData.labels, data: chartData.data }}
+        totalRooms={chartData.totalRoomCount}
         selectedTimeSlot={selectedTimeSlot}
         setSelectedTimeSlot={handleTimeSlotChange}
       />

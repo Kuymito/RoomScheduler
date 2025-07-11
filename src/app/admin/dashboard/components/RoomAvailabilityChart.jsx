@@ -15,7 +15,7 @@ ChartJS.register(
 const defaultChartLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const defaultChartValues = [15, 30, 25, 45, 20, 35, 50]; 
 
-export default function RoomAvailabilityChart({ chartData, selectedTimeSlot, setSelectedTimeSlot }) {
+export default function RoomAvailabilityChart({ chartData, totalRooms, selectedTimeSlot, setSelectedTimeSlot }) {
   // UPDATED: Use descriptive shift names to match the room page
   const timeSlots = ['Morning Shift', 'Noon Shift', 'Afternoon Shift', 'Evening Shift', 'Weekend Shift'];
   const [isDarkMode, setIsDarkMode] = useState(false);
@@ -58,7 +58,9 @@ export default function RoomAvailabilityChart({ chartData, selectedTimeSlot, set
     scales: {
       y: {
         beginAtZero: true,
-        max: 60,
+        // Dynamically set the max value based on totalRooms, rounded up to the nearest 10.
+        // Provides a minimum of 10 if totalRooms is very low or 0.
+        max: totalRooms > 0 ? Math.ceil(totalRooms / 10) * 10 : 10,
         grid: {
           drawBorder: false,
           color: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)',
