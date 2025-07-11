@@ -7,7 +7,10 @@ import html2canvas from 'html2canvas';
 import { classService } from '@/services/class.service';
 import { useSession } from 'next-auth/react';
 import SuccessPopup from '../../profile/components/SuccessPopup';
+<<<<<<< HEAD
 
+=======
+>>>>>>> 958bad5573cc6d572430c12e3e9f8f06d7283066
 
 const DefaultAvatarIcon = ({ className = "w-9 h-9" }) => (
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1} stroke="currentColor" className={className}>
