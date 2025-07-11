@@ -1,5 +1,6 @@
 // src/components/AdminLayout.jsx
 'use client';
+
 import { useState, useEffect, useRef } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
@@ -32,39 +33,49 @@ export default function AdminLayout({ children, activeItem, pageTitle, breadcrum
     const router = useRouter();
     const pathname = usePathname();
     const [ isProfileNavigating, setIsProfileNavigating] = useState(false);
-    const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
-        if (typeof window !== 'undefined') {
-            return localStorage.getItem('sidebarCollapsed') === 'true';
-        }
-        return false;
-    });
+    const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
     const { data: session } = useSession();
     const token = session?.accessToken;
 
-    const { data: profile } = useSWR(
-        token ? ['/api/profile', token] : null,
-        profileFetcher
-    );
-
+    // --- Data Fetching Hooks ---
+    const { data: profile } = useSWR(token ? ['/api/profile', token] : null, profileFetcher);
     const { data: notifications, mutate: mutateNotifications } = useSWR(
         token ? ['/api/notifications', token] : null,
         notificationsFetcher,
-        {
-            refreshInterval: 5000,
-        }
+        { refreshInterval: 5000 }
     );
-
     const { data: changeRequests, mutate: mutateChangeRequests } = useSWR(
         token ? ['/api/change-requests', token] : null,
         changeRequestsFetcher,
-        {
-            refreshInterval: 5000,
-        }
+        { refreshInterval: 5000 }
     );
 
     const finalBreadcrumbs = breadcrumbs || [{ label: pageTitle }];
 
+    // --- ADDED: useEffect for Automatic Sidebar Resizing ---
+    useEffect(() => {
+        const handleResize = () => {
+            if (window.innerWidth < 844) {
+                setIsSidebarCollapsed(true);
+            } else {
+                // On wider screens, restore the user's saved preference
+                const savedState = localStorage.getItem('sidebarCollapsed') === 'true';
+                setIsSidebarCollapsed(savedState);
+            }
+        };
+        
+        // Run once on initial load
+        handleResize();
+
+        // Add resize event listener
+        window.addEventListener('resize', handleResize);
+
+        // Cleanup listener on component unmount
+        return () => window.removeEventListener('resize', handleResize);
+    }, []); // Empty array ensures this runs only on mount
+
+    // --- This useEffect persists the state to localStorage whenever it changes ---
     useEffect(() => {
         if (typeof window !== 'undefined') {
             localStorage.setItem('sidebarCollapsed', isSidebarCollapsed);
@@ -72,6 +83,8 @@ export default function AdminLayout({ children, activeItem, pageTitle, breadcrum
     }, [isSidebarCollapsed]);
 
     const toggleSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
+    
+    // --- Event Handlers & Other Logic ---
     const handleUserIconClick = (event) => {
         event.stopPropagation();
         if (showNotificationPopup) {
@@ -79,6 +92,7 @@ export default function AdminLayout({ children, activeItem, pageTitle, breadcrum
         }
         setShowAdminPopup(prev => !prev);
     };
+
     const handleLogoutClick = () => { setShowAdminPopup(false); setShowLogoutAlert(true); };
     const handleCloseLogoutAlert = () => setShowLogoutAlert(false);
 

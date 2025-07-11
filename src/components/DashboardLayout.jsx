@@ -1,4 +1,3 @@
-// src/components/DashboardLayout.jsx
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -32,7 +31,7 @@ export default function DashboardLayout({ children, activeItem, pageTitle }) {
     const userIconRef = useRef(null);
     const router = useRouter();
     const pathname = usePathname();
-    const [ isProfileNavigating, setIsProfileNavigating] = useState(false);
+    const [isProfileNavigating, setIsProfileNavigating] = useState(false);
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
         if (typeof window !== 'undefined') {
             return localStorage.getItem('sidebarCollapsed') === 'true';
@@ -51,17 +50,13 @@ export default function DashboardLayout({ children, activeItem, pageTitle }) {
     const { data: notifications, mutate: mutateNotifications } = useSWR(
         token ? ['/api/notifications', token] : null,
         notificationsFetcher,
-        {
-            refreshInterval: 5000,
-        }
+        { refreshInterval: 5000 }
     );
 
     const { data: changeRequests, mutate: mutateChangeRequests } = useSWR(
         token ? ['/api/change-requests', token] : null,
         changeRequestsFetcher,
-        {
-            refreshInterval: 5000,
-        }
+        { refreshInterval: 5000 }
     );
 
     const breadcrumbs = [{ label: pageTitle }];
@@ -72,22 +67,50 @@ export default function DashboardLayout({ children, activeItem, pageTitle }) {
         }
     }, [isSidebarCollapsed]);
 
-    const toggleSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
+    // Handle window resize for auto-collapse
+    useEffect(() => {
+        const handleResize = () => {
+            const width = window.innerWidth;
+            if (width < 844) {
+                setIsSidebarCollapsed(true); // Auto-collapse below 844px
+            } else {
+                // Above 844px, use the stored or toggled state
+                const storedState = localStorage.getItem('sidebarCollapsed') === 'true';
+                setIsSidebarCollapsed(storedState);
+            }
+        };
+
+        if (typeof window !== 'undefined') {
+            handleResize(); // Initial check
+            window.addEventListener('resize', handleResize);
+        }
+
+        return () => {
+            if (typeof window !== 'undefined') {
+                window.removeEventListener('resize', handleResize);
+            }
+        };
+    }, []);
+
+    const toggleSidebar = () => {
+        setIsSidebarCollapsed(prev => {
+            const newState = !prev;
+            if (typeof window !== 'undefined') {
+                localStorage.setItem('sidebarCollapsed', newState);
+            }
+            return newState;
+        });
+    };
+
     const handleUserIconClick = (event) => {
         event.stopPropagation();
-        if (showNotificationPopup) {
-            setShowNotificationPopup(false);
-        }
+        if (showNotificationPopup) setShowNotificationPopup(false);
         setShowAdminPopup(prev => !prev);
     };
+
     const handleLogoutClick = () => { setShowAdminPopup(false); setShowLogoutAlert(true); };
     const handleCloseLogoutAlert = () => setShowLogoutAlert(false);
-
-    const handleConfirmLogout = () => { 
-        setShowLogoutAlert(false);
-        setIsLoading(true);
-        signOut({ callbackUrl: '/api/auth/login' });
-    };
+    const handleConfirmLogout = () => { setShowLogoutAlert(false); setIsLoading(true); signOut({ callbackUrl: '/api/auth/login' }); };
 
     const handleNavItemClick = (item) => {
         if (pathname !== item.href) {
@@ -95,19 +118,17 @@ export default function DashboardLayout({ children, activeItem, pageTitle }) {
             router.push(item.href);
         }
     };
-    
+
     useEffect(() => {
         setNavigatingTo(null);
     }, [pathname]);
 
     const handleToggleNotificationPopup = (event) => {
         event.stopPropagation();
-        if (showAdminPopup) {
-            setShowAdminPopup(false);
-        }
+        if (showAdminPopup) setShowAdminPopup(false);
         setShowNotificationPopup(prev => !prev); 
     };
-    
+
     const handleMarkSingleAsRead = async (notificationId) => {
         await notificationService.markNotificationAsRead(notificationId, token);
         mutateNotifications();
@@ -146,7 +167,7 @@ export default function DashboardLayout({ children, activeItem, pageTitle }) {
         setIsProfileNavigating(true);
         router.push(path);
     };
-    
+
     const sidebarWidth = isSidebarCollapsed ? '80px' : '265px';
 
     useEffect(() => {
@@ -163,9 +184,7 @@ export default function DashboardLayout({ children, activeItem, pageTitle }) {
     }, [showAdminPopup, showNotificationPopup]);
 
     useEffect(() => {
-        if (isProfileNavigating) {
-            setIsProfileNavigating(false);
-        }
+        if (isProfileNavigating) setIsProfileNavigating(false);
     }, [pathname]);
 
     if (isLoading) {
@@ -185,7 +204,16 @@ export default function DashboardLayout({ children, activeItem, pageTitle }) {
             <Sidebar isCollapsed={isSidebarCollapsed} activeItem={activeItem} onNavItemClick={handleNavItemClick} navigatingTo={navigatingTo} />
             <div className="flex flex-col flex-grow transition-all duration-300 ease-in-out" style={{ marginLeft: sidebarWidth, width: `calc(100% - ${sidebarWidth})`, height: '100vh', overflowY: 'auto' }}>
                 <div className="fixed top-0 bg-white dark:bg-gray-900 shadow-custom-medium p-5 flex justify-between items-center z-30 transition-all duration-300 ease-in-out" style={{ left: sidebarWidth, width: `calc(100% - ${sidebarWidth})`, height: TOPBAR_HEIGHT }}>
-                    <Topbar onToggleSidebar={toggleSidebar} isSidebarCollapsed={isSidebarCollapsed} onUserIconClick={handleUserIconClick} breadcrumbs={breadcrumbs} userIconRef={userIconRef} onNotificationIconClick={handleToggleNotificationPopup} notificationIconRef={notificationIconRef} hasUnreadNotifications={hasUnreadNotifications} />
+                    <Topbar
+                        onToggleSidebar={toggleSidebar}
+                        isSidebarCollapsed={isSidebarCollapsed}
+                        onUserIconClick={handleUserIconClick}
+                        breadcrumbs={breadcrumbs}
+                        userIconRef={userIconRef}
+                        onNotificationIconClick={handleToggleNotificationPopup}
+                        notificationIconRef={notificationIconRef}
+                        hasUnreadNotifications={hasUnreadNotifications}
+                    />
                 </div>
                 <div className="flex flex-col flex-grow" style={{ paddingTop: TOPBAR_HEIGHT }}>
                     <main className="content-area flex-grow m-6">{children}</main>
@@ -193,25 +221,25 @@ export default function DashboardLayout({ children, activeItem, pageTitle }) {
                 </div>
             </div>
             <div ref={adminPopupRef}>
-                <AdminPopup 
-                    show={showAdminPopup} 
-                    onLogoutClick={handleLogoutClick} 
-                    isNavigating={isProfileNavigating} 
+                <AdminPopup
+                    show={showAdminPopup}
+                    onLogoutClick={handleLogoutClick}
+                    isNavigating={isProfileNavigating}
                     onNavigate={handleProfileNav}
                     adminName={profile ? `${profile.firstName} ${profile.lastName}` : 'Admin'}
                     adminEmail={profile?.email || 'admin@example.com'}
                 />
             </div>
             <div ref={notificationPopupRef}>
-                <NotificationPopup 
-                    show={showNotificationPopup} 
-                    notifications={notifications} 
+                <NotificationPopup
+                    show={showNotificationPopup}
+                    notifications={notifications}
                     changeRequests={changeRequests}
-                    onMarkAllRead={handleMarkAllRead} 
-                    onApprove={handleApproveNotification} 
-                    onDeny={handleDenyNotification} 
-                    onMarkAsRead={handleMarkSingleAsRead} 
-                    anchorRef={notificationIconRef} 
+                    onMarkAllRead={handleMarkAllRead}
+                    onApprove={handleApproveNotification}
+                    onDeny={handleDenyNotification}
+                    onMarkAsRead={handleMarkSingleAsRead}
+                    anchorRef={notificationIconRef}
                     onClose={() => setShowNotificationPopup(false)}
                 />
             </div>

@@ -1,12 +1,30 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react'; // Import useState and useEffect
 import Link from 'next/link';
-import ThemeToggle from './ThemeToggle'; // Assuming ThemeToggle is in the same directory or adjust path
+import ThemeToggle from './ThemeToggle';
 
 const Topbar = ({ onToggleSidebar, isSidebarCollapsed, onUserIconClick, breadcrumbs, userIconRef, onNotificationIconClick, notificationIconRef, hasUnreadNotifications, }) => {
+  const [isSmallScreen, setIsSmallScreen] = useState(false);
+
+  useEffect(() => {
+    // Function to update isSmallScreen state
+    const checkScreenSize = () => {
+      setIsSmallScreen(window.innerWidth < 844); // Tailwind's 'md' breakpoint is 768px
+    };
+
+    // Set initial state
+    checkScreenSize();
+
+    // Add event listener for window resize
+    window.addEventListener('resize', checkScreenSize);
+
+    // Clean up event listener on component unmount
+    return () => window.removeEventListener('resize', checkScreenSize);
+  }, []); // Empty dependency array means this effect runs once on mount and cleans up on unmount
+
   return (
-    <div className="flex justify-between items-center w-full h-full"> 
+    <div className="flex justify-between items-center w-full h-full">
       <div className="topbar-content-left flex items-center">
         <div
           id="sidebar-toggle"
@@ -17,7 +35,8 @@ const Topbar = ({ onToggleSidebar, isSidebarCollapsed, onUserIconClick, breadcru
           {isSidebarCollapsed ? <span dangerouslySetInnerHTML={{ __html: '&#x2715;' }} /> : <span dangerouslySetInnerHTML={{ __html: '&#9776;' }} />}
         </div>
         <div className="page-title font-medium text-xl text-black dark:text-white">
-          National University of Management
+          {/* Conditional rendering based on screen size */}
+          {isSmallScreen ? 'NUM' : 'National University of Management'}
           <div className="dashboard text-sm font-normal text-blue-600 mt-1 flex items-center">
             {breadcrumbs.map((crumb, index) => (
               <React.Fragment key={index}>
@@ -36,11 +55,11 @@ const Topbar = ({ onToggleSidebar, isSidebarCollapsed, onUserIconClick, breadcru
       </div>
       <div className="topbar-icons flex items-center gap-4">
         <ThemeToggle />
-        
+
         <div
-          ref={notificationIconRef} 
-          className="icon-wrapper relative w-10 h-10 flex items-center justify-center border border-num-icon-border  dark:bg-gray-800 dark:border-gray-700 p-[10px] rounded-md cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700" // Added dark:border-gray-700 and dark:hover:bg-gray-800
-          onClick={onNotificationIconClick} 
+          ref={notificationIconRef}
+          className="icon-wrapper relative w-10 h-10 flex items-center justify-center border border-num-icon-border  dark:bg-gray-800 dark:border-gray-700 p-[10px] rounded-md cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
+          onClick={onNotificationIconClick}
           title="Notifications"
         >
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="h-16 w-12 text-black dark:text-white">
@@ -50,7 +69,8 @@ const Topbar = ({ onToggleSidebar, isSidebarCollapsed, onUserIconClick, breadcru
             <div className="notification-badge absolute w-2 h-2 bg-num-red rounded-full top-[5px] right-[5px]"></div>
           )}
         </div>
-        
+
+
         <div
           ref={userIconRef}
           className="user-icon relative w-10 h-10 flex items-center justify-center border border-num-icon-border dark:bg-gray-800 dark:border-gray-700 p-[10px] rounded-md cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
