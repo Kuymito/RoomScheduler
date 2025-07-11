@@ -19,7 +19,6 @@ const InstructorAvatarIcon = ({ className }) => (
 );
 
 
-// FIX: Updated NavItem to remove legacyBehavior and pass props directly to Link
 const NavItem = ({ href, icon: Icon, label, isActive, isCollapsed, onClick, isNavigating }) => (
     <Link
         href={href}
@@ -45,7 +44,6 @@ const InstructorSidebar = ({ isCollapsed, activeItem, onNavItemClick, navigating
     const { data: profile, error, isLoading: isProfileLoading } = useSWR(token ? ['/api/profile', token] : null, profileFetcher);
     const user = profile;
     
-    // The component is loading if the session is loading OR if the profile is loading.
     const isLoading = isSessionLoading || isProfileLoading;
 
     const navItemsData = [
@@ -67,14 +65,14 @@ const InstructorSidebar = ({ isCollapsed, activeItem, onNavItemClick, navigating
             <div className="profile-info flex flex-col items-center my-7 overflow-hidden">
                 <div className={`profile-avatar rounded-full mb-4 flex justify-center items-center ${isCollapsed ? 'w-10 h-10' : 'w-20 h-20'}`}>
                     {isLoading ? (
-                         <div className={`rounded-full bg-gray-300 dark:bg-gray-600 animate-pulse ${isCollapsed ? 'h-10 w-10' : 'h-[70px] w-[70px]'}`}></div>
+                         <div className={`rounded-full bg-gray-300 dark:bg-gray-600 animate-pulse ${isCollapsed ? 'h-10 w-10' : 'h-[79px] w-[79px]'}`}></div>
                     ) : user?.profile ? (
                         <Image
                             src={user.profile}
                             alt={user.name || "Instructor Avatar"}
                             width={isCollapsed ? 40 : 80}
                             height={isCollapsed ? 40 : 80}
-                            className={`rounded-full object-cover`}
+                            className={`w-full h-full rounded-full object-cover`}
                         />
                     ) : (
                         <InstructorAvatarIcon className={`text-gray-700 dark:text-gray-400 ${isCollapsed ? 'h-16 w-16' : 'h-22 w-22'}`} />
@@ -83,19 +81,17 @@ const InstructorSidebar = ({ isCollapsed, activeItem, onNavItemClick, navigating
                 <div className={`profile-texts-wrapper transition-opacity duration-200 ease-in-out px-2 ${isCollapsed ? 'opacity-0 max-w-0 h-0 overflow-hidden' : 'opacity-100 max-w-full'}`}>
                     {isLoading ? (
                         <div className="space-y-2">
-                            <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-24 mx-auto"></div>
+                            <div className="h-6 bg-gray-300 dark:bg-gray-600 rounded w-24 mx-auto"></div>
                             <div className="h-3 bg-gray-300 dark:bg-gray-600 rounded w-32 mx-auto"></div>
                         </div>
                     ) : (
                         <>
-                            {/* UPDATED: Added truncate and title for long names */}
                             <div 
-                                className="profile-name w-full px-9 text-center font-semibold text-base text-black dark:text-white mb-1 whitespace-nowrap truncate"
-                                title={`${user?.firstName || ''} ${user?.lastName || ''}`.trim()}
+                                className="profile-name w-full text-center font-semibold text-base text-black dark:text-white mb-1 whitespace-nowrap truncate"
+                                title={ user?.firstName ? `${user.firstName}` : 'Admin'}
                             >
                                 {user?.firstName} {user?.lastName}
                             </div>
-                            {/* UPDATED: Added truncate and title for long emails */}
                             <div 
                                 className="profile-email w-full text-center text-[10px] text-num-gray dark:text-gray-200 whitespace-nowrap truncate"
                                 title={user?.email}
@@ -106,7 +102,7 @@ const InstructorSidebar = ({ isCollapsed, activeItem, onNavItemClick, navigating
                     )}
                 </div>
             </div>
-            <nav className="nav-menu flex-grow mt-5 px-2">
+            <nav className="nav-menu flex-grow mt-4 px-2">
                 {navItemsData.map((item) => (
                     <NavItem key={item.id} href={item.href} icon={item.icon} label={item.label} isActive={activeItem === item.id} isCollapsed={isCollapsed} onClick={() => onNavItemClick(item)} isNavigating={navigatingTo === item.id} />
                 ))}

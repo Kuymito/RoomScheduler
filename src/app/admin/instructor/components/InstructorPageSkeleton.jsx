@@ -47,7 +47,7 @@ const InstructorPageSkeleton = () => {
       <div className="flex items-center justify-between mt-2 mb-4 gap-2">
         <div className="flex items-center gap-2">
           <div className="h-9 w-72 bg-slate-200 dark:bg-slate-700 rounded-lg"></div>
-          <div className="h-9 w-48 bg-slate-200 dark:bg-slate-700 rounded-lg"></div>
+          <div className="h-9 w-14 bg-slate-200 dark:bg-slate-700 rounded-lg"></div>
         </div>
         <div className="h-9 w-24 bg-slate-200 dark:bg-slate-700 rounded-md"></div>
       </div>

@@ -39,13 +39,14 @@ const fetchDashboardStats = async () => {
 
 
   classes.forEach(cls => {
-    if (cls.dailySchedule && Object.values(cls.dailySchedule).some(day => day && day.instructor)) {
+    // A class is considered assigned if its dailySchedule object is not null and has entries.
+    if (cls.dailySchedule && Object.keys(cls.dailySchedule).length > 0) {
       assigned++;
     } else {
       unassigned++;
     }
 
-    // FIX: Check if createdAt is not null before comparing dates.
+    // Check if createdAt is not null before comparing dates.
     if (cls.createdAt && new Date(cls.createdAt) < expiryThreshold) {
       expired++;
     }

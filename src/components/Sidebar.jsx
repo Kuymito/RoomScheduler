@@ -3,20 +3,18 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import React from 'react';
-import useSWR from 'swr'; // Import the useSWR hook
+import useSWR from 'swr';
+import { useSession } from 'next-auth/react';
+import { authService } from '@/services/auth.service';
 
-// --- Icon Components ---
+// --- Icon Components (unchanged) ---
 const DashboardIcon = ({ className }) => ( <svg className={className} width="15" height="16" viewBox="0 0 15 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M13.75 5.52422V2.68672C13.75 1.80547 13.35 1.44922 12.3563 1.44922H9.83125C8.8375 1.44922 8.4375 1.80547 8.4375 2.68672V5.51797C8.4375 6.40547 8.8375 6.75547 9.83125 6.75547H12.3563C13.35 6.76172 13.75 6.40547 13.75 5.52422Z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round"/><path d="M13.75 12.5555V10.0305C13.75 9.03672 13.35 8.63672 12.3563 8.63672H9.83125C8.8375 8.63672 8.4375 9.03672 8.4375 10.0305V12.5555C8.4375 13.5492 8.8375 13.9492 9.83125 13.9492H12.3563C13.35 13.9492 13.75 13.5492 13.75 12.5555Z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round"/><path d="M6.5625 5.52422V2.68672C6.5625 1.80547 6.1625 1.44922 5.16875 1.44922H2.64375C1.65 1.44922 1.25 1.80547 1.25 2.68672V5.51797C1.25 6.40547 1.65 6.75547 2.64375 6.75547H5.16875C6.1625 6.76172 6.5625 6.40547 6.5625 5.52422Z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round"/><path d="M6.5625 12.5555V10.0305C6.5625 9.03672 6.1625 8.63672 5.16875 8.63672H2.64375C1.65 8.63672 1.25 9.03672 1.25 10.0305V12.5555C1.25 13.5492 1.65 13.9492 2.64375 13.9492H5.16875C6.1625 13.9492 6.5625 13.5492 6.5625 12.5555Z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round"/></svg> );
 const ClassIcon = ({ className }) => ( <svg className={className} width="15" height="16" viewBox="0 0 15 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M1.25 14.5508H13.75" stroke="currentColor" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round"/><path d="M1.84375 14.5516L1.875 7.03279C1.875 6.65154 2.05625 6.28907 2.35625 6.05157L6.73125 2.64531C7.18125 2.29531 7.8125 2.29531 8.26875 2.64531L12.6438 6.04531C12.95 6.28281 13.125 6.64529 13.125 7.03279V14.5516" stroke="currentColor" strokeMiterlimit="10" strokeLinejoin="round"/><path d="M8.125 11.4258H6.875C6.35625 11.4258 5.9375 11.8445 5.9375 12.3633V14.5508H9.0625V12.3633C9.0625 11.8445 8.64375 11.4258 8.125 11.4258Z" stroke="currentColor" strokeMiterlimit="10" strokeLinejoin="round"/><path d="M5.9375 9.39453H4.6875C4.34375 9.39453 4.0625 9.11328 4.0625 8.76953V7.83203C4.0625 7.48828 4.34375 7.20703 4.6875 7.20703H5.9375C6.28125 7.20703 6.5625 7.48828 6.5625 7.83203V8.76953C6.5625 9.11328 6.28125 9.39453 5.9375 9.39453Z" stroke="currentColor" strokeMiterlimit="10" strokeLinejoin="round"/><path d="M10.3125 9.39453H9.0625C8.71875 9.39453 8.4375 9.11328 8.4375 8.76953V7.83203C8.4375 7.48828 8.71875 7.20703 9.0625 7.20703H10.3125C10.6563 7.20703 10.9375 7.48828 10.9375 7.83203V8.76953C10.9375 9.11328 10.6563 9.39453 10.3125 9.39453Z" stroke="currentColor" strokeMiterlimit="10" strokeLinejoin="round"/><path d="M11.8742 5.17578L11.8555 3.30078H9.10547" stroke="currentColor" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round"/></svg> );
 const InstructorIcon = ({ className }) => ( <svg className={className} width="15" height="16" viewBox="0 0 15 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M7.1625 9.18047C8.13245 9.18047 8.91875 8.39417 8.91875 7.42422C8.91875 6.45427 8.13245 5.66797 7.1625 5.66797C6.19255 5.66797 5.40625 6.45427 5.40625 7.42422C5.40625 8.39417 6.19255 9.18047 7.1625 9.18047Z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round"/><path d="M10.4055 13.2239C10.4055 11.7676 8.95547 10.5801 7.16172 10.5801C5.36797 10.5801 3.91797 11.7614 3.91797 13.2239" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round"/><path d="M13.125 8.41211C13.125 11.6934 10.4688 14.3496 7.1875 14.3496C3.90625 14.3496 1.25 11.6934 1.25 8.41211C1.25 5.13086 3.90625 2.47461 7.1875 2.47461C8.00625 2.47461 8.7875 2.6371 9.5 2.9371C9.41875 3.1871 9.375 3.44961 9.375 3.72461C9.375 4.19336 9.50625 4.63711 9.7375 5.01211C9.8625 5.22461 10.025 5.41834 10.2125 5.58084C10.65 5.98084 11.2313 6.22461 11.875 6.22461C12.15 6.22461 12.4125 6.18085 12.6562 6.09335C12.9562 6.80585 13.125 7.59336 13.125 8.41211Z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round"/><path d="M14.375 3.72461C14.375 3.92461 14.35 4.11835 14.3 4.30585C14.2437 4.55585 14.1437 4.79961 14.0125 5.01211C13.7125 5.51836 13.2313 5.9121 12.6562 6.09335C12.4125 6.18085 12.15 6.22461 11.875 6.22461C11.2313 6.22461 10.65 5.98084 10.2125 5.58084C10.025 5.41834 9.8625 5.22461 9.7375 5.01211C9.50625 4.63711 9.375 4.19336 9.375 3.72461C9.375 3.44961 9.41875 3.1871 9.5 2.9371C9.61875 2.5746 9.81875 2.24962 10.0813 1.98087C10.5375 1.51212 11.175 1.22461 11.875 1.22461C12.6125 1.22461 13.2813 1.54337 13.7313 2.05587C14.1313 2.49962 14.375 3.08711 14.375 3.72461Z" stroke="currentColor" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round"/><path d="M12.8059 3.71094H10.9434" stroke="currentColor" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round"/><path d="M11.875 2.79883V4.66757" stroke="currentColor" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round"/></svg> );
 const RoomIcon = ({ className }) => ( <svg className={className} width="15" height="16" viewBox="0 0 15 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M1.25 14.1504H13.75" stroke="currentColor" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round"/><path d="M10.625 1.65039H4.375C2.5 1.65039 1.875 2.76914 1.875 4.15039V14.1504H13.125V4.15039C13.125 2.76914 12.5 1.65039 10.625 1.65039Z" stroke="currentColor" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round"/><path d="M4.375 10.7129H6.25" stroke="currentColor" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round"/><path d="M8.75 10.7129H10.625" stroke="currentColor" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round"/><path d="M4.375 7.90039H6.25" stroke="currentColor" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round"/><path d="M8.75 7.90039H10.625" stroke="currentColor" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round"/><path d="M4.375 5.08789H6.25" stroke="currentColor" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round"/><path d="M8.75 5.08789H10.625" stroke="currentColor" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round"/></svg> );
 const ScheduleIcon = ({ className }) => ( <svg className={className} width="15" height="16" viewBox="0 0 15 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M5 1.44922V3.32422" stroke="currentColor" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round"/><path d="M10 1.44922V3.32422" stroke="currentColor" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round"/><path d="M2.1875 5.88086H12.8125" stroke="currentColor" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round"/><path d="M11.25 14.5742C12.6307 14.5742 13.75 13.4549 13.75 12.0742C13.75 10.6935 12.6307 9.57422 11.25 9.57422C9.86929 9.57422 8.75 10.6935 8.75 12.0742C8.75 13.4549 9.86929 14.5742 11.25 14.5742Z" stroke="currentColor" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round"/><path d="M12.1809 12.1055H10.3184" stroke="currentColor" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round"/><path d="M11.25 11.1934V13.0621" stroke="currentColor" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round"/><path d="M13.125 5.51172V10.4242C12.6687 9.90546 12 9.57422 11.25 9.57422C9.86875 9.57422 8.75 10.693 8.75 12.0742C8.75 12.543 8.88125 12.9867 9.1125 13.3617C9.24375 13.5867 9.4125 13.7867 9.60625 13.9492H5C2.8125 13.9492 1.875 12.6992 1.875 10.8242V5.51172C1.875 3.63672 2.8125 2.38672 5 2.38672H10C12.1875 2.38672 13.125 3.63672 13.125 5.51172Z" stroke="currentColor" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round"/><path d="M7.49657 8.76172H7.50218" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round"/><path d="M5.18407 8.76172H5.18968" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round"/><path d="M5.18407 10.6367H5.18968" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round"/></svg> );
 const SpinnerIcon = ({ className }) => ( <svg className={`animate-spin ${className}`} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> );
-const AdminAvatarIcon = ({ className }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={0.8} stroke="currentColor" className={className}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M17.982 18.725A7.488 7.488 0 0 0 12 15.75a7.488 7.488 0 0 0-5.982 2.975m11.963 0a9 9 0 1 0-11.963 0m11.963 0A8.966 8.966 0 0 1 12 21a8.966 8.966 0 0 1-5.982-2.275M15 9.75a3 3 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0Z" />
-    </svg>
-);
+const AdminAvatarIcon = ({ className }) => ( <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={0.8} stroke="currentColor" className={className}><path strokeLinecap="round" strokeLinejoin="round" d="M17.982 18.725A7.488 7.488 0 0 0 12 15.75a7.488 7.488 0 0 0-5.982 2.975m11.963 0a9 9 0 1 0-11.963 0m11.963 0A8.966 8.966 0 0 1 12 21a8.966 8.966 0 0 1-5.982-2.275M15 9.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" /></svg> );
 
 const NavItem = ({ href, icon: Icon, label, isActive, isCollapsed, onClick, isNavigating }) => (
     <Link
@@ -33,9 +31,18 @@ const NavItem = ({ href, icon: Icon, label, isActive, isCollapsed, onClick, isNa
     </Link>
 );
 
-const Sidebar = ({ isCollapsed, activeItem, onNavItemClick, navigatingTo, profile, isProfileLoading }) => {
-    const user = profile;
-    const isLoading = isProfileLoading;
+// SWR fetcher function for profile data
+const profileFetcher = ([, token]) => authService.getProfile(token);
+
+// The main Sidebar component now fetches its own data
+const Sidebar = ({ isCollapsed, activeItem, onNavItemClick, navigatingTo }) => {
+    const { data: session } = useSession();
+    const token = session?.accessToken;
+
+    const { data: user, isLoading } = useSWR(
+      token ? ['/api/profile', token] : null,
+      profileFetcher
+    );
 
     const navItemsData = [
         { id: 'dashboard', href: '/admin/dashboard', icon: DashboardIcon, label: 'Dashboard' },
@@ -56,47 +63,47 @@ const Sidebar = ({ isCollapsed, activeItem, onNavItemClick, navigatingTo, profil
             <hr className="border-t border-num-gray-light dark:border-gray-700" />
             <div className="profile-info flex flex-col items-center my-7 overflow-hidden">
                 <div className={`profile-avatar rounded-full mb-4 flex justify-center items-center ${isCollapsed ? 'w-10 h-10' : 'w-20 h-20'}`}>
-                    {isLoading ? (
-                         <div className={`rounded-full bg-gray-300 dark:bg-gray-600 animate-pulse ${isCollapsed ? 'h-10 w-10' : 'h-[70px] w-[70px]'}`}></div>
-                    ) : user?.profile ? (
+                    {/* FIX: Show skeleton if loading OR if data is not yet available */}
+                    {(isLoading || !user) ? (
+                         <div className={`rounded-full bg-gray-300 dark:bg-gray-600 animate-pulse ${isCollapsed ? 'h-10 w-10' : 'h-[79px] w-[79px]'}`}></div>
+                    ) : user.profile ? (
                         <Image
                             src={user.profile}
                             alt={user.name || "Admin Avatar"}
                             width={isCollapsed ? 40 : 80}
                             height={isCollapsed ? 40 : 80}
-                            className={`rounded-full object-cover`}
+                            className={`w-full h-full rounded-full object-cover`}
                         />
                     ) : (
-                        <AdminAvatarIcon className={`text-gray-700 dark:text-gray-400 ${isCollapsed ? 'h-16 w-16' : 'h-22 w-22'}`} />
+                        <AdminAvatarIcon className={`text-gray-700 dark:text-gray-400 ${isCollapsed ? 'h-22 w-22' : 'h-34 w-34'}`} />
                     )}
                 </div>
                 <div className={`profile-texts-wrapper transition-opacity duration-200 ease-in-out px-2 ${isCollapsed ? 'opacity-0 max-w-0 h-0 overflow-hidden' : 'opacity-100 max-w-full'}`}>
-                    {isLoading ? (
+                    {/* FIX: Show skeleton if loading OR if data is not yet available */}
+                    {(isLoading || !user) ? (
                         <div className="space-y-2">
-                            <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-24 mx-auto"></div>
+                            <div className="h-6 bg-gray-300 dark:bg-gray-600 rounded w-24 mx-auto"></div>
                             <div className="h-3 bg-gray-300 dark:bg-gray-600 rounded w-32 mx-auto"></div>
                         </div>
                     ) : (
                         <>
-                            {/* UPDATED: Added truncate and title for long names */}
                             <div 
-                                className="profile-name w-70% text-center font-semibold text-base text-black dark:text-white mb-1 whitespace-nowrap truncate"
-                                title={ user?.firstName ? `${user.firstName}` : 'Admin'}
+                                className="profile-name w-full text-center font-semibold text-base text-black dark:text-white mb-1 whitespace-nowrap truncate"
+                                title={ user.firstName ? `${user.firstName}` : 'Admin'}
                             >
-                                { user?.firstName ? `${user.firstName}` : 'Admin'}
+                                { user.firstName ? `${user.firstName}` : 'Admin'}
                             </div>
-                            {/* UPDATED: Added truncate and title for long emails */}
                             <div 
                                 className="profile-email w-full text-center text-[10px] text-num-gray dark:text-gray-200 whitespace-nowrap truncate"
-                                title={user?.email || 'admin@example.com'}
+                                title={user.email || 'NA'}
                             >
-                                {user?.email || 'admin@example.com'}
+                                {user.email || 'NA'}
                             </div>
                         </>
                     )}
                 </div>
             </div>
-            <nav className="nav-menu flex-grow mt-5 px-2">
+            <nav className="nav-menu flex-grow mt-4 px-2">
                 {navItemsData.map((item) => (
                     <NavItem key={item.id} href={item.href} icon={item.icon} label={item.label} isActive={activeItem === item.id} isCollapsed={isCollapsed} onClick={() => onNavItemClick(item)} isNavigating={navigatingTo === item.id} />
                 ))}

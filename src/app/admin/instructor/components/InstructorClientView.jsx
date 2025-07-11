@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useTransition, useEffect } from 'react';
+import { useState, useMemo, useTransition, useEffect, useRef } from 'react';
 import InstructorCreatePopup from './InstructorCreatePopup';
 import { useRouter } from 'next/navigation';
 import useSWR from 'swr';
@@ -54,6 +54,7 @@ export default function InstructorClientView({ initialInstructors, initialDepart
     const { data: session } = useSession();
     const [isLoading, setIsLoading] = useState(true);
     const [toastMessage, setToastMessage] = useState('');
+    const filterMenuRef = useRef(null);
 
     const { data: instructors, error: instructorsError, mutate: mutateInstructors } = useSWR(
         session?.accessToken ? ['/api/v1/instructors', session.accessToken] : null,
@@ -75,6 +76,7 @@ export default function InstructorClientView({ initialInstructors, initialDepart
     const [showCreateInstructorPopup, setShowCreateInstructorPopup] = useState(false);
     const [showSuccessPopup, setShowSuccessPopup] = useState(false);
     const [statusFilter, setStatusFilter] = useState('active');
+    const [isFilterMenuOpen, setIsFilterMenuOpen] = useState(false);
     const [sortColumn, setSortColumn] = useState(null);
     const [sortDirection, setSortDirection] = useState('asc');
     const [searchTexts, setSearchTexts] = useState({ name: '', email: '', phone: '', majorStudied: '', qualifications: '' });
@@ -234,6 +236,18 @@ export default function InstructorClientView({ initialInstructors, initialDepart
         }
         return pageNumbers;
     };
+    
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (filterMenuRef.current && !filterMenuRef.current.contains(event.target)) {
+                setIsFilterMenuOpen(false);
+            }
+        };
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside);
+        };
+    }, [filterMenuRef]);
 
     if (isLoading) {
         return <InstructorPageSkeleton />;
@@ -263,12 +277,26 @@ export default function InstructorClientView({ initialInstructors, initialDepart
                         placeholder="Search by name..."
                         value={searchTexts.name}
                         onChange={(e) => handleSearchChange('name', e.target.value)}
-                        className="block w-72 p-2 text-xs font-medium text-gray-900 bg-white border border-gray-200 rounded-lg hover:bg-gray-100 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:hover:text-white dark:hover:bg-gray-700"
+                        className="block w-72 p-2 text-xs font-medium text-gray-900 bg-white border border-gray-200 rounded-lg hover:bg-gray-100 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:hover:text-white dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-600 dark:focus:ring-offset-gray-800"
                     />
-                     <div className="inline-flex rounded-md shadow-xs" role="group">
-                        <button type="button" onClick={() => { setStatusFilter('active'); setCurrentPage(1); }} className={`px-4 py-2 text-xs font-medium rounded-s-lg border ${ statusFilter === 'active' ? 'text-blue-700 bg-blue-50 border-blue-300 dark:bg-gray-700 dark:text-blue-300 dark:border-blue-600' : 'text-gray-900 bg-white border-gray-200 hover:bg-gray-100 hover:text-blue-700 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:hover:text-white dark:hover:bg-gray-700' }`}>Active</button>
-                        <button type="button" onClick={() => { setStatusFilter('archived'); setCurrentPage(1); }} className={`px-4 py-2 text-xs font-medium border-t border-b ${ statusFilter === 'archived' ? 'text-red-700 bg-red-50 border-red-300 dark:bg-gray-700 dark:text-red-300 dark:border-red-600' : 'text-gray-900 bg-white border-gray-200 hover:bg-gray-100 hover:text-red-700 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:hover:text-white dark:hover:bg-gray-700' }`}>Archive</button>
-                        <button type="button" onClick={() => { setStatusFilter('all'); setCurrentPage(1); }} className={`px-4 py-2 text-xs font-medium rounded-e-lg border ${ statusFilter === 'all' ? 'text-purple-700 bg-purple-50 border-purple-300 dark:bg-gray-700 dark:text-purple-300 dark:border-purple-600' : 'text-gray-900 bg-white border-gray-200 hover:bg-gray-100 hover:text-purple-700 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:hover:text-white dark:hover:bg-gray-700' }`}>All</button>
+                     <div ref={filterMenuRef} className="relative inline-block text-left">
+                        <div>
+                            <button type="button" onClick={() => setIsFilterMenuOpen(!isFilterMenuOpen)} className="inline-flex justify-center w-full rounded-lg border border-gray-300 shadow-sm px-4 py-1.5 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-600 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-600 dark:focus:ring-offset-gray-800" id="menu-button" aria-expanded="true" aria-haspopup="true">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-5">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 1 1-3 0m3 0a1.5 1.5 0 1 0-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-9.75 0h9.75" />
+                                </svg>
+                            </button>
+                        </div>
+                        {isFilterMenuOpen && (
+                        <div className="origin-top-left absolute left-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none dark:bg-gray-800 dark:ring-gray-700 z-10" role="menu" aria-orientation="vertical" aria-labelledby="menu-button" tabIndex="-1">
+                            <div className="py-1" role="none">
+                                <div className="px-4 py-2 text-xs text-gray-400">Status</div>
+                                <button onClick={() => setStatusFilter('active')} className={`${statusFilter === 'active' ? 'bg-gray-100 text-gray-900 dark:bg-gray-700 dark:text-white' : 'text-gray-700 dark:text-gray-300'} hover:bg-gray-200 hover:dark:bg-gray-600 block w-full text-left px-4 py-2 text-sm`} role="menuitem" tabIndex="-1">Active</button>
+                                <button onClick={() => setStatusFilter('archived')} className={`${statusFilter === 'archived' ? 'bg-gray-100 text-gray-900 dark:bg-gray-700 dark:text-white' : 'text-gray-700 dark:text-gray-300'} hover:bg-gray-200 hover:dark:bg-gray-600 block w-full text-left px-4 py-2 text-sm`} role="menuitem" tabIndex="-1">Archived</button>
+                                <button onClick={() => setStatusFilter('all')} className={`${statusFilter === 'all' ? 'bg-gray-100 text-gray-900 dark:bg-gray-700 dark:text-white' : 'text-gray-700 dark:text-gray-300'} hover:bg-gray-200 hover:dark:bg-gray-600 block w-full text-left px-4 py-2 text-sm`} role="menuitem" tabIndex="-1">All</button>
+                            </div>
+                        </div>
+                        )}
                     </div>
                 </div>
                 <button type="button" onClick={() => setShowCreateInstructorPopup(true)} className="text-white bg-[#75B846] hover:bg-[#87D94D] focus:ring-2 focus:ring-green-600 font-medium rounded-md text-xs px-3 py-2 text-center inline-flex items-center dark:bg-[#75B846] me-2 mb-2 dark:hover:bg-[#79c344] dark:focus:ring-green-800 gap-1">
