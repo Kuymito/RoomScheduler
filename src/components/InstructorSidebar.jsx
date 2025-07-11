@@ -80,7 +80,7 @@ const InstructorSidebar = ({ isCollapsed, activeItem, onNavItemClick, navigating
                         <InstructorAvatarIcon className={`text-gray-700 dark:text-gray-400 ${isCollapsed ? 'h-16 w-16' : 'h-22 w-22'}`} />
                     )}
                 </div>
-                <div className={`profile-texts-wrapper transition-opacity duration-200 ease-in-out ${isCollapsed ? 'opacity-0 max-w-0 h-0 overflow-hidden' : 'opacity-100 max-w-full'}`}>
+                <div className={`profile-texts-wrapper transition-opacity duration-200 ease-in-out px-2 ${isCollapsed ? 'opacity-0 max-w-0 h-0 overflow-hidden' : 'opacity-100 max-w-full'}`}>
                     {isLoading ? (
                         <div className="space-y-2">
                             <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-24 mx-auto"></div>
@@ -88,10 +88,18 @@ const InstructorSidebar = ({ isCollapsed, activeItem, onNavItemClick, navigating
                         </div>
                     ) : (
                         <>
-                            <div className="profile-name text-center font-semibold text-base text-black dark:text-white mb-1 whitespace-nowrap">
+                            {/* UPDATED: Added truncate and title for long names */}
+                            <div 
+                                className="profile-name w-full px-9 text-center font-semibold text-base text-black dark:text-white mb-1 whitespace-nowrap truncate"
+                                title={`${user?.firstName || ''} ${user?.lastName || ''}`.trim()}
+                            >
                                 {user?.firstName} {user?.lastName}
                             </div>
-                            <div className="profile-email text-center text-[10px] text-num-gray dark:text-gray-200 whitespace-nowrap">
+                            {/* UPDATED: Added truncate and title for long emails */}
+                            <div 
+                                className="profile-email w-full text-center text-[10px] text-num-gray dark:text-gray-200 whitespace-nowrap truncate"
+                                title={user?.email}
+                            >
                                 {user?.email}
                             </div>
                         </>

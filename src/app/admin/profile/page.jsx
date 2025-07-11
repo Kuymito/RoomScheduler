@@ -264,6 +264,7 @@ const ProfileContent = () => {
     }
 
     const currentDisplayData = isEditingGeneral ? editableProfileData : profileData;
+    const fullName = `${currentDisplayData.firstName} ${currentDisplayData.lastName}`.trim();
 
     return (
       <div className="p-6 dark:text-white">
@@ -302,9 +303,12 @@ const ProfileContent = () => {
                   })}
                 </div>
               )}
-              <div className="avatar-info flex flex-col">
-                <div className="avatar-name font-semibold text-sm text-black dark:text-white mb-0.5">
-                  {`${currentDisplayData.firstName} ${currentDisplayData.lastName}`.trim()}
+              <div className="avatar-info flex flex-col overflow-hidden">
+                <div 
+                    className="avatar-name font-semibold text-sm text-black dark:text-white mb-0.5 truncate"
+                    title={fullName}
+                >
+                  {fullName}
                 </div>
                 <div className="avatar-role font-semibold text-xs text-gray-500 dark:text-gray-400">
                   Admin
