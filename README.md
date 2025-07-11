@@ -11,19 +11,19 @@ A comprehensive room and class scheduling management system designed for the Nat
 This project is a full-stack application built with Next.js and a separate backend API, featuring:
 
 -   **Role-Based Dashboards**: Separate, tailored views for Administrators and Instructors.
--   **Admin Dashboard**: At-a-glance statistics on class assignments, room availability charts, and recent activity logs.
--   **Instructor Dashboard**: View assigned classes, today's schedule, and class-related statistics.
+-   **Admin Dashboard**: At-a-glance statistics on class assignments, room availability charts, and real-time notifications for room change requests.
+-   **Instructor Dashboard**: View assigned classes, today's schedule, and class-related statistics. Instructors can also request room changes.
 -   **Room Management**: A visual, grid-based interface for viewing room layouts by building and floor. Admins can edit room details like capacity and equipment.
 -   **Schedule Management**:
-    -   Dynamic weekly schedule view for individual rooms.
-    -   Drag-and-drop interface for assigning classes to rooms.
-    -   Smart swap functionality with confirmation prompts.
--   **Class & Instructor Management**: Full CRUD (Create, Read, Update, Delete/Archive) capabilities for classes and instructors.
+    -   Dynamic weekly schedule view for individual rooms and classes.
+    -   Drag-and-drop interface for assigning classes to rooms and instructors to classes.
+    -   Smart swap functionality with confirmation prompts for conflicting assignments.
+-   **Class & Instructor Management**: Full CRUD (Create, Read, Update, Archive) capabilities for classes and instructors.
 -   **User Authentication**: Secure login, logout, and profile management powered by NextAuth.js. Includes forgot/reset password functionality with OTP email verification.
 -   **Role-Based Access Control**: Middleware ensures that admins and instructors can only access their respective routes (`/admin/*` and `/instructor/*`).
--   **Real-time Updates**: Client-side data fetching with `useSWR` to keep schedule and room availability information constantly updated.
--   **Notifications**: A real-time notification system for both admins (e.g., room requests) and instructors (e.g., request status).
--   **PDF Generation**: Download class and room schedules as PDF files directly from the browser.
+-   **Real-time Updates**: Client-side data fetching with `useSWR` to keep schedule, room availability, and notification information constantly updated.
+-   **Notifications**: A real-time notification system for both admins (e.g., room requests) and instructors (e.g., request status updates).
+-   **PDF Generation**: Download class and room schedules as PDF files directly from the browser using `jsPDF` and `html2canvas`.
 -   **Responsive Design**: A modern, responsive UI built with Tailwind CSS that works on all screen sizes.
 -   **Light/Dark Mode**: Theme toggling for user preference, with automatic detection based on system settings.
 
@@ -42,8 +42,8 @@ Follow these instructions to get a copy of the project up and running on your lo
 
 1.  **Clone the repository:**
     ```bash
-    git clone [https://github.com/your-username/RoomScheduler-reach-api.git](https://github.com/your-username/RoomScheduler-reach-api.git)
-    cd RoomScheduler-reach-api
+    git clone [https://github.com/your-username/RoomScheduler-master.git](https://github.com/your-username/RoomScheduler-master.git)
+    cd RoomScheduler-master
     ```
 
 2.  **Install dependencies:**
@@ -62,7 +62,7 @@ Follow these instructions to get a copy of the project up and running on your lo
     # A secret key for NextAuth.js to sign tokens.
     # Generate a secret: `openssl rand -base64 32`
     NEXTAUTH_SECRET=your_nextauth_secret_here
-
+    
     # The base URL of your backend API
     NEXT_PUBLIC_API_URL=[https://jaybird-new-previously.ngrok-free.app/api/v1](https://jaybird-new-previously.ngrok-free.app/api/v1)
     ```

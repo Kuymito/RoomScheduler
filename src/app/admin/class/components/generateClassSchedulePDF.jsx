@@ -115,7 +115,7 @@ const generateClassSchedulePDF = (classDetails, classSchedule, daysOfWeek, class
       font: DEFAULT_FONT, // Ensure header font
       // font: KHMER_FONT, // For Khmer
       fontSize: 10,
-      halign: 'center',
+      halign: 'center', // Center header text
     },
     styles: {
       font: DEFAULT_FONT, // Ensure body font
