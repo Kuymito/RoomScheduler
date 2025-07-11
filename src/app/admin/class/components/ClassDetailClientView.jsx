@@ -570,9 +570,6 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
                         <div className="form-row flex gap-3 mb-2 flex-wrap">
                             {renderSelectField("Semester", "semester", classData.semester, semesterOptions)}
                             {renderSelectField("Shift", "shift", classData.shift, shiftOptions, null, null, null)}
-                        </div>
-                        <div className="form-row flex gap-3 mb-2 flex-wrap">
-                            {renderDateField("Publish Date", "publishDate", classData.publishDate)}
                             {renderSelectField("Status", "status", classData.status, statusOptions)}
                         </div>
                         <div className="form-actions flex justify-end items-center gap-3 mt-4">
