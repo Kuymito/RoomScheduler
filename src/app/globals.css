@@ -1,6 +1,7 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+@import url('https://fonts.googleapis.com/css2?family=Battambang:wght@400;700&display=swap');
 
 body {
   @apply font-sans bg-num-bg;
@@ -95,4 +96,7 @@ body {
 
 .animate-pulse-green {
     animation: pulse-green 2s infinite;
+}
+.font-battambang {
+  font-family: 'Battambang', sans-serif;
 }

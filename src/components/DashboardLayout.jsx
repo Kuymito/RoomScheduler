@@ -219,3 +219,4 @@ export default function DashboardLayout({ children, activeItem, pageTitle }) {
         </div>
     );
 }
+

@@ -13,6 +13,7 @@
     "chart.js": "^4.4.9",
     "cloudinary": "^2.7.0",
     "html2canvas": "^1.4.1",
+    "i18next": "^25.3.2",
     "jspdf": "^3.0.1",
     "jspdf-autotable": "^5.0.2",
     "next": "^15.3.5",
@@ -21,6 +22,7 @@
     "react": "^19.1.0",
     "react-chartjs-2": "^5.3.0",
     "react-dom": "^19.1.0",
+    "react-i18next": "^15.6.0",
     "swr": "^2.3.3"
   },
   "devDependencies": {

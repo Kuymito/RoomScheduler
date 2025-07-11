@@ -12,6 +12,7 @@ module.exports = {
         sans: ['var(--font-inter)', 'sans-serif'],
         poppins: ['var(--font-poppins)', 'sans-serif'],
         roboto: ['var(--font-roboto)', 'sans-serif'],
+        battambang: ['Battambang', 'serif'],
       },
       colors: {
         'num-blue': '#396DFB',

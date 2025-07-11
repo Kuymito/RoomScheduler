@@ -7,7 +7,7 @@ import html2canvas from 'html2canvas';
 import { classService } from '@/services/class.service';
 import { useSession } from 'next-auth/react';
 import SuccessPopup from '../../profile/components/SuccessPopup';
-import SuccessPopup from '../../profile/components/SuccessPopup';
+
 
 const DefaultAvatarIcon = ({ className = "w-9 h-9" }) => (
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1} stroke="currentColor" className={className}>
@@ -518,8 +518,7 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
         } catch (error) {
             console.error("Error generating PDF:", error);
         } finally {
-            // ** CRUCIAL CLEANUP STEP **
-            // This block guarantees the live page is always restored to its interactive state.
+          
             document.getElementById('pdf-capture-styles')?.remove();
             schedulePanelElement.classList.remove('pdf-capture-mode');
             setIsPreparingPdf(false); 

@@ -1,0 +1,9 @@
+{
+  "sidebar": {
+    "dashboard": "Dashboard",
+    "class": "Class",
+    "instructor": "Instructor",
+    "room": "Room",
+    "schedule": "Schedule"
+  }
+}
