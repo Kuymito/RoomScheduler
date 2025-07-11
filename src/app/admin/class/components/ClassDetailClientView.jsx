@@ -85,25 +85,23 @@ const ScheduledInstructorCard = ({ instructorData, day, onDragStart, onDragEnd, 
         <div className="w-full flex flex-col">
             <div className="mb-5 w-full relative">
                 <label htmlFor={`studyMode-${day}`} className="sr-only">Study Mode for {day}</label>
-                {/* This is the interactive dropdown for the live page */}
                 <select
                     id={`studyMode-${day}`}
                     name={`studyMode-${day}`}
                     value={studyMode}
                     onChange={(e) => onStudyModeChange(day, e.target.value)}
-                    className={`${baseSelectClasses} ${colorSelectClasses} w-full h-auto study-mode-select`} // Added 'study-mode-select' class
+                    className={`${baseSelectClasses} ${colorSelectClasses} w-full h-auto study-mode-select`}
                 >
                     {studyModes.map(mode => (<option key={mode.value} value={mode.value}>{mode.label}</option>))}
                 </select>
-                {/* This is the static text for the PDF, normally hidden */}
-                <div className={`pdf-only-text ${cardTextColorClasses} p-1.5 text-xs text-center font-medium`}>
+                <div className={`pdf-only-text hidden ${cardTextColorClasses} p-1.5 text-xs text-center font-medium`}>
                     {studyModes.find(m => m.value === studyMode)?.label}
                 </div>
             </div>
             <div draggable onDragStart={(e) => onDragStart(e, instructor, day)} onDragEnd={onDragEnd} className={`${baseCardClasses} ${colorCardClasses}`}>
                 {instructor.profileImage ? (<img src={instructor.profileImage} alt={instructor.name} className="w-10 h-10 rounded-full object-cover border-2 border-white dark:border-gray-400 mb-1" onError={(e) => { e.currentTarget.style.display = 'none'; const sibling = e.currentTarget.nextSibling; if(sibling) sibling.style.display = 'flex'; }}/>) : null}
                 {!instructor.profileImage && <DefaultAvatarIcon className={`w-10 h-10 flex-shrink-0 flex items-center justify-center mb-1`} /> }
-                <p className={`text-sm font-semibold break-words ${cardTextColorClasses}`}>{instructor.name}</p>
+                <p className={`text-sm font-semibold truncate w-full scheduled-instructor-name ${cardTextColorClasses}`}>{instructor.name}</p>
                 {instructor.degree && (<p className={`text-xs mt-0.5 ${cardTextColorClasses} opacity-80`}>{instructor.degree}</p>)}
                 <button onClick={() => onRemove(day)} className="absolute top-1 right-1 text-xs text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity duration-150 p-1 bg-white/70 dark:bg-gray-900/70 rounded-full leading-none" title={`Remove ${instructor.name}`} aria-label={`Remove ${instructor.name}`}>✕</button>
             </div>
@@ -446,28 +444,29 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
         style.id = 'pdf-capture-styles';
        
         style.innerHTML = `
-            /* Hide the static text by default */
-            .pdf-only-text {
-                display: none;
-            }
-            /* Add a class to the panel to scope these changes */
             .pdf-capture-mode .study-mode-select {
-                display: none !important; /* Hide the interactive select dropdown */
+                display: none !important;
             }
             .pdf-capture-mode .pdf-only-text {
-                display: block !important; /* Show the static text version */
+                display: block !important;
             }
-            .pdf-capture-mode .group:hover { /* Disable hover effects */
+            .pdf-capture-mode .group:hover {
                 transform: none !important;
                 box-shadow: inherit !important;
             }
-            .pdf-capture-mode .group:hover .opacity-0 { /* Hide remove button on hover */
+            .pdf-capture-mode .group:hover .opacity-0 {
                 opacity: 0 !important;
             }
-            /* Hide the Save and Download buttons during capture */
             .pdf-capture-mode #saveScheduleButton,
             .pdf-capture-mode #downloadScheduleButton {
                 display: none !important;
+            }
+            .pdf-capture-mode .scheduled-instructor-name {
+                white-space: normal !important;
+                overflow-wrap: break-word !important;
+                word-break: break-word !important;
+                overflow: visible !important;
+                text-overflow: clip !important;
             }
         `;
 
@@ -517,8 +516,6 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
         } catch (error) {
             console.error("Error generating PDF:", error);
         } finally {
-            // ** CRUCIAL CLEANUP STEP **
-            // This block guarantees the live page is always restored to its interactive state.
             document.getElementById('pdf-capture-styles')?.remove();
             schedulePanelElement.classList.remove('pdf-capture-mode');
             setIsPreparingPdf(false); 
@@ -532,8 +529,7 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
     const downloadButtonColorClasses = isSaving || isDirty || scheduleIsEmpty ? "bg-gray-400 opacity-60 cursor-not-allowed" : "bg-blue-500 hover:bg-blue-600 focus:ring-blue-400";
     
     return (
-        <div className='p-6 dark:text-white relative'> {/* Added 'relative' for overlay positioning */}
-            {/* PDF Generation Overlay */}
+        <div className='p-6 dark:text-white relative'>
             {isPreparingPdf && (
                 <div className="absolute inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center z-50 rounded-lg">
                     <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-xl flex items-center gap-4">
@@ -603,7 +599,7 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
                             {availableInstructors.length > 0 ? availableInstructors.map((instructor) => (
                                 <div key={instructor.id} draggable onDragStart={(e) => handleNewInstructorDragStart(e, instructor)} onDragEnd={handleNewInstructorDragEnd} className="p-2 bg-sky-50 dark:bg-sky-700 dark:hover:bg-sky-600 border border-sky-200 dark:border-sky-600 rounded-md shadow-sm hover:shadow-md cursor-grab active:cursor-grabbing transition-all flex items-center gap-3 group">
                                     {instructor.profileImage ? (<img src={instructor.profileImage} alt={instructor.name} className="w-10 h-10 rounded-full object-cover border border-gray-200 dark:border-gray-600 flex-shrink-0" onError={(e) => { e.currentTarget.style.display = 'none'; }}/>) : (<DefaultAvatarIcon className={`w-10 h-10 flex-shrink-0`} /> )}
-                                    <div className="flex-grow">
+                                    <div className="flex-grow min-w-0 truncate">
                                         <p className="text-sm font-medium text-sky-800 dark:text-sky-100 group-hover:text-sky-900 dark:group-hover:text-white">{instructor.name}</p>
                                         {instructor.degree && (<p className="text-xs text-gray-500 dark:text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300">{instructor.degree}</p>)}
                                     </div>
@@ -687,5 +683,3 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
         </div>
     );
 }
-
-
