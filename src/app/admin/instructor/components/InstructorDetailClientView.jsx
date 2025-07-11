@@ -261,7 +261,17 @@ export default function InstructorDetailClientView({ initialInstructor, allDepar
     const renderTextField = (label, name, value, isEditing, opts = {}) => (
         <div className="form-group flex-1 min-w-[200px]">
             <label className="form-label block font-semibold text-xs text-num-dark-text dark:text-white mb-1">{label}</label>
-            <input type={opts.type || "text"} name={name} value={value || ''} placeholder={opts.placeholder || label} onChange={handleInputChange} readOnly={!isEditing} disabled={loading} className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs text-num-dark-text dark:text-white ${!isEditing ? 'bg-gray-100 dark:bg-gray-800 border-num-gray-light dark:border-gray-700 text-gray-500 dark:text-gray-400' : 'bg-num-content-bg dark:bg-gray-700 border-num-gray-light dark:border-gray-600'}`}/>
+            <input 
+                type={opts.type || "text"} 
+                name={name} 
+                value={value || ''} 
+                placeholder={opts.placeholder || label} 
+                onChange={handleInputChange} 
+                readOnly={!isEditing} 
+                disabled={loading} 
+                maxLength={opts.maxLength}
+                className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs text-num-dark-text dark:text-white ${!isEditing ? 'bg-gray-100 dark:bg-gray-800 border-num-gray-light dark:border-gray-700 text-gray-500 dark:text-gray-400' : 'bg-num-content-bg dark:bg-gray-700 border-num-gray-light dark:border-gray-600'}`}
+            />
         </div>
     );
     const renderSelectField = (label, name, value, options, isEditing, valueKey = 'id', labelKey = 'name') => (
@@ -274,11 +284,11 @@ export default function InstructorDetailClientView({ initialInstructor, allDepar
             })}</select> ) : ( <input type="text" value={value} readOnly className="form-input w-full py-2 px-3 bg-gray-100 border border-num-gray-light dark:bg-gray-800 dark:border-gray-700 rounded-md font-medium text-xs text-gray-500 dark:text-gray-400" /> )}
         </div>
     );
-    const renderPasswordField = (label, name, value, onChange, fieldName, hasError = false) => (
+    const renderPasswordField = (label, name, value, onChange, fieldName, hasError = false, opts = {}) => (
         <div className="form-group flex-1 min-w-[200px]">
             <label className="form-label block font-semibold text-xs text-num-dark-text dark:text-white mb-1">{label}</label>
             <div className="relative">
-                <input type={passwordVisibility[fieldName] ? "text" : "password"} name={name} className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs ${!isEditingPassword ? 'bg-gray-100 dark:bg-gray-800 border-num-gray-light dark:border-gray-700 text-gray-500 dark:text-gray-400' : 'bg-white dark:bg-gray-700 border-num-gray-light dark:border-gray-600 text-num-dark-text dark:text-white'} ${ hasError ? 'border-red-500 ring-1 ring-red-500' : '' }`} placeholder={`Enter ${label.toLowerCase()}`} value={value || ''} onChange={onChange} readOnly={!isEditingPassword} disabled={loading}/>
+                <input type={passwordVisibility[fieldName] ? "text" : "password"} name={name} className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs ${!isEditingPassword ? 'bg-gray-100 dark:bg-gray-800 border-num-gray-light dark:border-gray-700 text-gray-500 dark:text-gray-400' : 'bg-white dark:bg-gray-700 border-num-gray-light dark:border-gray-600 text-num-dark-text dark:text-white'} ${ hasError ? 'border-red-500 ring-1 ring-red-500' : '' }`} placeholder={`Enter ${label.toLowerCase()}`} value={value || ''} onChange={onChange} readOnly={!isEditingPassword} disabled={loading} maxLength={opts.maxLength} />
                 {isEditingPassword && ( <button type="button" onClick={() => togglePasswordVisibility(fieldName)} className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500 hover:text-gray-700" aria-label={passwordVisibility[fieldName] ? "Hide password" : "Show password"}>{passwordVisibility[fieldName] ? <EyeClosedIcon /> : <EyeOpenIcon />}</button> )}
             </div>
         </div>
@@ -321,10 +331,16 @@ export default function InstructorDetailClientView({ initialInstructor, allDepar
                 <div className="info-details-wrapper flex-grow flex flex-col gap-8 min-w-[300px]">
                     <div className="info-card p-3 sm:p-4 bg-white border border-num-gray-light dark:bg-gray-800 dark:border-gray-700 shadow-custom-light rounded-lg">
                         <div className="section-title font-semibold text-sm text-num-dark-text dark:text-white mb-3">General Information</div>
-                        <div className="form-row flex gap-3 mb-2 flex-wrap">{renderTextField("First Name", "firstName", currentData.firstName, isEditingGeneral)}{renderTextField("Last Name", "lastName", currentData.lastName, isEditingGeneral)}</div>
-                        <div className="form-row flex gap-3 mb-2 flex-wrap">{renderTextField("Email", "email", currentData.email, isEditingGeneral, { type: 'email' })}{renderTextField("Phone Number", "phone", currentData.phone, isEditingGeneral, { type: 'tel' })}</div>
                         <div className="form-row flex gap-3 mb-2 flex-wrap">
-                            {renderTextField("Major", "major", currentData.major, isEditingGeneral)}
+                            {renderTextField("First Name", "firstName", currentData.firstName, isEditingGeneral, { maxLength: 20 })}
+                            {renderTextField("Last Name", "lastName", currentData.lastName, isEditingGeneral, { maxLength: 30 })}
+                        </div>
+                        <div className="form-row flex gap-3 mb-2 flex-wrap">
+                            {renderTextField("Email", "email", currentData.email, isEditingGeneral, { type: 'email', maxLength: 30 })}
+                            {renderTextField("Phone Number", "phone", currentData.phone, isEditingGeneral, { type: 'tel', maxLength: 15 })}
+                        </div>
+                        <div className="form-row flex gap-3 mb-2 flex-wrap">
+                            {renderTextField("Major", "major", currentData.major, isEditingGeneral, { maxLength: 50 })}
                             {renderSelectField("Degree", "degree", currentData.degree, degreeOptions, isEditingGeneral)}
                         </div>
                         <div className="form-row flex gap-3 mb-2 flex-wrap">{renderSelectField("Department / Faculty", "department", currentData.department, allDepartments, isEditingGeneral, 'departmentId', 'name')}{renderTextField("Address", "address", currentData.address, isEditingGeneral)}</div>
@@ -337,8 +353,8 @@ export default function InstructorDetailClientView({ initialInstructor, allDepar
                         <div className="section-title font-semibold text-sm text-num-dark-text dark:text-white mb-3">Password information</div>
                         <div className="space-y-4">
                             <div className="form-row flex gap-3 mb-2 flex-wrap">
-                                {renderPasswordField("New Password", "newPassword", newPassword, handleNewPasswordChange, "new", passwordMismatchError || emptyPasswordError.new)}
-                                {renderPasswordField("Confirm New Password", "confirmNewPassword", confirmNewPassword, handleConfirmPasswordChange, "confirm", passwordMismatchError || emptyPasswordError.confirm)}
+                                {renderPasswordField("New Password", "newPassword", newPassword, handleNewPasswordChange, "new", passwordMismatchError || emptyPasswordError.new, { maxLength: 64 })}
+                                {renderPasswordField("Confirm New Password", "confirmNewPassword", confirmNewPassword, handleConfirmPasswordChange, "confirm", passwordMismatchError || emptyPasswordError.confirm, { maxLength: 64 })}
                             </div>
                         </div>
                         <div className="form-actions flex justify-end items-center gap-3 mt-4">

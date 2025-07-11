@@ -288,10 +288,10 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
         </div>
     );
     
-    const renderTextField = (label, name, value) => (
-           <div className="form-group flex-1 min-w-[200px]">
+    const renderTextField = (label, name, value, opts = {}) => (
+         <div className="form-group flex-1 min-w-[200px]">
             <label className="form-label block font-semibold text-xs text-num-dark-text dark:text-white mb-1">{label}</label>
-            <input type="text" name={name} value={value || ''} onChange={handleInputChange} readOnly={!isEditing} disabled={loading} className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs text-num-dark-text dark:text-white ${!isEditing ? 'bg-gray-100 dark:bg-gray-800 border-num-gray-light dark:border-gray-700 text-gray-500 dark:text-gray-400' : 'bg-num-content-bg dark:bg-gray-700 border-num-gray-light dark:border-gray-600'}`}/>
+            <input type="text" name={name} value={value || ''} onChange={handleInputChange} readOnly={!isEditing} disabled={loading} className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs text-num-dark-text dark:text-white ${!isEditing ? 'bg-gray-100 dark:bg-gray-800 border-num-gray-light dark:border-gray-700 text-gray-500 dark:text-gray-400' : 'bg-num-content-bg dark:bg-gray-700 border-num-gray-light dark:border-gray-600'}`} maxLength={opts.maxLength} />
         </div>
     );
 
@@ -560,8 +560,8 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
                 <div className="info-details-wrapper flex-grow flex flex-col gap-8 min-w-[300px]">
                     <div className="info-card p-3 sm:p-4 bg-white border border-num-gray-light dark:bg-gray-800 dark:border-gray-700 shadow-custom-light rounded-lg">
                         <div className="section-title font-semibold text-md text-num-dark-text dark:text-white mb-3">General Information</div>
-                        <div className="form-row flex gap-3 mb-2 flex-wrap">{renderTextField("Class Name", "name", classData.name)}</div>
-                        <div className="form-row flex gap-3 mb-2 flex-wrap">{renderTextField("Group", "group", classData.group)}{renderSelectField("Generation", "generation", classData.generation, generationOptions)}</div>
+                        <div className="form-row flex gap-3 mb-2 flex-wrap">{renderTextField("Class Name", "name", classData.name, { maxLength: 30 })}</div>
+                        <div className="form-row flex gap-3 mb-2 flex-wrap">{renderTextField("Group", "group", classData.group, { maxLength: 2 })}{renderSelectField("Generation", "generation", classData.generation, generationOptions)}</div>
                         <div className="form-row flex gap-3 mb-2 flex-wrap">
                             {renderSelectField("Faculty", "faculty", classData.faculty, departmentOptions, 'departmentId', 'name', 'name')}
                             {renderSelectField("Degree", "degrees", classData.degrees, degreesOptions)}

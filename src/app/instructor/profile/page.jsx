@@ -112,7 +112,7 @@ const ProfileContent = () => {
                 address: profileResponse.address || "N/A",
                 avatarUrl: profileResponse.profile,
                 degree: profileResponse.degree || "N/A",
-                department: profileResponse.departmentName, // Use departmentName
+                department: profileResponse.department,
                 departmentId: profileResponse.departmentId,
                 major: profileResponse.major || "N/A",
             };
@@ -298,7 +298,7 @@ const ProfileContent = () => {
 
     const togglePasswordVisibility = (field) => { setPasswordVisibility(prev => ({ ...prev, [field]: !prev[field] })) };
 
-    const renderTextField = (label, name, value, isEditing) => (
+    const renderTextField = (label, name, value, isEditing, opts = {}) => (
         <div className="form-group flex-1 min-w-[200px]">
             <label className="form-label block font-semibold text-xs text-gray-700 dark:text-gray-300 mb-1">{label}</label>
             <input
@@ -310,6 +310,7 @@ const ProfileContent = () => {
                 className={`form-input w-full py-2 px-3 border dark:border-gray-700 dark:text-gray-400 rounded-md font-medium text-xs ${
                     !isEditing ? "bg-gray-100 dark:bg-gray-800" : "bg-white dark:bg-gray-600 "
                 }`}
+                maxLength={opts.maxLength}
             />
         </div>
     );
@@ -342,7 +343,7 @@ const ProfileContent = () => {
         </div>
     );
 
-    const renderPasswordField = (label, name, value, onChange, fieldName, isReadOnly = false, hasError = false) => (
+    const renderPasswordField = (label, name, value, onChange, fieldName, isReadOnly = false, hasError = false, opts = {}) => (
         <div className="form-group flex-1 min-w-[200px]">
             <label className="form-label block font-semibold text-xs text-num-dark-text dark:text-white mb-1">{label}</label>
             <div className="relative">
@@ -355,6 +356,7 @@ const ProfileContent = () => {
                     onChange={onChange}
                     readOnly={isReadOnly}
                     disabled={loading}
+                    maxLength={opts.maxLength}
                 />
                 <button
                     type="button"
@@ -378,6 +380,7 @@ const ProfileContent = () => {
     }
 
     const currentDisplayData = isEditingGeneral ? editableProfileData : profileData;
+    const fullName = `Dr. ${currentDisplayData.firstName} ${currentDisplayData.lastName}`.trim();
 
     return (
       <div className="p-6">
@@ -416,10 +419,12 @@ const ProfileContent = () => {
                   })}
                 </div>
               )}
-              <div className="avatar-info flex flex-col">
-                <div className="avatar-name font-semibold text-sm text-gray-800 dark:text-gray-200 mb-0.5">
-                  Dr. {currentDisplayData.firstName}{" "}
-                  {currentDisplayData.lastName}
+              <div className="avatar-info flex flex-col overflow-hidden">
+                <div 
+                    className="avatar-name font-semibold text-sm text-gray-800 dark:text-gray-200 mb-0.5 truncate"
+                    title={fullName}
+                >
+                  {fullName}
                 </div>
                 <div className="avatar-role font-semibold text-xs text-gray-500 dark:text-gray-400">
                   Instructor
@@ -449,12 +454,12 @@ const ProfileContent = () => {
                 General Information
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 dark:text-gray-300">
-                {renderTextField("First Name", "firstName", currentDisplayData.firstName, isEditingGeneral)}
-                {renderTextField("Last Name", "lastName", currentDisplayData.lastName, isEditingGeneral)}
-                {renderTextField("Email", "email", currentDisplayData.email, false)}
-                {renderTextField("Phone Number", "phoneNumber", formatPhoneNumber(currentDisplayData.phoneNumber), isEditingGeneral)}
+                {renderTextField("First Name", "firstName", currentDisplayData.firstName, isEditingGeneral, { maxLength: 20 })}
+                {renderTextField("Last Name", "lastName", currentDisplayData.lastName, isEditingGeneral, { maxLength: 30 })}
+                {renderTextField("Email", "email", currentDisplayData.email, false, { maxLength: 30 })}
+                {renderTextField("Phone Number", "phoneNumber", formatPhoneNumber(currentDisplayData.phoneNumber), isEditingGeneral, { maxLength: 15 })}
                 {renderSelectField("Degree", "degree", currentDisplayData.degree, degreeOptions, isEditingGeneral)}
-                {renderTextField("Major", "major", currentDisplayData.major, isEditingGeneral)}
+                {renderTextField("Major", "major", currentDisplayData.major, isEditingGeneral, { maxLength: 50 })}
                 <div className="form-group md:col-span-2">
                   {renderSelectField("Department", "department", currentDisplayData.department, allDepartments, isEditingGeneral)}
                 </div>

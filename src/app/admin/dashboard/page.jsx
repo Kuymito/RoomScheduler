@@ -73,6 +73,7 @@ const fetchChartData = async (timeSlot) => {
     return {
       labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
       data: [0, 0, 0, 0, 0, 0, 0],
+      totalRoomCount: 10, // Default value
     };
   }
 
@@ -118,6 +119,7 @@ const fetchChartData = async (timeSlot) => {
     return {
       labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
       data: dataPoints,
+      totalRoomCount: totalRoomCount,
     };
 
   } catch (error) {
@@ -125,6 +127,7 @@ const fetchChartData = async (timeSlot) => {
     return {
       labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
       data: [0, 0, 0, 0, 0, 0, 0],
+      totalRoomCount: 10, // Default value on error
     };
   }
 };
