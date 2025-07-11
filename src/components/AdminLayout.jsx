@@ -42,7 +42,8 @@ export default function AdminLayout({ children, activeItem, pageTitle, breadcrum
     const { data: session } = useSession();
     const token = session?.accessToken;
 
-    const { data: profile, isLoading: isProfileLoading } = useSWR(
+    // This SWR call remains here to fetch data for the AdminPopup
+    const { data: profile } = useSWR(
         token ? ['/api/profile', token] : null,
         profileFetcher
     );
@@ -186,8 +187,6 @@ export default function AdminLayout({ children, activeItem, pageTitle, breadcrum
                 activeItem={activeItem} 
                 onNavItemClick={handleNavItemClick} 
                 navigatingTo={navigatingTo}
-                profile={profile}
-                isProfileLoading={isProfileLoading}
             />
             <div className="flex flex-col flex-grow transition-all duration-300 ease-in-out" style={{ marginLeft: sidebarWidth, width: `calc(100% - ${sidebarWidth})`, height: '100vh', overflowY: 'auto' }}>
                 <div className="fixed top-0 bg-white dark:bg-gray-900 shadow-custom-medium p-5 flex justify-between items-center z-30 transition-all duration-300 ease-in-out" style={{ left: sidebarWidth, width: `calc(100% - ${sidebarWidth})`, height: TOPBAR_HEIGHT }}>
@@ -217,7 +216,7 @@ export default function AdminLayout({ children, activeItem, pageTitle, breadcrum
                     onApprove={handleApproveNotification} 
                     onDeny={handleDenyNotification} 
                     onMarkAsRead={handleMarkSingleAsRead} 
-                    anchorRef={notificationIconRef}
+                    anchorRef={notificationIconRef} 
                     onClose={() => setShowNotificationPopup(false)}
                 />
             </div>

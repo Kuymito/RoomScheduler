@@ -596,7 +596,7 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
                         <div> 
                             <h3 className="text-base sm:text-lg font-semibold mb-2 text-num-dark-text dark:text-gray-100 border-b dark:border-gray-600 pb-2">Available Instructors</h3>
                             <div className="my-3 flex flex-col sm:flex-row items-center gap-2">
-                                <input type="text" placeholder="Search by name..." className="w-full p-2 text-sm border border-gray-300 rounded-md dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200 focus:ring-sky-500 focus:border-sky-500 placeholder-gray-400 dark:placeholder-gray-500" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}/>
+                                <input type="text" placeholder="Search by name..." className="w-full p-2 text-sm border border-gray-300 rounded-md dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-600 placeholder-gray-400 dark:placeholder-gray-500 dark:focus:ring-offset-gray-800" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}/>
                                 <select value={selectedDegree} onChange={(e) => setSelectedDegree(e.target.value)} className="w-full sm:w-auto p-2 text-sm border border-gray-300 rounded-md dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200 focus:ring-sky-500 focus:border-sky-500">
                                     {degreeFilterOptions.map(option => <option key={option} value={option}>{option}</option>)}
                                 </select>
