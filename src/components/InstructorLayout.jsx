@@ -18,18 +18,52 @@ const TOPBAR_HEIGHT = '90px';
 const profileFetcher = ([, token]) => authService.getProfile(token);
 const notificationsFetcher = ([, token]) => notificationService.getNotifications(token);
 
+const useMediaQuery = (query) => {
+    const [matches, setMatches] = useState(false);
+
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+
+        const media = window.matchMedia(query);
+        if (media.matches !== matches) {
+            setMatches(media.matches);
+        }
+        const listener = () => {
+            setMatches(media.matches);
+        };
+        media.addEventListener('change', listener);
+        return () => media.removeEventListener('change', listener);
+    }, [matches, query]);
+
+    return matches;
+};
+
 export default function InstructorLayout({ children, activeItem, pageTitle, breadcrumbs }) {
     const [showAdminPopup, setShowAdminPopup] = useState(false);
     const [showLogoutAlert, setShowLogoutAlert] = useState(false);
     const [showInstructorNotificationPopup, setShowInstructorNotificationPopup] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [isProfileNavigating, setIsProfileNavigating] = useState(false);
+    
+    const isSmallScreen = useMediaQuery('(max-width: 1023px)');
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
         if (typeof window !== 'undefined') {
             return localStorage.getItem('sidebarCollapsed') === 'true';
         }
         return false;
     });
+
+    useEffect(() => {
+        if (isSmallScreen) {
+            setIsSidebarCollapsed(true);
+        }
+    }, [isSmallScreen]);
+
+    useEffect(() => {
+        if (typeof window !== 'undefined' && !isSmallScreen) {
+            localStorage.setItem('sidebarCollapsed', isSidebarCollapsed);
+        }
+    }, [isSidebarCollapsed, isSmallScreen]);
 
     const notificationPopupRef = useRef(null);
     const notificationIconRef = useRef(null);
@@ -57,7 +91,11 @@ export default function InstructorLayout({ children, activeItem, pageTitle, brea
 
     const finalBreadcrumbs = breadcrumbs || [{ label: pageTitle }];
 
-    const toggleSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
+    const toggleSidebar = () => {
+        if (!isSmallScreen) {
+            setIsSidebarCollapsed(!isSidebarCollapsed);
+        }
+    };
 
     const handleUserIconClick = (event) => { 
         event.stopPropagation();
@@ -216,6 +254,7 @@ export default function InstructorLayout({ children, activeItem, pageTitle, brea
                         onNotificationIconClick={handleToggleInstructorNotificationPopup}
                         notificationIconRef={notificationIconRef}
                         hasUnreadNotifications={hasUnreadInstructorNotifications}
+                        showToggleButton={!isSmallScreen}
                     />
                 </div>
 

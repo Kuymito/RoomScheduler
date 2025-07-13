@@ -1,23 +1,27 @@
+// src/components/InstructorTopbar.jsx
 'use client';
 
 import React from 'react';
 import Link from 'next/link';
-import ThemeToggle from './ThemeToggle'; // Assuming ThemeToggle is in the same directory or adjust path
+import ThemeToggle from './ThemeToggle';
 
-const InstructorTopbar = ({ onToggleSidebar, isSidebarCollapsed, onUserIconClick, breadcrumbs, userIconRef, onNotificationIconClick, notificationIconRef, hasUnreadNotifications, }) => {
+const InstructorTopbar = ({ onToggleSidebar, isSidebarCollapsed, onUserIconClick, breadcrumbs, userIconRef, onNotificationIconClick, notificationIconRef, hasUnreadNotifications, showToggleButton = true }) => {
   return (
     <div className="flex justify-between items-center w-full h-full"> 
       <div className="topbar-content-left flex items-center">
-        <div
-          id="sidebar-toggle"
-          className="sidebar-toggle-btn text-xl cursor-pointer mr-4 p-2 rounded text-black dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 select-none leading-none"
-          title={isSidebarCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
-          onClick={onToggleSidebar}
-        >
-          {isSidebarCollapsed ? <span dangerouslySetInnerHTML={{ __html: '&#x2715;' }} /> : <span dangerouslySetInnerHTML={{ __html: '&#9776;' }} />}
-        </div>
+        {showToggleButton && (
+          <div
+            id="sidebar-toggle"
+            className="sidebar-toggle-btn text-xl cursor-pointer mr-4 p-2 rounded text-black dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 select-none leading-none"
+            title={isSidebarCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
+            onClick={onToggleSidebar}
+          >
+            {isSidebarCollapsed ? <span dangerouslySetInnerHTML={{ __html: '&#x2715;' }} /> : <span dangerouslySetInnerHTML={{ __html: '&#9776;' }} />}
+          </div>
+        )}
         <div className="page-title font-medium text-xl text-black dark:text-white">
-          National University of Management
+          <span className="lg:hidden">NUM</span>
+          <span className="hidden lg:inline">National University of Management</span>
           <div className="dashboard text-sm font-normal text-blue-600 mt-1 flex items-center">
             {breadcrumbs.map((crumb, index) => (
               <React.Fragment key={index}>
@@ -39,7 +43,7 @@ const InstructorTopbar = ({ onToggleSidebar, isSidebarCollapsed, onUserIconClick
         
         <div
           ref={notificationIconRef} 
-          className="icon-wrapper relative w-10 h-10 flex items-center justify-center border border-num-icon-border  dark:bg-gray-800 dark:border-gray-700 p-[10px] rounded-md cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700" // Added dark:border-gray-700 and dark:hover:bg-gray-800
+          className="icon-wrapper relative w-10 h-10 flex items-center justify-center border border-num-icon-border  dark:bg-gray-800 dark:border-gray-700 p-[10px] rounded-md cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
           onClick={onNotificationIconClick} 
           title="Notifications"
         >
