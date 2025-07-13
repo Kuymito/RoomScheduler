@@ -38,8 +38,11 @@ const fetchDashboardStats = async () => {
 
 
   classes.forEach(cls => {
-    // A class is considered assigned if its dailySchedule object is not null and has entries.
-    if (cls.dailySchedule && Object.keys(cls.dailySchedule).length > 0) {
+    // Updated logic for assigned vs unassigned classes
+    // A class is unassigned if it has no daily schedule or the schedule is empty.
+    const isAssigned = cls.dailySchedule && typeof cls.dailySchedule === 'object' && Object.keys(cls.dailySchedule).length > 0;
+    
+    if (isAssigned) {
       assigned++;
     } else {
       unassigned++;
