@@ -54,7 +54,16 @@ export default function ClassClientView({ initialClasses, initialDepartments }) 
     const [successPopupMessage, setSuccessPopupMessage] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPageOptions = [5, 10, 20, 50];
-    const [itemsPerPage, setItemsPerPage] = useState(itemsPerPageOptions[0]);
+    
+    // State for items per page, initialized from localStorage or default
+    const [itemsPerPage, setItemsPerPage] = useState(() => {
+        if (typeof window !== 'undefined') {
+            const savedSize = localStorage.getItem('classItemsPerPage');
+            const savedValue = savedSize ? parseInt(savedSize, 10) : itemsPerPageOptions[0];
+            return itemsPerPageOptions.includes(savedValue) ? savedValue : itemsPerPageOptions[0];
+        }
+        return itemsPerPageOptions[0];
+    });
     
     // --- Filter States ---
     const [isFilterMenuOpen, setIsFilterMenuOpen] = useState(false);
@@ -66,6 +75,13 @@ export default function ClassClientView({ initialClasses, initialDepartments }) 
     const [sortColumn, setSortColumn] = useState(null);
     const [sortDirection, setSortDirection] = useState('asc');
     const [searchTexts, setSearchTexts] = useState({ name: '', generation: '', group: '', major: '', degrees: '', faculty: '', semester: '', shift: '' });
+
+    // Effect to save itemsPerPage to localStorage whenever it changes
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            localStorage.setItem('classItemsPerPage', itemsPerPage);
+        }
+    }, [itemsPerPage]);
 
     useEffect(() => {
         if (classes) {

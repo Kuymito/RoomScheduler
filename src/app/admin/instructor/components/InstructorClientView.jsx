@@ -82,7 +82,23 @@ export default function InstructorClientView({ initialInstructors, initialDepart
     const [searchTexts, setSearchTexts] = useState({ name: '', email: '', phone: '', majorStudied: '', qualifications: '' });
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPageOptions = [5, 10, 20, 50];
-    const [itemsPerPage, setItemsPerPage] = useState(itemsPerPageOptions[0]);
+    
+    // State for items per page, initialized from localStorage or default
+    const [itemsPerPage, setItemsPerPage] = useState(() => {
+        if (typeof window !== 'undefined') {
+            const savedSize = localStorage.getItem('instructorItemsPerPage');
+            const savedValue = savedSize ? parseInt(savedSize, 10) : itemsPerPageOptions[0];
+            return itemsPerPageOptions.includes(savedValue) ? savedValue : itemsPerPageOptions[0];
+        }
+        return itemsPerPageOptions[0];
+    });
+
+    // Effect to save itemsPerPage to localStorage whenever it changes
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            localStorage.setItem('instructorItemsPerPage', itemsPerPage);
+        }
+    }, [itemsPerPage]);
 
     useEffect(() => {
         if (instructors) {
