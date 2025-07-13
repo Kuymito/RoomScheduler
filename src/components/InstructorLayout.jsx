@@ -261,7 +261,7 @@ export default function InstructorLayout({ children, activeItem, pageTitle, brea
                 </div>
 
                 <div className="flex flex-col flex-grow" style={{ paddingTop: TOPBAR_HEIGHT }}>
-                    <main className="content-area flex-grow m-6">
+                    <main className="content-area flex-grow m-6 bg-white dark:bg-gray-900 rounded-lg shadow-md">
                         {children}
                     </main>
                     <Footer />
