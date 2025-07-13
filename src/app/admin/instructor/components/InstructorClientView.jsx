@@ -293,7 +293,7 @@ export default function InstructorClientView({ initialInstructors, initialDepart
                         placeholder="Search by name..."
                         value={searchTexts.name}
                         onChange={(e) => handleSearchChange('name', e.target.value)}
-                        className="block w-72 p-2 text-xs font-medium text-gray-900 bg-white border border-gray-200 rounded-lg hover:bg-gray-100 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:hover:text-white dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-600 dark:focus:ring-offset-gray-800"
+                        className="block md:w-72 sm:w-52 w-32 p-2 text-xs font-medium text-gray-900 bg-white border border-gray-200 rounded-lg hover:bg-gray-100 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:hover:text-white dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-600 dark:focus:ring-offset-gray-800"
                     />
                      <div ref={filterMenuRef} className="relative inline-block text-left">
                         <div>

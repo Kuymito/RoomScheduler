@@ -19,21 +19,21 @@ const profileFetcher = ([, token]) => authService.getProfile(token);
 const notificationsFetcher = ([, token]) => notificationService.getNotifications(token);
 
 const useMediaQuery = (query) => {
-    const [matches, setMatches] = useState(false);
+    const [matches, setMatches] = useState(() => {
+        if (typeof window === 'undefined') return false;
+        return window.matchMedia(query).matches;
+    });
 
     useEffect(() => {
         if (typeof window === 'undefined') return;
 
         const media = window.matchMedia(query);
-        if (media.matches !== matches) {
-            setMatches(media.matches);
-        }
-        const listener = () => {
-            setMatches(media.matches);
-        };
+        const listener = () => setMatches(media.matches);
+        
         media.addEventListener('change', listener);
+        
         return () => media.removeEventListener('change', listener);
-    }, [matches, query]);
+    }, [query]);
 
     return matches;
 };
@@ -53,13 +53,17 @@ export default function InstructorDashboardLayout({ children, activeItem, pageTi
     const [isProfileNavigating, setIsProfileNavigating] = useState(false);
     
     const isSmallScreen = useMediaQuery('(max-width: 1023px)');
+    
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
-        if (typeof window !== 'undefined') {
-            return localStorage.getItem('sidebarCollapsed') === 'true';
+        if (typeof window === 'undefined') {
+            return false;
         }
-        return false;
+        if (window.matchMedia('(max-width: 1023px)').matches) {
+            return true;
+        }
+        return localStorage.getItem('sidebarCollapsed') === 'true';
     });
-
+    
     useEffect(() => {
         if (isSmallScreen) {
             setIsSidebarCollapsed(true);

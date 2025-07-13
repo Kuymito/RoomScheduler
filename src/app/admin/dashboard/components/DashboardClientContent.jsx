@@ -69,7 +69,7 @@ export default function DashboardClientContent({ dashboardStats, initialChartDat
         academicYear={academicYear}
       />
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mt-6">
         <StatCard title="Class Assign" value={classAssign} />
         <StatCard title="Expired" value={expired} />
         <StatCard title="Unassigned Class" value={unassignedClass} />
