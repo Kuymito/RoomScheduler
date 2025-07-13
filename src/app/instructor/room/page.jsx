@@ -6,22 +6,10 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import { getAllRooms } from '@/services/room.service';
 import { scheduleService } from '@/services/schedule.service';
-import { classService } from '@/services/class.service'; // Assuming a service to get instructor's classes
-
-// This layout structure can be dynamic if your API provides building/floor info
-const baseBuildingLayout = {
-    "Building A": [ { floor: 3, rooms: [] }, { floor: 2, rooms: [] }, { floor: 1, rooms: [] } ],
-    "Building B": [ { floor: 2, rooms: [] }, { floor: 1, rooms: [] } ],
-    "Building C": [ { floor: 3, rooms: [] }, { floor: 2, rooms: [] }, { floor: 1, rooms: [] } ],
-    "Building D": [ { floor: 3, rooms: [] }, { floor: 2, rooms: [] }, { floor: 1, rooms: [] } ],
-    "Building E": [ { floor: 5, rooms: [] }, { floor: 4, rooms: [] }, { floor: 3, rooms: [] }, { floor: 2, rooms: [] }, { floor: 1, rooms: [] } ],
-    "Building F": [ { floor: 5, rooms: [] }, { floor: 4, rooms: [] }, { floor: 3, rooms: [] }, { floor: 2, rooms: [] }, { floor: 1, rooms: [] } ],
-};
-
 
 /**
  * Fetches all necessary data for the instructor room page on the server.
- * This includes all rooms, the complete schedule, and the classes taught by the current instructor.
+ * This includes all rooms, the complete schedule, and the schedules taught by the current instructor.
  * @returns {Promise<object>} An object containing data for the client component.
  */
 async function fetchAllRoomsAndSchedules() {
@@ -32,18 +20,19 @@ async function fetchAllRoomsAndSchedules() {
         console.error("Instructor Room Page: Not authenticated.");
         return { 
             initialAllRoomsData: {}, 
-            buildingLayout: baseBuildingLayout, 
+            buildingLayout: {}, 
             initialScheduleMap: {}, 
             initialInstructorClasses: [] 
         };
     }
 
     try {
-        // Fetch rooms, schedules, and instructor's classes in parallel
-        const [apiRooms, apiSchedules, apiInstructorClasses] = await Promise.all([
+        // Fetch rooms, all schedules, and the instructor's specific schedules in parallel
+        const [apiRooms, apiSchedules, apiInstructorSchedules] = await Promise.all([
             getAllRooms(token),
             scheduleService.getAllSchedules(token),
-            classService.getAssignedClasses(token) // Assuming this fetches classes for the logged-in instructor
+            // FIX: Call getMySchedule to get entries with a scheduleId
+            scheduleService.getMySchedule(token) 
         ]);
 
         const roomsDataMap = {};
@@ -76,10 +65,9 @@ async function fetchAllRoomsAndSchedules() {
             };
         });
 
-        // Create a schedule map for quick lookup: { "Monday": { "07:00-10:00": { roomId: className } } }
+        // Create a schedule map for quick lookup of occupied rooms
         const scheduleMap = {};
         apiSchedules.forEach(schedule => {
-            // FIX: Use the new `dayDetails` array from the API response
             if (schedule && schedule.dayDetails && Array.isArray(schedule.dayDetails) && schedule.shift) {
                 const timeSlot = `${schedule.shift.startTime.substring(0, 5)}-${schedule.shift.endTime.substring(0, 5)}`;
                 
@@ -96,9 +84,9 @@ async function fetchAllRoomsAndSchedules() {
             }
         });
         
-        // Format instructor classes for the request form dropdown
-        const formattedClasses = apiInstructorClasses.map(cls => ({
-            id: cls.classId,
+        // Format instructor's schedules for the request form dropdown
+        const formattedClasses = apiInstructorSchedules.map(cls => ({
+            id: cls.scheduleId, // Use scheduleId as the value for the dropdown
             name: cls.className,
             shift: `${cls.shift.startTime}-${cls.shift.endTime}`,
         }));

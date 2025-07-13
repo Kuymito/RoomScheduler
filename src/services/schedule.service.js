@@ -120,7 +120,7 @@ export const getMySchedule = async (token) => {
 
 const assignRoomToClass = async (scheduleRequest, token) => {
     const isServer = typeof window === 'undefined';
-    const url = isServer ? `${API_BASE_URL}/schedule/assign` : `${LOCAL_API_URL}/schedule/assign`;
+    const url = isServer ? `${API_BASE_URL}/schedule/assign` : `${API_BASE_URL}/schedule/assign`;
   
     try {
       const response = await axios.post(url, scheduleRequest, {
@@ -148,7 +148,7 @@ const assignRoomToClass = async (scheduleRequest, token) => {
     const isServer = typeof window === 'undefined';
     const url = isServer 
       ? `${API_BASE_URL}/schedule/${scheduleId}` 
-      : `${LOCAL_API_URL}/schedule/${scheduleId}`;
+      : `${API_BASE_URL}/schedule/${scheduleId}`;
     
     try {
       await axios.delete(url, {
