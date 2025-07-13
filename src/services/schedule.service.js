@@ -4,6 +4,8 @@ import { getSession } from 'next-auth/react';
 
 // The base URL for your backend API.
 const API_BASE_URL = 'https://jaybird-new-previously.ngrok-free.app/api/v1';
+const LOCAL_API_URL = "/api"; // Proxy for client-side calls
+
 
 /**
  * A helper function to create authorization headers.
@@ -39,8 +41,11 @@ const getAuthHeaders = async (token) => {
  */
 const handleResponse = (response) => {
     if (response.status >= 200 && response.status < 300) {
-        if (response.data && response.data.payload) {
+        if (response.data && typeof response.data.payload !== 'undefined') {
             return response.data.payload;
+        }
+        if(response.data){
+            return response.data;
         }
         return null; // Handle successful but empty responses (e.g., 204 No Content)
     }
@@ -57,7 +62,23 @@ export const getAllSchedules = async (token) => {
     try {
         const headers = await getAuthHeaders(token);
         const response = await axios.get(`${API_BASE_URL}/schedule`, { headers });
-        return handleResponse(response);
+        
+        // FIX: Handle potential duplicate schedule entries from the backend
+        const payload = handleResponse(response);
+        if (Array.isArray(payload)) {
+            const uniqueSchedules = new Map();
+            payload.forEach(schedule => {
+                // Use 'scheduleId' as the unique key to prevent duplicates.
+                if (schedule && schedule.scheduleId) {
+                    if (!uniqueSchedules.has(schedule.scheduleId)) {
+                        uniqueSchedules.set(schedule.scheduleId, schedule);
+                    }
+                }
+            });
+            return Array.from(uniqueSchedules.values());
+        }
+        
+        return payload; // Return as-is if not an array
     } catch (error) {
         console.error("getAllSchedules service error:", error.message);
         throw error;
@@ -73,16 +94,81 @@ export const getMySchedule = async (token) => {
     try {
         const headers = await getAuthHeaders(token);
         const response = await axios.get(`${API_BASE_URL}/schedule/my-schedule`, { headers });
-        return handleResponse(response);
+        
+        // FIX: Handle potential duplicate schedule entries from the backend
+        const payload = handleResponse(response);
+        if (Array.isArray(payload)) {
+            const uniqueSchedules = new Map();
+            payload.forEach(schedule => {
+                // Use 'scheduleId' as the unique key to prevent duplicates.
+                if (schedule && schedule.scheduleId) {
+                    if (!uniqueSchedules.has(schedule.scheduleId)) {
+                        uniqueSchedules.set(schedule.scheduleId, schedule);
+                    }
+                }
+            });
+            return Array.from(uniqueSchedules.values());
+        }
+        
+        return payload; // Return as-is if not an array
+
     } catch (error) {
         console.error("getMySchedule service error:", error.message);
         throw error;
     }
 };
 
+const assignRoomToClass = async (scheduleRequest, token) => {
+    const isServer = typeof window === 'undefined';
+    const url = isServer ? `${API_BASE_URL}/schedule/assign` : `${LOCAL_API_URL}/schedule/assign`;
+  
+    try {
+      const response = await axios.post(url, scheduleRequest, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          ...(isServer && { 'ngrok-skip-browser-warning': 'true' })
+        }
+      });
+      return response.data;
+    } catch (error) {
+      // Throw a more detailed error to be caught by the component
+      const errorMessage = error.response?.data?.message || "An unexpected error occurred during assignment.";
+      throw new Error(errorMessage);
+    }
+  };
+
+  /**
+ * Deletes a schedule entry by its ID.
+ * @param {number} scheduleId - The ID of the schedule to delete.
+ * @param {string} token - The authorization token.
+ * @returns {Promise<void>}
+ */
+  const unassignRoomFromClass = async (scheduleId, token) => {
+    const isServer = typeof window === 'undefined';
+    const url = isServer 
+      ? `${API_BASE_URL}/schedule/${scheduleId}` 
+      : `${LOCAL_API_URL}/schedule/${scheduleId}`;
+    
+    try {
+      await axios.delete(url, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          ...(isServer && { 'ngrok-skip-browser-warning': 'true' })
+        }
+      });
+    } catch (error) {
+      const errorMessage = error.response?.data?.message || "Failed to delete schedule.";
+      throw new Error(errorMessage);
+    }
+  };
+
+
 
 // Export the service object
 export const scheduleService = {
   getAllSchedules,
   getMySchedule,
+  assignRoomToClass,
+  unassignRoomFromClass
 };

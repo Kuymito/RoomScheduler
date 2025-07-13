@@ -54,7 +54,16 @@ export default function ClassClientView({ initialClasses, initialDepartments }) 
     const [successPopupMessage, setSuccessPopupMessage] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPageOptions = [5, 10, 20, 50];
-    const [itemsPerPage, setItemsPerPage] = useState(itemsPerPageOptions[0]);
+    
+    // State for items per page, initialized from localStorage or default
+    const [itemsPerPage, setItemsPerPage] = useState(() => {
+        if (typeof window !== 'undefined') {
+            const savedSize = localStorage.getItem('classItemsPerPage');
+            const savedValue = savedSize ? parseInt(savedSize, 10) : itemsPerPageOptions[0];
+            return itemsPerPageOptions.includes(savedValue) ? savedValue : itemsPerPageOptions[0];
+        }
+        return itemsPerPageOptions[0];
+    });
     
     // --- Filter States ---
     const [isFilterMenuOpen, setIsFilterMenuOpen] = useState(false);
@@ -66,6 +75,13 @@ export default function ClassClientView({ initialClasses, initialDepartments }) 
     const [sortColumn, setSortColumn] = useState(null);
     const [sortDirection, setSortDirection] = useState('asc');
     const [searchTexts, setSearchTexts] = useState({ name: '', generation: '', group: '', major: '', degrees: '', faculty: '', semester: '', shift: '' });
+
+    // Effect to save itemsPerPage to localStorage whenever it changes
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            localStorage.setItem('classItemsPerPage', itemsPerPage);
+        }
+    }, [itemsPerPage]);
 
     useEffect(() => {
         if (classes) {
@@ -260,7 +276,7 @@ export default function ClassClientView({ initialClasses, initialDepartments }) 
             <hr className="border-t border-slate-300 dark:border-slate-700 mt-4 mb-4" />
             <div className="flex items-center justify-between mt-2 mb-4 gap-2">
                 <div className="flex items-center gap-2">
-                    <input type="text" placeholder="Search by name..." value={searchTexts.name} onChange={(e) => handleSearchChange('name', e.target.value)} className="block w-72 p-2 text-xs font-medium text-gray-900 bg-white border border-gray-200 rounded-lg hover:bg-gray-100 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:hover:text-white dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-600 dark:focus:ring-offset-gray-800"/>
+                    <input type="text" placeholder="Search by name..." value={searchTexts.name} onChange={(e) => handleSearchChange('name', e.target.value)} className="block md:w-72 sm:w-52 w-32 p-2 text-xs font-medium text-gray-900 bg-white border border-gray-200 rounded-lg hover:bg-gray-100 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:hover:text-white dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-600 dark:focus:ring-offset-gray-800"/>
                     <div ref={filterMenuRef} className="relative inline-block text-left">
                         <div>
                             <button type="button" onClick={() => setIsFilterMenuOpen(!isFilterMenuOpen)} className="inline-flex justify-center w-full rounded-lg border border-gray-300 shadow-sm px-4 py-1.5 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-600 dark:bg-gray-700 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-600 dark:focus:ring-offset-gray-800" id="menu-button" aria-expanded="true" aria-haspopup="true">
@@ -286,7 +302,7 @@ export default function ClassClientView({ initialClasses, initialDepartments }) 
                         )}
                     </div>
                 </div>
-                <button type="button" onClick={() => setShowCreatePopup(true)} className="text-white bg-[#75B846] hover:bg-[#87D94D] focus:ring-2 focus:ring-green-600 font-medium rounded-md text-xs px-3 py-2 text-center inline-flex items-center dark:bg-[#75B846] me-2 mb-2 dark:hover:bg-[#79c344] dark:focus:ring-green-800 gap-1">
+                <button type="button" onClick={() => setShowCreatePopup(true)} className="text-white bg-[#75B846] hover:bg-[#87D94D] focus:ring-2 focus:ring-green-600 font-medium rounded-md text-xs px-3 py-2 text-center inline-flex items-center dark:bg-[#75B846] me-2 dark:hover:bg-[#79c344] dark:focus:ring-green-800 gap-1">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-4"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
                     Create
                 </button>

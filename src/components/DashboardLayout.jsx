@@ -20,6 +20,26 @@ const profileFetcher = ([, token]) => authService.getProfile(token);
 const notificationsFetcher = ([, token]) => notificationService.getNotifications(token);
 const changeRequestsFetcher = ([, token]) => notificationService.getChangeRequests(token);
 
+const useMediaQuery = (query) => {
+    const [matches, setMatches] = useState(() => {
+        if (typeof window === 'undefined') return false;
+        return window.matchMedia(query).matches;
+    });
+
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+
+        const media = window.matchMedia(query);
+        const listener = () => setMatches(media.matches);
+        
+        media.addEventListener('change', listener);
+        
+        return () => media.removeEventListener('change', listener);
+    }, [query]);
+
+    return matches;
+};
+
 export default function DashboardLayout({ children, activeItem, pageTitle }) {
     const [showAdminPopup, setShowAdminPopup] = useState(false);
     const [showLogoutAlert, setShowLogoutAlert] = useState(false);
@@ -33,12 +53,30 @@ export default function DashboardLayout({ children, activeItem, pageTitle }) {
     const router = useRouter();
     const pathname = usePathname();
     const [ isProfileNavigating, setIsProfileNavigating] = useState(false);
+    
+    const isSmallScreen = useMediaQuery('(max-width: 1023px)');
+    
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
-        if (typeof window !== 'undefined') {
-            return localStorage.getItem('sidebarCollapsed') === 'true';
+        if (typeof window === 'undefined') {
+            return false;
         }
-        return false;
+        if (window.matchMedia('(max-width: 1023px)').matches) {
+            return true;
+        }
+        return localStorage.getItem('sidebarCollapsed') === 'true';
     });
+    
+    useEffect(() => {
+        if (isSmallScreen) {
+            setIsSidebarCollapsed(true);
+        }
+    }, [isSmallScreen]);
+
+    useEffect(() => {
+        if (typeof window !== 'undefined' && !isSmallScreen) {
+            localStorage.setItem('sidebarCollapsed', isSidebarCollapsed);
+        }
+    }, [isSidebarCollapsed, isSmallScreen]);
 
     const { data: session } = useSession();
     const token = session?.accessToken;
@@ -66,13 +104,12 @@ export default function DashboardLayout({ children, activeItem, pageTitle }) {
 
     const breadcrumbs = [{ label: pageTitle }];
 
-    useEffect(() => {
-        if (typeof window !== 'undefined') {
-            localStorage.setItem('sidebarCollapsed', isSidebarCollapsed);
+    const toggleSidebar = () => {
+        if (!isSmallScreen) {
+            setIsSidebarCollapsed(!isSidebarCollapsed);
         }
-    }, [isSidebarCollapsed]);
-
-    const toggleSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
+    };
+    
     const handleUserIconClick = (event) => {
         event.stopPropagation();
         if (showNotificationPopup) {
@@ -185,7 +222,7 @@ export default function DashboardLayout({ children, activeItem, pageTitle }) {
             <Sidebar isCollapsed={isSidebarCollapsed} activeItem={activeItem} onNavItemClick={handleNavItemClick} navigatingTo={navigatingTo} profile={profile} isProfileLoading={isProfileLoading} />
             <div className="flex flex-col flex-grow transition-all duration-300 ease-in-out" style={{ marginLeft: sidebarWidth, width: `calc(100% - ${sidebarWidth})`, height: '100vh', overflowY: 'auto' }}>
                 <div className="fixed top-0 bg-white dark:bg-gray-900 shadow-custom-medium p-5 flex justify-between items-center z-30 transition-all duration-300 ease-in-out" style={{ left: sidebarWidth, width: `calc(100% - ${sidebarWidth})`, height: TOPBAR_HEIGHT }}>
-                    <Topbar onToggleSidebar={toggleSidebar} isSidebarCollapsed={isSidebarCollapsed} onUserIconClick={handleUserIconClick} breadcrumbs={breadcrumbs} userIconRef={userIconRef} onNotificationIconClick={handleToggleNotificationPopup} notificationIconRef={notificationIconRef} hasUnreadNotifications={hasUnreadNotifications} />
+                    <Topbar onToggleSidebar={toggleSidebar} isSidebarCollapsed={isSidebarCollapsed} onUserIconClick={handleUserIconClick} breadcrumbs={breadcrumbs} userIconRef={userIconRef} onNotificationIconClick={handleToggleNotificationPopup} notificationIconRef={notificationIconRef} hasUnreadNotifications={hasUnreadNotifications} showToggleButton={!isSmallScreen} />
                 </div>
                 <div className="flex flex-col flex-grow" style={{ paddingTop: TOPBAR_HEIGHT }}>
                     <main className="content-area flex-grow m-6">{children}</main>

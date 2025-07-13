@@ -18,6 +18,26 @@ import { moul } from './fonts';
 const profileFetcher = ([, token]) => authService.getProfile(token);
 const notificationsFetcher = ([, token]) => notificationService.getNotifications(token);
 
+const useMediaQuery = (query) => {
+    const [matches, setMatches] = useState(() => {
+        if (typeof window === 'undefined') return false;
+        return window.matchMedia(query).matches;
+    });
+
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+
+        const media = window.matchMedia(query);
+        const listener = () => setMatches(media.matches);
+        
+        media.addEventListener('change', listener);
+        
+        return () => media.removeEventListener('change', listener);
+    }, [query]);
+
+    return matches;
+};
+
 export default function InstructorDashboardLayout({ children, activeItem, pageTitle }) {
     const [showAdminPopup, setShowAdminPopup] = useState(false);
     const [showLogoutAlert, setShowLogoutAlert] = useState(false);
@@ -31,12 +51,30 @@ export default function InstructorDashboardLayout({ children, activeItem, pageTi
     const router = useRouter();
     const pathname = usePathname();
     const [isProfileNavigating, setIsProfileNavigating] = useState(false);
+    
+    const isSmallScreen = useMediaQuery('(max-width: 1023px)');
+    
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
-        if (typeof window !== 'undefined') {
-            return localStorage.getItem('sidebarCollapsed') === 'true';
+        if (typeof window === 'undefined') {
+            return false;
         }
-        return false;
+        if (window.matchMedia('(max-width: 1023px)').matches) {
+            return true;
+        }
+        return localStorage.getItem('sidebarCollapsed') === 'true';
     });
+    
+    useEffect(() => {
+        if (isSmallScreen) {
+            setIsSidebarCollapsed(true);
+        }
+    }, [isSmallScreen]);
+
+    useEffect(() => {
+        if (typeof window !== 'undefined' && !isSmallScreen) {
+            localStorage.setItem('sidebarCollapsed', isSidebarCollapsed);
+        }
+    }, [isSidebarCollapsed, isSmallScreen]);
 
     const { data: session } = useSession();
     const token = session?.accessToken;
@@ -62,7 +100,11 @@ export default function InstructorDashboardLayout({ children, activeItem, pageTi
         }
     }, [isSidebarCollapsed]);
 
-    const toggleSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
+    const toggleSidebar = () => {
+        if (!isSmallScreen) {
+            setIsSidebarCollapsed(!isSidebarCollapsed);
+        }
+    };
 
     const handleUserIconClick = (event) => {
         event.stopPropagation();
@@ -213,6 +255,7 @@ export default function InstructorDashboardLayout({ children, activeItem, pageTi
                         onNotificationIconClick={handleToggleInstructorNotificationPopup}
                         notificationIconRef={notificationIconRef}
                         hasUnreadNotifications={hasUnreadInstructorNotifications}
+                        showToggleButton={!isSmallScreen}
                     />
                 </div>
                 <div className="flex flex-col flex-grow" style={{ paddingTop: TOPBAR_HEIGHT }}>

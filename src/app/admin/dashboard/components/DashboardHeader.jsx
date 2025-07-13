@@ -2,7 +2,7 @@ export default function DashboardHeader({
   title,
   description,
   currentDate, // This prop will now be passed from the client component
-  academicYear, // This prop will now be passed from the client component
+  academicYear, // This prop will now bepassed from the client component
 }) {
   return (
     <>
@@ -11,16 +11,14 @@ export default function DashboardHeader({
           flex flex-col md:flex-row md:justify-between md:items-start 
           p-4 sm:p-6 
           mb-4 
-          space-y-10
           rounded-lg 
-          num-dark-bg bg-white dark:bg-gray-900
+          bg-white dark:bg-gray-900
         "
       >
         <div className="mb-4 md:mb-0 md:mr-6">
           {" "}
           <h1
             className="
-              space-y-10
               text-lg sm:text-xl 
               font-bold 
               text-gray-800 dark:text-gray-100 
@@ -30,9 +28,9 @@ export default function DashboardHeader({
           </h1>
           <p
             className="
-              text-sm sm:text-xs sm:text-semibold 
+              text-sm
               text-gray-700 dark:text-gray-300 
-              mt-4
+              mt-2
             "
           >
             {description}
@@ -41,11 +39,10 @@ export default function DashboardHeader({
 
         <div
           className="
-            text-xs sm:text-sm 
+            text-xs 
             text-gray-600 dark:text-gray-400 
             md:text-right 
             flex-shrink-0
-            mt-10
           "
         >
           <p className="text-xs">{`Date: ${currentDate}`}</p>
