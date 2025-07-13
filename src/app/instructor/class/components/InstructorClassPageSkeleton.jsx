@@ -43,7 +43,7 @@ export default function InstructorClassPageSkeleton() {
                 <div className="flex items-center justify-between mb-4">
                     <div className="h-9 bg-gray-200 rounded-lg dark:bg-gray-700 w-72"></div>
                 </div>
-                <TableSkeleton columns={tableColumns} rows={10} />
+                <TableSkeleton columns={tableColumns} rows={5} />
              </div>
         </div>
     )
