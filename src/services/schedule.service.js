@@ -161,6 +161,30 @@ const assignRoomToClass = async (scheduleRequest, token) => {
     }
   };
 
+  const swapSchedules = async (swapRequest, token) => {
+    try {
+        const headers = await getAuthHeaders(token);
+        const response = await axios.post(`${API_BASE_URL}/schedule/swap`, swapRequest, { headers });
+        return handleResponse(response);
+    } catch (error) {
+        console.error("swapSchedules service error:", error);
+        const errorMessage = error.response?.data?.message || "An unexpected error occurred during the swap.";
+        throw new Error(errorMessage);
+    }
+};
+
+const moveScheduleToRoom = async (scheduleId, newRoomId, token) => {
+  try {
+      const headers = await getAuthHeaders(token);
+      const response = await axios.put(`${API_BASE_URL}/schedule/${scheduleId}/move`, { newRoomId }, { headers });
+      return handleResponse(response);
+  } catch (error) {
+      const message = error.response?.data?.message || "Move failed.";
+      throw new Error(message);
+  }
+};
+
+
 
 
 // Export the service object
@@ -168,5 +192,7 @@ export const scheduleService = {
   getAllSchedules,
   getMySchedule,
   assignRoomToClass,
-  unassignRoomFromClass
+  unassignRoomFromClass,
+  swapSchedules,
+  moveScheduleToRoom
 };

@@ -30,29 +30,27 @@ async function fetchAllRoomsAndSchedules() {
 
     if (!token) {
         console.error("Instructor Room Page: Not authenticated.");
-        return { 
-            initialAllRoomsData: {}, 
-            buildingLayout: baseBuildingLayout, 
-            initialScheduleMap: {}, 
-            initialInstructorClasses: [] 
+        return {
+            initialAllRoomsData: {},
+            buildingLayout: baseBuildingLayout, // Assuming baseBuildingLayout is defined
+            initialScheduleMap: {},
+            initialInstructorClasses: []
         };
     }
 
     try {
-        // Fetch rooms, schedules, and instructor's classes in parallel
-        const [apiRooms, apiSchedules, apiInstructorClasses] = await Promise.all([
+        // 1. Fetch rooms and the instructor's schedule in parallel.
+        // We no longer need to call classService.getAssignedClasses.
+        const [apiRooms, apiInstructorSchedules] = await Promise.all([
             getAllRooms(token),
-            scheduleService.getAllSchedules(token),
-            classService.getAssignedClasses(token) // Assuming this fetches classes for the logged-in instructor
+            scheduleService.getMySchedule(token) // This now provides all the class data needed.
         ]);
 
+        // ... (The rest of your existing code for processing rooms remains the same)
         const roomsDataMap = {};
         const populatedLayout = {};
-
-        // Process all rooms to build the main data map and UI layout
         apiRooms.forEach(room => {
             const { roomId, roomName, buildingName, floor, capacity, type, equipment } = room;
-
             if (!populatedLayout[buildingName]) {
                 populatedLayout[buildingName] = [];
             }
@@ -64,55 +62,45 @@ async function fetchAllRoomsAndSchedules() {
             if (!floorObj.rooms.includes(roomName)) {
                  floorObj.rooms.push(roomName);
             }
-
             roomsDataMap[roomId] = {
-                id: roomId,
-                name: roomName,
-                building: buildingName,
-                floor: floor,
-                capacity: capacity,
-                type: type,
+                id: roomId, name: roomName, building: buildingName, floor: floor,
+                capacity: capacity, type: type,
                 equipment: typeof equipment === 'string' ? equipment.split(',').map(e => e.trim()).filter(Boolean) : [],
             };
         });
 
-        // Create a schedule map for quick lookup: { "Monday": { "07:00-10:00": { roomId: className } } }
+
+        // 2. Create the schedule map for the UI from the same instructor schedule data.
         const scheduleMap = {};
-        apiSchedules.forEach(schedule => {
-            // FIX: Use the new `dayDetails` array from the API response
+        apiInstructorSchedules.forEach(schedule => {
             if (schedule && schedule.dayDetails && Array.isArray(schedule.dayDetails) && schedule.shift) {
                 const timeSlot = `${schedule.shift.startTime.substring(0, 5)}-${schedule.shift.endTime.substring(0, 5)}`;
-                
                 schedule.dayDetails.forEach(dayDetail => {
                     const dayName = dayDetail.dayOfWeek.charAt(0).toUpperCase() + dayDetail.dayOfWeek.slice(1).toLowerCase();
-                    if (!scheduleMap[dayName]) {
-                        scheduleMap[dayName] = {};
-                    }
-                    if (!scheduleMap[dayName][timeSlot]) {
-                        scheduleMap[dayName][timeSlot] = {};
-                    }
+                    if (!scheduleMap[dayName]) scheduleMap[dayName] = {};
+                    if (!scheduleMap[dayName][timeSlot]) scheduleMap[dayName][timeSlot] = {};
                     scheduleMap[dayName][timeSlot][schedule.roomId] = schedule.className;
                 });
             }
         });
-        
-        // Format instructor classes for the request form dropdown
-        const formattedClasses = apiInstructorClasses.map(cls => ({
-            id: cls.classId,
-            name: cls.className,
-            shift: `${cls.shift.startTime}-${cls.shift.endTime}`,
+
+        // 3. ✨ Create the class list for the dropdown directly from the instructor's schedule data.
+        const formattedClasses = apiInstructorSchedules.map(schedule => ({
+            id: schedule.scheduleId, // Use the correct scheduleId
+            name: schedule.className,
+            shift: `${schedule.shift.startTime}-${schedule.shift.endTime}`,
         }));
 
-        // Sort floors in descending order
+        // Sort floors and return all the data
         for (const building in populatedLayout) {
             populatedLayout[building].sort((a, b) => b.floor - a.floor);
         }
-        
-        return { 
-            initialAllRoomsData: roomsDataMap, 
+
+        return {
+            initialAllRoomsData: roomsDataMap,
             buildingLayout: populatedLayout,
             initialScheduleMap: scheduleMap,
-            initialInstructorClasses: formattedClasses
+            initialInstructorClasses: formattedClasses // This is now correctly populated
         };
 
     } catch (error) {
