@@ -28,7 +28,7 @@ export default function DashboardHeader({
           </h1>
           <p
             className="
-              text-sm sm:text-base 
+              text-sm
               text-gray-700 dark:text-gray-300 
               mt-2
             "
@@ -39,14 +39,14 @@ export default function DashboardHeader({
 
         <div
           className="
-            text-xs sm:text-sm 
+            text-xs 
             text-gray-600 dark:text-gray-400 
             md:text-right 
             flex-shrink-0
           "
         >
-          <p className="text-xs sm:text-sm">{`Date: ${currentDate}`}</p>
-          <p className="text-xs sm:text-sm mt-1">{`Academic Year: ${academicYear}`}</p>{" "}
+          <p className="text-xs">{`Date: ${currentDate}`}</p>
+          <p className="text-xs mt-1">{`Academic Year: ${academicYear}`}</p>{" "}
         </div>
 
       </div>
