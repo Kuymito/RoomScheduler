@@ -21,7 +21,7 @@ const fetchScheduleData = async () => {
 
   try {
       const [apiSchedulesResponse, allShifts] = await Promise.all([
-          scheduleService.getMySchedules(token),
+          scheduleService.getMySchedule(token),
           shiftService.getAllShifts(token)
       ]);
 

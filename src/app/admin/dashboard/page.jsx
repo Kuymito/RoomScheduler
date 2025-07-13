@@ -1,164 +1,166 @@
 import { Suspense } from 'react';
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
-import { revalidatePath } from 'next/cache';
 import DashboardLayout from '@/components/DashboardLayout';
 import DashboardSkeleton from './components/DashboardSkeleton';
 import DashboardClientContent from './components/DashboardClientContent';
 import { classService } from '@/services/class.service';
 import { scheduleService } from '@/services/schedule.service';
-import { roomService } from '@/services/room.service'; // Import room service
+import { getAllRooms } from '@/services/room.service';
+import { getServerSession }from 'next-auth/next';
+import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import { revalidatePath } from 'next/cache';
 
-/**
- * Fetches and calculates dashboard statistics from the live API using services.
- * @param {string} token - The authentication token.
- * @returns {Promise<object>} An object containing the calculated stats.
- */
-const fetchDashboardStats = async (token) => {
-    try {
-        const [schedulesResponse, allClasses] = await Promise.all([
-            scheduleService.getAllSchedules(token),
-            classService.getAllClasses(token)
-        ]);
+const fetchDashboardStats = async () => {
+  const session = await getServerSession(authOptions);
+  const token = session?.accessToken;
 
-        // --- THE FIX ---
-        // The service returns an array directly, so we use it.
-        const allSchedules = Array.isArray(schedulesResponse) ? schedulesResponse : [];
+  if (!token) {
+    return {
+      classAssign: 0,
+      expired: 0,
+      unassignedClass: 0,
+      onlineClass: 0,
+    };
+  }
 
-        // The rest of the logic from before is correct
-        const assignedClassIds = new Set();
-        const unassignedClassIds = new Set();
-        const onlineClassIds = new Set();
+  const classes = await classService.getAllClasses(token);
 
-        for (const schedule of allSchedules) {
-            const classId = schedule.classId;
-            const hasDays = schedule.dayDetails && schedule.dayDetails.length > 0;
+  let assigned = 0;
+  let unassigned = 0;
+  let expired = 0;
+  let online = 0;
 
-            if (hasDays) {
-                assignedClassIds.add(classId);
-            } else {
-                unassignedClassIds.add(classId);
-            }
+  const currentDate = new Date();
+  // Calculate the date 4 years ago
+  const fourYearsAgo = new Date(currentDate);
+  fourYearsAgo.setFullYear(currentDate.getFullYear() - 4);
+  // Subtract 2 months from that date to get the expiry threshold
+  const expiryThreshold = new Date(fourYearsAgo);
+  expiryThreshold.setMonth(expiryThreshold.getMonth() - 2);
 
-            if (hasDays && schedule.dayDetails.some(day => day.online === true)) {
-                onlineClassIds.add(classId);
-            }
-        }
 
-        return {
-            classAssign: assignedClassIds.size,
-            unassignedClass: unassignedClassIds.size,
-            onlineClass: onlineClassIds.size,
-            expired: allClasses.filter(c => c.archived).length,
-        };
-    } catch (error) {
-        console.error("Failed to fetch dashboard stats:", error);
-        return { classAssign: 0, expired: 0, unassignedClass: 0, onlineClass: 0 };
+  classes.forEach(cls => {
+    if (cls.dailySchedule && Object.values(cls.dailySchedule).some(day => day && day.instructor)) {
+      assigned++;
+    } else {
+      unassigned++;
     }
+
+    // FIX: Check if createdAt is not null before comparing dates.
+    if (cls.createdAt && new Date(cls.createdAt) < expiryThreshold) {
+      expired++;
+    }
+
+    if (cls.online) {
+      online++;
+    }
+  });
+
+  return {
+    classAssign: assigned,
+    expired: expired,
+    unassignedClass: unassigned,
+    onlineClass: online,
+  };
 };
-/**
- * **[UPDATED LOGIC]**
- * Fetches all rooms and schedules to calculate the number of AVAILABLE rooms.
- * @param {string} timeSlot - The time slot to filter by.
- * @param {string} token - The authentication token.
- * @returns {Promise<object>} An object containing labels and data for the chart.
- */
-const fetchChartData = async (timeSlot, token) => {
-    console.log(`Fetching server chart data for available rooms: ${timeSlot}`);
-    try {
-        const [allRooms, schedulesResponse] = await Promise.all([
-            roomService.getAllRooms(token),
-            scheduleService.getAllSchedules(token)
-        ]);
 
-        // --- FIX 1: Access the array directly from the response ---
-        const allSchedules = Array.isArray(schedulesResponse) ? schedulesResponse : [];
-        const totalRoomCount = allRooms.length;
-        const [startTime] = timeSlot.split(' - ');
-        
-        const relevantSchedules = allSchedules.filter(s => s.shift.startTime === startTime);
 
-        const dailyOccupiedCounts = { Mon: 0, Tue: 0, Wed: 0, Thu: 0, Fri: 0, Sat: 0, Sun: 0 };
+const fetchChartData = async (timeSlot) => {
+  console.log(`Fetching server chart data for: ${timeSlot}`);
+  const session = await getServerSession(authOptions);
+  const token = session?.accessToken;
 
-        relevantSchedules.forEach(schedule => {
-            if (schedule.roomId !== null && schedule.dayDetails) {
-                schedule.dayDetails.forEach(dayDetail => {
-                    if (!dayDetail.online) {
-                        // --- FIX 2: Correctly format the day abbreviation to match the keys ---
-                        // Converts "TUESDAY" to "Tue", "WEDNESDAY" to "Wed", etc.
-                        const dayOfWeek = dayDetail.dayOfWeek;
-                        const dayAbbr = dayOfWeek.charAt(0).toUpperCase() + dayOfWeek.substring(1, 3).toLowerCase();
-                        
-                        if (dayAbbr in dailyOccupiedCounts) {
-                            dailyOccupiedCounts[dayAbbr]++;
-                        }
-                    }
-                });
-            }
-        });
+  if (!token) {
+    return {
+      labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+      data: [0, 0, 0, 0, 0, 0, 0],
+    };
+  }
 
-        const dailyAvailableCounts = {
-            Mon: totalRoomCount - dailyOccupiedCounts.Mon,
-            Tue: totalRoomCount - dailyOccupiedCounts.Tue,
-            Wed: totalRoomCount - dailyOccupiedCounts.Wed,
-            Thu: totalRoomCount - dailyOccupiedCounts.Thu,
-            Fri: totalRoomCount - dailyOccupiedCounts.Fri,
-            Sat: totalRoomCount - dailyOccupiedCounts.Sat,
-            Sun: totalRoomCount - dailyOccupiedCounts.Sun,
-        };
-
-        return {
-            labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-            data: Object.values(dailyAvailableCounts),
-        };
-    } catch (error) {
-        console.error("Failed to fetch chart data:", error);
-        return {
-            labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-            data: [0, 0, 0, 0, 0, 0, 0],
-        };
-    }
-};
-/**
- * The primary server component for the dashboard.
- */
-async function DashboardContent() {
-    const session = await getServerSession(authOptions);
-    const token = session?.accessToken;
-
-    if (!token) {
-        return <div>Authentication error. Please sign in again.</div>;
-    }
-
-    const [dashboardStats, initialChartData] = await Promise.all([
-        fetchDashboardStats(token),
-        fetchChartData('07:00:00 - 10:00:00', token)
+  try {
+    const [allRooms, allSchedules] = await Promise.all([
+      getAllRooms(token),
+      scheduleService.getAllSchedules(token)
     ]);
 
-    // Server Action to be called from the client to get new chart data.
-    async function updateChart(timeSlot) {
-        'use server';
-        const session = await getServerSession(authOptions);
-        const data = await fetchChartData(timeSlot, session?.accessToken);
-        revalidatePath('/admin/dashboard');
-        return data;
-    }
+    const totalRoomCount = allRooms.length;
+    const selectedStartTime = timeSlot.split(' - ')[0] + ':00';
 
-    return (
-        <DashboardClientContent
-            dashboardStats={dashboardStats}
-            initialChartData={initialChartData}
-            updateChartAction={updateChart}
-        />
+    const occupiedRoomsByDay = {
+      MONDAY: new Set(),
+      TUESDAY: new Set(),
+      WEDNESDAY: new Set(),
+      THURSDAY: new Set(),
+      FRIDAY: new Set(),
+      SATURDAY: new Set(),
+      SUNDAY: new Set()
+    };
+
+    const relevantSchedules = allSchedules.filter(
+      schedule => schedule.shift && schedule.shift.startTime === selectedStartTime
     );
+
+    relevantSchedules.forEach(schedule => {
+      if (schedule.dayDetails && schedule.roomId) {
+        schedule.dayDetails.forEach(dayDetail => {
+          if (occupiedRoomsByDay[dayDetail.dayOfWeek] && !dayDetail.online) {
+            occupiedRoomsByDay[dayDetail.dayOfWeek].add(schedule.roomId);
+          }
+        });
+      }
+    });
+
+    const daysOrder = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'];
+    const dataPoints = daysOrder.map(day => {
+      const occupiedCount = occupiedRoomsByDay[day].size;
+      return totalRoomCount - occupiedCount;
+    });
+
+    return {
+      labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+      data: dataPoints,
+    };
+
+  } catch (error) {
+    console.error("Failed to fetch chart data:", error);
+    return {
+      labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+      data: [0, 0, 0, 0, 0, 0, 0],
+    };
+  }
+};
+
+// This is the primary content component, rendered on the server.
+async function DashboardContent() {
+  // Fetch initial data for the page and the chart in parallel on the server.
+  const [dashboardStats, initialChartData] = await Promise.all([
+    fetchDashboardStats(), // No longer fetching date/year here
+    fetchChartData('07:00 - 10:00')
+  ]);
+
+  // Server Action to be called from the client component to get new chart data.
+  async function updateChart(timeSlot) {
+    'use server'; // This marks the function as a Server Action
+    const data = await fetchChartData(timeSlot);
+    revalidatePath('/admin/dashboard'); // Optional: revalidate path if data is not mock
+    return data;
+  }
+
+  return (
+    // Pass the fetched stats and the server action to the client component
+    <DashboardClientContent
+      dashboardStats={dashboardStats}
+      initialChartData={initialChartData}
+      updateChartAction={updateChart}
+    />
+  );
 }
 
-// The main page export
+// The main page export, which uses Suspense for a loading fallback.
 export default function AdminDashboardPage() {
     return (
         <DashboardLayout activeItem="dashboard" pageTitle="Dashboard">
             <Suspense fallback={<DashboardSkeleton />}>
-                <DashboardContent />
+                <DashboardContent/>
             </Suspense>
         </DashboardLayout>
     );

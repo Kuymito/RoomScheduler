@@ -17,6 +17,23 @@ const defaultUserIcon = ({ className }) => (
     </svg>
 );
 
+const formatPhoneNumber = (phone) => {
+    if (!phone || typeof phone !== 'string') return phone;
+    const cleaned = phone.replace(/\D/g, '');
+    if (cleaned.length === 3 || cleaned.length === 4) {
+        return cleaned;
+    } else if (cleaned.length === 5 || cleaned.length === 6) {
+        return `${cleaned.slice(0, 3)}-${cleaned.slice(3)}`;
+    } else if (cleaned.length === 7 || cleaned.length === 8) {
+        return `${cleaned.slice(0, 3)}-${cleaned.slice(3, 6)}-${cleaned.slice(6)}`;
+    } else if (cleaned.length === 9) {
+        return `${cleaned.slice(0, 3)}-${cleaned.slice(3, 6)}-${cleaned.slice(6)}`;
+    } else if (cleaned.length === 10) {
+        return `${cleaned.slice(0, 1)}-${cleaned.slice(1, 4)}-${cleaned.slice(4, 7)}-${cleaned.slice(7)}`;
+    }
+    return phone;
+};
+
 const ProfileContentSkeleton = () => (
     <div className='p-6 animate-pulse'>
         <div className="h-7 w-24 bg-slate-300 dark:bg-slate-600 rounded mb-4"></div>
@@ -249,114 +266,260 @@ const ProfileContent = () => {
     const currentDisplayData = isEditingGeneral ? editableProfileData : profileData;
 
     return (
-        <div className='p-6 dark:text-white'>
-             <SuccessPopup
-                show={showSuccessPopup}
-                onClose={() => setShowSuccessPopup(false)}
-                title="Success"
-                message="Your profile has been updated successfully."
-            />
-            <div className="section-title font-semibold text-lg text-num-dark-text dark:text-white mb-4">
-                Profile
-            </div>
-            <hr className="border-t border-slate-300 dark:border-slate-700 mt-4 mb-8" />
-            {error && (
-                <div className={`p-4 mb-4 text-sm rounded-lg bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300`}>
-                    {error}
+      <div className="p-6 dark:text-white">
+        <SuccessPopup
+          show={showSuccessPopup}
+          onClose={() => setShowSuccessPopup(false)}
+          title="Success"
+          message="Your profile has been updated successfully."
+        />
+        <div className="section-title font-semibold text-lg text-num-dark-text dark:text-white mb-4">
+          Profile
+        </div>
+        <hr className="border-t border-slate-300 dark:border-slate-700 mt-4 mb-8" />
+        {error && (
+          <div
+            className={`p-4 mb-4 text-sm rounded-lg bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300`}
+          >
+            {error}
+          </div>
+        )}
+        <div className="profile-section flex gap-8 mb-4 flex-wrap">
+          <div className="avatar-card w-[220px] p-3 bg-white border border-num-gray-light dark:bg-gray-800 dark:border-gray-700 shadow-custom-light rounded-lg flex-shrink-0 self-start">
+            <div className="avatar-content flex items-center">
+              {imagePreviewUrl ? (
+                <Image
+                  src={imagePreviewUrl}
+                  alt="Profile Avatar"
+                  width={56}
+                  height={56}
+                  className="avatar-img w-14 h-14 rounded-full mr-3 object-cover"
+                />
+              ) : (
+                <div className="w-14 h-14 rounded-full mr-3 flex items-center justify-center">
+                  {defaultUserIcon({
+                    className: "h-34 w-34 text-gray-700 dark:text-gray-400",
+                  })}
                 </div>
-            )}
-            <div className="profile-section flex gap-8 mb-4 flex-wrap">
-                <div className="avatar-card w-[220px] p-3 bg-white border border-num-gray-light dark:bg-gray-800 dark:border-gray-700 shadow-custom-light rounded-lg flex-shrink-0 self-start">
-                    <div className="avatar-content flex items-center">
-                        {imagePreviewUrl ? (
-                            <Image
-                                src={imagePreviewUrl}
-                                alt="Profile Avatar"
-                                width={56}
-                                height={56}
-                                className="avatar-img w-14 h-14 rounded-full mr-3 object-cover"
-                            />
-                        ) : (
-                            <div className="w-14 h-14 rounded-full mr-3 flex items-center justify-center">
-                            {defaultUserIcon({className: "h-34 w-34 text-gray-700 dark:text-gray-400"})}
-                            </div>
-                        )}
-                        <div className="avatar-info flex flex-col">
-                            <div className="avatar-name font-semibold text-sm text-black dark:text-white mb-0.5">
-                                {`${currentDisplayData.firstName} ${currentDisplayData.lastName}`.trim()}
-                            </div>
-                            <div className="avatar-role font-semibold text-xs text-gray-500 dark:text-gray-400">Admin</div>
-                        </div>
-                    </div>
+              )}
+              <div className="avatar-info flex flex-col">
+                <div className="avatar-name font-semibold text-sm text-black dark:text-white mb-0.5">
+                  {`${currentDisplayData.firstName} ${currentDisplayData.lastName}`.trim()}
+                </div>
+                <div className="avatar-role font-semibold text-xs text-gray-500 dark:text-gray-400">
+                  Admin
+                </div>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={handleUploadButtonClick}
+              disabled={isUploading || !isEditingGeneral}
+              className="w-full rounded-md mt-3 px-3 py-2 text-xs font-semibold text-white shadow-sm bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isUploading ? "Uploading..." : "Upload Photo"}
+            </button>
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileChange}
+              accept="image/*"
+              className="sr-only"
+            />
+          </div>
+
+          <div className="info-details-wrapper flex-grow flex flex-col gap-8 min-w-[300px]">
+            <div className="info-card p-3 sm:p-4 bg-white border border-num-gray-light dark:bg-gray-800 dark:border-gray-700 shadow-custom-light rounded-lg">
+              <div className="section-title font-semibold text-sm text-num-dark-text dark:text-white mb-3">
+                General Information
+              </div>
+              <div className="space-y-3">
+                <div className="flex gap-3 flex-wrap">
+                  <div className="form-group flex-1 min-w-[200px]">
+                    <label className="form-label block font-semibold text-xs text-num-dark-text dark:text-white mb-1">
+                      First Name
+                    </label>
+                    <input
+                      type="text"
+                      name="firstName"
+                      value={currentDisplayData.firstName}
+                      onChange={handleGeneralInputChange}
+                      readOnly={!isEditingGeneral}
+                      className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs ${
+                        !isEditingGeneral
+                          ? "bg-gray-100 dark:bg-gray-800 border-num-gray-light dark:border-gray-700 text-gray-500 dark:text-gray-400"
+                          : "bg-white dark:bg-gray-700 border-num-gray-light dark:border-gray-600 text-num-dark-text dark:text-white"
+                      }`}
+                    />
+                  </div>
+                  <div className="form-group flex-1 min-w-[200px]">
+                    <label className="form-label block font-semibold text-xs text-num-dark-text dark:text-white mb-1">
+                      Last Name
+                    </label>
+                    <input
+                      type="text"
+                      name="lastName"
+                      value={currentDisplayData.lastName}
+                      onChange={handleGeneralInputChange}
+                      readOnly={!isEditingGeneral}
+                      className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs ${
+                        !isEditingGeneral
+                          ? "bg-gray-100 dark:bg-gray-800 border-num-gray-light dark:border-gray-700 text-gray-500 dark:text-gray-400"
+                          : "bg-white dark:bg-gray-700 border-num-gray-light dark:border-gray-600 text-num-dark-text dark:text-white"
+                      }`}
+                    />
+                  </div>
+                </div>
+                <div className="flex gap-3 flex-wrap">
+                  <div className="form-group flex-1 min-w-[200px]">
+                    <label className="form-label block font-semibold text-xs text-num-dark-text dark:text-white mb-1">
+                      Email
+                    </label>
+                    <input
+                      type="email"
+                      name="email"
+                      value={currentDisplayData.email}
+                      readOnly
+                      disabled
+                      className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs bg-gray-100 dark:bg-gray-800 border-num-gray-light dark:border-gray-700 text-gray-500 dark:text-gray-400`}
+                    />
+                  </div>
+                  <div className="form-group flex-1 min-w-[200px]">
+                    <label className="form-label block font-semibold text-xs text-num-dark-text dark:text-white mb-1">
+                      Phone Number
+                    </label>
+                    <input
+                      type="tel"
+                      name="phoneNumber"
+                      value={formatPhoneNumber(currentDisplayData.phoneNumber)}
+                      onChange={handleGeneralInputChange}
+                      readOnly={!isEditingGeneral}
+                      className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs ${
+                        !isEditingGeneral
+                          ? "bg-gray-100 dark:bg-gray-800 border-num-gray-light dark:border-gray-700 text-gray-500 dark:text-gray-400"
+                          : "bg-white dark:bg-gray-700 border-num-gray-light dark:border-gray-600 text-num-dark-text dark:text-white"
+                      }`}
+                    />
+                  </div>
+                </div>
+                <div className="form-group flex-1 min-w-[200px]">
+                  <label className="form-label block font-semibold text-xs text-num-dark-text dark:text-white mb-1">
+                    Address
+                  </label>
+                  <input
+                    type="text"
+                    name="address"
+                    value={currentDisplayData.address}
+                    onChange={handleGeneralInputChange}
+                    readOnly={!isEditingGeneral}
+                    className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs ${
+                      !isEditingGeneral
+                        ? "bg-gray-100 dark:bg-gray-800 border-num-gray-light dark:border-gray-700 text-gray-500 dark:text-gray-400"
+                        : "bg-white dark:bg-gray-700 border-num-gray-light dark:border-gray-600 text-num-dark-text dark:text-white"
+                    }`}
+                  />
+                </div>
+              </div>
+              <div className="form-actions flex justify-end items-center gap-3 mt-4">
+                {isEditingGeneral ? (
+                  <>
                     <button
-                        type="button"
-                        onClick={handleUploadButtonClick}
-                        disabled={isUploading || !isEditingGeneral}
-                        className="w-full rounded-md mt-3 px-3 py-2 text-xs font-semibold text-white shadow-sm bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                      onClick={() => handleCancelClick("general")}
+                      className="back-button bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 shadow-custom-light rounded-md text-gray-800 dark:text-white border-none py-2 px-3 font-semibold text-xs cursor-pointer"
+                      disabled={loading}
                     >
-                        {isUploading ? 'Uploading...' : 'Upload Photo'}
+                      Cancel
                     </button>
-                    <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" className="sr-only" />
+                    <button
+                      onClick={() => handleSaveClick("general")}
+                      className="save-button bg-blue-600 hover:bg-blue-700 shadow-custom-light rounded-md text-white text-xs py-2 px-3 font-semibold"
+                    >
+                      Save Changes
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    onClick={() => handleEditClick("general")}
+                    className="save-button bg-blue-600 hover:bg-blue-700 shadow-custom-light rounded-md text-white py-2 px-3 font-semibold text-xs"
+                  >
+                    Edit Profile
+                  </button>
+                )}
+              </div>
+            </div>
+            <div className="info-card-password p-3 sm:p-4 bg-white border border-num-gray-light dark:bg-gray-800 dark:border-gray-700 shadow-custom-light rounded-lg">
+              <div className="section-title font-semibold text-sm text-num-dark-text dark:text-white mb-3">
+                Password information
+              </div>
+              <div className="space-y-4">
+                {/* current password */}
+                <div className="flex gap-3 flex-wrap">
+                  {renderPasswordField(
+                    "Current Password",
+                    "currentPassword",
+                    currentPassword,
+                    handleCurrentPasswordChange,
+                    "current",
+                    !isEditingPassword,
+                    emptyPasswordError.current
+                  )}
                 </div>
 
-                <div className="info-details-wrapper flex-grow flex flex-col gap-8 min-w-[300px]">
-                    <div className="info-card p-3 sm:p-4 bg-white border border-num-gray-light dark:bg-gray-800 dark:border-gray-700 shadow-custom-light rounded-lg">
-                        <div className="section-title font-semibold text-sm text-num-dark-text dark:text-white mb-3">General Information</div>
-                        <div className="space-y-3">
-                           <div className="flex gap-3 flex-wrap">
-                                <div className="form-group flex-1 min-w-[200px]">
-                                    <label className="form-label block font-semibold text-xs text-num-dark-text dark:text-white mb-1">First Name</label>
-                                    <input type="text" name="firstName" value={currentDisplayData.firstName} onChange={handleGeneralInputChange} readOnly={!isEditingGeneral} className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs ${!isEditingGeneral ? 'bg-gray-100 dark:bg-gray-800 border-num-gray-light dark:border-gray-700 text-gray-500 dark:text-gray-400' : 'bg-white dark:bg-gray-700 border-num-gray-light dark:border-gray-600 text-num-dark-text dark:text-white'}`}/>
-                                </div>
-                                <div className="form-group flex-1 min-w-[200px]">
-                                    <label className="form-label block font-semibold text-xs text-num-dark-text dark:text-white mb-1">Last Name</label>
-                                    <input type="text" name="lastName" value={currentDisplayData.lastName} onChange={handleGeneralInputChange} readOnly={!isEditingGeneral} className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs ${!isEditingGeneral ? 'bg-gray-100 dark:bg-gray-800 border-num-gray-light dark:border-gray-700 text-gray-500 dark:text-gray-400' : 'bg-white dark:bg-gray-700 border-num-gray-light dark:border-gray-600 text-num-dark-text dark:text-white'}`}/>
-                                </div>
-                            </div>
-                             <div className="flex gap-3 flex-wrap">
-                                <div className="form-group flex-1 min-w-[200px]">
-                                    <label className="form-label block font-semibold text-xs text-num-dark-text dark:text-white mb-1">Email</label>
-                                    <input type="email" name="email" value={currentDisplayData.email} readOnly disabled className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs bg-gray-100 dark:bg-gray-800 border-num-gray-light dark:border-gray-700 text-gray-500 dark:text-gray-400`}/>
-                                </div>
-                                <div className="form-group flex-1 min-w-[200px]">
-                                    <label className="form-label block font-semibold text-xs text-num-dark-text dark:text-white mb-1">Phone Number</label>
-                                    <input type="tel" name="phoneNumber" value={currentDisplayData.phoneNumber} onChange={handleGeneralInputChange} readOnly={!isEditingGeneral} className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs ${!isEditingGeneral ? 'bg-gray-100 dark:bg-gray-800 border-num-gray-light dark:border-gray-700 text-gray-500 dark:text-gray-400' : 'bg-white dark:bg-gray-700 border-num-gray-light dark:border-gray-600 text-num-dark-text dark:text-white'}`}/>
-                                </div>
-                            </div>
-                            <div className="form-group flex-1 min-w-[200px]">
-                                <label className="form-label block font-semibold text-xs text-num-dark-text dark:text-white mb-1">Address</label>
-                                <input type="text" name="address" value={currentDisplayData.address} onChange={handleGeneralInputChange} readOnly={!isEditingGeneral} className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs ${!isEditingGeneral ? 'bg-gray-100 dark:bg-gray-800 border-num-gray-light dark:border-gray-700 text-gray-500 dark:text-gray-400' : 'bg-white dark:bg-gray-700 border-num-gray-light dark:border-gray-600 text-num-dark-text dark:text-white'}`}/>
-                            </div>
-                        </div>
-                        <div className="form-actions flex justify-end items-center gap-3 mt-4">
-                            {isEditingGeneral ? (
-                                <>
-                                    <button onClick={() => handleCancelClick('general')} className="back-button bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 shadow-custom-light rounded-md text-gray-800 dark:text-white border-none py-2 px-3 font-semibold text-xs cursor-pointer" disabled={loading}>Cancel</button>
-                                    <button onClick={() => handleSaveClick('general')} className="save-button bg-blue-600 hover:bg-blue-700 shadow-custom-light rounded-md text-white text-xs py-2 px-3 font-semibold">Save Changes</button>
-                                </>
-                            ) : (
-                                <button onClick={() => handleEditClick('general')} className="save-button bg-blue-600 hover:bg-blue-700 shadow-custom-light rounded-md text-white py-2 px-3 font-semibold text-xs">Edit Profile</button>
-                            )}
-                        </div>
-                    </div>
-                     <div className="info-card-password p-3 sm:p-4 bg-white border border-num-gray-light dark:bg-gray-800 dark:border-gray-700 shadow-custom-light rounded-lg">
-                        <div className="section-title font-semibold text-sm text-num-dark-text dark:text-white mb-3">Password information</div>
-                        <div className="space-y-4">
-                             <div className="flex gap-3 flex-wrap">
-                                {renderPasswordField("Current Password", "currentPassword", currentPassword, handleCurrentPasswordChange, "current", !isEditingPassword, emptyPasswordError.current)}
-                                {renderPasswordField("New Password", "newPassword", newPassword, handleNewPasswordChange, "new", !isEditingPassword, emptyPasswordError.new || passwordMismatchError)}
-                            </div>
-                            <div className="flex gap-3 flex-wrap">
-                                {renderPasswordField("Confirm New Password", "confirmNewPassword", confirmNewPassword, handleConfirmPasswordChange, "confirm", !isEditingPassword, emptyPasswordError.confirm || passwordMismatchError)}
-                            </div>
-                        </div>
-                        <div className="form-actions flex justify-end items-center gap-3 mt-4">
-                             {isEditingPassword ? ( <> <button onClick={() => handleCancelClick('password')} className="back-button bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 shadow-custom-light rounded-md text-gray-800 dark:text-white border-none py-2 px-3 font-semibold text-xs cursor-pointer" disabled={loading}>Cancel</button><button onClick={() => handleSaveClick('password')} className="save-button bg-blue-600 hover:bg-blue-700 shadow-custom-light rounded-md text-white border-none py-2 px-3 font-semibold text-xs cursor-pointer" disabled={loading}>{loading ? "Saving..." : "Save Password"}</button> </> ) : ( <button onClick={() => handleEditClick('password')} className="save-button bg-blue-600 hover:bg-blue-700 shadow-custom-light rounded-md text-white border-none py-2 px-3 font-semibold text-xs cursor-pointer" disabled={loading}>Change Password</button> )}
-                        </div>
-                    </div>
+                {/* New & Confirm password */}
+                <div className="flex gap-3 flex-wrap">
+                  {renderPasswordField(
+                    "New Password",
+                    "newPassword",
+                    newPassword,
+                    handleNewPasswordChange,
+                    "new",
+                    !isEditingPassword,
+                    emptyPasswordError.new || passwordMismatchError
+                  )}
+                  {renderPasswordField(
+                    "Confirm New Password",
+                    "confirmNewPassword",
+                    confirmNewPassword,
+                    handleConfirmPasswordChange,
+                    "confirm",
+                    !isEditingPassword,
+                    emptyPasswordError.confirm || passwordMismatchError
+                  )}
                 </div>
+              </div>
+              <div className="form-actions flex justify-end items-center gap-3 mt-4">
+                {isEditingPassword ? (
+                  <>
+                    {" "}
+                    <button
+                      onClick={() => handleCancelClick("password")}
+                      className="back-button bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 shadow-custom-light rounded-md text-gray-800 dark:text-white border-none py-2 px-3 font-semibold text-xs cursor-pointer"
+                      disabled={loading}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={() => handleSaveClick("password")}
+                      className="save-button bg-blue-600 hover:bg-blue-700 shadow-custom-light rounded-md text-white border-none py-2 px-3 font-semibold text-xs cursor-pointer"
+                      disabled={loading}
+                    >
+                      {loading ? "Saving..." : "Save Password"}
+                    </button>{" "}
+                  </>
+                ) : (
+                  <button
+                    onClick={() => handleEditClick("password")}
+                    className="save-button bg-blue-600 hover:bg-blue-700 shadow-custom-light rounded-md text-white border-none py-2 px-3 font-semibold text-xs cursor-pointer"
+                    disabled={loading}
+                  >
+                    Change Password
+                  </button>
+                )}
+              </div>
             </div>
+          </div>
         </div>
+      </div>
     );
 };
 

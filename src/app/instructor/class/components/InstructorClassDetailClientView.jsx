@@ -3,6 +3,12 @@
 import { useState } from 'react';
 
 // --- HELPER COMPONENTS (from your original file) ---
+
+const DefaultAvatarIcon = ({ className = "w-12 h-12" }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1} stroke="currentColor" className={className}>
+<path strokeLinecap="round" strokeLinejoin="round" d="M17.982 18.725A7.488 7.488 0 0 0 12 15.75a7.488 7.488 0 0 0-5.982 2.975m11.963 0a9 9 0 1 0-11.963 0m11.963 0A8.966 8.966 0 0 1 12 21a8.966 8.966 0 0 1-5.982-2.275M15 9.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" /></svg>
+);
+
 const InfoField = ({ label, value }) => (
     <div className="form-group flex-1 min-w-[200px]">
         <label className="form-label block font-semibold text-xs text-num-dark-text dark:text-white mb-1">{label}</label>
@@ -15,19 +21,33 @@ const InfoField = ({ label, value }) => (
     </div>
 );
 
-const ScheduledInstructorCard = ({ instructor }) => (
-     <div className="flex flex-col items-center space-y-1">
-        <img
-            src={instructor.avatar || `https://ui-avatars.com/api/?name=${instructor.name.replace(' ', '+')}&background=random`} 
-            alt={instructor.name}
-            className="w-12 h-12 rounded-full object-cover"
-        />
-        <div>
-            <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">{instructor.name}</p>
-            <p className="text-xs text-gray-500 dark:text-gray-400">{instructor.role}</p>
+const ScheduledInstructorCard = ({ instructor }) => {
+    const [imageError, setImageError] = useState(false);
+
+    const handleImageError = () => {
+        setImageError(true);
+    };
+
+    return (
+         <div className="flex flex-col items-center space-y-1">
+            {instructor.avatar && !imageError ? (
+                <img
+                    src={instructor.avatar}
+                    alt={instructor.name}
+                    className="w-12 h-12 rounded-full object-cover"
+                    onError={handleImageError}
+                />
+            ) : (
+                <DefaultAvatarIcon className="w-12 h-12" />
+            )}
+            <div>
+                <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">{instructor.name}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">{instructor.role}</p>
+            </div>
         </div>
-    </div>
-);
+    );
+};
+
 
  const StudyModeTag = ({ mode }) => {
     const isOnline = mode === 'Online';
@@ -41,6 +61,18 @@ const ScheduledInstructorCard = ({ instructor }) => (
         </div>
     );
 };
+
+// --- CONSTANTS ---
+const DAY_HEADER_COLORS = {
+    Monday: 'bg-yellow-50 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-200',
+    Tuesday: 'bg-purple-50 text-purple-800 dark:bg-purple-900/50 dark:text-purple-200',
+    Wednesday: 'bg-red-50 text-red-800 dark:bg-red-900/50 dark:text-red-200',
+    Thursday: 'bg-green-50 text-green-800 dark:bg-green-900/50 dark:text-green-200',
+    Friday: 'bg-blue-50 text-blue-800 dark:bg-blue-900/50 dark:text-blue-200',
+    Saturday: 'bg-orange-50 text-orange-800 dark:bg-orange-900/50 dark:text-orange-200',
+    Sunday: 'bg-pink-50 text-pink-800 dark:bg-pink-900/50 dark:text-pink-200',
+};
+
 
 /**
  * This is the Client Component for the Instructor Class Detail page.
@@ -94,28 +126,28 @@ export default function InstructorClassDetailClientView({ initialClassDetails, i
             </div>
 
             <div className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700">
-                <h2 className="text-lg font-semibold text-gray-800 dark:text-white mb-6">Schedule Class</h2>
+                <h2 className="text-lg font-semibold text-gray-800 dark:text-white mb-6">
+                    Schedule Class - {classDetails.name}
+                </h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
                     {daysOfWeek.map(day => {
                         const scheduledItem = schedule[day];
                         const isNoClass = !scheduledItem;
 
-                        let dayHeaderStyle = "bg-gray-200 dark:bg-slate-700";
+                        const dayHeaderStyle = DAY_HEADER_COLORS[day] || "bg-gray-200 dark:bg-slate-700";
+                        
                         let dayBorderStyle = "border-gray-200 dark:border-slate-700";
                         let studyModeComponent = <div className="rounded-md bg-gray-200 dark:bg-slate-700 px-3 py-1 text-xs font-semibold text-gray-500 dark:text-gray-400">No Class</div>;
 
                         if (scheduledItem) {
                             if (scheduledItem.studyMode === 'In-Class') {
-                                dayHeaderStyle = "bg-green-100 dark:bg-green-900/50";
                                 dayBorderStyle = "border-green-300 dark:border-green-700";
                                 studyModeComponent = <StudyModeTag mode={scheduledItem.studyMode} />;
                             } else if (scheduledItem.studyMode === 'Online') {
-                                dayHeaderStyle = "bg-orange-100 dark:bg-orange-900/50";
                                 dayBorderStyle = "border-orange-300 dark:border-orange-700";
                                 studyModeComponent = <StudyModeTag mode={scheduledItem.studyMode} />;
                             }
                         } else {
-                            dayHeaderStyle = "bg-purple-100 dark:bg-purple-900/50";
                             dayBorderStyle = "border-purple-200 dark:border-slate-700";
                         }
 

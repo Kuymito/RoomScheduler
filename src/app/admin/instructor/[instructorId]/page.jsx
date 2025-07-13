@@ -6,11 +6,11 @@ import { notFound } from 'next/navigation';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import { instructorService } from '@/services/instructor.service';
-import { departmentService } from '@/services/department.service'; // ✅ Import department service
+import { departmentService } from '@/services/department.service';
 
 /**
  * Server-side data fetching function.
- * Fetches details for a specific instructor AND the list of all departments.
+ * Fetches instructor details and all available departments.
  */
 const fetchInstructorPageData = async (id) => {
     const session = await getServerSession(authOptions);
@@ -22,15 +22,11 @@ const fetchInstructorPageData = async (id) => {
     }
     
     try {
-        // Fetch both data sets in parallel for better performance
+        // Fetch instructor details and all departments in parallel
         const [instructorData, departmentsData] = await Promise.all([
             instructorService.getInstructorById(id, token),
-            departmentService.getAllDepartments(token) // ✅ Fetch all departments
+            departmentService.getAllDepartments(token)
         ]);
-
-        if (!instructorData) {
-            return { instructor: null, departments: [] };
-        }
 
         const instructor = {
             id: instructorData.instructorId,
@@ -41,46 +37,44 @@ const fetchInstructorPageData = async (id) => {
             phone: instructorData.phone,
             major: instructorData.major,
             degree: instructorData.degree,
-            department: instructorData.departmentName, // The current department name
+            department: instructorData.departmentName,
+            departmentId: instructorData.departmentId, // Pass departmentId to client
             status: instructorData.archived ? 'archived' : 'active',
             profileImage: instructorData.profile || null,
             address: instructorData.address,
+            password: 'password123', // Password should not be sent from API
         };
-        
-        return { instructor, departments: departmentsData || [] };
+
+        return { instructor, allDepartments: departmentsData };
 
     } catch (error) {
-        console.error(`Failed to fetch data for instructor ID ${id}:`, error);
-        return { instructor: null, departments: [] };
+        console.error(`Failed to fetch page data for instructor ID ${id}:`, error);
+        return { instructor: null, allDepartments: [] };
     }
 };
 
 /**
- * The main page is a Server Component that orchestrates data fetching.
+ * The page is now an async Server Component.
  */
 export default async function InstructorDetailsPage({ params }) {
     const instructorId = parseInt(params.instructorId, 10);
-    const session = await getServerSession(authOptions);
-    const token = session?.accessToken;
-
-    if (!token) {
-        // Handle unauthorized access
-        return redirect('/api/auth/login');
-    }
-
-    const { instructor, departments } = await fetchInstructorPageData(instructorId, token);
+    const { instructor, allDepartments } = await fetchInstructorPageData(instructorId);
 
     if (!instructor) {
         notFound();
     }
 
+    const breadcrumbs = [
+        { label: "Instructor", href: "/admin/instructor" },
+        { label: `${instructor.name}` }
+    ];
+
     return (
-        <AdminLayout activeItem="instructor" pageTitle="Instructor Details">
+        <AdminLayout activeItem="instructor" breadcrumbs={breadcrumbs}>
             <Suspense fallback={<InstructorDetailSkeleton />}>
                 <InstructorDetailClientView 
-                    initialInstructor={instructor} 
-                    allDepartments={departments}
-                    token={token}  // Pass the token as a prop
+                    initialInstructor={instructor}
+                    allDepartments={allDepartments} 
                 />
             </Suspense>
         </AdminLayout>

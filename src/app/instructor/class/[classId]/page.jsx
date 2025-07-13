@@ -1,90 +1,122 @@
 import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import InstructorLayout from '@/components/InstructorLayout';
 import InstructorClassDetailSkeleton from '../components/InstructorClassDetailSkeleton';
 import InstructorClassDetailClientView from '../components/InstructorClassDetailClientView';
-import { classService } from '@/services/class.service'; // Import your class service
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import { classService } from '@/services/class.service';
+
+// --- Mappings and Helper Functions ---
+
+// Mapping from shiftId to the full descriptive name used in the UI.
+const shiftIdToFullNameMap = {
+    1: 'Morning Shift (07:00:00 - 10:00:00, Weekday)',
+    2: 'Noon Shift (10:30:00 - 13:30:00, Weekday)',
+    3: 'Afternoon Shift (14:00:00 - 17:00:00, Weekday)',
+    4: 'Evening Shift (17:30:00 - 20:30:00, Weekday)',
+    5: 'Weekend Shift (07:30:00 - 17:00:00, Weekend)'
+};
+
+// Helper to map full day names from API to abbreviated names for the client
+const mapApiDayToClientDay = (apiDay) => {
+    const dayMap = {
+        MONDAY: 'Monday',
+        TUESDAY: 'Tuesday',
+        WEDNESDAY: 'Wednesday',
+        THURSDAY: 'Thursday',
+        FRIDAY: 'Friday',
+        SATURDAY: 'Saturday',
+        SUNDAY: 'Sunday',
+    };
+    return dayMap[apiDay.toUpperCase()];
+};
+
 
 /**
- * Fetches and processes data for a specific class from the live API.
- * @param {number} classId - The ID of the class to fetch.
- * @returns {Promise<object>} An object containing the formatted class details and schedule.
+ * Server-side data fetching function for a specific class assigned to the instructor.
+ * @param {number} classId - The ID of the class to fetch details for.
+ * @returns {Promise<{classDetails: object, schedule: object}>}
  */
-const fetchClassAndScheduleData = async (classId) => {
+const fetchInstructorClassDetails = async (classId) => {
     const session = await getServerSession(authOptions);
     const token = session?.accessToken;
 
     if (!token) {
-        console.error("Authentication token not found.");
+        console.error("Instructor Class Details: Not authenticated.");
         return { classDetails: null, schedule: {} };
     }
 
     try {
-        const classApiResponse = await classService.getClassById(classId, token);
-        
-        if (!classApiResponse) {
+        const assignedClasses = await classService.getAssignedClasses(token);
+        const classInfo = assignedClasses.find(c => c.classId === classId);
+
+        if (!classInfo) {
             return { classDetails: null, schedule: {} };
         }
 
         // Format the main class details
         const classDetails = {
-            id: classApiResponse.classId,
-            name: classApiResponse.className,
-            generation: classApiResponse.generation,
-            group: classApiResponse.groupName,
-            major: classApiResponse.majorName,
-            degrees: classApiResponse.degreeName,
-            faculty: classApiResponse.department?.name || 'N/A',
-            semester: classApiResponse.semester,
-            shift: classApiResponse.shift ? `${classApiResponse.shift.startTime} - ${classApiResponse.shift.endTime}` : 'N/A',
-            status: classApiResponse.archived ? 'Archived' : 'Active',
+            id: classInfo.classId,
+            name: classInfo.className,
+            generation: classInfo.generation,
+            group: classInfo.groupName,
+            major: classInfo.majorName,
+            degrees: classInfo.degreeName,
+            faculty: classInfo.department?.name || 'N/A',
+            semester: classInfo.semester,
+            shift: classInfo.shift ? shiftIdToFullNameMap[classInfo.shift.shiftId] : 'N/A',
+            status: classInfo.archived ? 'Archived' : 'Active',
         };
 
-        // --- THIS IS THE FIX ---
-        // Process the 'dailySchedule' from the API response into the format the UI expects.
+        // Format the schedule data from the dailySchedule object
         const schedule = {};
-        const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-        daysOfWeek.forEach(day => {
-            const apiDay = day.toUpperCase(); // API uses uppercase day names
-            const scheduleForDay = classApiResponse.dailySchedule[apiDay];
-            
-            if (scheduleForDay && scheduleForDay.instructor) {
-                schedule[day] = {
-                    instructor: {
-                        name: `${scheduleForDay.instructor.firstName} ${scheduleForDay.instructor.lastName}`,
-                        role: scheduleForDay.instructor.degree,
-                        avatar: scheduleForDay.instructor.profile || null
-                    },
-                    studyMode: scheduleForDay.online ? 'Online' : 'In-Class'
-                };
-            } else {
-                schedule[day] = null; // No class on this day
+        if (classInfo.dailySchedule) {
+            for (const apiDay in classInfo.dailySchedule) {
+                const clientDay = mapApiDayToClientDay(apiDay);
+                if (clientDay) {
+                    const scheduleItem = classInfo.dailySchedule[apiDay];
+                    schedule[clientDay] = {
+                        instructor: {
+                            name: `${scheduleItem.instructor.firstName} ${scheduleItem.instructor.lastName}`,
+                            role: scheduleItem.instructor.degree,
+                            avatar: scheduleItem.instructor.profile || null
+                        },
+                        studyMode: scheduleItem.online ? 'Online' : 'In-Class'
+                    };
+                }
             }
-        });
-        
+        }
+
         return { classDetails, schedule };
 
     } catch (error) {
-        console.error(`Failed to fetch data for class ${classId}:`, error);
+        console.error(`Failed to fetch details for instructor's class ${classId}:`, error.message);
         return { classDetails: null, schedule: {} };
     }
 };
 
-
+/**
+ * The main page component is now an async Server Component.
+ */
 export default async function InstructorClassDetailsPage({ params }) {
     const classId = parseInt(params.classId, 10);
     
-    // Fetch the live data from your API
-    const { classDetails, schedule } = await fetchClassAndScheduleData(classId);
+    // Fetch data in parallel on the server
+    const { classDetails, schedule } = await fetchInstructorClassDetails(classId);
     
+    // If class doesn't exist for this instructor, show a 404 page
     if (!classDetails) {
         notFound();
     }
 
+    const breadcrumbs = [
+        { label: "Class", href: "/instructor/class" },
+        { label: `${classDetails.name}` }
+    ];
+
     return (
-        <InstructorLayout activeItem="class" pageTitle="Class Details">
+        <InstructorLayout activeItem="class" breadcrumbs={breadcrumbs}>
             <Suspense fallback={<InstructorClassDetailSkeleton />}>
                 <InstructorClassDetailClientView
                     initialClassDetails={classDetails}

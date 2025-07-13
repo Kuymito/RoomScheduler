@@ -1,8 +1,15 @@
+// src/services/auth.service.js
 import axios from 'axios';
-import { getSession } from 'next-auth/react'; // Import getSession
 
-// Define a single, consistent API_URL for all backend requests.
-const API_URL = "https://jaybird-new-previously.ngrok-free.app/api/v1";
+// The API_URL now points to the local API directory for client-side calls.
+// The server-side proxy will handle forwarding to the actual backend.
+const LOCAL_API_URL = "/api";
+const SERVER_API_URL = "https://jaybird-new-previously.ngrok-free.app/api/v1";
+
+const handleError = (context, error) => {
+    console.error(`${context} service error:`, error.response?.data || error.message);
+    throw new Error(error.response?.data?.message || `Failed operation: ${context}.`);
+};
 
 const getAuthHeaders = (token, contentType = 'application/json') => ({
     'Authorization': `Bearer ${token}`,
@@ -11,53 +18,148 @@ const getAuthHeaders = (token, contentType = 'application/json') => ({
     'Content-Type': contentType,
 });
 
-const handleError = (context, error) => {
-    console.error(`${context} service error:`, error.response?.data || error.message);
-    throw new Error(error.response?.data?.message || `Failed operation: ${context}.`);
-};
-
-const login = async (credentials) => {
-    try {
-        const response = await axios.post(`${API_URL}/auth/login`, credentials, {
-            headers: { 'ngrok-skip-browser-warning': 'true' }
-        });
-
-        const token = response.data?.payload?.token || response.data?.token;
-
-        if (token) {
-            return response.data.payload || response.data;
-        }
-
-        console.error("Login Error: Token not found in backend response.", response.data);
-        throw new Error('Invalid response structure from login API.');
-
-    } catch (error) {
-        handleError("Login", error);
-    }
+const login = async (email, password) => {
+  try {
+    const response = await axios.post(`${SERVER_API_URL}/auth/login`, {
+      email,
+      password,
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Login service error:", error.response ? error.response.data : error.message);
+    throw new Error(error.response?.data?.message || "Invalid credentials.");
+  }
 };
 
 const getProfile = async (token) => {
+    const isServer = typeof window === 'undefined';
+    // Use the correct URL based on the environment
+    const url = isServer ? `${SERVER_API_URL}/auth/profile` : `${LOCAL_API_URL}/profile`;
+
     try {
-        const response = await axios.get(`${API_URL}/auth/profile`, { headers: getAuthHeaders(token) });
-        
+        const response = await axios.get(url, {
+            headers: { 
+                'Authorization': `Bearer ${token}`,
+                // Add ngrok header only on server-side calls
+                ...(isServer && { 'ngrok-skip-browser-warning': 'true' })
+            }
+        });
+
+        // The key is to access response.data directly now, not response.data.payload
         if (response.data) {
             return response.data;
         }
-
-        throw new Error('No profile data received from API');
         
+        throw new Error('Invalid data structure for profile from API');
     } catch (error) {
-        handleError("Get profile", error);
+        console.error("Get profile service error:", {
+            message: error.message,
+            code: error.code,
+            response: error.response ? error.response.data : 'No response data'
+        });
+        throw new Error(error.response?.data?.message || "Failed to fetch profile.");
     }
 };
 
+const forgotPassword = async (email) => {
+  try {
+    const response = await axios.post(`${LOCAL_API_URL}/otp/generate`, { email });
+    if (response.data.status !== 'OK') {
+      throw new Error(response.data.message || 'Failed to send OTP.');
+    }
+    return response.data;
+  } catch (error) {
+    console.error("Forgot Password service error:", error.response ? error.response.data : error.message);
+    throw new Error(error.response?.data?.message || 'An error occurred while sending the OTP.');
+  }
+};
+
+const verifyOtp = async (email, otp) => {
+    try {
+        const response = await axios.post(`${LOCAL_API_URL}/otp/validate`, { email, otp });
+        if (response.data.payload === true) {
+             return { success: true, message: "OTP verified successfully." };
+        } else {
+             throw new Error(response.data.message || "Invalid OTP.");
+        }
+    } catch (error) {
+        console.error("Verify OTP service error:", error.response ? error.response.data : error.message);
+        throw new Error(error.response?.data?.message || "An error occurred during OTP validation.");
+    }
+};
+
+const resetPassword = async ({ email, otp, newPassword }) => {
+    try {
+        const response = await axios.post(`${SERVER_API_URL}/auth/reset-password-with-otp`, {
+            email,
+            otp,
+            newPassword
+        });
+        return response.data;
+    } catch (error) {
+        console.error("Reset Password service error:", error.response ? error.response.data : error.message);
+        throw new Error(error.response?.data?.message || 'Failed to reset password. Please check your details and try again.');
+    }
+};
 
 /**
- * Updates the currently authenticated instructor's profile using a JSON payload.
- * @param {Object} profileData - An object containing the instructor's profile fields.
+ * Changes the user's password.
+ * @param {string} currentPassword - The user's current password.
+ * @param {string} newPassword - The new password.
  * @param {string} token - The authorization token.
- * @returns {Promise<Object>} The API response.
+ * @returns {Promise<Object>} A promise that resolves to the API response.
  */
+const changePassword = async (currentPassword, newPassword, token) => {
+  try {
+    // Using a new, non-conflicting API route for password changes.
+    const response = await axios.post(
+      `${LOCAL_API_URL}/user/change-password`, // UPDATED ENDPOINT
+      { currentPassword, newPassword },
+      {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Change password service error:", error.response ? error.response.data : error.message);
+    throw new Error(error.response?.data?.message || 'Failed to change password.');
+  }
+};
+
+/**
+ * Resets a specific instructor's password (Admin action).
+ * @param {string|number} instructorId - The ID of the instructor whose password is to be reset.
+ * @param {string} newPassword - The new password to set.
+ * @param {string} token - The admin's authorization token.
+ * @returns {Promise<Object>} The response from the API.
+ */
+const resetInstructorPassword = async (instructorId, newPassword, token) => {
+  // Always call the local, non-conflicting API route from the client.
+  const url = `${LOCAL_API_URL}/instructors/${instructorId}/reset-password`;
+    
+  try {
+    const response = await axios.patch(url, 
+      { newPassword }, 
+      {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        }
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error(`Reset instructor password service error for ID ${instructorId}:`, {
+      message: error.message,
+      code: error.code,
+      response: error.response ? error.response.data : 'No response data'
+    });
+    throw new Error(error.response?.data?.message || `Failed to reset password for instructor ${instructorId}.`);
+  }
+};
+
 const updateProfile = async (profileData, token) => {
     try {
         let authToken = token;
@@ -96,7 +198,7 @@ const updateProfile = async (profileData, token) => {
         
         // Use the correct endpoint with the instructor's ID in the URL.
         const response = await axios.patch(
-            `${API_URL}/instructors/${instructorId}`, // The endpoint now includes the ID.
+            `${LOCAL_API_URL}/instructors/${instructorId}`, // The endpoint now includes the ID.
             payload,
             { 
                 headers: getAuthHeaders(authToken, 'application/json')
@@ -110,71 +212,13 @@ const updateProfile = async (profileData, token) => {
     }
 };
 
-
-const forgotPassword = async (email) => {
-    try {
-        const response = await axios.post(`${API_URL}/otp/generate`, { email }, {
-             headers: { 'ngrok-skip-browser-warning': 'true' }
-        });
-        if (response.data.status !== 'OK') {
-            throw new Error(response.data.message || 'Failed to send OTP.');
-        }
-        return response.data;
-    } catch (error) {
-        handleError("Forgot Password", error);
-    }
-};
-
-const verifyOtp = async (email, otp) => {
-    try {
-        const response = await axios.post(`${API_URL}/otp/validate`, { email, otp }, {
-             headers: { 'ngrok-skip-browser-warning': 'true' }
-        });
-        if (response.data.payload === true) {
-            return { success: true, message: "OTP verified successfully." };
-        } else {
-            throw new Error(response.data.message || "Invalid OTP.");
-        }
-    } catch (error) {
-        handleError("Verify OTP", error);
-    }
-};
-
-const resetPassword = async ({ email, otp, newPassword }) => {
-    try {
-        const response = await axios.post(`${API_URL}/auth/reset-password-with-otp`, {
-            email,
-            otp,
-            newPassword
-        }, {
-             headers: { 'ngrok-skip-browser-warning': 'true' }
-        });
-        return response.data;
-    } catch (error) {
-        handleError("Reset Password", error);
-    }
-};
-
-const changePassword = async (currentPassword, newPassword, token) => {
-    try {
-        const payload = { currentPassword, newPassword };
-        const response = await axios.post(
-            `${API_URL}/auth/change-password`,
-            payload,
-            { headers: getAuthHeaders(token) }
-        );
-        return response.data;
-    } catch (error) {
-        handleError("Change password", error);
-    }
-};
-
 export const authService = {
-    login,
-    getProfile,
-    updateProfile, // The updated function
-    forgotPassword,
-    verifyOtp,
-    resetPassword,
-    changePassword,
+  login,
+  getProfile,
+  forgotPassword,
+  verifyOtp,
+  resetPassword,
+  changePassword,
+  resetInstructorPassword,
+  updateProfile
 };

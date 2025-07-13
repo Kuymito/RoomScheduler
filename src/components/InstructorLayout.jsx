@@ -1,3 +1,4 @@
+// src/components/InstructorLayout.jsx
 'use client';
 import { useState, useEffect, useRef } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
@@ -8,43 +9,20 @@ import LogoutAlert from '@/components/LogoutAlert';
 import Footer from '@/components/Footer';
 import InstructorNotificationPopup from '@/app/instructor/notification/InstructorNotificationPopup';
 import { signOut, useSession } from 'next-auth/react';
-import { moul } from './fonts';
+import useSWR, { mutate } from 'swr';
+import { authService } from '@/services/auth.service';
 import { notificationService } from '@/services/notification.service';
-import useSWR from 'swr';
+import { moul } from './fonts';
 
 const TOPBAR_HEIGHT = '90px';
+const profileFetcher = ([, token]) => authService.getProfile(token);
+const notificationsFetcher = ([, token]) => notificationService.getNotifications(token);
 
-// Helper function to format date strings into relative time
-const formatDistanceToNow = (dateString) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const seconds = Math.round((now - date) / 1000);
-    const minutes = Math.round(seconds / 60);
-    const hours = Math.round(minutes / 60);
-    const days = Math.round(hours / 24);
-
-    if (seconds < 60) return `${seconds}s ago`;
-    if (minutes < 60) return `${minutes}m ago`;
-    if (hours < 24) return `${hours}h ago`;
-    return `${days}d ago`;
-};
-
-// Fetcher function for SWR
-const notificationsFetcher = (url, token) => notificationService.getNotifications(token);
-
-export default function InstructorLayout({ children, activeItem, pageTitle }) {
-    const { data: session } = useSession();
+export default function InstructorLayout({ children, activeItem, pageTitle, breadcrumbs }) {
     const [showAdminPopup, setShowAdminPopup] = useState(false);
     const [showLogoutAlert, setShowLogoutAlert] = useState(false);
     const [showInstructorNotificationPopup, setShowInstructorNotificationPopup] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
-    const [navigatingTo, setNavigatingTo] = useState(null);
-    const notificationPopupRef = useRef(null);
-    const notificationIconRef = useRef(null);
-    const adminPopupRef = useRef(null);
-    const userIconRef = useRef(null);
-    const router = useRouter();
-    const pathname = usePathname();
     const [isProfileNavigating, setIsProfileNavigating] = useState(false);
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
         if (typeof window !== 'undefined') {
@@ -53,29 +31,34 @@ export default function InstructorLayout({ children, activeItem, pageTitle }) {
         return false;
     });
 
-    const { data: rawNotifications, mutate: mutateNotifications } = useSWR(
-        session?.accessToken ? ['/api/v1/notifications', session.accessToken] : null,
+    const notificationPopupRef = useRef(null);
+    const notificationIconRef = useRef(null);
+    const adminPopupRef = useRef(null);
+    const userIconRef = useRef(null);
+    const router = useRouter();
+    const pathname = usePathname();
+    const [navigatingTo, setNavigatingTo] = useState(null);
+    
+    const { data: session } = useSession();
+    const token = session?.accessToken;
+
+    const { data: profile } = useSWR(
+        token ? ['/api/profile', token] : null,
+        profileFetcher
+    );
+
+    const { data: instructorNotifications, mutate: mutateInstructorNotifications } = useSWR(
+        token ? ['/api/notifications', token] : null,
         notificationsFetcher,
         {
-            revalidateOnFocus: true,
-            revalidateOnReconnect: true,
+            refreshInterval: 5000,
         }
     );
-    
-    // Map the raw API data to the format your component expects
-    const instructorNotifications = rawNotifications?.map(n => ({
-        id: n.notificationId,
-        avatarUrl: '/images/kok.png', // Default avatar
-        message: n.message,
-        timestamp: formatDistanceToNow(n.createdAt),
-        isUnread: !n.read,
-        // Derive type from message content for different icons/styles
-        type: n.message.includes('approved') ? 'request_approved' : n.message.includes('denied') ? 'request_denied' : 'info',
-        details: { adminName: 'Admin' } // Placeholder details
-    })) || [];
 
+    const finalBreadcrumbs = breadcrumbs || [{ label: pageTitle }];
 
     const toggleSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
+
     const handleUserIconClick = (event) => { 
         event.stopPropagation();
         if (showInstructorNotificationPopup) {
@@ -83,6 +66,7 @@ export default function InstructorLayout({ children, activeItem, pageTitle }) {
         }
         setShowAdminPopup(prev => !prev); 
     };
+    
     const handleLogoutClick = () => {
         setShowAdminPopup(false);
         setShowLogoutAlert(true);
@@ -94,7 +78,7 @@ export default function InstructorLayout({ children, activeItem, pageTitle }) {
         setIsLoading(true);
         signOut({ callbackUrl: '/api/auth/login' });
     };
-    
+
     const handleNavItemClick = (item) => {
         if (pathname !== item.href) {
             setNavigatingTo(item.id);
@@ -111,45 +95,26 @@ export default function InstructorLayout({ children, activeItem, pageTitle }) {
     };
     
     const handleMarkInstructorNotificationAsRead = async (notificationId) => {
-        try {
-            // Optimistic UI update
-            mutateNotifications(
-                instructorNotifications.map(n => n.id === notificationId ? { ...n, isUnread: false } : n),
-                false // Don't revalidate yet
-            );
-            await notificationService.markNotificationAsRead(notificationId, session.accessToken);
-            mutateNotifications(); // Re-fetch from API to confirm
-        } catch (error) {
-            console.error("Failed to mark notification as read:", error);
-            // Optionally revert optimistic update on error
-            mutateNotifications();
-        }
+        await notificationService.markNotificationAsRead(notificationId, token);
+        mutateInstructorNotifications();
+        mutate(['/api/v1/schedule', token]);
     };
 
     const handleMarkAllInstructorNotificationsAsRead = async () => {
-        // Optimistic UI update
-        mutateNotifications(
-            instructorNotifications.map(n => ({ ...n, isUnread: false })),
-            false
-        );
-        try {
-            // In a real app, you might have a dedicated endpoint for this.
-            // For now, we'll mark all visible notifications as read one by one.
-            const unreadIds = instructorNotifications.filter(n => n.isUnread).map(n => n.id);
-            await Promise.all(
-                unreadIds.map(id => notificationService.markNotificationAsRead(id, session.accessToken))
-            );
-            mutateNotifications();
-        } catch (error) {
-            console.error("Failed to mark all notifications as read:", error);
-            mutateNotifications(); // Revert on error
+        const unreadIds = instructorNotifications?.filter(n => !n.read).map(n => n.notificationId) || [];
+        if (unreadIds.length > 0) {
+            await Promise.all(unreadIds.map(id => notificationService.markNotificationAsRead(id, token)));
+            mutateInstructorNotifications();
+            mutate(['/api/v1/schedule', token]);
         }
     };
 
-    const hasUnreadInstructorNotifications = instructorNotifications.some(n => n.isUnread);
+    const hasUnreadInstructorNotifications = instructorNotifications?.some(n => !n.read);
 
     const handleProfileNav = (path) => {
-        if (isProfileNavigating) return;
+        if (isProfileNavigating) {
+            return;
+        }
         if (pathname === path) {
             setShowAdminPopup(false);
             return;
@@ -188,30 +153,30 @@ export default function InstructorLayout({ children, activeItem, pageTitle }) {
             setIsProfileNavigating(false);
         }
         setNavigatingTo(null);
-    }, [pathname]); 
-
+    }, [pathname]);
+    
     if (isLoading) {
         return (
             <div className="min-h-screen w-screen flex flex-col items-center justify-center bg-[#E0E4F3] text-center p-6">
                 <img 
-                    src="https://numregister.com/assets/img/logo/num.png" 
-                    alt="University Logo" 
-                    className="mx-auto mb-6 w-24 sm:w-28 md:w-32" 
+                src="https://numregister.com/assets/img/logo/num.png" 
+                alt="University Logo" 
+                className="mx-auto mb-6 w-24 sm:w-28 md:w-32" 
                 />
                 <h1 className={`${moul.className} text-2xl sm:text-3xl font-bold mb-3 text-blue-800`}>
-                    សាកលវិទ្យាល័យជាតិគ្រប់គ្រង
+                សាកលវិទ្យាល័យជាតិគ្រប់គ្រង
                 </h1>
                 <h2 className="text-xl sm:text-2xl font-medium mb-8 text-blue-700">
-                    National University of Management
+                National University of Management
                 </h2>
                 <p className="text-lg sm:text-xl text-gray-700 font-semibold mb-4">
-                    Logging out, please wait...
+                Logging out, please wait...
                 </p>
                 <div 
-                    className="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-blue-600"
-                    role="status"
+                className="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-blue-600"
+                role="status"
                 >
-                    <span className="sr-only">Loading...</span>
+                <span className="sr-only">Loading...</span>
                 </div>
             </div>
         );
@@ -225,7 +190,6 @@ export default function InstructorLayout({ children, activeItem, pageTitle }) {
                 onNavItemClick={handleNavItemClick}
                 navigatingTo={navigatingTo}
             />
-
             <div
                 className="flex flex-col flex-grow transition-all duration-300 ease-in-out"
                 style={{
@@ -247,7 +211,7 @@ export default function InstructorLayout({ children, activeItem, pageTitle }) {
                         onToggleSidebar={toggleSidebar}
                         isSidebarCollapsed={isSidebarCollapsed}
                         onUserIconClick={handleUserIconClick}
-                        pageSubtitle={pageTitle}
+                        breadcrumbs={finalBreadcrumbs}
                         userIconRef={userIconRef}
                         onNotificationIconClick={handleToggleInstructorNotificationPopup}
                         notificationIconRef={notificationIconRef}
@@ -266,9 +230,11 @@ export default function InstructorLayout({ children, activeItem, pageTitle }) {
             <div ref={adminPopupRef}>
                 <InstructorPopup 
                     show={showAdminPopup} 
-                    onLogoutClick={handleLogoutClick} 
+                    onLogoutClick={handleLogoutClick}
                     isNavigating={isProfileNavigating}
                     onNavigate={handleProfileNav}
+                    instructorName={profile ? `${profile.firstName} ${profile.lastName}` : 'Instructor'}
+                    instructorEmail={profile?.email || 'instructor@example.com'}
                 />
             </div>
 

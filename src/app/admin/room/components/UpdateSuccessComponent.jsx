@@ -1,7 +1,6 @@
 'use client';
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 
-// --- Icon Components (no changes needed here) ---
 const CheckmarkIcon = (props) => (
   <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="text-white size-9">
     <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
@@ -14,25 +13,38 @@ const CloseIconSvg = (props) => (
   </svg>
 );
 
-
-// --- Corrected SuccessAlert Component ---
 const SuccessAlert = ({ show, onConfirm, onClose, title = "Update Successfully", messageLine1 = "Your item has been updated successfully.", messageLine2 = "You can view or edit it anytime.", confirmButtonText = "OK" }) => {
-  
-  // If the show prop is false, the component renders nothing.
-  if (!show) {
-    return null;
-  }
+  const [isExiting, setIsExiting] = useState(false);
 
-  // The component now relies solely on the 'show' prop to be visible.
-  // The animation class is applied directly when it's rendered.
+  useEffect(() => {
+    if (!show) {
+      setIsExiting(false);
+    }
+  }, [show]);
+
+  const handleClose = () => {
+    setIsExiting(true);
+    setTimeout(onClose, 200);
+  };
+
+  const handleConfirm = () => {
+    setIsExiting(true);
+    setTimeout(onConfirm, 200);
+  };
+
+  if (!show && !isExiting) return null;
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[1001] p-4">
       <div
-          className="relative w-full max-w-sm bg-white dark:bg-gray-800 shadow-custom-heavy rounded-lg font-sans"
+        className={`relative w-full max-w-sm bg-white dark:bg-gray-800 shadow-custom-heavy rounded-lg font-sans
+          ${show && !isExiting ? 'animate-fade-in-scale' : ''}
+          ${isExiting ? 'animate-fade-out-scale' : ''}
+        `}
       >
         <div className="p-6 text-center">
             {onClose && (
-              <button onClick={onClose} aria-label="Close alert" className="absolute top-3 right-3 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700">
+              <button onClick={handleClose} aria-label="Close alert" className="absolute top-3 right-3 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700">
                 <CloseIconSvg className="w-5 h-5" />
               </button>
             )}
@@ -50,7 +62,7 @@ const SuccessAlert = ({ show, onConfirm, onClose, title = "Update Successfully",
                 {messageLine2}
             </p>
 
-            <button onClick={onConfirm} className="w-full h-11 px-6 bg-blue-600 hover:bg-blue-700 rounded-md text-white font-sans font-semibold text-sm transition-colors">
+            <button onClick={handleConfirm} className="w-full h-11 px-6 bg-blue-600 hover:bg-blue-700 rounded-md text-white font-sans font-semibold text-sm transition-colors">
                 {confirmButtonText}
             </button>
         </div>

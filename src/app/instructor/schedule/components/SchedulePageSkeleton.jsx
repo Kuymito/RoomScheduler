@@ -1,3 +1,5 @@
+import React from 'react'; // FIX: Added missing React import
+
 const SkeletonCard = () => (
     <div className="w-full h-full p-2 bg-gray-200 dark:bg-gray-700/50 rounded-md animate-pulse">
         <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-3/4 mb-3"></div>

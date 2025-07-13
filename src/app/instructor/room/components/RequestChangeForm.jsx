@@ -1,22 +1,9 @@
+// src/app/instructor/room/components/RequestChangeForm.jsx
 "use client";
 
 import React, { useState, useRef, useEffect } from 'react';
-
-// --- Helper function to get the next date for a given weekday ---
-const getNextDateForDay = (day) => {
-    const dayIndexMap = { "Monday": 1, "Tuesday": 2, "Wednesday": 3, "Thursday": 4, "Friday": 5, "Saturday": 6, "Sunday": 0 };
-    const targetDayIndex = dayIndexMap[day];
-    if (targetDayIndex === undefined) return new Date();
-
-    const today = new Date();
-    const currentDayIndex = today.getDay();
-    let diff = targetDayIndex - currentDayIndex;
-    if (diff <= 0) {
-        diff += 7;
-    }
-    today.setDate(today.getDate() + diff);
-    return today;
-};
+import { useSession } from 'next-auth/react';
+import { notificationService } from '@/services/notification.service';
 
 // --- Custom Calendar Component ---
 const CustomDatePicker = ({ selectedDate, onDateChange, minDate }) => {
@@ -24,7 +11,7 @@ const CustomDatePicker = ({ selectedDate, onDateChange, minDate }) => {
 
     const firstDayOfMonth = new Date(viewDate.getFullYear(), viewDate.getMonth(), 1);
     const lastDayOfMonth = new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 0);
-    const startingDay = firstDayOfMonth.getDay(); // 0 (Sun) to 6 (Sat)
+    const startingDay = firstDayOfMonth.getDay();
     const daysInMonth = lastDayOfMonth.getDate();
 
     const days = Array.from({ length: startingDay + daysInMonth }, (_, i) => {
@@ -32,7 +19,8 @@ const CustomDatePicker = ({ selectedDate, onDateChange, minDate }) => {
         return i - startingDay + 1;
     });
 
-    const isSameDay = (d1, d2) => 
+    const isSameDay = (d1, d2) =>
+        d1 && d2 &&
         d1.getFullYear() === d2.getFullYear() &&
         d1.getMonth() === d2.getMonth() &&
         d1.getDate() === d2.getDate();
@@ -44,11 +32,11 @@ const CustomDatePicker = ({ selectedDate, onDateChange, minDate }) => {
     const handleNextMonth = () => {
         setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 1));
     };
-    
+
     const handleDayClick = (day) => {
         const newDate = new Date(viewDate.getFullYear(), viewDate.getMonth(), day);
         if (minDate && newDate < minDate && !isSameDay(newDate, minDate)) {
-             return; 
+            return;
         }
         onDateChange(newDate);
     };
@@ -69,17 +57,15 @@ const CustomDatePicker = ({ selectedDate, onDateChange, minDate }) => {
                 </button>
             </div>
             <div className="grid grid-cols-7 gap-1 text-center text-xs text-gray-500 dark:text-gray-400">
-                {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map(day => <div key={day}>{day}</div>)}
+                {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, index) => <div key={index}>{day}</div>)}
             </div>
             <div className="grid grid-cols-7 gap-1 mt-2">
                 {days.map((day, index) => {
                     if (!day) return <div key={index}></div>;
-
                     const date = new Date(viewDate.getFullYear(), viewDate.getMonth(), day);
-                    const isSelected = isSameDay(date, selectedDate);
+                    const isSelected = selectedDate && isSameDay(date, selectedDate);
                     const isToday = isSameDay(date, today);
                     const isDisabled = minDate && date < minDate && !isSameDay(date, minDate);
-
                     return (
                         <div key={index} className="flex justify-center items-center">
                             <button
@@ -103,17 +89,30 @@ const CustomDatePicker = ({ selectedDate, onDateChange, minDate }) => {
     );
 };
 
-// --- Main Form Component ---
+
+// --- Main Request Change Form Component ---
 const RequestChangeForm = ({ isOpen, onClose, onSave, roomDetails, instructorClasses, selectedDay, selectedTime }) => {
-    
+    const { data: session } = useSession();
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
     const getInitialState = () => ({
-        classId: instructorClasses[0]?.id || '', 
-        date: getNextDateForDay(selectedDay.substring(0, 3)), // Use the helper to get a valid starting date
+        scheduleId: instructorClasses && instructorClasses.length > 0 ? instructorClasses[0].id : '',
+        date: new Date(),
         description: '',
     });
+
+    const renderClassOptions = () => {
+        if (!instructorClasses || instructorClasses.length === 0) {
+            return <option value="">No classes available</option>;
+        }
+
+        return instructorClasses.map((cls) => (
+            <option key={cls.id} value={cls.id}>
+                {cls.name} - {formatShift(cls.shift)}
+            </option>
+        ));
+    };
 
     const [requestData, setRequestData] = useState(getInitialState());
     const [isCalendarOpen, setIsCalendarOpen] = useState(false);
@@ -123,7 +122,7 @@ const RequestChangeForm = ({ isOpen, onClose, onSave, roomDetails, instructorCla
         if (isOpen) {
             setRequestData(getInitialState());
         }
-    }, [isOpen, instructorClasses, selectedDay, selectedTime]);
+    }, [isOpen, instructorClasses]);
 
     const handleDateChange = (newDate) => {
         setRequestData(prev => ({ ...prev, date: newDate }));
@@ -132,23 +131,79 @@ const RequestChangeForm = ({ isOpen, onClose, onSave, roomDetails, instructorCla
     
     const handleInputChange = (e) => {
         const { name, value } = e.target;
-        setRequestData(prev => ({ ...prev, [name]: value, }));
+        setRequestData(prev => ({ ...prev, [name]: value }));
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!requestData.classId || !requestData.date) {
-            alert('Please select a class and a valid date.');
+        
+        if (!requestData.scheduleId || !requestData.date || !roomDetails?.id) {
+            alert('Please select a class and valid date');
             return;
         }
-        
-        // --- THIS IS THE FIX ---
-        // The date is now formatted as a full ISO string, which your backend can parse.
-        const isoDateString = requestData.date.toISOString();
-        onSave({ ...requestData, date: isoDateString, timeSlot: selectedTime, room: roomDetails });
-        // -------------------------
+    
+        try {
+            // Debug: Log the full session data
+            console.log("Full session data:", session);
+            
+            // Get instructor ID from session - ensure we're accessing the correct path
+            const instructorId = session?.user?.id;
+            
+            if (!instructorId) {
+                throw new Error(`Instructor ID not found in session. Session structure: ${JSON.stringify(session)}`);
+            }
+    
+            // Create payload with proper numeric IDs
+            const payload = {
+                instructorId: Number(instructorId),
+                scheduleId: Number(requestData.scheduleId),
+                newRoomId: Number(roomDetails.id),
+                effectiveDate: requestData.date.toISOString().split('T')[0],
+                description: requestData.description || '',
+            };
+    
+            console.log("Submitting payload:", payload);
+            
+            await notificationService.submitChangeRequest(payload, session.accessToken);
+            
+            onSave(payload);
+            onClose();
+            
+        } catch (error) {
+            console.error('Submission failed:', {
+                error: error.message,
+                sessionUser: session?.user,
+                stack: error.stack
+            });
+            alert(`Submission failed: ${error.message}`);
+        }
+    };
 
-        onClose();
+    // Format the day of week from the schedule data
+    const formatDayOfWeek = (dayDetails) => {
+        if (!dayDetails || !Array.isArray(dayDetails) || dayDetails.length === 0) return 'N/A';
+        return dayDetails[0].dayOfWeek.toLowerCase().replace(/_/g, ' ');
+    };
+
+    // Format the time range from shift data
+    const formatTimeRange = (shift) => {
+        if (!shift || !shift.startTime || !shift.endTime) return 'N/A';
+        const start = shift.startTime.substring(0, 5);
+        const end = shift.endTime.substring(0, 5);
+        return `${start}-${end}`;
+    };
+
+    const formatShift = (shiftString) => {
+        if (!shiftString) return 'Time not specified';
+        
+        try {
+            // Handle "07:00:00-10:00:00" format
+            const [start, end] = shiftString.split('-');
+            return `${start.substring(0, 5)}-${end.substring(0, 5)}`;
+        } catch (e) {
+            console.error('Error formatting shift:', e);
+            return shiftString; // Return original if formatting fails
+        }
     };
 
     useEffect(() => {
@@ -183,7 +238,7 @@ const RequestChangeForm = ({ isOpen, onClose, onSave, roomDetails, instructorCla
                             </div>
                         </div>
 
-                         <div>
+                        <div>
                             <label className="block mb-2 text-xs font-medium text-gray-900 dark:text-white">Requested Slot</label>
                             <div className="bg-gray-100 border border-gray-300 text-gray-600 text-sm rounded-lg block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
                                 {selectedDay}, {selectedTime}
@@ -191,25 +246,21 @@ const RequestChangeForm = ({ isOpen, onClose, onSave, roomDetails, instructorCla
                         </div>
 
                         <div>
-                            <label htmlFor="classId" className="block mb-2 text-xs font-medium text-gray-900 dark:text-white">Assign to Class</label>
+                            <label htmlFor="scheduleId" className="block mb-2 text-xs font-medium text-gray-900 dark:text-white">Assign to Class</label>
                             <select
-                                id="classId"
-                                name="classId"
-                                value={requestData.classId}
+                                id="scheduleId"
+                                name="scheduleId"
+                                value={requestData.scheduleId}
                                 onChange={handleInputChange}
-                                className="bg-gray-50 border border-gray-300 text-gray-900 text-xs rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                                className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                                 required
                             >
-                                {instructorClasses.length > 0 ? (
-                                    instructorClasses.map(cls => (
-                                        <option key={cls.id} value={cls.id}>{cls.name}</option>
-                                    ))
-                                ) : (
-                                    <option value="" disabled>No classes found</option>
-                                )}
+                                <option value="" disabled>Select a class</option>
+                                {renderClassOptions()}
                             </select>
                         </div>
 
+                        {/* Rest of the form remains the same */}
                         <div className="relative">
                             <label htmlFor="date" className="block mb-2 text-xs font-medium text-gray-900 dark:text-white">Date of Change</label>
                             <button
@@ -219,7 +270,7 @@ const RequestChangeForm = ({ isOpen, onClose, onSave, roomDetails, instructorCla
                             >
                                {requestData.date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
                             </button>
-                             {isCalendarOpen && (
+                            {isCalendarOpen && (
                                 <CustomDatePicker
                                     selectedDate={requestData.date}
                                     onDateChange={handleDateChange}
@@ -264,5 +315,4 @@ const RequestChangeForm = ({ isOpen, onClose, onSave, roomDetails, instructorCla
         </div>
     );
 };
-
 export default RequestChangeForm;

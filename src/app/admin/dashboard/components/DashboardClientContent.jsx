@@ -1,3 +1,4 @@
+// src/app/admin/dashboard/components/DashboardClientContent.jsx
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -33,54 +34,54 @@ const getAcademicYear = () => {
  * @param {function} props.updateChartAction - Server Action to fetch updated chart data.
  */
 export default function DashboardClientContent({ dashboardStats, initialChartData, updateChartAction }) {
-    const { classAssign, expired, unassignedClass, onlineClass } = dashboardStats;
+  const { classAssign, expired, unassignedClass, onlineClass } = dashboardStats;
 
-    // State for real-time current date
-    const [currentDate, setCurrentDate] = useState('');
-    // State for academic year
-    const [academicYear, setAcademicYear] = useState('');
+  // State for real-time current date
+  const [currentDate, setCurrentDate] = useState('');
+  // State for academic year
+  const [academicYear, setAcademicYear] = useState('');
 
-    useEffect(() => {
-        // Function to update date and academic year
-        const updateDateTime = () => {
-            const now = new Date();
-            setCurrentDate(now.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }));
-            setAcademicYear(getAcademicYear());
-        };
+  useEffect(() => {
+    // Function to update date and academic year
+    const updateDateTime = () => {
+      const now = new Date();
+      setCurrentDate(now.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }));
+      setAcademicYear(getAcademicYear());
+    };
 
-        // Set initial date and academic year immediately
-        updateDateTime();
+    // Set initial date and academic year immediately
+    updateDateTime();
 
-        // Update date every second for a real-time effect (optional)
-        const dateInterval = setInterval(updateDateTime, 1000);
+    // Update date every second for real-time effect
+    const dateInterval = setInterval(updateDateTime, 1000);
 
-        // Cleanup interval on component unmount
-        return () => clearInterval(dateInterval);
-    }, []); // Empty dependency array ensures this runs once on mount
+    // Cleanup interval on component unmount
+    return () => clearInterval(dateInterval);
+  }, []); // Empty dependency array ensures this runs once on mount
 
-    return (
-        <>
-            {/* DashboardHeader uses the client-side managed current date and academic year */}
-            <DashboardHeader
-                title="Welcome to Schedule Management"
-                description="Easily plan, track, and manage your school schedule all in one place."
-                currentDate={currentDate}
-                academicYear={academicYear}
-            />
+  return (
+    <>
+      {/* DashboardHeader uses the client-side managed current date and academic year */}
+      <DashboardHeader
+        title="Welcome to Schedule Management"
+        description="Easily plan, track, and manage your school schedule all in one place."
+        currentDate={currentDate}
+        academicYear={academicYear}
+      />
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-6">
-                <StatCard title="Class Assigned" value={classAssign} />
-                <StatCard title="Expired" value={expired} />
-                <StatCard title="Unassigned Class" value={unassignedClass} />
-                <StatCard title="Online Class" value={onlineClass} />
-            </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-6">
+        <StatCard title="Class Assign" value={classAssign} />
+        <StatCard title="Expired" value={expired} />
+        <StatCard title="Unassigned Class" value={unassignedClass} />
+        <StatCard title="Online Class" value={onlineClass} />
+      </div>
 
-            <div className="mt-6 grid grid-cols-1 gap-6">
-                <RoomAvailabilityWrapper
-                    initialChartData={initialChartData}
-                    updateChartAction={updateChartAction}
-                />
-            </div>
-        </>
-    );
+      <div className="mt-6 grid grid-cols-1 gap-6">
+        <RoomAvailabilityWrapper
+          initialChartData={initialChartData}
+          updateChartAction={updateChartAction}
+        />
+      </div>
+    </>
+  );
 }

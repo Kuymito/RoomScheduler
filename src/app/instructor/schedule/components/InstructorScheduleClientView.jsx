@@ -21,15 +21,16 @@ const SCHEDULE_ITEM_BG_COLOR = 'bg-green-50 dark:bg-green-900/40';
 const ScheduleItemCard = ({ item }) => (
   <div className={`${SCHEDULE_ITEM_BG_COLOR} p-2 h-full w-full flex flex-col text-xs rounded-md shadow-sm border border-green-200 dark:border-green-800/60`}>
     <div className="flex justify-between items-start mb-1">
-      {/* --- THIS IS THE FIX --- */}
+      {/* Subject remains at the top */}
       <span className="font-semibold text-[13px] text-gray-800 dark:text-gray-200">{item.subject}</span>
-      <span className="text-gray-500 dark:text-gray-400 text-[10px] leading-tight pt-0.5">{item.timeDisplay}</span>
     </div>
     <div className="text-gray-700 dark:text-gray-300 text-[11px]">{item.year}</div>
-    <div className="mt-auto text-right text-gray-500 dark:text-gray-400 text-[11px]">{item.semester}</div>
+    <div className="mt-auto flex justify-between items-end">
+      <span className="text-gray-500 dark:text-gray-400 text-[11px]">{item.semester}</span>
+      <span className="text-gray-500 dark:text-gray-400 text-[10px]">{item.timeDisplay}</span>
+    </div>
   </div>
 );
-
 export default function InstructorScheduleClientView({ initialScheduleData, instructorDetails, allShifts }) {
     const [scheduleData] = useState(initialScheduleData);
     const { instructorName, publicDate } = instructorDetails;

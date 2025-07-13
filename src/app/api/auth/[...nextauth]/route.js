@@ -1,3 +1,4 @@
+// src/app/api/auth/[...nextauth]/route.js
 import NextAuth from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import { authService } from '@/services/auth.service';
@@ -10,6 +11,7 @@ function decodeJwt(token) {
     return null;
   }
 }
+
 
 export const authOptions = {
   providers: [
@@ -27,30 +29,45 @@ export const authOptions = {
         if (!credentials?.email || !credentials?.password) {
           throw new Error("Please provide both email and password.");
         }
-
         try {
-          const apiResponse = await authService.login({
-            email: credentials.email,
-            password: credentials.password,
-          });
-
+          const apiResponse = await authService.login(credentials.email, credentials.password);
           const accessToken = apiResponse.token;
 
           if (accessToken) {
             const decodedPayload = decodeJwt(accessToken);
             if (!decodedPayload) throw new Error("Could not decode token.");
+            
+            console.log("Decoded JWT Payload:", decodedPayload);
 
             const userRole = decodedPayload.roles && decodedPayload.roles[0];
+
             if (!userRole) {
               console.error("Role not found in JWT payload's 'roles' array!");
               return null;
             }
             
-            let userName = decodedPayload.firstName ? `${decodedPayload.firstName} ${decodedPayload.lastName || ''}`.trim() : (decodedPayload.name || credentials.email.split('@')[0]);
+            // --- UPDATED NAME HANDLING ---
+            let userName;
+            
+            // Priority 1: Use firstName and lastName if available
+            if (decodedPayload.firstName) {
+                userName = decodedPayload.firstName;
+                if (decodedPayload.lastName) {
+                    userName += ` ${decodedPayload.lastName}`;
+                }
+            } 
+            // Priority 2: Use the 'name' field if available and not empty
+            else if (decodedPayload.name) {
+                userName = decodedPayload.name;
+            } 
+            // Priority 3: Fallback to the email, but strip the domain part
+            else {
+                userName = credentials.email.split('@')[0];
+            }
 
             return {
-              id: decodedPayload.sub,
-              name: userName,
+              id: decodedPayload.instructorId, // Use instructorId from the token
+              name: userName, // Use the constructed or cleaned-up name
               email: decodedPayload.sub,
               role: userRole,
               accessToken: accessToken,
@@ -80,21 +97,29 @@ export const authOptions = {
     },
     async session({ session, token }) {
       if (token) {
-        session.accessToken = token.accessToken;
-        session.user = {
-            ...session.user,
-            id: token.id,
-            role: token.role,
-            name: token.name,
-            email: token.email
-        };
+          // Decode the token to get the instructorId
+          const decoded = token.accessToken ? 
+              JSON.parse(Buffer.from(token.accessToken.split('.')[1], 'base64').toString()) 
+              : null;
+          
+          session.accessToken = token.accessToken;
+          session.user = {
+              ...session.user,
+              id: decoded?.instructorId || token.id, // Use instructorId from token
+              email: token.email,
+              role: token.role,
+              name: token.name
+          };
       }
+      console.log("Updated session:", session);
       return session;
-    },
   },
+  },
+  
   session: { strategy: 'jwt' },
   secret: process.env.NEXTAUTH_SECRET,
 };
+
 
 const handler = NextAuth(authOptions);
 export { handler as GET, handler as POST };

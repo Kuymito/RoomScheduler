@@ -8,6 +8,8 @@ import { useParams } from 'next/navigation';
 import AdminLayout from '@/components/AdminLayout';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import { scheduleService } from '@/services/schedule.service';
+import { useSession } from 'next-auth/react';
 
 // --- Constants ---
 const DAYS_OF_WEEK = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
@@ -25,29 +27,12 @@ const DAY_HEADER_COLORS = {
 
 const SCHEDULE_ITEM_BG_COLOR = 'bg-green-50 dark:bg-green-900/40';
 
-// --- Mock Database for All Rooms ---
-const ALL_ROOMS_SCHEDULES = {
-    'A-21': { 'Monday': { '07:00 - 10:00': { subject: '32/27 IT', year: 'Year 2', semester: 'Semester 1' } }, 'Wednesday': { '10:30 - 13:30': { subject: '33/29 FA', year: 'Year 1', semester: 'Semester 1' } }, 'Friday': { '17:30 - 20:30': { subject: '30/11 IT', year: 'Year 4', semester: 'Semester 2' } }, },
-    'A-22': { 'Tuesday': { '07:00 - 10:00': { subject: '45/01 Marketing', year: 'Year 1', semester: 'Semester 1' } }, 'Thursday': { '14:00 - 17:00': { subject: '41/12 Economics', year: 'Year 4', semester: 'Semester 2' } }, },
-    'A-23': { 'Monday': { '10:30 - 13:30': { subject: '55/90 Engineering', year: 'Year 3', semester: 'Semester 1' } }, 'Tuesday': { '14:00 - 17:00': { subject: '51/18 Architecture', year: 'Year 2', semester: 'Semester 2' } }, 'Wednesday': { '07:00 - 10:00': { subject: '55/90 Engineering', year: 'Year 3', semester: 'Semester 1' } }, 'Friday': { '10:30 - 13:30': { subject: '51/18 Architecture', year: 'Year 2', semester: 'Semester 2' } }, 'Saturday': { '07:00 - 10:00': { subject: 'Weekend Workshop', year: 'All Years', semester: 'Special' } }, },
-    'A-24': {} // An empty room
-};
-
-// --- Mock Fetch Function ---
-const fetchScheduleForRoom = (roomId) => {
-    console.log(`Simulating API fetch for room: ${roomId}`);
-    return new Promise(resolve => {
-        // Artificial delay removed
-        const roomData = ALL_ROOMS_SCHEDULES[roomId] || {};
-        const processedData = Object.entries(roomData).reduce((acc, [day, slots]) => {
-            acc[day] = Object.entries(slots).reduce((dayAcc, [timeSlot, item]) => {
-                dayAcc[timeSlot] = { ...item, timeDisplay: timeSlot };
-                return dayAcc;
-            }, {});
-            return acc;
-        }, {});
-        resolve(processedData);
-    });
+// --- Helper function to calculate year from semester ---
+const mapSemesterToYear = (semester) => {
+    if (!semester || typeof semester !== 'string') return '';
+    const semesterNumber = parseInt(semester.replace(/[^0-9]/g, ''), 10);
+    if (isNaN(semesterNumber)) return '';
+    return Math.ceil(semesterNumber / 2);
 };
 
 // --- Responsive Hook ---
@@ -215,6 +200,7 @@ const ConfirmationModal = ({ isOpen, onCancel, onConfirm, swapDetails }) => {
 // --- Main Page Component ---
 const RoomSchedulePage = () => {
     const { roomId } = useParams();
+    const { data: session } = useSession();
     const [scheduleData, setScheduleData] = useState({});
     const [loading, setLoading] = useState(true);
     const publicDate = "2025-06-09 14:31:43"; // Updated timestamp
@@ -228,14 +214,40 @@ const RoomSchedulePage = () => {
     const isDesktop = useMediaQuery('(min-width: 1024px)');
 
     useEffect(() => {
-        if (roomId) {
+        if (roomId && session?.accessToken) {
             setLoading(true);
-            fetchScheduleForRoom(roomId).then(data => {
-                setScheduleData(data);
-                setLoading(false);
-            });
+            scheduleService.getAllSchedules(session.accessToken)
+                .then(apiSchedules => {
+                    const roomSchedules = {};
+                    apiSchedules.forEach(schedule => {
+                        if (String(schedule.roomId) === String(roomId)) {
+                            const timeSlotKey = `${schedule.shift.startTime.slice(0, 5)} - ${schedule.shift.endTime.slice(0, 5)}`;
+                            if (schedule.dayDetails && Array.isArray(schedule.dayDetails)) {
+                                schedule.dayDetails.forEach(dayDetail => {
+                                    const dayName = dayDetail.dayOfWeek.charAt(0).toUpperCase() + dayDetail.dayOfWeek.slice(1).toLowerCase();
+                                    if (!roomSchedules[dayName]) {
+                                        roomSchedules[dayName] = {};
+                                    }
+                                    const academicYear = mapSemesterToYear(schedule.semester);
+                                    roomSchedules[dayName][timeSlotKey] = {
+                                        subject: schedule.className,
+                                        year: `Year ${academicYear}`,
+                                        semester: schedule.semester,
+                                        timeDisplay: timeSlotKey,
+                                    };
+                                });
+                            }
+                        }
+                    });
+                    setScheduleData(roomSchedules);
+                    setLoading(false);
+                })
+                .catch(err => {
+                    console.error("Failed to fetch schedules:", err);
+                    setLoading(false);
+                });
         }
-    }, [roomId]);
+    }, [roomId, session]);
 
     useEffect(() => {
         if (!loading) {
@@ -270,9 +282,8 @@ const RoomSchedulePage = () => {
     };
 
     const handleConfirmSwap = () => {
-        // Delay the state update to allow drag events to finish
         setTimeout(modalState.onConfirm, 0);
-        handleCancelSwap(); // Close modal immediately
+        handleCancelSwap();
     };
 
     // --- Drag and Drop Handlers ---
@@ -286,13 +297,11 @@ const RoomSchedulePage = () => {
         dragGhost.style.height = '80px';
         document.body.appendChild(dragGhost);
         e.dataTransfer.setDragImage(dragGhost, 20, 20);
-        // This attribute is the key to the cursor style
         document.body.setAttribute('data-dragging', 'true');
         setTimeout(() => document.body.removeChild(dragGhost), 0);
     }, []);
 
     const handleDragEnd = useCallback(() => {
-        // This function must run reliably to clean up the cursor
         document.body.removeAttribute('data-dragging');
         setDraggedItemInfo(null);
         setDragOverCell(null);
@@ -346,18 +355,15 @@ const RoomSchedulePage = () => {
         };
 
         if (targetItem) {
-            // This is a SWAP action, trigger modal
             setModalState({
                 isOpen: true,
                 details: {
                     from: { classData: draggedItem, day: origin.day, time: origin.timeSlot },
                     to: { classData: targetItem, day: targetDay, time: targetTimeSlot }
                 },
-                onConfirm: performMoveOrSwap, // Correctly assign the function
+                onConfirm: performMoveOrSwap,
             });
         } else {
-            // This is a simple MOVE action
-            // ✨ FIX: Delay the state update to allow drag events to finish
             setTimeout(performMoveOrSwap, 0);
         }
 
@@ -368,11 +374,9 @@ const RoomSchedulePage = () => {
     return (
         <div className='p-4 sm:p-6'>
             <style jsx global>{`
-                /* The not-allowed cursor is applied when this attribute is present */
                 body[data-dragging] * {
                     cursor: not-allowed !important;
                 }
-                /* Override the cursor for the item being dragged */
                 body[data-dragging] [draggable="true"] {
                     cursor: move !important;
                 }
@@ -414,10 +418,16 @@ const RoomSchedulePage = () => {
     );
 };
 
-export default function AdminSchedulePage() {
+export default function AdminScheduleRoomDetailPage() {
     const { roomId } = useParams();
+
+    const breadcrumbs = [
+        { label: "Schedule", href: "/admin/schedule" },
+        { label: `${roomId}` }
+    ];
+
     return (
-        <AdminLayout activeItem="schedule" pageTitle={`Schedule Management of Room ${roomId}`}>
+        <AdminLayout activeItem="schedule" breadcrumbs={breadcrumbs}>
             <RoomSchedulePage />
         </AdminLayout>
     );

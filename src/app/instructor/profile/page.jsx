@@ -5,14 +5,14 @@ import InstructorLayout from '@/components/InstructorLayout';
 import Image from 'next/image';
 import { useSession } from 'next-auth/react';
 import useSWR from 'swr';
-import { authService } from '@/services/auth.service';
+import { authService as authenticationService } from '@/services/auth.service';
 import SuccessPopup from '@/app/instructor/profile/components/SuccessPopup';
 import PasswordConfirmationModal from './components/PasswordConfirmationModal';
 
 // --- Icon Components ---
 const EyeOpenIcon = ({ className = "h-5 w-5" }) => ( <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className}><path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" /></svg> );
 const EyeClosedIcon = ({ className = "h-5 w-5" }) => ( <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className}><path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 0 0 1.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.451 10.451 0 0 1 12 4.5c4.756 0 8.773 3.162 10.065 7.498a10.522 10.522 0 0 1-4.293 5.774M6.228 6.228 3 3m3.228 3.228 3.65 3.65m7.894 7.894L21 21m-3.228-3.228-3.65-3.65m0 0a3 3 0 1 0-4.243-4.243m4.242 4.242L9.88 9.88" /></svg> );
-const defaultUserIcon = ({ className }) => (
+const DefaultUserIcon = ({ className }) => (
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={0.8} stroke="currentColor" className={className}>
       <path strokeLinecap="round" strokeLinejoin="round" d="M17.982 18.725A7.488 7.488 0 0 0 12 15.75a7.488 7.488 0 0 0-5.982 2.975m11.963 0a9 9 0 1 0-11.963 0m11.963 0A8.966 8.966 0 0 1 12 21a8.966 8.966 0 0 1-5.982-2.275M15 9.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
     </svg>
@@ -48,215 +48,231 @@ const ProfileContentSkeleton = () => (
             </div>
         </div>
     </div>
-);  
+);
 
-const fetcher = ([, token]) => authService.getProfile(token);
+const profileFetcher = ([, token]) => authenticationService.getProfile(token);
 
-const ProfileContent = () => {
-    const { data: session, status: sessionStatus } = useSession();
-    const { data: profileResponse, error: profileError, mutate } = useSWR(
-        session?.accessToken ? ['/api/profile', session.accessToken] : null,
-        fetcher
+function ProfileContent() {
+    const { data: sessionData, status: sessionStatus } = useSession();
+    const { data: profileResponse, error: profileFetchError, mutate: mutateProfileData } = useSWR(
+        sessionData?.accessToken ? ['/api/profile', sessionData.accessToken] : null,
+        profileFetcher
     );
-    
-    const [profileData, setProfileData] = useState(null);
-    const [editableProfileData, setEditableProfileData] = useState(null);
-    const [imagePreviewUrl, setImagePreviewUrl] = useState(null);
-    const [isUploading, setIsUploading] = useState(false); 
-    const fileInputRef = useRef(null);
-    const [isEditingGeneral, setIsEditingGeneral] = useState(false);
+
+    const [profileState, setProfileState] = useState(null);
+    const [editableProfileState, setEditableProfileState] = useState(null);
+    const [imagePreviewURL, setImagePreviewURL] = useState(null);
+    const [selectedFile, setSelectedFile] = useState(null);
+    const [isUploadingImage, setIsUploadingImage] = useState(false);
+    const fileInputReference = useRef(null);
+    const [isEditingGeneralInformation, setIsEditingGeneralInformation] = useState(false);
     const [isEditingPassword, setIsEditingPassword] = useState(false);
-    const [newPassword, setNewPassword] = useState('');
-    const [confirmNewPassword, setConfirmNewPassword] = useState('');
+    const [newPasswordValue, setNewPasswordValue] = useState('');
+    const [confirmNewPasswordValue, setConfirmNewPasswordValue] = useState('');
     const [passwordMismatchError, setPasswordMismatchError] = useState(false);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState(null);
-    const [showSuccessPopup, setShowSuccessPopup] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
+    const [errorMessage, setErrorMessage] = useState(null);
+    const [isSuccessPopupVisible, setIsSuccessPopupVisible] = useState(false);
     const [emptyPasswordError, setEmptyPasswordError] = useState({ new: false, confirm: false });
     const [passwordVisibility, setPasswordVisibility] = useState({ new: false, confirm: false });
-    const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
-    const [modalError, setModalError] = useState(null);
+    const [isConfirmationModalOpen, setIsConfirmationModalOpen] = useState(false);
+    const [modalErrorMessage, setModalErrorMessage] = useState(null);
 
     useEffect(() => {
         if (profileResponse) {
-             const initialData = {
-                firstName: profileResponse.firstName || "NA",
-                lastName: profileResponse.lastName || "NA",
-                email: profileResponse.email || "NA",
-                phoneNumber: profileResponse.phone || "Not Provided", 
+             const initialProfileData = {
+                firstName: profileResponse.firstName || "Not Available",
+                lastName: profileResponse.lastName || "Not Available",
+                email: profileResponse.email || "Not Available",
+                phoneNumber: profileResponse.phone || "Not Provided",
                 address: profileResponse.address || "Not Provided",
                 avatarUrl: profileResponse.profile,
                 degree: profileResponse.degree || "Not Provided",
-                // --- THIS IS THE FIX ---
-                // Use the 'department' property from the API response.
-                department: profileResponse.department || "N/A",
+                department: profileResponse.department || "Not Available",
                 departmentId: profileResponse.departmentId,
                 major: profileResponse.major || "Not Provided",
              };
-            setProfileData(initialData);
-            setEditableProfileData(initialData);
-            setImagePreviewUrl(initialData.avatarUrl);
+            setProfileState(initialProfileData);
+            setEditableProfileState(initialProfileData);
+            setImagePreviewURL(initialProfileData.avatarUrl);
         }
     }, [profileResponse]);
 
     const handleGeneralInputChange = (event) => {
         const { name, value } = event.target;
-        setEditableProfileData(previousState => ({ ...previousState, [name]: value }));
+        setEditableProfileState(previousState => ({ ...previousState, [name]: value }));
     };
 
-    /**
-     * Reads the selected image file and converts it to a Base64 data URL.
-     */
     const handleFileChange = (event) => {
         const file = event.target.files[0];
         if (file) {
-            setIsUploading(true); // Indicate that processing has started
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                const base64String = reader.result;
-                setImagePreviewUrl(base64String);
-                setEditableProfileData(previousState => ({ ...previousState, avatarUrl: base64String }));
-                setIsUploading(false); // Processing is finished
-            };
-            reader.onerror = () => {
-                console.error("Error reading file");
-                setIsUploading(false);
-            };
-            reader.readAsDataURL(file);
+            setSelectedFile(file);
+            setImagePreviewURL(URL.createObjectURL(file));
         }
     };
-    
-    const handleUploadButtonClick = () => fileInputRef.current?.click();
+
+    const handleUploadButtonClick = () => fileInputReference.current?.click();
 
     const handleEditClick = (section) => {
-        setError(null);
-        setModalError(null);
+        setErrorMessage(null);
+        setModalErrorMessage(null);
         if (section === 'general') {
-            setEditableProfileData({ ...profileData });
-            setIsEditingGeneral(true);
+            setEditableProfileState({ ...profileState });
+            setIsEditingGeneralInformation(true);
         } else if (section === 'password') {
             setIsEditingPassword(true);
         }
     };
 
     const handleCancelClick = (section) => {
-        setError(null);
-        setModalError(null);
+        setErrorMessage(null);
+        setModalErrorMessage(null);
         if (section === 'general') {
-            setEditableProfileData({ ...profileData });
-            setImagePreviewUrl(profileData.avatarUrl);
-            setIsEditingGeneral(false);
+            setEditableProfileState({ ...profileState });
+            setImagePreviewURL(profileState.avatarUrl);
+            setIsEditingGeneralInformation(false);
+            setSelectedFile(null);
         } else if (section === 'password') {
-            setNewPassword('');
-            setConfirmNewPassword('');
+            setNewPasswordValue('');
+            setConfirmNewPasswordValue('');
             setIsEditingPassword(false);
             setPasswordMismatchError(false);
             setEmptyPasswordError({ new: false, confirm: false });
         }
     };
 
-
-    const handleSaveClick = async (section) => {
+    const handleSaveChanges = async (section) => {
         if (section === 'general') {
-            setLoading(true);
-            setError(null);
+            setIsLoading(true);
+            setErrorMessage(null);
     
-            // --- THIS IS THE FIX ---
-            // 1. Check for a valid session and token BEFORE making the API call.
-            if (!session?.accessToken) {
-                setError("Your session has expired. Please log out and sign in again.");
-                setLoading(false);
-                return; // Stop the function here
+            let finalImageURL = editableProfileState.avatarUrl;
+    
+            if (selectedFile) {
+                setIsUploadingImage(true);
+                try {
+                    const formData = new FormData();
+                    formData.append('file', selectedFile);
+    
+                    const response = await fetch('/api/upload', {
+                        method: 'POST',
+                        body: formData,
+                    });
+    
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.message || 'Image upload failed');
+                    }
+    
+                    const { url } = await response.json();
+                    finalImageURL = url;
+                    setSelectedFile(null);
+                } catch (uploadError) {
+                    setErrorMessage(`Image upload failed: ${uploadError.message}`);
+                    setIsLoading(false);
+                    setIsUploadingImage(false);
+                    return;
+                } finally {
+                    setIsUploadingImage(false);
+                }
             }
     
             try {
-                // 2. Pass the confirmed valid token to the service.
-                await authService.updateProfile(editableProfileData, session.accessToken);
+                if (!sessionData?.accessToken) {
+                    throw new Error("Your session has expired. Please log out and sign in again.");
+                }
     
-                setShowSuccessPopup(true);
-                setIsEditingGeneral(false);
-                mutate(); // Re-fetch profile data
-            } catch (err) {
-                setError(err.message || "Failed to update profile.");
+                const profilePayload = {
+                    ...editableProfileState,
+                    avatarUrl: finalImageURL,
+                };
+    
+                await authenticationService.updateProfile(profilePayload, sessionData.accessToken);
+    
+                setIsSuccessPopupVisible(true);
+                setIsEditingGeneralInformation(false);
+                mutateProfileData();
+            } catch (error) {
+                setErrorMessage(error.message || "Failed to update profile.");
             } finally {
-                setLoading(false);
+                setIsLoading(false);
             }
         } else if (section === 'password') {
             setPasswordMismatchError(false);
             setEmptyPasswordError({ new: false, confirm: false });
 
-            const isNewEmpty = !newPassword;
-            const isConfirmEmpty = !confirmNewPassword;
+            const isNewEmpty = !newPasswordValue;
+            const isConfirmEmpty = !confirmNewPasswordValue;
 
             if (isNewEmpty || isConfirmEmpty) {
-                setError("New password fields cannot be empty.");
+                setErrorMessage("New password fields cannot be empty.");
                 setEmptyPasswordError({ new: isNewEmpty, confirm: isConfirmEmpty });
-                setLoading(false);
+                setIsLoading(false);
                 return;
             }
 
-            if (newPassword !== confirmNewPassword) {
-                setError("New passwords do not match.");
+            if (newPasswordValue !== confirmNewPasswordValue) {
+                setErrorMessage("New passwords do not match.");
                 setPasswordMismatchError(true);
-                setLoading(false);
+                setIsLoading(false);
                 return;
             }
 
-            setIsConfirmModalOpen(true);
-            setLoading(false);
+            setIsConfirmationModalOpen(true);
+            setIsLoading(false);
         }
     };
 
-    const handlePasswordSaveConfirm = async (currentPassword) => {
-        setLoading(true);
-        setModalError(null);
-        
+    const handlePasswordSaveConfirmation = async (currentPassword) => {
+        setIsLoading(true);
+        setModalErrorMessage(null);
+
         if (!currentPassword) {
-            setModalError("Current password is required.");
-            setLoading(false);
+            setModalErrorMessage("Current password is required.");
+            setIsLoading(false);
             return;
         }
 
         try {
-            if (!session?.accessToken) {
+            if (!sessionData?.accessToken) {
                 throw new Error("You are not authenticated.");
             }
-            await authService.changePassword(currentPassword, newPassword, session.accessToken);
-            
-            setShowSuccessPopup(true);
-            setIsConfirmModalOpen(false);
-            
-            setNewPassword('');
-            setConfirmNewPassword('');
+            await authenticationService.changePassword(currentPassword, newPasswordValue, sessionData.accessToken);
+
+            setIsSuccessPopupVisible(true);
+            setIsConfirmationModalOpen(false);
+
+            setNewPasswordValue('');
+            setConfirmNewPasswordValue('');
             setIsEditingPassword(false);
 
         } catch (passwordChangeError) {
-            setModalError(passwordChangeError.message || "An unexpected error occurred.");
+            setModalErrorMessage(passwordChangeError.message || "An unexpected error occurred.");
         } finally {
-            setLoading(false);
+            setIsLoading(false);
         }
     };
 
     const handleNewPasswordChange = (event) => {
-        setNewPassword(event.target.value);
+        setNewPasswordValue(event.target.value);
         if(passwordMismatchError || emptyPasswordError.new) {
             setPasswordMismatchError(false);
-            setError(null);
+            setErrorMessage(null);
             setEmptyPasswordError(previousState => ({...previousState, new: false}));
         }
     };
 
     const handleConfirmPasswordChange = (event) => {
-        setConfirmNewPassword(event.target.value);
+        setConfirmNewPasswordValue(event.target.value);
          if(passwordMismatchError || emptyPasswordError.confirm) {
             setPasswordMismatchError(false);
-            setError(null);
+            setErrorMessage(null);
             setEmptyPasswordError(previousState => ({...previousState, confirm: false}));
         }
     };
 
-    const togglePasswordVisibility = (field) => { 
-        setPasswordVisibility(previousState => ({ ...previousState, [field]: !previousState[field] })) 
+    const togglePasswordVisibility = (fieldName) => {
+        setPasswordVisibility(previousState => ({ ...previousState, [fieldName]: !previousState[fieldName] }))
     };
 
     const renderPasswordField = (label, name, value, onChange, fieldName, isReadOnly = false, hasError = false) => (
@@ -271,7 +287,7 @@ const ProfileContent = () => {
                     value={value}
                     onChange={onChange}
                     readOnly={isReadOnly}
-                    disabled={loading}
+                    disabled={isLoading}
                 />
                 <button
                     type="button"
@@ -285,28 +301,28 @@ const ProfileContent = () => {
         </div>
     );
 
-    if (sessionStatus === 'loading' || !profileData) {
+    if (sessionStatus === 'loading' || !profileState) {
         return <ProfileContentSkeleton />;
     }
 
-    if (profileError) {
-        return <div className="p-6 text-red-500 text-center">Error loading profile: {profileError.message}</div>
+    if (profileFetchError) {
+        return <div className="p-6 text-red-500 text-center">Error loading profile: {profileFetchError.message}</div>
     }
 
-    const currentDisplayData = isEditingGeneral ? editableProfileData : profileData;
+    const displayedProfileData = isEditingGeneralInformation ? editableProfileState : profileState;
 
     return (
         <div className="p-6">
-            <PasswordConfirmationModal 
-                show={isConfirmModalOpen}
-                onClose={() => setIsConfirmModalOpen(false)}
-                onConfirm={handlePasswordSaveConfirm}
-                loading={loading}
-                error={modalError}
+            <PasswordConfirmationModal
+                show={isConfirmationModalOpen}
+                onClose={() => setIsConfirmationModalOpen(false)}
+                onConfirm={handlePasswordSaveConfirmation}
+                loading={isLoading}
+                error={modalErrorMessage}
             />
             <SuccessPopup
-                show={showSuccessPopup}
-                onClose={() => setShowSuccessPopup(false)}
+                show={isSuccessPopupVisible}
+                onClose={() => setIsSuccessPopupVisible(false)}
                 title="Success"
                 message="Your profile has been updated successfully."
             />
@@ -314,17 +330,17 @@ const ProfileContent = () => {
                 Profile
             </div>
             <hr className="border-t border-gray-300 dark:border-gray-700 mt-4 mb-8" />
-            {error && (
+            {errorMessage && (
                 <div className={`p-4 mb-4 text-sm rounded-lg bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300`}>
-                    {error}
+                    {errorMessage}
                 </div>
             )}
             <div className="profile-section flex gap-8 mb-4 flex-wrap">
                 <div className="avatar-card w-[220px] p-3 bg-white border border-gray-300 dark:bg-gray-800 dark:border-gray-700 shadow-sm rounded-lg flex-shrink-0 self-start">
                     <div className="avatar-content flex items-center">
-                        {imagePreviewUrl ? (
+                        {imagePreviewURL ? (
                             <Image
-                                src={imagePreviewUrl}
+                                src={imagePreviewURL}
                                 alt="Profile Avatar"
                                 width={56}
                                 height={56}
@@ -332,13 +348,13 @@ const ProfileContent = () => {
                             />
                         ) : (
                             <div className="w-14 h-14 rounded-full mr-3 flex items-center justify-center">
-                            {defaultUserIcon({className: "h-34 w-34 text-gray-700 dark:text-gray-400"})}
+                            {DefaultUserIcon({className: "h-34 w-34 text-gray-700 dark:text-gray-400"})}
                             </div>
                         )}
                         <div className="avatar-info flex flex-col">
                             <div className="avatar-name font-semibold text-sm text-gray-800 dark:text-gray-200 mb-0.5">
                                 Dr.{" "}
-                                {currentDisplayData.firstName} {currentDisplayData.lastName}
+                                {displayedProfileData.firstName} {displayedProfileData.lastName}
                             </div>
                             <div className="avatar-role font-semibold text-xs text-gray-500 dark:text-gray-400">
                                 Instructor
@@ -348,12 +364,12 @@ const ProfileContent = () => {
                      <button
                         type="button"
                         onClick={handleUploadButtonClick}
-                        disabled={isUploading || !isEditingGeneral || loading}
+                        disabled={isUploadingImage || !isEditingGeneralInformation || isLoading}
                         className="w-full rounded-md mt-2 px-3 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                        {isUploading ? "Uploading..." : "Upload Picture"}
+                        {isUploadingImage ? "Uploading..." : "Upload Picture"}
                     </button>
-                    <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" className="sr-only" />
+                    <input type="file" ref={fileInputReference} onChange={handleFileChange} accept="image/*" className="sr-only" />
                 </div>
 
                 <div className="info-details-wrapper flex-grow flex flex-col gap-8 min-w-[300px]">
@@ -364,38 +380,38 @@ const ProfileContent = () => {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                              <div className="form-group">
                                 <label className="form-label block font-semibold text-xs text-gray-700 dark:text-gray-300 mb-1">First Name</label>
-                                <input type="text" name="firstName" value={currentDisplayData.firstName} onChange={handleGeneralInputChange} readOnly={!isEditingGeneral} className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs ${!isEditingGeneral ? 'bg-gray-100 dark:bg-gray-700' : 'bg-white dark:bg-gray-600'}`}/>
+                                <input type="text" name="firstName" value={displayedProfileData.firstName} onChange={handleGeneralInputChange} readOnly={!isEditingGeneralInformation} className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs ${!isEditingGeneralInformation ? 'bg-gray-100 dark:bg-gray-700' : 'bg-white dark:bg-gray-600'}`}/>
                             </div>
                             <div className="form-group">
                                 <label className="form-label block font-semibold text-xs text-gray-700 dark:text-gray-300 mb-1">Last Name</label>
-                                <input type="text" name="lastName" value={currentDisplayData.lastName} onChange={handleGeneralInputChange} readOnly={!isEditingGeneral} className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs ${!isEditingGeneral ? 'bg-gray-100 dark:bg-gray-700' : 'bg-white dark:bg-gray-600'}`}/>
+                                <input type="text" name="lastName" value={displayedProfileData.lastName} onChange={handleGeneralInputChange} readOnly={!isEditingGeneralInformation} className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs ${!isEditingGeneralInformation ? 'bg-gray-100 dark:bg-gray-700' : 'bg-white dark:bg-gray-600'}`}/>
                             </div>
                             <div className="form-group">
                                 <label className="form-label block font-semibold text-xs text-gray-700 dark:text-gray-300 mb-1">Email</label>
-                                <input type="email" name="email" value={currentDisplayData.email} readOnly className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs bg-gray-100 dark:bg-gray-700`}/>
+                                <input type="email" name="email" value={displayedProfileData.email} readOnly className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs bg-gray-100 dark:bg-gray-700`}/>
                             </div>
                             <div className="form-group">
                                 <label className="form-label block font-semibold text-xs text-gray-700 dark:text-gray-300 mb-1">Phone Number</label>
-                                <input type="tel" name="phoneNumber" value={currentDisplayData.phoneNumber} onChange={handleGeneralInputChange} readOnly={!isEditingGeneral} className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs ${!isEditingGeneral ? 'bg-gray-100 dark:bg-gray-700' : 'bg-white dark:bg-gray-600'}`}/>
+                                <input type="tel" name="phoneNumber" value={displayedProfileData.phoneNumber} onChange={handleGeneralInputChange} readOnly={!isEditingGeneralInformation} className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs ${!isEditingGeneralInformation ? 'bg-gray-100 dark:bg-gray-700' : 'bg-white dark:bg-gray-600'}`}/>
                             </div>
                              <div className="form-group">
                                 <label className="form-label block font-semibold text-xs text-gray-700 dark:text-gray-300 mb-1">Degree</label>
-                                <input type="text" name="degree" value={currentDisplayData.degree} onChange={handleGeneralInputChange} readOnly={!isEditingGeneral} className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs ${!isEditingGeneral ? 'bg-gray-100 dark:bg-gray-700' : 'bg-white dark:bg-gray-600'}`}/>
+                                <input type="text" name="degree" value={displayedProfileData.degree} onChange={handleGeneralInputChange} readOnly={!isEditingGeneralInformation} className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs ${!isEditingGeneralInformation ? 'bg-gray-100 dark:bg-gray-700' : 'bg-white dark:bg-gray-600'}`}/>
                             </div>
                              <div className="form-group">
                                 <label className="form-label block font-semibold text-xs text-gray-700 dark:text-gray-300 mb-1">Major</label>
-                                <input type="text" name="major" value={currentDisplayData.major} onChange={handleGeneralInputChange} readOnly={!isEditingGeneral} className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs ${!isEditingGeneral ? 'bg-gray-100 dark:bg-gray-700' : 'bg-white dark:bg-gray-600'}`}/>
+                                <input type="text" name="major" value={displayedProfileData.major} onChange={handleGeneralInputChange} readOnly={!isEditingGeneralInformation} className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs ${!isEditingGeneralInformation ? 'bg-gray-100 dark:bg-gray-700' : 'bg-white dark:bg-gray-600'}`}/>
                             </div>
                              <div className="form-group md:col-span-2">
                                 <label className="form-label block font-semibold text-xs text-gray-700 dark:text-gray-300 mb-1">Department</label>
-                                <input type="text" name="department" value={currentDisplayData.department} onChange={handleGeneralInputChange} readOnly={!isEditingGeneral} className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs ${!isEditingGeneral ? 'bg-gray-100 dark:bg-gray-700' : 'bg-white dark:bg-gray-600'}`}/>
+                                <input type="text" name="department" value={displayedProfileData.department} onChange={handleGeneralInputChange} readOnly={!isEditingGeneralInformation} className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs ${!isEditingGeneralInformation ? 'bg-gray-100 dark:bg-gray-700' : 'bg-white dark:bg-gray-600'}`}/>
                             </div>
                         </div>
                         <div className="form-actions flex justify-end items-center gap-3 mt-4">
-                            {isEditingGeneral ? (
+                            {isEditingGeneralInformation ? (
                                 <>
-                                    <button onClick={() => handleCancelClick('general')} className="back-button bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 shadow-custom-light rounded-md text-gray-800 dark:text-white py-2 px-3 font-semibold text-xs" disabled={loading}>Cancel</button>
-                                    <button onClick={() => handleSaveClick('general')} className="save-button bg-blue-600 hover:bg-blue-700 shadow-custom-light rounded-md text-white text-xs py-2 px-3 font-semibold" disabled={loading}>{loading ? "Saving..." : "Save Changes"}</button>
+                                    <button onClick={() => handleCancelClick('general')} className="back-button bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 shadow-custom-light rounded-md text-gray-800 dark:text-white py-2 px-3 font-semibold text-xs" disabled={isLoading}>Cancel</button>
+                                    <button onClick={() => handleSaveChanges('general')} className="save-button bg-blue-600 hover:bg-blue-700 shadow-custom-light rounded-md text-white text-xs py-2 px-3 font-semibold" disabled={isLoading || isUploadingImage}>{isLoading || isUploadingImage ? "Saving..." : "Save Changes"}</button>
                                 </>
                             ) : (
                                 <button onClick={() => handleEditClick('general')} className="save-button bg-blue-600 hover:bg-blue-700 shadow-custom-light rounded-md text-white py-2 px-3 font-semibold text-xs">Edit Profile</button>
@@ -407,18 +423,18 @@ const ProfileContent = () => {
                         <div className="section-title font-semibold text-sm text-gray-800 dark:text-gray-200 mb-3">Password Information</div>
                         <div className="space-y-4">
                              <div className="flex gap-3 flex-wrap">
-                                {renderPasswordField("New Password", "newPassword", newPassword, handleNewPasswordChange, "new", !isEditingPassword, emptyPasswordError.new || passwordMismatchError)}
-                                {renderPasswordField("Confirm New Password", "confirmNewPassword", confirmNewPassword, handleConfirmPasswordChange, "confirm", !isEditingPassword, emptyPasswordError.confirm || passwordMismatchError)}
+                                {renderPasswordField("New Password", "newPassword", newPasswordValue, handleNewPasswordChange, "new", !isEditingPassword, emptyPasswordError.new || passwordMismatchError)}
+                                {renderPasswordField("Confirm New Password", "confirmNewPassword", confirmNewPasswordValue, handleConfirmPasswordChange, "confirm", !isEditingPassword, emptyPasswordError.confirm || passwordMismatchError)}
                             </div>
                         </div>
                          <div className="form-actions flex justify-end items-center gap-3 mt-4">
                              {isEditingPassword ? (
                                 <>
-                                    <button onClick={() => handleCancelClick('password')} className="back-button bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 shadow-custom-light rounded-md text-gray-800 dark:text-white border-none py-2 px-3 font-semibold text-xs cursor-pointer" disabled={loading}>Cancel</button>
-                                    <button onClick={() => handleSaveClick('password')} className="save-button bg-blue-600 hover:bg-blue-700 shadow-custom-light rounded-md text-white border-none py-2 px-3 font-semibold text-xs cursor-pointer" disabled={loading}>Save Password</button>
+                                    <button onClick={() => handleCancelClick('password')} className="back-button bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 shadow-custom-light rounded-md text-gray-800 dark:text-white border-none py-2 px-3 font-semibold text-xs cursor-pointer" disabled={isLoading}>Cancel</button>
+                                    <button onClick={() => handleSaveChanges('password')} className="save-button bg-blue-600 hover:bg-blue-700 shadow-custom-light rounded-md text-white border-none py-2 px-3 font-semibold text-xs cursor-pointer" disabled={isLoading}>Save Password</button>
                                 </>
                             ) : (
-                                <button onClick={() => handleEditClick('password')} className="save-button bg-blue-600 hover:bg-blue-700 shadow-custom-light rounded-md text-white border-none py-2 px-3 font-semibold text-xs cursor-pointer" disabled={loading}>Change Password</button>
+                                <button onClick={() => handleEditClick('password')} className="save-button bg-blue-600 hover:bg-blue-700 shadow-custom-light rounded-md text-white border-none py-2 px-3 font-semibold text-xs cursor-pointer" disabled={isLoading}>Change Password</button>
                             )}
                          </div>
                     </div>

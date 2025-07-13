@@ -19,29 +19,34 @@ const InstructorAvatarIcon = ({ className }) => (
 );
 
 
+// FIX: Updated NavItem to remove legacyBehavior and pass props directly to Link
 const NavItem = ({ href, icon: Icon, label, isActive, isCollapsed, onClick, isNavigating }) => (
-  <Link href={href} passHref legacyBehavior>
-    <a onClick={onClick} className={`nav-item flex items-center py-2.5 mb-1.5 rounded-[5px] cursor-pointer overflow-hidden transition-all duration-150 ease-in-out hover:bg-gray-100 dark:hover:bg-gray-800 ${isActive ? 'hover:bg-sky-100 dark:hover:bg-blue-800' : ''} ${isCollapsed ? 'px-0 justify-center' : 'px-[60px]'} ${isNavigating ? 'opacity-70' : ''}`}>
+    <Link
+        href={href}
+        onClick={onClick}
+        className={`nav-item flex items-center py-2.5 mb-1.5 rounded-[5px] cursor-pointer overflow-hidden transition-all duration-150 ease-in-out hover:bg-gray-100 dark:hover:bg-gray-800 ${isActive ? 'hover:bg-sky-100 dark:hover:bg-blue-800' : ''} ${isCollapsed ? 'px-0 justify-center' : 'px-[60px]'} ${isNavigating ? 'opacity-70' : ''}`}
+    >
       <div className={`nav-icon-wrapper transition-all duration-300 ease-in-out flex-shrink-0 ${isCollapsed ? 'mr-0' : 'mr-[15px]'}`}>
         {isNavigating ? ( <SpinnerIcon className={`h-[15px] w-[15px] ${isActive ? 'text-num-blue' : 'text-[#737373] dark:text-gray-300'}`} /> ) : ( <Icon className={`h-[15px] w-[15px] ${isActive ? 'text-num-blue' : 'text-[#737373] dark:text-gray-300'}`} /> )}
       </div>
       <div className={`nav-text text-xs whitespace-nowrap transition-all duration-150 ease-in-out ${isActive ? 'text-num-blue' : 'text-[#737373] dark:text-gray-300'} ${isCollapsed ? 'opacity-0 max-w-0 hidden' : 'opacity-100 max-w-[150px]'}`}>
         {label}
       </div>
-    </a>
-  </Link>
+    </Link>
 );
 
-const fetcher = ([, token]) => authService.getProfile(token);
+const profileFetcher = ([, token]) => authService.getProfile(token);
+const sessionFetcher = (url) => fetch(url).then(res => res.json());
 
 const InstructorSidebar = ({ isCollapsed, activeItem, onNavItemClick, navigatingTo }) => {
-    // Fetch session data to get the access token
-    const { data: session } = useSWR('/api/auth/session', (url) => fetch(url).then(res => res.json()));
+    const { data: session, isLoading: isSessionLoading } = useSWR('/api/auth/session', sessionFetcher);
     const token = session?.accessToken;
 
-    // Use the getProfile service to fetch profile data, including the image
-    const { data: profile, error, isLoading } = useSWR(token ? ['/api/profile', token] : null, fetcher);
+    const { data: profile, error, isLoading: isProfileLoading } = useSWR(token ? ['/api/profile', token] : null, profileFetcher);
     const user = profile;
+    
+    // The component is loading if the session is loading OR if the profile is loading.
+    const isLoading = isSessionLoading || isProfileLoading;
 
     const navItemsData = [
         { id: 'dashboard', href: '/instructor/dashboard', icon: DashboardIcon, label: 'Dashboard' },
@@ -84,10 +89,10 @@ const InstructorSidebar = ({ isCollapsed, activeItem, onNavItemClick, navigating
                     ) : (
                         <>
                             <div className="profile-name text-center font-semibold text-base text-black dark:text-white mb-1 whitespace-nowrap">
-                                {user?.firstName || 'Keo Linda'}
+                                {user?.firstName} {user?.lastName}
                             </div>
                             <div className="profile-email text-center text-[10px] text-num-gray dark:text-gray-200 whitespace-nowrap">
-                                {user?.email || 'instructor@example.com'}
+                                {user?.email}
                             </div>
                         </>
                     )}
