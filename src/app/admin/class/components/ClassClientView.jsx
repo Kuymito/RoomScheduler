@@ -90,22 +90,38 @@ export default function ClassClientView({ initialClasses, initialDepartments }) 
             const expiryThreshold = new Date(fourYearsAgo);
             expiryThreshold.setMonth(expiryThreshold.getMonth() - 2);
 
-            const formattedData = classes.map(item => ({
-                id: item.classId,
-                name: item.className,
-                generation: item.generation,
-                group: item.groupName,
-                major: item.majorName,
-                degrees: item.degreeName,
-                faculty: item.department?.name || 'N/A',
-                semester: item.semester,
-                shift: item.shift ? shiftIdToFullNameMap[item.shift.shiftId] || 'N/A' : 'N/A',
-                status: item.archived ? 'archived' : 'active',
-                online: item.dailySchedule && Object.values(item.dailySchedule).some(day => day.online),
-                unassigned: !item.dailySchedule || Object.keys(item.dailySchedule).length === 0,
-                expired: item.createdAt && new Date(item.createdAt) < expiryThreshold,
-                createdAt: item.createdAt,
-            }));
+            const formattedData = classes.map(item => {
+                // Determine if the class is online
+                let isOnline = false;
+                if (item.dailySchedule && typeof item.dailySchedule === 'object') {
+                    for (const day in item.dailySchedule) {
+                        if (item.dailySchedule[day] && item.dailySchedule[day].online === true) {
+                            isOnline = true;
+                            break;
+                        }
+                    }
+                }
+
+                // Determine if the class is unassigned
+                const isUnassigned = !item.dailySchedule || typeof item.dailySchedule !== 'object' || Object.keys(item.dailySchedule).length === 0;
+
+                return {
+                    id: item.classId,
+                    name: item.className,
+                    generation: item.generation,
+                    group: item.groupName,
+                    major: item.majorName,
+                    degrees: item.degreeName,
+                    faculty: item.department?.name || 'N/A',
+                    semester: item.semester,
+                    shift: item.shift ? shiftIdToFullNameMap[item.shift.shiftId] || 'N/A' : 'N/A',
+                    status: item.archived ? 'archived' : 'active',
+                    online: isOnline,
+                    unassigned: isUnassigned,
+                    expired: item.createdAt && new Date(item.createdAt) < expiryThreshold,
+                    createdAt: item.createdAt,
+                };
+            });
             setClassData(formattedData);
         }
     }, [classes]);

@@ -20,13 +20,48 @@ const getNextDateForDay = (day) => {
     return today;
 };
 
+
+// --- Reusable Toast Component (Integrated) ---
+const Toast = ({ message, type, onClose }) => {
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            onClose();
+        }, 5000); // The toast will disappear after 5 seconds
+
+        return () => clearTimeout(timer);
+    }, [onClose]);
+
+    if (!message) return null;
+
+    const isSuccess = type === 'success';
+    const bgColor = isSuccess ? 'bg-green-100 dark:bg-green-800/90' : 'bg-red-100 dark:bg-red-800/90';
+    const textColor = isSuccess ? 'text-green-800 dark:text-green-200' : 'text-red-800 dark:text-red-200';
+    const Icon = isSuccess 
+        ? () => <svg className="w-6 h-6 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+        : () => <svg className="w-6 h-6 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>;
+
+    return (
+        <div className="fixed top-24 right-6 z-[1002] animate-fade-in-scale">
+            <div className={`flex items-center p-4 rounded-lg shadow-lg ${bgColor} border ${isSuccess ? 'border-green-200 dark:border-green-700' : 'border-red-200 dark:border-red-700'}`}>
+                <Icon />
+                <p className={`ml-3 font-medium ${textColor}`}>{message}</p>
+                <button onClick={onClose} className="ml-auto -mx-1.5 -my-1.5 p-1.5 rounded-lg focus:ring-2 focus:ring-offset-2">
+                    <span className="sr-only">Dismiss</span>
+                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd"></path></svg>
+                </button>
+            </div>
+        </div>
+    );
+};
+
+
 // --- Custom Calendar Component ---
-const CustomDatePicker = ({ selectedDate, onDateChange, minDate, maxDate }) => {
+const CustomDatePicker = ({ selectedDate, onDateChange, minDate, maxDate, allowedDayIndex }) => {
     const [viewDate, setViewDate] = useState(selectedDate || new Date());
 
     const firstDayOfMonth = new Date(viewDate.getFullYear(), viewDate.getMonth(), 1);
     const lastDayOfMonth = new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 0);
-    const startingDay = firstDayOfMonth.getDay(); // 0 (Sun) to 6 (Sat)
+    const startingDay = firstDayOfMonth.getDay();
     const daysInMonth = lastDayOfMonth.getDate();
 
     const days = Array.from({ length: startingDay + daysInMonth }, (_, i) => {
@@ -34,7 +69,8 @@ const CustomDatePicker = ({ selectedDate, onDateChange, minDate, maxDate }) => {
         return i - startingDay + 1;
     });
 
-    const isSameDay = (d1, d2) => 
+    const isSameDay = (d1, d2) =>
+        d1 && d2 &&
         d1.getFullYear() === d2.getFullYear() &&
         d1.getMonth() === d2.getMonth() &&
         d1.getDate() === d2.getDate();
@@ -46,13 +82,12 @@ const CustomDatePicker = ({ selectedDate, onDateChange, minDate, maxDate }) => {
     const handleNextMonth = () => {
         setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 1));
     };
-    
+
     const handleDayClick = (day) => {
         const newDate = new Date(viewDate.getFullYear(), viewDate.getMonth(), day);
         if (minDate && newDate < minDate && !isSameDay(newDate, minDate)) {
-             return; // Don't allow selection of past dates
+             return;
         }
-        // FIX: Prevent selection of dates beyond the maximum allowed date
         if (maxDate && newDate > maxDate) {
             return;
         }
@@ -75,20 +110,21 @@ const CustomDatePicker = ({ selectedDate, onDateChange, minDate, maxDate }) => {
                 </button>
             </div>
             <div className="grid grid-cols-7 gap-1 text-center text-xs text-gray-500 dark:text-gray-400">
-                {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map(day => <div key={day}>{day}</div>)}
+                {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, index) => <div key={index}>{day}</div>)}
             </div>
             <div className="grid grid-cols-7 gap-1 mt-2">
                 {days.map((day, index) => {
                     if (!day) return <div key={index}></div>;
-
                     const date = new Date(viewDate.getFullYear(), viewDate.getMonth(), day);
-                    const isSelected = isSameDay(date, selectedDate);
+                    const isSelected = selectedDate && isSameDay(date, selectedDate);
                     const isToday = isSameDay(date, today);
-                    
-                    // FIX: Disable dates before minDate and after maxDate
                     const isBeforeMin = minDate && date < minDate && !isSameDay(date, minDate);
                     const isAfterMax = maxDate && date > maxDate;
-                    const isDisabled = isBeforeMin || isAfterMax;
+                    
+                    // FIX: Check if the day is the allowed day of the week
+                    const isWrongDay = allowedDayIndex !== undefined && date.getDay() !== allowedDayIndex;
+
+                    const isDisabled = isBeforeMin || isAfterMax || isWrongDay;
 
                     return (
                         <div key={index} className="flex justify-center items-center">
@@ -100,7 +136,7 @@ const CustomDatePicker = ({ selectedDate, onDateChange, minDate, maxDate }) => {
                                     ${isSelected ? 'bg-blue-600 text-white font-semibold' : ''}
                                     ${!isSelected && isToday ? 'text-blue-600 font-semibold' : ''}
                                     ${!isSelected && !isDisabled ? 'hover:bg-gray-100 dark:hover:bg-gray-700' : ''}
-                                    ${isDisabled ? 'text-gray-400 dark:text-gray-500 cursor-not-allowed' : 'text-gray-700 dark:text-gray-200'}
+                                    ${isDisabled ? 'text-gray-400 dark:text-gray-500 cursor-not-allowed bg-gray-100 dark:bg-gray-900' : 'text-gray-700 dark:text-gray-200'}
                                 `}
                             >
                                 {day}
@@ -114,84 +150,88 @@ const CustomDatePicker = ({ selectedDate, onDateChange, minDate, maxDate }) => {
 };
 
 
+// --- Main Request Change Form Component ---
 const RequestChangeForm = ({ isOpen, onClose, onSave, roomDetails, instructorClasses, selectedDay, selectedTime }) => {
     const { data: session } = useSession();
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-
-    // FIX: Calculate the maximum selectable date (30 days from today)
+    
     const maxDate = new Date();
     maxDate.setDate(today.getDate() + 30);
-    maxDate.setHours(23, 59, 59, 999); // Set to the end of the 30th day
-
-    const timeSlotToShiftIdMap = {
-        '07:00-10:00': 1,
-        '10:30-13:30': 2,
-        '14:00-17:00': 3,
-        '17:30-20:30': 4,
-        '07:30-17:00': 5,
-    };
+    maxDate.setHours(23, 59, 59, 999);
 
     const getInitialState = () => ({
-        classId: instructorClasses[0]?.id || '', 
+        scheduleId: instructorClasses && instructorClasses.length > 0 ? instructorClasses[0].id : '',
         date: getNextDateForDay(selectedDay),
         description: '',
     });
 
     const [requestData, setRequestData] = useState(getInitialState());
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+    const [toast, setToast] = useState({ message: '', type: '' });
     const popupRef = useRef(null);
+    
+    // FIX: Map the selected day name to its numerical index for the calendar
+    const dayIndexMap = { "Monday": 1, "Tuesday": 2, "Wednesday": 3, "Thursday": 4, "Friday": 5, "Saturday": 6, "Sunday": 0 };
+    const allowedDayIndex = dayIndexMap[selectedDay];
 
     useEffect(() => {
         if (isOpen) {
             setRequestData(getInitialState());
+            setIsSubmitting(false);
+            setToast({ message: '', type: '' });
         }
-    }, [isOpen, instructorClasses, selectedDay, selectedTime]);
-
+    }, [isOpen, instructorClasses, selectedDay]);
 
     const handleDateChange = (newDate) => {
         setRequestData(prev => ({ ...prev, date: newDate }));
-        setIsCalendarOpen(false); // Close calendar on date selection
+        setIsCalendarOpen(false);
     };
     
     const handleInputChange = (e) => {
         const { name, value } = e.target;
-        setRequestData(prev => ({ ...prev, [name]: value, }));
+        setRequestData(prev => ({ ...prev, [name]: value }));
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!requestData.classId || !requestData.date || !roomDetails?.id) {
-            alert('Please select a class and a valid date.');
+        
+        if (!requestData.scheduleId || !requestData.date || !roomDetails?.id) {
+            setToast({ message: 'Please select a class and valid date.', type: 'error' });
             return;
         }
-
-        const shiftId = timeSlotToShiftIdMap[selectedTime];
-        if (!shiftId) {
-            alert('Invalid time slot selected.');
-            return;
-        }
-
-        const payload = {
-            classId: parseInt(requestData.classId, 10),
-            roomId: roomDetails.id,
-            shiftId: shiftId,
-            description: requestData.description,
-            dayOfChange: requestData.date.toISOString(),
-        };
-
+    
+        setIsSubmitting(true);
         try {
-            if (!session?.accessToken) {
-                throw new Error("Authentication token not found.");
-            }
+            const payload = {
+                scheduleId: Number(requestData.scheduleId),
+                newRoomId: Number(roomDetails.id),
+                effectiveDate: requestData.date.toISOString().split('T')[0],
+                description: requestData.description || '',
+            };
+    
             await notificationService.submitChangeRequest(payload, session.accessToken);
-            onSave(payload); // Notify parent component of success
+            
+            onSave(payload);
+            onClose();
+            
         } catch (error) {
-            console.error("Failed to submit change request:", error);
-            alert(`Error: ${error.message}`);
+            console.error('Submission failed:', error);
+            setToast({ message: `Submission failed: ${error.message}`, type: 'error' });
+        } finally {
+            setIsSubmitting(false);
         }
+    };
 
-        onClose();
+    const formatShift = (shiftString) => {
+        if (!shiftString) return 'Time not specified';
+        try {
+            const [start, end] = shiftString.split('-');
+            return `${start.substring(0, 5)}-${end.substring(0, 5)}`;
+        } catch (e) {
+            return shiftString;
+        }
     };
 
     useEffect(() => {
@@ -214,6 +254,7 @@ const RequestChangeForm = ({ isOpen, onClose, onSave, roomDetails, instructorCla
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60">
+            {toast.message && <Toast message={toast.message} type={toast.type} onClose={() => setToast({ message: '', type: '' })} />}
             <div ref={popupRef} className="relative p-5 bg-white rounded-lg shadow-lg max-w-lg w-full dark:bg-gray-800 dark:text-white">
                 <h2 className="text-xl font-bold mb-4">Confirm Room Change Request</h2>
                 <hr className="border-t border-gray-200 mt-4 mb-4" />
@@ -226,7 +267,7 @@ const RequestChangeForm = ({ isOpen, onClose, onSave, roomDetails, instructorCla
                             </div>
                         </div>
 
-                         <div>
+                        <div>
                             <label className="block mb-2 text-xs font-medium text-gray-900 dark:text-white">Requested Slot</label>
                             <div className="bg-gray-100 border border-gray-300 text-gray-600 text-sm rounded-lg block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
                                 {selectedDay}, {selectedTime}
@@ -234,26 +275,28 @@ const RequestChangeForm = ({ isOpen, onClose, onSave, roomDetails, instructorCla
                         </div>
 
                         <div>
-                            <label htmlFor="classId" className="block mb-2 text-xs font-medium text-gray-900 dark:text-white">Assign to Class</label>
+                            <label htmlFor="scheduleId" className="block mb-2 text-xs font-medium text-gray-900 dark:text-white">Assign to Class</label>
                             <select
-                                id="classId"
-                                name="classId"
-                                value={requestData.classId}
+                                id="scheduleId"
+                                name="scheduleId"
+                                value={requestData.scheduleId}
                                 onChange={handleInputChange}
-                                className="bg-gray-50 border border-gray-300 text-gray-900 text-xs rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                                className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                                 required
                             >
+                                <option value="" disabled>Select a class</option>
                                 {instructorClasses.length > 0 ? (
-                                    instructorClasses.map(cls => (
-                                        <option key={cls.id} value={cls.id}>{cls.name}</option>
+                                    instructorClasses.map((cls) => (
+                                        <option key={cls.id} value={cls.id}>
+                                            {cls.name} - {formatShift(cls.shift)}
+                                        </option>
                                     ))
                                 ) : (
-                                    <option value="" disabled>No classes found</option>
+                                    <option value="" disabled>No classes available</option>
                                 )}
                             </select>
                         </div>
 
-                        {/* --- Custom Date Picker Input --- */}
                         <div className="relative">
                             <label htmlFor="date" className="block mb-2 text-xs font-medium text-gray-900 dark:text-white">Date of Change</label>
                             <button
@@ -263,12 +306,13 @@ const RequestChangeForm = ({ isOpen, onClose, onSave, roomDetails, instructorCla
                             >
                                {requestData.date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
                             </button>
-                             {isCalendarOpen && (
+                            {isCalendarOpen && (
                                 <CustomDatePicker
                                     selectedDate={requestData.date}
                                     onDateChange={handleDateChange}
                                     minDate={today}
-                                    maxDate={maxDate} // Pass the maxDate prop
+                                    maxDate={maxDate}
+                                    allowedDayIndex={allowedDayIndex}
                                 />
                             )}
                         </div>
@@ -299,9 +343,10 @@ const RequestChangeForm = ({ isOpen, onClose, onSave, roomDetails, instructorCla
                         </button>
                         <button
                             type="submit"
-                            className="px-4 py-2 text-xs font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
+                            disabled={isSubmitting}
+                            className="px-4 py-2 text-xs font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed"
                         >
-                            Submit Request
+                            {isSubmitting ? 'Submitting...' : 'Submit Request'}
                         </button>
                     </div>
                 </form>
@@ -309,5 +354,4 @@ const RequestChangeForm = ({ isOpen, onClose, onSave, roomDetails, instructorCla
         </div>
     );
 };
-
 export default RequestChangeForm;

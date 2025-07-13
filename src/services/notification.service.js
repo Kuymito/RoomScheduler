@@ -65,18 +65,33 @@ const getChangeRequests = async (token) => {
  */
 const submitChangeRequest = async (requestData, token) => {
     try {
-        // Use the local proxy for client-side requests
-        const response = await axios.post(`${LOCAL_API_URL}/change-requests`, requestData, {
-             headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
+        // FIX: Construct the payload according to the new API body.
+        // The instructorId is no longer needed.
+        const payload = {
+            scheduleId: Number(requestData.scheduleId),
+            newRoomId: Number(requestData.newRoomId),
+            effectiveDate: requestData.effectiveDate,
+            description: requestData.description || ''
+        };
+
+        console.log("Final payload being sent:", payload);
+
+        const response = await axios.post(
+            `${LOCAL_API_URL}/change-requests`, 
+            payload, // Send the corrected payload
+            {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
             }
-        });
+        );
         return response.data;
     } catch (error) {
         handleError("Submit change request", error);
     }
 };
+
 
 /**
  * Approves a change request.

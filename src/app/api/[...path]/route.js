@@ -15,39 +15,41 @@ async function handler(req) {
   
   const destinationUrl = `${API_URL}${backendPath}${search}`;
 
-  // Log for debugging
-  console.log("--- API Proxy ---");
-  console.log("Incoming Path:", req.nextUrl.pathname);
-  console.log("Mapped Backend Path:", backendPath);
-  console.log("Final Destination URL:", destinationUrl);
-  console.log("Request Method:", req.method);
-  
-  // --- Explicit Header Forwarding (FIX) ---
-  // Create a new Headers object to avoid issues with read-only properties.
+  // --- Header Forwarding ---
   const headersToForward = new Headers();
-  // Iterate over the incoming request's headers and append them to the new Headers object.
   req.headers.forEach((value, key) => {
-    // Do not forward the original 'host' header, as it can cause issues.
     if (key.toLowerCase() !== 'host') {
       headersToForward.append(key, value);
     }
   });
-
-  // Set the correct host for the backend API.
   headersToForward.set('host', new URL(API_URL).host);
-  // Add the ngrok header to bypass the browser warning page.
   headersToForward.set('ngrok-skip-browser-warning', 'true');
 
-  console.log("Forwarding Authorization Header:", headersToForward.get('authorization'));
-  console.log("-------------------");
+  // --- Body Forwarding (FIX) ---
+  // Determine if the request has a body and handle it correctly.
+  let body;
+  const contentType = req.headers.get('content-type');
+  if (req.method !== 'GET' && req.method !== 'HEAD' && contentType) {
+    if (contentType.includes('application/json')) {
+        try {
+            body = await req.json();
+        } catch (e) {
+            return NextResponse.json({ message: 'Invalid JSON body' }, { status: 400 });
+        }
+    } else {
+        // Handle other content types like form-data if necessary
+        body = await req.text();
+    }
+  }
 
   try {
     const response = await fetch(destinationUrl, {
       method: req.method,
-      headers: headersToForward, // Use the newly constructed headers object
-      body: req.method === 'GET' || req.method === 'HEAD' ? null : req.body,
+      headers: headersToForward,
+      // Conditionally add the body to the request.
+      // Stringify the body if it's a JSON object.
+      body: body ? JSON.stringify(body) : null,
       redirect: 'follow',
-      // 'duplex: "half"' is required for streaming request bodies with `fetch`.
       duplex: 'half'
     });
     

@@ -1,3 +1,4 @@
+// src/app/admin/dashboard/page.jsx
 import { Suspense } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import DashboardSkeleton from './components/DashboardSkeleton';
@@ -30,17 +31,18 @@ const fetchDashboardStats = async () => {
   let online = 0;
 
   const currentDate = new Date();
-  // Calculate the date 4 years ago
   const fourYearsAgo = new Date(currentDate);
   fourYearsAgo.setFullYear(currentDate.getFullYear() - 4);
-  // Subtract 2 months from that date to get the expiry threshold
   const expiryThreshold = new Date(fourYearsAgo);
   expiryThreshold.setMonth(expiryThreshold.getMonth() - 2);
 
 
   classes.forEach(cls => {
-    // A class is considered assigned if its dailySchedule object is not null and has entries.
-    if (cls.dailySchedule && Object.keys(cls.dailySchedule).length > 0) {
+    // Updated logic for assigned vs unassigned classes
+    // A class is unassigned if it has no daily schedule or the schedule is empty.
+    const isAssigned = cls.dailySchedule && typeof cls.dailySchedule === 'object' && Object.keys(cls.dailySchedule).length > 0;
+    
+    if (isAssigned) {
       assigned++;
     } else {
       unassigned++;
@@ -51,8 +53,18 @@ const fetchDashboardStats = async () => {
       expired++;
     }
 
-    if (cls.online) {
-      online++;
+    // Updated logic for counting online classes
+    let isOnline = false;
+    if (cls.dailySchedule && typeof cls.dailySchedule === 'object') {
+        for (const day in cls.dailySchedule) {
+            if (cls.dailySchedule[day] && cls.dailySchedule[day].online === true) {
+                isOnline = true;
+                break; // Exit the loop once an online session is found for the class
+            }
+        }
+    }
+    if (isOnline) {
+        online++;
     }
   });
 
