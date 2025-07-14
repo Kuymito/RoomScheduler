@@ -1,16 +1,16 @@
 'use client';
 
-import { useState, useEffect } from "react";
-import SuccessAlert from "./RequestSuccessComponent";
-import RequestChangeForm from "./RequestChangeForm";
+import { useState, useEffect, lazy, Suspense } from "react";
 import { notificationService } from '@/services/notification.service';
 import { useSession } from 'next-auth/react';
+import Toast from "@/components/Toast";
+
+// Lazy load the modal component. It will now be in a separate JavaScript file.
+const RequestChangeForm = lazy(() => import("./RequestChangeForm"));
 
 // This component now receives all its data as props from the parent server component.
-// It no longer fetches its own data, which prevents the flash of inconsistent states.
 export default function InstructorRoomClientView({ initialAllRoomsData, buildingLayout, initialScheduleMap, initialInstructorClasses }) {
     // --- State Management ---
-    // Initialize state directly from the props passed by the server component.
     const [allRoomsData] = useState(initialAllRoomsData);
     const [buildings] = useState(buildingLayout);
     const [scheduleMap] = useState(initialScheduleMap);
@@ -25,8 +25,8 @@ export default function InstructorRoomClientView({ initialAllRoomsData, building
     const [roomDetails, setRoomDetails] = useState(null);
     const [loading, setLoading] = useState(false);
     const [isFormOpen, setIsFormOpen] = useState(false);
-    const [showSuccessAlert, setShowSuccessAlert] = useState(false);
     const [error, setError] = useState('');
+    const [toast, setToast] = useState({ show: false, message: '', type: 'info' });
 
     const { data: session } = useSession();
 
@@ -56,9 +56,25 @@ export default function InstructorRoomClientView({ initialAllRoomsData, building
     };
 
     const handleRequest = () => { if (roomDetails) setIsFormOpen(true); };
-    const handleSaveRequest = (data) => {
-        console.log("Change Request Submitted:", { requestDetails: data });
-        setShowSuccessAlert(true);
+    
+    // This function now handles the API call and shows a toast on success/failure.
+    const handleSaveRequest = async (requestData) => {
+        if (!session?.accessToken) {
+            setToast({ show: true, message: 'Authentication session expired.', type: 'error' });
+            return;
+        }
+        
+        try {
+            const payload = {
+                ...requestData,
+                instructorId: session.user.id, // Add instructor ID from session
+            };
+            await notificationService.submitChangeRequest(payload, session.accessToken);
+            setToast({ show: true, message: 'Request sent successfully!', type: 'success' });
+            setIsFormOpen(false); // Close the form on success
+        } catch (err) {
+            setToast({ show: true, message: `Request failed: ${err.message}`, type: 'error' });
+        }
     };
 
     // --- Derived Data and Constants ---
@@ -92,10 +108,22 @@ export default function InstructorRoomClientView({ initialAllRoomsData, building
         return "";
     };
 
+    const SpinnerFallback = () => (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60">
+            <div className="w-10 h-10 border-4 border-t-transparent border-white rounded-full animate-spin"></div>
+        </div>
+    );
+
     return (
     <>
-      {showSuccessAlert && ( <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 "><SuccessAlert show={showSuccessAlert} title="Request was sent Successfully" messageLine1={`Room ${roomDetails?.name || ""} Your request was sent Successfully`} messageLine2="" confirmButtonText="Close" onConfirm={() => setShowSuccessAlert(false)} onClose={() => setShowSuccessAlert(false)}/></div>)}
-      <RequestChangeForm isOpen={isFormOpen} onClose={() => setIsFormOpen(false)} onSave={handleSaveRequest} roomDetails={roomDetails} instructorClasses={instructorClasses} selectedDay={selectedDay} selectedTime={selectedTimeSlot}/>
+      {toast.show && <Toast message={toast.message} type={toast.type} onClose={() => setToast({ show: false, message: '', type: 'info' })} />}
+
+      {isFormOpen && (
+        <Suspense fallback={<SpinnerFallback />}>
+            <RequestChangeForm isOpen={isFormOpen} onClose={() => setIsFormOpen(false)} onSave={handleSaveRequest} roomDetails={roomDetails} instructorClasses={instructorClasses} selectedDay={selectedDay} selectedTime={selectedTimeSlot}/>
+        </Suspense>
+      )}
+
       <div className="p-4 sm:p-6 min-h-full">
         <div className="mb-4 w-full"><h2 className="text-xl font-semibold text-slate-800 dark:text-white">Room</h2><hr className="border-t border-slate-300 dark:border-slate-700 mt-3" /></div>
         <div className="flex flex-col lg:flex-row gap-6">
@@ -158,8 +186,8 @@ export default function InstructorRoomClientView({ initialAllRoomsData, building
                                     <div className="flex flex-row items-center self-stretch w-full min-h-[56px] border-b border-slate-200 dark:border-slate-700"><div className="flex flex-col justify-center items-start p-3 sm:p-4 w-[120px]"><span className={textLabelRoom}>Room</span></div><div className="flex flex-col justify-center items-start px-2 sm:px-3 flex-1 py-2"><span className={textValueRoomDisplay}>{roomDetails.name}</span></div></div>
                                     <div className="flex flex-row items-center self-stretch w-full min-h-[56px] border-b border-slate-200 dark:border-slate-700"><div className="flex flex-col justify-center items-start p-3 sm:p-4 w-[120px]"><span className={textLabelDefault}>Building</span></div><div className="flex flex-col justify-center items-start px-2 sm:px-3 flex-1 py-2"><span className={textValueDefaultDisplay}>{roomDetails.building}</span></div></div>
                                     <div className="flex flex-row items-center self-stretch w-full min-h-[56px] border-b border-slate-200 dark:border-slate-700"><div className="flex flex-col justify-center items-start p-3 sm:p-4 w-[120px]"><span className={textLabelDefault}>Floor</span></div><div className="flex flex-col justify-center items-start px-2 sm:px-3 flex-1 py-2"><span className={textValueDefaultDisplay}>{roomDetails.floor}</span></div></div>
-                                    <div className="flex flex-row items-center self-stretch w-full min-h-[56px] border-b border-slate-200 dark:border-slate-700"><div className="flex flex-col justify-center items-start p-3 sm:p-4 w-[120px]"><span className={textLabelDefault}>Capacity</span></div><div className="flex flex-col justify-center items-start px-2 sm:px-3 flex-1 py-2"><span className={textValueDefaultDisplay}>{roomDetails.capacity}</span></div></div>
-                                    <div className="flex flex-row items-start self-stretch w-full min-h-[92px]"><div className="flex flex-col justify-center items-start p-3 sm:p-4 w-[120px] pt-5"><span className={textLabelDefault}>Equipment</span></div><div className="flex flex-col justify-center items-start px-2 sm:px-3 flex-1 py-2 pt-3"><span className={`${textValueDefaultDisplay} pt-1`}>{roomDetails.equipment.join(", ")}</span></div></div>
+                                    <div className="flex flex-row items-center self-stretch w-full min-h-[56px] border-b border-slate-200 dark:border-slate-700"><div className="flex flex-col justify-center items-start p-3 sm:p-4 w-[120px]"><span className={textLabelDefault}>Capacity</span></div><div className="px-2 sm:px-3 flex-1 py-2"><span className={textValueDefaultDisplay}>{roomDetails.capacity}</span></div></div>
+                                    <div className="flex flex-row items-start self-stretch w-full min-h-[92px]"><div className="flex flex-col justify-center items-start p-3 sm:p-4 w-[120px] pt-5"><span className={textLabelDefault}>Equipment</span></div><div className="flex flex-col justify-center items-start px-2 sm:px-3 flex-1 py-2 pt-3"><span className={`${textValueDefaultDisplay} pt-1`}>{Array.isArray(roomDetails.equipment) ? roomDetails.equipment.join(", ") : ''}</span></div></div>
                                 </div>
                             </div>
                             <button className="flex flex-row justify-center items-center pyx-3 px-5 sm:px-6 gap-2 w-full h-[48px] sm:h-[50px] bg-green-600 hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600 shadow-md hover:shadow-lg rounded-md text-white font-semibold text-sm sm:text-base self-stretch disabled:opacity-60 transition-all duration-150" onClick={handleRequest} disabled={loading}>{loading ? "Loading..." : "Request"}</button>

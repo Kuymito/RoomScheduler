@@ -1,16 +1,18 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import InstructorLayout from '@/components/InstructorLayout';
 import Image from 'next/image';
 import { useSession } from 'next-auth/react';
 import useSWR from 'swr';
 import { authService as authenticationService } from '@/services/auth.service';
 import { instructorService } from '@/services/instructor.service';
-import PasswordConfirmationModal from '@/components/PasswordConfirmationModal';
 import { departmentService } from '@/services/department.service';
 import axios from 'axios';
 import Toast from '@/components/Toast';
+
+// Dynamically import the PasswordConfirmationModal component
+const PasswordConfirmationModal = lazy(() => import('@/components/PasswordConfirmationModal'));
 
 
 // --- Icon Components ---
@@ -370,13 +372,17 @@ function ProfileContent() {
     return (
         <div className="p-6">
             {toast.show && <Toast message={toast.message} type={toast.type} onClose={() => setToast({ ...toast, show: false })} />}
-            <PasswordConfirmationModal
-                show={isConfirmationModalOpen}
-                onClose={() => setIsConfirmationModalOpen(false)}
-                onConfirm={handlePasswordSaveConfirmation}
-                loading={isLoading}
-                error={modalErrorMessage}
-            />
+            {isConfirmationModalOpen && (
+                 <Suspense fallback={<div className="fixed inset-0 bg-black bg-opacity-50 z-[1002] flex items-center justify-center"><div className="w-10 h-10 border-4 border-t-transparent border-white rounded-full animate-spin"></div></div>}>
+                    <PasswordConfirmationModal
+                        show={isConfirmationModalOpen}
+                        onClose={() => setIsConfirmationModalOpen(false)}
+                        onConfirm={handlePasswordSaveConfirmation}
+                        loading={isLoading}
+                        error={modalErrorMessage}
+                    />
+                </Suspense>
+            )}
             <div className="section-title font-semibold text-lg text-gray-800 dark:text-gray-200 mb-4">
                 Profile
             </div>

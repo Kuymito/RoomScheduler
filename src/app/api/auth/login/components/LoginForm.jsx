@@ -2,9 +2,15 @@
 
 import React, { Suspense } from 'react';
 import Image from 'next/image';
+import dynamic from 'next/dynamic';
 import { moul } from '@/components/fonts';
-import RightSection from './RightSection';
 import RightSectionSkeleton from './RightSectionSkeleton';
+
+// Dynamically import the RightSection.
+// The `suspense: true` option tells Next.js to use the nearest <Suspense> boundary.
+const RightSection = dynamic(() => import('./RightSection'), {
+    suspense: true,
+});
 
 const LoginForm = () => {
     return (
@@ -37,7 +43,7 @@ const LoginForm = () => {
 
             {/* Right Column (Form Section) */}
             <div className="w-full lg:w-2/5 bg-[#E0E4F3] flex items-center justify-center p-6 sm:p-8 md:p-12 lg:p-16">
-                 {/* Suspense will show the 'fallback' component (our skeleton) 
+                 {/* Suspense will show the 'fallback' skeleton component
                   until the RightSection component is loaded and ready to be displayed.
                 */}
                 <Suspense fallback={<RightSectionSkeleton />}>

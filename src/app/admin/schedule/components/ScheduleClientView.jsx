@@ -1,11 +1,13 @@
 'use client';
 
-import React, { useState, useMemo, useEffect, useRef } from 'react';
+import React, { useState, useMemo, useEffect, useRef, lazy, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
 import { scheduleService } from '@/services/schedule.service';
-import ConfirmationModal from './ConfirmationModal';
 import { useSession } from 'next-auth/react';
 import Toast from '@/components/Toast'; // Import the new Toast component
+
+// Dynamically import the ConfirmationModal. It will now be loaded only when needed.
+const ConfirmationModal = lazy(() => import('./ConfirmationModal'));
 
 // --- Child Components ---
 
@@ -469,12 +471,16 @@ const ScheduleClientView = ({
         <>
             {toast.show && <Toast message={toast.message} type={toast.type} onClose={() => setToast({ ...toast, show: false })} />}
 
-            <ConfirmationModal
-                isOpen={swapConfirmation.isOpen}
-                onCancel={handleCancelSwap}
-                onConfirm={handleConfirmSwap}
-                swapDetails={swapConfirmation.details}
-            />
+            {swapConfirmation.isOpen && (
+                <Suspense fallback={<div className="fixed inset-0 bg-black bg-opacity-50 z-[1002] flex items-center justify-center"><div className="w-10 h-10 border-4 border-t-transparent border-white rounded-full animate-spin"></div></div>}>
+                    <ConfirmationModal
+                        isOpen={swapConfirmation.isOpen}
+                        onCancel={handleCancelSwap}
+                        onConfirm={handleConfirmSwap}
+                        swapDetails={swapConfirmation.details}
+                    />
+                </Suspense>
+            )}
             
             <div className='p-6 dark:text-white flex flex-col lg:flex-row gap-6 h-[calc(100vh-100px)]'>
                 {/* Class List Column */}
