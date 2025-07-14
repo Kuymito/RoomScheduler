@@ -45,6 +45,7 @@ const NotificationItem = ({ notification, onApprove, onDeny, onMarkAsRead }) => 
 
     const handleDeny = async (e) => {
         e.stopPropagation();
+        console.log("Clicked on")
         if (session?.accessToken && changeRequestId) {
             await notificationService.denyChangeRequest(changeRequestId, session.accessToken);
             onDeny(changeRequestId);
