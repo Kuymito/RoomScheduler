@@ -91,7 +91,7 @@ export default function RightSection() {
     return (
         <div className="w-full max-w-xs sm:max-w-sm md:max-w-md flex flex-col items-center">
             <div className="w-full sm:w-5/6 mb-6">
-                <div className="mb-16 block md:hidden">
+                <div className="mb-16 block lg:hidden">
                     <img src="https://numregister.com/assets/img/logo/num.png" alt="University Logo" className="mx-auto mb-5 w-16 sm:w-20 md:w-24 lg:w-28" />
                     <h1 className={`${moul.className} font-bold mb-2 text-center sm:text-[25px]`}>សាកលវិទ្យាល័យជាតិគ្រប់គ្រង</h1>
                     <h2 className="sm:text-[21px] font-medium mb-6 text-center">National University of Management</h2>

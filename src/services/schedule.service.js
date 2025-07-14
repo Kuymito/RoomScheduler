@@ -4,8 +4,6 @@ import { getSession } from 'next-auth/react';
 
 // The base URL for your backend API.
 const API_BASE_URL = 'https://jaybird-new-previously.ngrok-free.app/api/v1';
-const LOCAL_API_URL = "/api"; // Proxy for client-side calls
-
 
 /**
  * A helper function to create authorization headers.
@@ -63,12 +61,10 @@ export const getAllSchedules = async (token) => {
         const headers = await getAuthHeaders(token);
         const response = await axios.get(`${API_BASE_URL}/schedule`, { headers });
         
-        // FIX: Handle potential duplicate schedule entries from the backend
         const payload = handleResponse(response);
         if (Array.isArray(payload)) {
             const uniqueSchedules = new Map();
             payload.forEach(schedule => {
-                // Use 'scheduleId' as the unique key to prevent duplicates.
                 if (schedule && schedule.scheduleId) {
                     if (!uniqueSchedules.has(schedule.scheduleId)) {
                         uniqueSchedules.set(schedule.scheduleId, schedule);
@@ -78,7 +74,7 @@ export const getAllSchedules = async (token) => {
             return Array.from(uniqueSchedules.values());
         }
         
-        return payload; // Return as-is if not an array
+        return payload;
     } catch (error) {
         console.error("getAllSchedules service error:", error.message);
         throw error;
@@ -95,12 +91,10 @@ export const getMySchedule = async (token) => {
         const headers = await getAuthHeaders(token);
         const response = await axios.get(`${API_BASE_URL}/schedule/my-schedule`, { headers });
         
-        // FIX: Handle potential duplicate schedule entries from the backend
         const payload = handleResponse(response);
         if (Array.isArray(payload)) {
             const uniqueSchedules = new Map();
             payload.forEach(schedule => {
-                // Use 'scheduleId' as the unique key to prevent duplicates.
                 if (schedule && schedule.scheduleId) {
                     if (!uniqueSchedules.has(schedule.scheduleId)) {
                         uniqueSchedules.set(schedule.scheduleId, schedule);
@@ -110,7 +104,7 @@ export const getMySchedule = async (token) => {
             return Array.from(uniqueSchedules.values());
         }
         
-        return payload; // Return as-is if not an array
+        return payload;
 
     } catch (error) {
         console.error("getMySchedule service error:", error.message);
@@ -132,7 +126,6 @@ const assignRoomToClass = async (scheduleRequest, token) => {
       });
       return response.data;
     } catch (error) {
-      // Throw a more detailed error to be caught by the component
       const errorMessage = error.response?.data?.message || "An unexpected error occurred during assignment.";
       throw new Error(errorMessage);
     }
@@ -163,12 +156,35 @@ const assignRoomToClass = async (scheduleRequest, token) => {
     }
   };
 
+  const swapSchedules = async (swapRequest, token) => {
+    try {
+        const headers = await getAuthHeaders(token);
+        const response = await axios.post(`${API_BASE_URL}/schedule/swap`, swapRequest, { headers });
+        return handleResponse(response);
+    } catch (error) {
+        console.error("swapSchedules service error:", error);
+        const errorMessage = error.response?.data?.message || "An unexpected error occurred during the swap.";
+        throw new Error(errorMessage);
+    }
+};
 
+const moveScheduleToRoom = async (scheduleId, newRoomId, token) => {
+  try {
+      const headers = await getAuthHeaders(token);
+      const response = await axios.put(`${API_BASE_URL}/schedule/${scheduleId}/move`, { newRoomId }, { headers });
+      return handleResponse(response);
+  } catch (error) {
+      const message = error.response?.data?.message || "Move failed.";
+      throw new Error(message);
+  }
+};
 
 // Export the service object
 export const scheduleService = {
   getAllSchedules,
   getMySchedule,
   assignRoomToClass,
-  unassignRoomFromClass
+  unassignRoomFromClass,
+  swapSchedules,
+  moveScheduleToRoom
 };

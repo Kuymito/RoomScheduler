@@ -7,10 +7,11 @@ import html2canvas from 'html2canvas';
 import { classService } from '@/services/class.service';
 import { useSession } from 'next-auth/react';
 import SuccessPopup from '../../profile/components/SuccessPopup';
+import Toast from '@/components/Toast'; // Import the new Toast component
 
 const DefaultAvatarIcon = ({ className = "w-9 h-9" }) => (
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1} stroke="currentColor" className={className}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M17.982 18.725A7.488 7.488 0 0 0 12 15.75a7.488 7.488 0 0 0-5.982 2.975m11.963 0a9 9 0 1 0-11.963 0m11.963 0A8.966 9 0 0 1 12 21a8.966 9 0 0 1-5.982-2.275M15 9.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M17.982 18.725A7.488 7.488 0 0 0 12 15.75a7.488 7.488 0 0 0-5.982 2.975m11.963 0a9 9 0 1 0-11.963 0m11.963 0A8.966 8.966 0 0 1 12 21a8.966 8.966 0 0 1-5.982-2.275M15 9.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
     </svg>
 );
 
@@ -31,35 +32,6 @@ const clientDayToApiDay = {
     Sat: 'SATURDAY',
     Sun: 'SUNDAY',
 };
-
-// --- Integrated Error Toast Component ---
-const ErrorToast = ({ show, message, onClose }) => {
-    useEffect(() => {
-        if (show) {
-            const timer = setTimeout(() => {
-                onClose();
-            }, 5000); // Auto-close after 5 seconds
-            return () => clearTimeout(timer);
-        }
-    }, [show, onClose]);
-
-    if (!show) return null;
-
-    return (
-        <div className="fixed top-24 right-6 bg-red-500 text-white py-3 px-5 rounded-lg shadow-lg z-50 animate-fade-in-scale">
-            <div className="flex items-center justify-between">
-                <p className="font-semibold mr-4">{message}</p>
-                <button onClick={onClose} className="-mr-1 p-1 rounded-full text-white hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-white">
-                    <span className="sr-only">Close</span>
-                    <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                </button>
-            </div>
-        </div>
-    );
-};
-
 
 const ScheduledInstructorCard = ({ instructorData, classDetails, day, onDragStart, onDragEnd, onRemove, studyMode, onStudyModeChange }) => {
     if (!instructorData || !instructorData.instructor) return null;
@@ -122,7 +94,7 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
     const [isNameManuallySet, setIsNameManuallySet] = useState(false);
     const [showSuccessPopup, setShowSuccessPopup] = useState(false);
     const [successPopupMessage, setSuccessPopupMessage] = useState('');
-    const [errorToast, setErrorToast] = useState({ show: false, message: '' });
+    const [toast, setToast] = useState({ show: false, message: '', type: 'info' });
     
     const daysOfWeek = useMemo(() => ['Mon', 'Tue', 'Wed', 'Thur', 'Fri', 'Sat', 'Sun'], []);
     
@@ -374,7 +346,7 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
         setIsSaving(true);
         setSaveStatus('saving');
         setSaveMessage('Saving schedule...');
-        setErrorToast({ show: false, message: '' }); // Reset error toast
+        setToast({ show: false, message: '', type: 'info' }); // Reset toast
 
         const promises = [];
         const originalSchedule = JSON.parse(JSON.stringify(initialScheduleForCheck));
@@ -411,7 +383,7 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
             console.error('Failed to save schedule:', error);
             setSaveStatus('error');
             setSaveMessage(error.message || 'An error occurred while saving.');
-            setErrorToast({ show: true, message: error.message || 'An error occurred while saving.' });
+            setToast({ show: true, message: error.message || 'An error occurred while saving.', type: 'error' });
             
             setSchedule(originalSchedule);
         } finally {
@@ -537,11 +509,7 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
                 </div>
             )}
 
-            <ErrorToast
-                show={errorToast.show}
-                message={errorToast.message}
-                onClose={() => setErrorToast({ ...errorToast, show: false })}
-            />
+            {toast.show && <Toast message={toast.message} type={toast.type} onClose={() => setToast({ ...toast, show: false })} />}
             <SuccessPopup
                 show={showSuccessPopup}
                 onClose={() => setShowSuccessPopup(false)}

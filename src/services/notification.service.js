@@ -65,33 +65,34 @@ const getChangeRequests = async (token) => {
  */
 const submitChangeRequest = async (requestData, token) => {
     try {
-        // FIX: Construct the payload according to the new API body.
-        // The instructorId is no longer needed.
+        // Convert string IDs to numbers if needed
         const payload = {
+            instructorId: Number(requestData.instructorId),
             scheduleId: Number(requestData.scheduleId),
             newRoomId: Number(requestData.newRoomId),
             effectiveDate: requestData.effectiveDate,
             description: requestData.description || ''
         };
 
-        console.log("Final payload being sent:", payload);
+        console.log("Final payload being sent:", payload); // Debug log
 
         const response = await axios.post(
-            `${LOCAL_API_URL}/change-requests`, 
-            payload, // Send the corrected payload
+            `${API_URL}/change-requests`, // Ensure this matches your backend
+            payload,
             {
                 headers: {
                     'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
+                    'ngrok-skip-browser-warning': 'true'
                 }
             }
         );
         return response.data;
     } catch (error) {
-        handleError("Submit change request", error);
+        console.error('Submit change request error:', error);
+        throw error;
     }
 };
-
 
 /**
  * Approves a change request.
@@ -132,11 +133,32 @@ const markNotificationAsRead = async (notificationId, token) => {
     }
 };
 
+/**
+ * Marks all unread notifications as read.
+ * @param {Array} notifications - The list of all notifications.
+ * @param {string} token - The authorization token.
+ */
+const markAllNotificationsAsRead = async (notifications, token) => {
+    const unreadNotifications = notifications.filter(n => !n.read);
+    if (unreadNotifications.length === 0) {
+        return;
+    }
+    const markAsReadPromises = unreadNotifications.map(notification =>
+        markNotificationAsRead(notification.notificationId, token)
+    );
+    try {
+        await Promise.all(markAsReadPromises);
+    } catch (error) {
+        console.error("An error occurred while marking all notifications as read.", error);
+    }
+};
+
 export const notificationService = {
     getNotifications,
     getChangeRequests,
     submitChangeRequest,
     approveChangeRequest,
     denyChangeRequest,
-    markNotificationAsRead
+    markNotificationAsRead,
+    markAllNotificationsAsRead
 };

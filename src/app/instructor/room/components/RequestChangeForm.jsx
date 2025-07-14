@@ -3,6 +3,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { notificationService } from '@/services/notification.service';
+import Toast from '@/components/Toast'; // Import the new Toast component
 
 // --- Helper function to get the next date for a given weekday ---
 const getNextDateForDay = (day) => {
@@ -19,41 +20,6 @@ const getNextDateForDay = (day) => {
     today.setDate(today.getDate() + diff);
     return today;
 };
-
-
-// --- Reusable Toast Component (Integrated) ---
-const Toast = ({ message, type, onClose }) => {
-    useEffect(() => {
-        const timer = setTimeout(() => {
-            onClose();
-        }, 5000); // The toast will disappear after 5 seconds
-
-        return () => clearTimeout(timer);
-    }, [onClose]);
-
-    if (!message) return null;
-
-    const isSuccess = type === 'success';
-    const bgColor = isSuccess ? 'bg-green-100 dark:bg-green-800/90' : 'bg-red-100 dark:bg-red-800/90';
-    const textColor = isSuccess ? 'text-green-800 dark:text-green-200' : 'text-red-800 dark:text-red-200';
-    const Icon = isSuccess 
-        ? () => <svg className="w-6 h-6 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-        : () => <svg className="w-6 h-6 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>;
-
-    return (
-        <div className="fixed top-24 right-6 z-[1002] animate-fade-in-scale">
-            <div className={`flex items-center p-4 rounded-lg shadow-lg ${bgColor} border ${isSuccess ? 'border-green-200 dark:border-green-700' : 'border-red-200 dark:border-red-700'}`}>
-                <Icon />
-                <p className={`ml-3 font-medium ${textColor}`}>{message}</p>
-                <button onClick={onClose} className="ml-auto -mx-1.5 -my-1.5 p-1.5 rounded-lg focus:ring-2 focus:ring-offset-2">
-                    <span className="sr-only">Dismiss</span>
-                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd"></path></svg>
-                </button>
-            </div>
-        </div>
-    );
-};
-
 
 // --- Custom Calendar Component ---
 const CustomDatePicker = ({ selectedDate, onDateChange, minDate, maxDate, allowedDayIndex }) => {
@@ -169,7 +135,7 @@ const RequestChangeForm = ({ isOpen, onClose, onSave, roomDetails, instructorCla
     const [requestData, setRequestData] = useState(getInitialState());
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isCalendarOpen, setIsCalendarOpen] = useState(false);
-    const [toast, setToast] = useState({ message: '', type: '' });
+    const [toast, setToast] = useState({ show: false, message: '', type: 'info' });
     const popupRef = useRef(null);
     
     // FIX: Map the selected day name to its numerical index for the calendar
@@ -180,7 +146,7 @@ const RequestChangeForm = ({ isOpen, onClose, onSave, roomDetails, instructorCla
         if (isOpen) {
             setRequestData(getInitialState());
             setIsSubmitting(false);
-            setToast({ message: '', type: '' });
+            setToast({ show: false, message: '', type: 'info' });
         }
     }, [isOpen, instructorClasses, selectedDay]);
 
@@ -198,7 +164,7 @@ const RequestChangeForm = ({ isOpen, onClose, onSave, roomDetails, instructorCla
         e.preventDefault();
         
         if (!requestData.scheduleId || !requestData.date || !roomDetails?.id) {
-            setToast({ message: 'Please select a class and valid date.', type: 'error' });
+            setToast({ show: true, message: 'Please select a class and valid date.', type: 'error' });
             return;
         }
     
@@ -218,7 +184,7 @@ const RequestChangeForm = ({ isOpen, onClose, onSave, roomDetails, instructorCla
             
         } catch (error) {
             console.error('Submission failed:', error);
-            setToast({ message: `Submission failed: ${error.message}`, type: 'error' });
+            setToast({ show: true, message: `Submission failed: ${error.message}`, type: 'error' });
         } finally {
             setIsSubmitting(false);
         }
@@ -254,7 +220,7 @@ const RequestChangeForm = ({ isOpen, onClose, onSave, roomDetails, instructorCla
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60">
-            {toast.message && <Toast message={toast.message} type={toast.type} onClose={() => setToast({ message: '', type: '' })} />}
+            {toast.show && <Toast message={toast.message} type={toast.type} onClose={() => setToast({ ...toast, show: false })} />}
             <div ref={popupRef} className="relative p-5 bg-white rounded-lg shadow-lg max-w-lg w-full dark:bg-gray-800 dark:text-white">
                 <h2 className="text-xl font-bold mb-4">Confirm Room Change Request</h2>
                 <hr className="border-t border-gray-200 mt-4 mb-4" />
@@ -319,7 +285,7 @@ const RequestChangeForm = ({ isOpen, onClose, onSave, roomDetails, instructorCla
 
                         <div>
                             <label htmlFor="description" className="block mb-2 text-xs font-medium text-gray-900 dark:text-white">
-                                Description <span className="text-gray-500">(Optional)</span>
+                                Description <span className="text-gray-500 dark:text-white">(Optional)</span>
                             </label>
                             <textarea
                                 id="description"
@@ -327,7 +293,7 @@ const RequestChangeForm = ({ isOpen, onClose, onSave, roomDetails, instructorCla
                                 value={requestData.description}
                                 onChange={handleInputChange}
                                 rows="3"
-                                className="bg-gray-50 border border-gray-300 text-gray-900 text-xs rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600"
+                                className="bg-gray-50 border border-gray-300 text-gray-900 dark:text-white text-xs rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600"
                                 placeholder="Provide any additional details..."
                             ></textarea>
                         </div>

@@ -8,6 +8,7 @@ import { useSession } from 'next-auth/react';
 import { instructorService } from '@/services/instructor.service';
 import InstructorPageSkeleton from './InstructorPageSkeleton';
 import SuccessPopup from '../../profile/components/SuccessPopup';
+import Toast from '@/components/Toast'; // Import the new Toast component
 
 // --- Reusable Icon and Spinner Components ---
 const Spinner = () => ( <svg className="animate-spin h-5 w-5 text-gray-500 dark:text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> );
@@ -26,34 +27,11 @@ const formatPhoneNumber = (phone) => {
     return phone;
 };
 
-const ErrorToast = ({ message, onClose }) => {
-    if (!message) return null;
-  
-    useEffect(() => {
-      const timer = setTimeout(() => {
-        onClose();
-      }, 5000); // Auto-dismiss after 5 seconds
-  
-      return () => clearTimeout(timer);
-    }, [message, onClose]);
-  
-    return (
-      <div className="fixed top-24 right-6 bg-red-500 text-white py-3 px-5 rounded-lg shadow-lg z-50 animate-fade-in-scale">
-        <div className="flex items-center justify-between">
-          <p className="font-semibold">{message}</p>
-          <button onClick={onClose} className="ml-4 text-white hover:text-red-100">
-            &#x2715;
-          </button>
-        </div>
-      </div>
-    );
-};
-
 export default function InstructorClientView({ initialInstructors, initialDepartments }) {
     const router = useRouter();
     const { data: session } = useSession();
     const [isLoading, setIsLoading] = useState(true);
-    const [toastMessage, setToastMessage] = useState('');
+    const [toast, setToast] = useState({ show: false, message: '', type: 'info' });
     const filterMenuRef = useRef(null);
 
     const { data: instructors, error: instructorsError, mutate: mutateInstructors } = useSWR(
@@ -170,11 +148,11 @@ export default function InstructorClientView({ initialInstructors, initialDepart
             try {
                 const schedule = await instructorService.getInstructorSchedule(id, session.accessToken);
                 if (schedule && schedule.length > 0) {
-                    setToastMessage("Cannot archive instructor with an active schedule.");
+                    setToast({ show: true, message: "Cannot archive instructor with an active schedule.", type: 'error' });
                     return; // Stop the archiving process
                 }
             } catch (error) {
-                setToastMessage(`Error checking schedule: ${error.message}`);
+                setToast({ show: true, message: `Error checking schedule: ${error.message}`, type: 'error' });
                 return;
             }
         }
@@ -200,7 +178,7 @@ export default function InstructorClientView({ initialInstructors, initialDepart
             console.error("Failed to update instructor status:", error);
             // Revert the UI change if the API call fails
             setInstructorData(originalData);
-            setToastMessage(`Failed to update status: ${error.message}`);
+            setToast({ show: true, message: `Failed to update status: ${error.message}`, type: 'error' });
         }
     };
 
@@ -275,7 +253,7 @@ export default function InstructorClientView({ initialInstructors, initialDepart
 
     return (
         <div className="p-6 dark:text-white">
-            <ErrorToast message={toastMessage} onClose={() => setToastMessage('')} />
+            {toast.show && <Toast message={toast.message} type={toast.type} onClose={() => setToast({ ...toast, show: false })} />}
             <SuccessPopup
                 show={showSuccessPopup}
                 onClose={() => setShowSuccessPopup(false)}

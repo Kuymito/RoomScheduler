@@ -5,30 +5,22 @@ import InstructorLayout from '@/components/InstructorLayout';
 import Image from 'next/image';
 import { useSession } from 'next-auth/react';
 import useSWR from 'swr';
-import { authService } from '@/services/auth.service';
-import { instructorService } from '@/services/instructor.service';
-import { departmentService } from '@/services/department.service';
+import { authService as authenticationService } from '@/services/auth.service';
 import SuccessPopup from '@/app/instructor/profile/components/SuccessPopup';
+import PasswordConfirmationModal from '@/components/PasswordConfirmationModal';
+import { departmentService } from '@/services/department.service';
 import axios from 'axios';
+
 
 // --- Icon Components ---
 const EyeOpenIcon = ({ className = "h-5 w-5" }) => ( <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className}><path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" /></svg> );
 const EyeClosedIcon = ({ className = "h-5 w-5" }) => ( <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className}><path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 0 0 1.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.451 10.451 0 0 1 12 4.5c4.756 0 8.773 3.162 10.065 7.498a10.522 10.522 0 0 1-4.293 5.774M6.228 6.228 3 3m3.228 3.228 3.65 3.65m7.894 7.894L21 21m-3.228-3.228-3.65-3.65m0 0a3 3 0 1 0-4.243-4.243m4.242 4.242L9.88 9.88" /></svg> );
-const defaultUserIcon = ({ className }) => (
+const DefaultUserIcon = ({ className }) => (
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={0.8} stroke="currentColor" className={className}>
       <path strokeLinecap="round" strokeLinejoin="round" d="M17.982 18.725A7.488 7.488 0 0 0 12 15.75a7.488 7.488 0 0 0-5.982 2.975m11.963 0a9 9 0 1 0-11.963 0m11.963 0A8.966 8.966 0 0 1 12 21a8.966 8.966 0 0 1-5.982-2.275M15 9.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
     </svg>
 );
 
-// --- Helper Functions ---
-const formatPhoneNumber = (phone) => {
-    if (!phone || typeof phone !== 'string') return phone;
-    const cleaned = phone.replace(/\D/g, '');
-    if (cleaned.length <= 10) return cleaned.replace(/(\d{3})(\d{3})(\d{4})/, '$1-$2-$3');
-    return phone;
-};
-
-// --- Skeleton Component ---
 const ProfileContentSkeleton = () => (
     <div className='p-6 animate-pulse'>
         <div className="h-7 w-24 bg-slate-300 dark:bg-slate-600 rounded mb-4"></div>
@@ -61,71 +53,65 @@ const ProfileContentSkeleton = () => (
     </div>
 );
 
-// --- SWR Fetchers ---
-const profileFetcher = ([, token]) => authService.getProfile(token);
+const profileFetcher = ([, token]) => authenticationService.getProfile(token);
 const departmentsFetcher = ([, token]) => departmentService.getAllDepartments(token);
 
-// --- Main Profile Content Component ---
-const ProfileContent = () => {
-    const { data: session, status: sessionStatus } = useSession();
-    
-    // Fetch profile data
-    const { data: profileResponse, error: profileError, mutate } = useSWR(
-        session?.accessToken ? ['/api/profile', session.accessToken] : null,
+function ProfileContent() {
+    const { data: sessionData, status: sessionStatus } = useSession();
+    const { data: profileResponse, error: profileFetchError, mutate: mutateProfileData } = useSWR(
+        sessionData?.accessToken ? ['/api/profile', sessionData.accessToken] : null,
         profileFetcher
     );
-    
-    // Fetch all departments for the dropdown
-    const { data: allDepartments, error: departmentsError } = useSWR(
-        session?.accessToken ? ['/api/departments', session.accessToken] : null,
+     const { data: allDepartments, error: departmentsError } = useSWR(
+        sessionData?.accessToken ? ['/api/departments', sessionData.accessToken] : null,
         departmentsFetcher
     );
 
-    const [profileData, setProfileData] = useState(null);
-    const [editableProfileData, setEditableProfileData] = useState(null);
-    const [imagePreviewUrl, setImagePreviewUrl] = useState(null);
-    const [isUploading, setIsUploading] = useState(false);
-    const [profileImageFile, setProfileImageFile] = useState(null);
-    const fileInputRef = useRef(null);
-    const [isEditingGeneral, setIsEditingGeneral] = useState(false);
+    const [profileState, setProfileState] = useState(null);
+    const [editableProfileState, setEditableProfileState] = useState(null);
+    const [imagePreviewURL, setImagePreviewURL] = useState(null);
+    const [selectedFile, setSelectedFile] = useState(null);
+    const [isUploadingImage, setIsUploadingImage] = useState(false);
+    const fileInputReference = useRef(null);
+    const [isEditingGeneralInformation, setIsEditingGeneralInformation] = useState(false);
     const [isEditingPassword, setIsEditingPassword] = useState(false);
-    const [currentPassword, setCurrentPassword] = useState('');
-    const [newPassword, setNewPassword] = useState('');
-    const [confirmNewPassword, setConfirmNewPassword] = useState('');
+    const [newPasswordValue, setNewPasswordValue] = useState('');
+    const [confirmNewPasswordValue, setConfirmNewPasswordValue] = useState('');
     const [passwordMismatchError, setPasswordMismatchError] = useState(false);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState(null);
-    const [showSuccessPopup, setShowSuccessPopup] = useState(false);
-    const [successMessage, setSuccessMessage] = useState('');
-    const [emptyPasswordError, setEmptyPasswordError] = useState({ current: false, new: false, confirm: false });
-    const [passwordVisibility, setPasswordVisibility] = useState({ current: false, new: false, confirm: false });
-    
+    const [isLoading, setIsLoading] = useState(false);
+    const [errorMessage, setErrorMessage] = useState(null);
+    const [isSuccessPopupVisible, setIsSuccessPopupVisible] = useState(false);
+    const [emptyPasswordError, setEmptyPasswordError] = useState({ new: false, confirm: false });
+    const [passwordVisibility, setPasswordVisibility] = useState({ new: false, confirm: false });
+    const [isConfirmationModalOpen, setIsConfirmationModalOpen] = useState(false);
+    const [modalErrorMessage, setModalErrorMessage] = useState(null);
+
     const degreeOptions = ['Master', 'PhD', 'Doctor'];
 
     useEffect(() => {
         if (profileResponse) {
-             const initialData = {
-                firstName: profileResponse.firstName || "N/A",
-                lastName: profileResponse.lastName || "N/A",
-                email: profileResponse.email || "N/A",
-                phoneNumber: profileResponse.phone || "N/A",
-                address: profileResponse.address || "N/A",
+             const initialProfileData = {
+                firstName: profileResponse.firstName || "Not Available",
+                lastName: profileResponse.lastName || "Not Available",
+                email: profileResponse.email || "Not Available",
+                phoneNumber: profileResponse.phone || "Not Available",
+                address: profileResponse.address || "Not Available",
                 avatarUrl: profileResponse.profile,
-                degree: profileResponse.degree || "N/A",
+                degree: profileResponse.degree || "Not Available",
                 department: profileResponse.department,
                 departmentId: profileResponse.departmentId,
-                major: profileResponse.major || "N/A",
-            };
-            setProfileData(initialData);
-            setEditableProfileData(initialData);
-            setImagePreviewUrl(initialData.avatarUrl);
+                major: profileResponse.major || "Not Available",
+             };
+            setProfileState(initialProfileData);
+            setEditableProfileState(initialProfileData);
+            setImagePreviewURL(initialProfileData.avatarUrl);
         }
     }, [profileResponse]);
 
-    const handleGeneralInputChange = (e) => {
-        const { name, value } = e.target;
-        setEditableProfileData(prev => {
-            const newState = { ...prev, [name]: value };
+    const handleGeneralInputChange = (event) => {
+        const { name, value } = event.target;
+        setEditableProfileState(previousState => {
+            const newState = { ...previousState, [name]: value };
             if (name === 'department' && allDepartments) {
                 const selectedDept = allDepartments.find(d => d.name === value);
                 if (selectedDept) {
@@ -136,167 +122,167 @@ const ProfileContent = () => {
         });
     };
 
-    const handleFileChange = (e) => {
-        const file = e.target.files[0];
+    const handleFileChange = (event) => {
+        const file = event.target.files[0];
         if (file) {
-            setProfileImageFile(file);
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setImagePreviewUrl(reader.result);
-            };
-            reader.readAsDataURL(file);
+            setSelectedFile(file);
+            setImagePreviewURL(URL.createObjectURL(file));
         }
     };
-    
-    const handleUploadButtonClick = () => fileInputRef.current?.click();
+
+    const handleUploadButtonClick = () => fileInputReference.current?.click();
 
     const handleEditClick = (section) => {
-        setError(null);
+        setErrorMessage(null);
+        setModalErrorMessage(null);
         if (section === 'general') {
-            setEditableProfileData({ ...profileData });
-            setIsEditingGeneral(true);
+            setEditableProfileState({ ...profileState });
+            setIsEditingGeneralInformation(true);
         } else if (section === 'password') {
             setIsEditingPassword(true);
         }
     };
 
     const handleCancelClick = (section) => {
-        setError(null);
+        setErrorMessage(null);
+        setModalErrorMessage(null);
         if (section === 'general') {
-            setEditableProfileData({ ...profileData });
-            setImagePreviewUrl(profileData.avatarUrl);
-            setProfileImageFile(null);
-            setIsEditingGeneral(false);
+            setEditableProfileState({ ...profileState });
+            setImagePreviewURL(profileState.avatarUrl);
+            setIsEditingGeneralInformation(false);
+            setSelectedFile(null);
         } else if (section === 'password') {
-            setCurrentPassword('');
-            setNewPassword('');
-            setConfirmNewPassword('');
+            setNewPasswordValue('');
+            setConfirmNewPasswordValue('');
             setIsEditingPassword(false);
             setPasswordMismatchError(false);
-            setEmptyPasswordError({ current: false, new: false, confirm: false });
+            setEmptyPasswordError({ new: false, confirm: false });
         }
     };
 
-    const handleSaveClick = async (section) => {
+    const handleSaveChanges = async (section) => {
         if (section === 'general') {
-            setLoading(true);
-            setError(null);
+            setIsLoading(true);
+            setErrorMessage(null);
     
-            if (!session?.user?.id || !session?.accessToken) {
-                setError("Authentication error or user ID not found. Please log in again.");
-                setLoading(false);
+            if (!sessionData?.user?.id || !sessionData?.accessToken) {
+                setErrorMessage("Authentication error or user ID not found. Please log in again.");
+                setIsLoading(false);
                 return;
             }
 
-            let finalImageUrl = profileData.avatarUrl;
-            if (profileImageFile) {
-                setIsUploading(true);
+            let finalImageUrl = profileState.avatarUrl;
+            if (selectedFile) {
+                setIsUploadingImage(true);
                 const formData = new FormData();
-                formData.append('file', profileImageFile);
+                formData.append('file', selectedFile);
                 try {
                     const response = await axios.post('/api/upload', formData);
                     finalImageUrl = response.data.url;
                 } catch (uploadError) {
-                    setError('Image upload failed. Please try again.');
-                    setLoading(false);
-                    setIsUploading(false);
+                    setErrorMessage('Image upload failed. Please try again.');
+                    setIsLoading(false);
+                    setIsUploadingImage(false);
                     return;
                 } finally {
-                    setIsUploading(false);
+                    setIsUploadingImage(false);
                 }
             }
     
             const payload = {
-                firstName: editableProfileData.firstName,
-                lastName: editableProfileData.lastName,
-                phone: editableProfileData.phoneNumber,
-                address: editableProfileData.address,
-                degree: editableProfileData.degree,
-                major: editableProfileData.major,
-                departmentId: editableProfileData.departmentId,
+                firstName: editableProfileState.firstName,
+                lastName: editableProfileState.lastName,
+                phone: editableProfileState.phoneNumber,
+                address: editableProfileState.address,
+                degree: editableProfileState.degree,
+                major: editableProfileState.major,
+                departmentId: editableProfileState.departmentId,
                 profile: finalImageUrl,
             };
     
             try {
-                await instructorService.updateInstructor(session.user.id, payload, session.accessToken);
-                mutate(); // Re-fetch profile data
-                setSuccessMessage("Your profile has been updated successfully.");
-                setShowSuccessPopup(true);
-                setIsEditingGeneral(false);
-                setProfileImageFile(null);
+                await authenticationService.updateInstructorProfile(sessionData.user.id, payload, sessionData.accessToken);
+                mutateProfileData(); 
+                setIsSuccessPopupVisible(true);
+                setIsEditingGeneralInformation(false);
+                setSelectedFile(null);
             } catch (err) {
-                setError(err.message || "Failed to update profile. Please try again.");
+                setErrorMessage(err.message || "Failed to update profile. Please try again.");
             } finally {
-                setLoading(false);
+                setIsLoading(false);
             }
         } else if (section === 'password') {
-            setLoading(true);
-            setError(null);
             setPasswordMismatchError(false);
-            setEmptyPasswordError({ new: false, confirm: false, current: false });
+            setEmptyPasswordError({ new: false, confirm: false });
 
-            const isCurrentEmpty = !currentPassword;
-            const isNewEmpty = !newPassword;
-            const isConfirmEmpty = !confirmNewPassword;
+            const isNewEmpty = !newPasswordValue;
+            const isConfirmEmpty = !confirmNewPasswordValue;
 
-            if (isCurrentEmpty || isNewEmpty || isConfirmEmpty) {
-                setError("All password fields are required.");
-                setEmptyPasswordError({ current: isCurrentEmpty, new: isNewEmpty, confirm: isConfirmEmpty });
-                setLoading(false);
+            if (isNewEmpty || isConfirmEmpty) {
+                setErrorMessage("New password fields cannot be empty.");
+                setEmptyPasswordError({ new: isNewEmpty, confirm: isConfirmEmpty });
                 return;
             }
 
-            if (newPassword !== confirmNewPassword) {
-                setError("New passwords do not match.");
+            if (newPasswordValue !== confirmNewPasswordValue) {
+                setErrorMessage("New passwords do not match.");
                 setPasswordMismatchError(true);
-                setLoading(false);
                 return;
             }
-
-            try {
-                if (!session?.accessToken) {
-                    throw new Error("You are not authenticated.");
-                }
-                await authService.changePassword(currentPassword, newPassword, session.accessToken);
-                setSuccessMessage("Your password has been changed successfully.");
-                setShowSuccessPopup(true);
-                setCurrentPassword('');
-                setNewPassword('');
-                setConfirmNewPassword('');
-                setIsEditingPassword(false);
-            } catch (err) {
-                setError(err.message || "An unexpected error occurred.");
-            } finally {
-                setLoading(false);
-            }
+            setIsConfirmationModalOpen(true);
         }
     };
 
-    const handleCurrentPasswordChange = (e) => {
-        setCurrentPassword(e.target.value);
-        if (emptyPasswordError.current) setEmptyPasswordError(prev => ({ ...prev, current: false }));
-        if (error) setError(null);
+    const handlePasswordSaveConfirmation = async (currentPassword) => {
+        setIsLoading(true);
+        setModalErrorMessage(null);
+
+        if (!currentPassword) {
+            setModalErrorMessage("Current password is required.");
+            setIsLoading(false);
+            return;
+        }
+
+        try {
+            if (!sessionData?.accessToken) {
+                throw new Error("You are not authenticated.");
+            }
+            await authenticationService.changePassword(currentPassword, newPasswordValue, sessionData.accessToken);
+
+            setIsSuccessPopupVisible(true);
+            setIsConfirmationModalOpen(false);
+            setNewPasswordValue('');
+            setConfirmNewPasswordValue('');
+            setIsEditingPassword(false);
+
+        } catch (passwordChangeError) {
+            setModalErrorMessage(passwordChangeError.message || "An unexpected error occurred.");
+        } finally {
+            setIsLoading(false);
+        }
     };
-    
-    const handleNewPasswordChange = (e) => {
-        setNewPassword(e.target.value);
+
+    const handleNewPasswordChange = (event) => {
+        setNewPasswordValue(event.target.value);
         if(passwordMismatchError || emptyPasswordError.new) {
             setPasswordMismatchError(false);
-            setEmptyPasswordError(p => ({...p, new: false}));
-            if (error) setError(null);
+            setErrorMessage(null);
+            setEmptyPasswordError(previousState => ({...previousState, new: false}));
         }
     };
 
-    const handleConfirmPasswordChange = (e) => {
-        setConfirmNewPassword(e.target.value);
+    const handleConfirmPasswordChange = (event) => {
+        setConfirmNewPasswordValue(event.target.value);
          if(passwordMismatchError || emptyPasswordError.confirm) {
             setPasswordMismatchError(false);
-            setEmptyPasswordError(p => ({...p, confirm: false}));
-            if (error) setError(null);
+            setErrorMessage(null);
+            setEmptyPasswordError(previousState => ({...previousState, confirm: false}));
         }
     };
 
-    const togglePasswordVisibility = (field) => { setPasswordVisibility(prev => ({ ...prev, [field]: !prev[field] })) };
+    const togglePasswordVisibility = (fieldName) => {
+        setPasswordVisibility(previousState => ({ ...previousState, [fieldName]: !previousState[fieldName] }))
+    };
 
     const renderTextField = (label, name, value, isEditing, opts = {}) => (
         <div className="form-group flex-1 min-w-[200px]">
@@ -323,7 +309,7 @@ const ProfileContent = () => {
                     name={name}
                     value={value}
                     onChange={handleGeneralInputChange}
-                    disabled={loading}
+                    disabled={isLoading}
                     className="form-input w-full py-2 px-3 border rounded-md font-medium text-xs bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white"
                 >
                     {options?.map(option => {
@@ -343,7 +329,7 @@ const ProfileContent = () => {
         </div>
     );
 
-    const renderPasswordField = (label, name, value, onChange, fieldName, isReadOnly = false, hasError = false, opts = {}) => (
+    const renderPasswordField = (label, name, value, onChange, fieldName, isReadOnly = false, hasError = false) => (
         <div className="form-group flex-1 min-w-[200px]">
             <label className="form-label block font-semibold text-xs text-num-dark-text dark:text-white mb-1">{label}</label>
             <div className="relative">
@@ -355,8 +341,7 @@ const ProfileContent = () => {
                     value={value}
                     onChange={onChange}
                     readOnly={isReadOnly}
-                    disabled={loading}
-                    maxLength={opts.maxLength}
+                    disabled={isLoading}
                 />
                 <button
                     type="button"
@@ -369,202 +354,128 @@ const ProfileContent = () => {
             </div>
         </div>
     );
-    
 
-    if (sessionStatus === 'loading' || !profileData || !allDepartments) {
+    if (sessionStatus === 'loading' || !profileState || !allDepartments) {
         return <ProfileContentSkeleton />;
     }
 
-    if (profileError || departmentsError) {
+    if (profileFetchError || departmentsError) {
         return <div className="p-6 text-red-500 text-center">Error loading data. Please try refreshing the page.</div>
     }
 
-    const currentDisplayData = isEditingGeneral ? editableProfileData : profileData;
-    const fullName = `Dr. ${currentDisplayData.firstName} ${currentDisplayData.lastName}`.trim();
+    const displayedProfileData = isEditingGeneralInformation ? editableProfileState : profileState;
+    const fullName = `Dr. ${displayedProfileData.firstName} ${displayedProfileData.lastName}`.trim();
 
     return (
-      <div className="p-6">
-        <SuccessPopup
-          show={showSuccessPopup}
-          onClose={() => setShowSuccessPopup(false)}
-          title="Success"
-          message={successMessage}
-        />
-        <div className="section-title font-semibold text-lg text-gray-800 dark:text-gray-200 mb-4">
-          Profile
-        </div>
-        <hr className="border-t border-gray-300 dark:border-gray-700 mt-4 mb-8" />
-        {error && (
-          <div
-            className={`p-4 mb-4 text-sm rounded-lg bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300`}
-          >
-            {error}
-          </div>
-        )}
-        <div className="profile-section flex gap-8 mb-4 flex-wrap">
-          <div className="avatar-card w-[220px] p-3 bg-white border border-gray-300 dark:bg-gray-800 dark:border-gray-700 shadow-sm rounded-lg flex-shrink-0 self-start">
-            <div className="avatar-content flex items-center">
-              {imagePreviewUrl ? (
-                <Image
-                  src={imagePreviewUrl}
-                  alt="Profile Avatar"
-                  width={56}
-                  height={56}
-                  className="avatar-img w-14 h-14 rounded-full mr-3 object-cover"
-                />
-              ) : (
-                <div className="w-14 h-14 rounded-full mr-3 flex items-center justify-center">
-                  {defaultUserIcon({
-                    className: "h-34 w-34 text-gray-700 dark:text-gray-400",
-                  })}
-                </div>
-              )}
-              <div className="avatar-info flex flex-col overflow-hidden">
-                <div 
-                    className="avatar-name font-semibold text-sm text-gray-800 dark:text-gray-200 mb-0.5 truncate"
-                    title={fullName}
-                >
-                  {fullName}
-                </div>
-                <div className="avatar-role font-semibold text-xs text-gray-500 dark:text-gray-400">
-                  Instructor
-                </div>
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={handleUploadButtonClick}
-              disabled={isUploading || !isEditingGeneral}
-              className="w-full rounded-md mt-2 px-3 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isUploading ? "Uploading..." : "Upload Picture"}
-            </button>
-            <input
-              type="file"
-              ref={fileInputRef}
-              onChange={handleFileChange}
-              accept="image/*"
-              className="sr-only"
+        <div className="p-6">
+            <PasswordConfirmationModal
+                show={isConfirmationModalOpen}
+                onClose={() => setIsConfirmationModalOpen(false)}
+                onConfirm={handlePasswordSaveConfirmation}
+                loading={isLoading}
+                error={modalErrorMessage}
             />
-          </div>
-
-          <div className="info-details-wrapper flex-grow flex flex-col gap-8 min-w-[300px] ">
-            <div className="info-card p-3 sm:p-4 bg-white border border-gray-300 dark:bg-gray-800 dark:border-gray-700 shadow-sm rounded-lg">
-              <div className="section-title font-semibold text-sm text-gray-800 dark:text-gray-200 mb-3">
-                General Information
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 dark:text-gray-300">
-                {renderTextField("First Name", "firstName", currentDisplayData.firstName, isEditingGeneral, { maxLength: 20 })}
-                {renderTextField("Last Name", "lastName", currentDisplayData.lastName, isEditingGeneral, { maxLength: 30 })}
-                {renderTextField("Email", "email", currentDisplayData.email, false, { maxLength: 30 })}
-                {renderTextField("Phone Number", "phoneNumber", formatPhoneNumber(currentDisplayData.phoneNumber), isEditingGeneral, { maxLength: 15 })}
-                {renderSelectField("Degree", "degree", currentDisplayData.degree, degreeOptions, isEditingGeneral)}
-                {renderTextField("Major", "major", currentDisplayData.major, isEditingGeneral, { maxLength: 50 })}
-                <div className="form-group md:col-span-2">
-                  {renderSelectField("Department", "department", currentDisplayData.department, allDepartments, isEditingGeneral)}
-                </div>
-              </div>
-              <div className="form-actions flex justify-end items-center gap-3 mt-4">
-                {isEditingGeneral ? (
-                  <>
-                    <button
-                      onClick={() => handleCancelClick("general")}
-                      className="back-button bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 shadow-custom-light rounded-md text-gray-800 dark:text-white py-2 px-3 font-semibold text-xs"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      onClick={() => handleSaveClick("general")}
-                      className="save-button bg-blue-600 hover:bg-blue-700 shadow-custom-light rounded-md text-white text-xs py-2 px-3 font-semibold"
-                      disabled={loading}
-                    >
-                      {loading ? 'Saving...' : 'Save Changes'}
-                    </button>
-                  </>
-                ) : (
-                  <button
-                    onClick={() => handleEditClick("general")}
-                    className="save-button bg-blue-600 hover:bg-blue-700 shadow-custom-light rounded-md text-white py-2 px-3 font-semibold text-xs"
-                  >
-                    Edit Profile
-                  </button>
-                )}
-              </div>
+            <SuccessPopup
+                show={isSuccessPopupVisible}
+                onClose={() => setIsSuccessPopupVisible(false)}
+                title="Success"
+                message="Your profile has been updated successfully."
+            />
+            <div className="section-title font-semibold text-lg text-gray-800 dark:text-gray-200 mb-4">
+                Profile
             </div>
-
-            <div className="info-card-password p-3 sm:p-4 bg-white border border-gray-300 dark:bg-gray-800 dark:border-gray-700 shadow-sm rounded-lg">
-              <div className="section-title font-semibold text-sm text-gray-800 dark:text-gray-200 mb-3">
-                Password Information
-              </div>
-              <div className="space-y-4">
-                {/* current password */}
-                <div className="flex gap-3 flex-wrap">
-                  {renderPasswordField(
-                    "Current Password",
-                    "currentPassword",
-                    currentPassword,
-                    handleCurrentPasswordChange,
-                    "current",
-                    !isEditingPassword,
-                    emptyPasswordError.current
-                  )}
+            <hr className="border-t border-gray-300 dark:border-gray-700 mt-4 mb-8" />
+            {errorMessage && (
+                <div className={`p-4 mb-4 text-sm rounded-lg bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300`}>
+                    {errorMessage}
                 </div>
-
-                {/* New & Confirm password */}
-                <div className="flex gap-3 flex-wrap">
-                  {renderPasswordField(
-                    "New Password",
-                    "newPassword",
-                    newPassword,
-                    handleNewPasswordChange,
-                    "new",
-                    !isEditingPassword,
-                    emptyPasswordError.new || passwordMismatchError
-                  )}
-                  {renderPasswordField(
-                    "Confirm New Password",
-                    "confirmNewPassword",
-                    confirmNewPassword,
-                    handleConfirmPasswordChange,
-                    "confirm",
-                    !isEditingPassword,
-                    emptyPasswordError.confirm || passwordMismatchError
-                  )}
-                </div>
-              </div>
-              <div className="form-actions flex justify-end items-center gap-3 mt-4">
-                {isEditingPassword ? (
-                  <>
-                    {" "}
-                    <button
-                      onClick={() => handleCancelClick("password")}
-                      className="back-button bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 shadow-custom-light rounded-md text-gray-800 dark:text-white border-none py-2 px-3 font-semibold text-xs cursor-pointer"
-                      disabled={loading}
+            )}
+            <div className="profile-section flex gap-8 mb-4 flex-wrap">
+                <div className="avatar-card w-[220px] p-3 bg-white border border-gray-300 dark:bg-gray-800 dark:border-gray-700 shadow-sm rounded-lg flex-shrink-0 self-start">
+                    <div className="avatar-content flex items-center">
+                        {imagePreviewURL ? (
+                            <Image
+                                src={imagePreviewURL}
+                                alt="Profile Avatar"
+                                width={56}
+                                height={56}
+                                className="avatar-img w-14 h-14 rounded-full mr-3 object-cover"
+                            />
+                        ) : (
+                            <div className="w-14 h-14 rounded-full mr-3 flex items-center justify-center">
+                                <DefaultUserIcon className="h-34 w-34 text-gray-700 dark:text-gray-400"/>
+                            </div>
+                        )}
+                        <div className="avatar-info flex flex-col overflow-hidden">
+                            <div className="avatar-name font-semibold text-sm text-gray-800 dark:text-gray-200 mb-0.5 truncate" title={fullName}>
+                                {fullName}
+                            </div>
+                            <div className="avatar-role font-semibold text-xs text-gray-500 dark:text-gray-400">
+                                Instructor
+                            </div>
+                        </div>
+                    </div>
+                     <button
+                        type="button"
+                        onClick={handleUploadButtonClick}
+                        disabled={isUploadingImage || !isEditingGeneralInformation || isLoading}
+                        className="w-full rounded-md mt-2 px-3 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      Cancel
+                        {isUploadingImage ? "Uploading..." : "Upload Picture"}
                     </button>
-                    <button
-                      onClick={() => handleSaveClick("password")}
-                      className="save-button bg-blue-600 hover:bg-blue-700 shadow-custom-light rounded-md text-white border-none py-2 px-3 font-semibold text-xs cursor-pointer"
-                      disabled={loading}
-                    >
-                      {loading ? "Saving..." : "Save Password"}
-                    </button>{" "}
-                  </>
-                ) : (
-                  <button
-                    onClick={() => handleEditClick("password")}
-                    className="save-button bg-blue-600 hover:bg-blue-700 shadow-custom-light rounded-md text-white border-none py-2 px-3 font-semibold text-xs cursor-pointer"
-                    disabled={loading}
-                  >
-                    Change Password
-                  </button>
-                )}
-              </div>
+                    <input type="file" ref={fileInputReference} onChange={handleFileChange} accept="image/*" className="sr-only" />
+                </div>
+
+                <div className="info-details-wrapper flex-grow flex flex-col gap-8 min-w-[300px]">
+                    <div className="info-card p-3 sm:p-4 bg-white border border-gray-300 dark:bg-gray-800 dark:border-gray-700 shadow-sm rounded-lg">
+                        <div className="section-title font-semibold text-sm text-gray-800 dark:text-gray-200 mb-3">
+                            General Information
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 dark:text-gray-300">
+                            {renderTextField("First Name", "firstName", displayedProfileData.firstName, isEditingGeneralInformation)}
+                            {renderTextField("Last Name", "lastName", displayedProfileData.lastName, isEditingGeneralInformation)}
+                            {renderTextField("Email", "email", displayedProfileData.email, false)}
+                            {renderTextField("Phone Number", "phoneNumber", displayedProfileData.phoneNumber, isEditingGeneralInformation)}
+                            {renderSelectField("Degree", "degree", displayedProfileData.degree, degreeOptions, isEditingGeneralInformation)}
+                            {renderTextField("Major", "major", displayedProfileData.major, isEditingGeneralInformation)}
+                            <div className="form-group md:col-span-2">
+                                {renderSelectField("Department", "department", displayedProfileData.department, allDepartments, isEditingGeneralInformation)}
+                            </div>
+                        </div>
+                        <div className="form-actions flex justify-end items-center gap-3 mt-4">
+                            {isEditingGeneralInformation ? (
+                                <>
+                                    <button onClick={() => handleCancelClick('general')} className="back-button bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 shadow-custom-light rounded-md text-gray-800 dark:text-white py-2 px-3 font-semibold text-xs">Cancel</button>
+                                    <button onClick={() => handleSaveChanges('general')} className="save-button bg-blue-600 hover:bg-blue-700 shadow-custom-light rounded-md text-white text-xs py-2 px-3 font-semibold" disabled={isLoading || isUploadingImage}>{isLoading || isUploadingImage ? "Saving..." : "Save Changes"}</button>
+                                </>
+                            ) : (
+                                <button onClick={() => handleEditClick('general')} className="save-button bg-blue-600 hover:bg-blue-700 shadow-custom-light rounded-md text-white py-2 px-3 font-semibold text-xs">Edit Profile</button>
+                            )}
+                        </div>
+                    </div>
+
+                    <div className="info-card-password p-3 sm:p-4 bg-white border border-gray-300 dark:bg-gray-800 dark:border-gray-700 shadow-sm rounded-lg">
+                        <div className="section-title font-semibold text-sm text-gray-800 dark:text-gray-200 mb-3">Password Information</div>
+                        <div className="space-y-4">
+                             <div className="flex gap-3 flex-wrap">
+                                {renderPasswordField("New Password", "newPassword", newPasswordValue, handleNewPasswordChange, "new", !isEditingPassword, emptyPasswordError.new || passwordMismatchError)}
+                                {renderPasswordField("Confirm New Password", "confirmNewPassword", confirmNewPasswordValue, handleConfirmPasswordChange, "confirm", !isEditingPassword, emptyPasswordError.confirm || passwordMismatchError)}
+                            </div>
+                        </div>
+                         <div className="form-actions flex justify-end items-center gap-3 mt-4">
+                             {isEditingPassword ? (
+                                <>
+                                    <button onClick={() => handleCancelClick('password')} className="back-button bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 shadow-custom-light rounded-md text-gray-800 dark:text-white border-none py-2 px-3 font-semibold text-xs cursor-pointer" disabled={isLoading}>Cancel</button>
+                                    <button onClick={() => handleSaveChanges('password')} className="save-button bg-blue-600 hover:bg-blue-700 shadow-custom-light rounded-md text-white border-none py-2 px-3 font-semibold text-xs cursor-pointer" disabled={isLoading}>Save Password</button>
+                                </>
+                            ) : (
+                                <button onClick={() => handleEditClick('password')} className="save-button bg-blue-600 hover:bg-blue-700 shadow-custom-light rounded-md text-white border-none py-2 px-3 font-semibold text-xs cursor-pointer" disabled={isLoading}>Change Password</button>
+                            )}
+                         </div>
+                    </div>
+                </div>
             </div>
-          </div>
         </div>
-      </div>
     );
 };
 
