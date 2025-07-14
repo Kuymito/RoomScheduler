@@ -1,16 +1,20 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import SuccessAlert from './UpdateSuccessComponent';
 import { getAllRooms, updateRoom } from '@/services/room.service';
-import RoomPageSkeleton from './RoomPageSkeleton';
 import { useSession } from 'next-auth/react';
 import useSWR from 'swr';
+import RoomPageSkeleton from './RoomPageSkeleton'; // Import the skeleton
 
 // SWR fetcher for rooms
 const roomsFetcher = (token) => getAllRooms(token);
 
-export default function RoomClientView({ initialAllRoomsData, buildingLayout }) {
+/**
+ * An internal component to handle the data-dependent rendering.
+ * This component will only be rendered when the session is authenticated and data is ready.
+ */
+const RoomView = () => {
     // --- Style Constants ---
     const textLabelRoom = "font-medium text-base leading-7 text-slate-700 dark:text-slate-300 tracking-[-0.01em]";
     const textValueRoomDisplay = "font-medium text-base leading-7 text-slate-900 dark:text-slate-100 tracking-[-0.01em]";
@@ -20,11 +24,54 @@ export default function RoomClientView({ initialAllRoomsData, buildingLayout }) 
     const equipmentInputContainerSize = "w-full sm:w-[132px] h-[72px]";
     const inputStyle = "py-[9px] px-3 w-full h-full bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-[6px] font-normal text-sm leading-[22px] text-slate-900 dark:text-slate-50 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500";
     const textareaStyle = "py-[10px] px-3 w-full h-full bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-[6px] font-normal text-sm leading-[22px] text-slate-900 dark:text-slate-50 placeholder:text-slate-400 dark:placeholder:text-slate-500 resize-none focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 scrollbar-thin scrollbar-thumb-slate-400 dark:scrollbar-thumb-slate-500 scrollbar-track-slate-100 dark:scrollbar-track-slate-800";
+    
+    const { data: session } = useSession();
 
-    // --- Component State ---
-    const [allRoomsData, setAllRoomsData] = useState(initialAllRoomsData);
-    const [buildings, setBuildings] = useState(buildingLayout);
-    const [selectedBuilding, setSelectedBuilding] = useState(Object.keys(buildingLayout)[0] || "");
+    // The key is guaranteed to be valid here because RoomView is only rendered when authenticated.
+    const { data: swrRooms, error: swrError, mutate: mutateRooms } = useSWR(
+        ['/api/v1/room', session.accessToken],
+        () => roomsFetcher(session.accessToken),
+        {
+            suspense: true, // Let Suspense boundary handle the loading state
+        }
+    );
+
+    // Process the data directly from the SWR response.
+    // useMemo ensures this logic only re-runs when swrRooms changes.
+    const { allRoomsData, buildings } = useMemo(() => {
+        if (!swrRooms) return { allRoomsData: {}, buildings: {} };
+
+        const newRoomsDataMap = {};
+        const newPopulatedLayout = {};
+
+        swrRooms.forEach(room => {
+            const { roomId, roomName, buildingName, floor, capacity, type, equipment } = room;
+            if (!newPopulatedLayout[buildingName]) {
+                newPopulatedLayout[buildingName] = [];
+            }
+            let floorObj = newPopulatedLayout[buildingName].find(f => f.floor === floor);
+            if (!floorObj) {
+                floorObj = { floor: floor, rooms: [] };
+                newPopulatedLayout[buildingName].push(floorObj);
+            }
+            if (!floorObj.rooms.includes(roomId)) {
+                 floorObj.rooms.push(roomId);
+            }
+            newRoomsDataMap[roomId] = {
+                id: roomId, name: roomName, building: buildingName, floor: floor,
+                capacity: capacity, type: type,
+                equipment: typeof equipment === 'string' ? equipment.split(',').map(e => e.trim()).filter(Boolean) : [],
+            };
+        });
+
+        for (const building in newPopulatedLayout) {
+            newPopulatedLayout[building].sort((a, b) => b.floor - a.floor);
+        }
+        
+        return { allRoomsData: newRoomsDataMap, buildings: newPopulatedLayout };
+    }, [swrRooms]);
+
+    const [selectedBuilding, setSelectedBuilding] = useState(() => Object.keys(buildings)[0] || "");
     const [selectedRoomId, setSelectedRoomId] = useState(null);
     const [roomDetails, setRoomDetails] = useState(null);
     const [loading, setLoading] = useState(false);
@@ -34,51 +81,14 @@ export default function RoomClientView({ initialAllRoomsData, buildingLayout }) 
     const [error, setError] = useState('');
     const [formError, setFormError] = useState({ field: '', message: '' });
 
-    const { data: session } = useSession();
-    const { data: swrRooms, error: swrError, isLoading: isSWRLoading, mutate: mutateRooms } = useSWR(session?.accessToken ? ['/api/v1/room', session.accessToken] : null, () => roomsFetcher(session.accessToken));
-
-    // --- Effects ---
+    // This effect will run when the building data changes, ensuring the selected building is valid.
     useEffect(() => {
-        if (swrRooms) {
-            const newRoomsDataMap = {};
-            const newPopulatedLayout = {};
-
-            swrRooms.forEach(room => {
-                const { roomId, roomName, buildingName, floor, capacity, type, equipment } = room;
-
-                if (!newPopulatedLayout[buildingName]) {
-                    newPopulatedLayout[buildingName] = [];
-                }
-                let floorObj = newPopulatedLayout[buildingName].find(f => f.floor === floor);
-                if (!floorObj) {
-                    floorObj = { floor: floor, rooms: [] };
-                    newPopulatedLayout[buildingName].push(floorObj);
-                }
-                if (!floorObj.rooms.includes(roomId)) {
-                    floorObj.rooms.push(roomId);
-                }
-
-                newRoomsDataMap[roomId] = {
-                    id: roomId,
-                    name: roomName,
-                    building: buildingName,
-                    floor: floor,
-                    capacity: capacity,
-                    type: type,
-                    equipment: typeof equipment === 'string' ? equipment.split(',').map(e => e.trim()).filter(Boolean) : [],
-                };
-            });
-
-            for (const building in newPopulatedLayout) {
-                newPopulatedLayout[building].sort((a, b) => b.floor - a.floor);
-            }
-            
-            setAllRoomsData(newRoomsDataMap);
-            setBuildings(newPopulatedLayout);
+        const buildingKeys = Object.keys(buildings);
+        if (buildingKeys.length > 0 && !buildingKeys.includes(selectedBuilding)) {
+            setSelectedBuilding(buildingKeys[0]);
         }
-    }, [swrRooms]);
+    }, [buildings, selectedBuilding]);
 
-    // --- Event Handlers ---
     const resetSelection = () => { setSelectedRoomId(null); setRoomDetails(null); setIsEditing(false); };
     const handleBuildingChange = (event) => { setSelectedBuilding(event.target.value); resetSelection(); };
 
@@ -119,27 +129,22 @@ export default function RoomClientView({ initialAllRoomsData, buildingLayout }) 
             setFormError({ field: 'name', message: 'Room name cannot be empty.' });
             return false;
         }
-
         const isDuplicate = Object.values(allRoomsData).some(
             (room) => room.id !== selectedRoomId && room.name.toLowerCase() === trimmedName.toLowerCase()
         );
-
         if (isDuplicate) {
-            setFormError({ field: 'name', message: 'This room name already exists.' });
+            setFormError({ field: 'name', message: 'Name already exists.' });
             return false;
         }
-
         setFormError({ field: '', message: '' });
         return true;
     };
 
     const handleInputChange = (event) => {
         const { name, value } = event.target;
-
         if (name === 'name' && formError.field === 'name') {
             setFormError({ field: '', message: '' });
         }
-
         setEditableRoomDetails((prev) => ({
             ...prev,
             [name]: (name === 'capacity') ? parseInt(value, 10) || 0 : value,
@@ -148,11 +153,7 @@ export default function RoomClientView({ initialAllRoomsData, buildingLayout }) 
 
     const handleSaveChanges = async () => {
         if (!editableRoomDetails) return;
-
-        if (!validateRoomName(editableRoomDetails.name)) {
-            return;
-        }
-
+        if (!validateRoomName(editableRoomDetails.name)) return;
         setLoading(true);
         setError('');
         const roomUpdateDto = {
@@ -161,15 +162,11 @@ export default function RoomClientView({ initialAllRoomsData, buildingLayout }) 
             type: editableRoomDetails.type,
             equipment: editableRoomDetails.equipment,
         };
-
         try {
             await updateRoom(selectedRoomId, roomUpdateDto);
-            const updatedLocalData = { ...editableRoomDetails, equipment: editableRoomDetails.equipment.split(',').map(e => e.trim()).filter(Boolean), };
-            setRoomDetails(updatedLocalData);
-            setAllRoomsData(prev => ({ ...prev, [selectedRoomId]: updatedLocalData }));
+            mutateRooms(); 
             setIsEditing(false);
             setShowSuccessAlert(true);
-            mutateRooms();
         } catch (err) {
             setError(err.message || 'An error occurred while saving.');
         } finally {
@@ -182,9 +179,7 @@ export default function RoomClientView({ initialAllRoomsData, buildingLayout }) 
         const id = room.id;
         if (id === 10 && room.building === "Building A") return "col-span-2";
         if (id === 34 && room.building === "Building B") return "col-span-4";
-        if ([47, 48, 49].includes(id) && room.building === "Building D") {
-            return "col-span-full";
-        }
+        if ([47, 48, 49].includes(id) && room.building === "Building D") return "col-span-full";
         return "";
     };
     
@@ -201,17 +196,13 @@ export default function RoomClientView({ initialAllRoomsData, buildingLayout }) 
 
     const floors = buildings[selectedBuilding] || [];
 
-    if (isSWRLoading) {
-        return <RoomPageSkeleton />;
-    }
-
     if (swrError) {
         return <div className="p-6 text-center text-red-500">Error loading room data: {swrError.message}</div>;
     }
 
     return (
         <>
-            {showSuccessAlert && ( <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60"><SuccessAlert show={showSuccessAlert} title="Room Updated" messageLine1={`Room ${roomDetails?.name || ''} has been updated successfully.`} messageLine2="You can continue managing rooms." confirmButtonText="OK" onConfirm={() => setShowSuccessAlert(false)} onClose={() => setShowSuccessAlert(false)}/></div> )}
+            {showSuccessAlert && ( <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60"><SuccessAlert show={showSuccessAlert} title="Room Updated" messageLine1={`Room ${editableRoomDetails?.name || ''} has been updated successfully.`} messageLine2="You can continue managing rooms." confirmButtonText="OK" onConfirm={() => setShowSuccessAlert(false)} onClose={() => setShowSuccessAlert(false)}/></div> )}
             <div className='p-4 sm:p-6 min-h-full'>
                 <div className="mb-4 w-full"><h2 className="text-xl font-semibold text-slate-800 dark:text-white">Room</h2><hr className="border-t border-slate-300 dark:border-slate-700 mt-3" /></div>
                 {error && <p className="text-red-500 text-center mb-4">{error}</p>}
@@ -260,19 +251,10 @@ export default function RoomClientView({ initialAllRoomsData, buildingLayout }) 
                                             <div className="px-2 sm:px-3 flex-1 py-2">
                                                 {isEditing && editableRoomDetails ? (
                                                     <div className="flex flex-col">
-                                                        <input
-                                                            type="text"
-                                                            name="name"
-                                                            value={editableRoomDetails.name}
-                                                            onChange={handleInputChange}
-                                                            className={`${inputStyle} ${formError.field === 'name' ? 'border-red-500 ring-1 ring-red-500' : ''}`}
-                                                            maxLength={20}
-                                                        />
+                                                        <input type="text" name="name" value={editableRoomDetails.name} onChange={handleInputChange} className={`${inputStyle} ${formError.field === 'name' ? 'border-red-500 ring-1 ring-red-500' : ''}`} maxLength={20}/>
                                                         {formError.field === 'name' && <p className="text-red-500 text-xs mt-1">{formError.message}</p>}
                                                     </div>
-                                                ) : (
-                                                    <span className={textValueRoomDisplay}>{roomDetails.name}</span>
-                                                )}
+                                                ) : (<span className={textValueRoomDisplay}>{roomDetails.name}</span>)}
                                             </div>
                                         </div>
                                         <div className="flex items-center self-stretch w-full min-h-[56px] border-b border-slate-200 dark:border-slate-700"><div className="p-3 sm:p-4 w-[120px]"><span className={textLabelDefault}>Building</span></div><div className="px-2 sm:px-3 flex-1 py-2"><span className={textValueDefaultDisplay}>{roomDetails.building}</span></div></div>
@@ -284,29 +266,11 @@ export default function RoomClientView({ initialAllRoomsData, buildingLayout }) 
                                     <div className="w-full mt-auto">
                                         {isEditing ? (
                                             <div className="flex justify-center gap-3">
-                                                <button
-                                                    onClick={handleCancel}
-                                                    className="px-6 py-3 w-full h-12 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
-                                                    disabled={loading}
-                                                >
-                                                    Cancel
-                                                </button>
-                                                <button
-                                                    onClick={handleSaveChanges}
-                                                    className="px-6 py-3 w-full h-12 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:bg-blue-400"
-                                                    disabled={loading || !!formError.field}
-                                                >
-                                                    {loading ? "Saving..." : "Save"}
-                                                </button>
+                                                <button onClick={handleCancel} className="px-6 py-3 w-full h-12 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600" disabled={loading}>Cancel</button>
+                                                <button onClick={handleSaveChanges} className="px-6 py-3 w-full h-12 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:bg-blue-400" disabled={loading || !!formError.field}>{loading ? "Saving..." : "Save"}</button>
                                             </div>
                                         ) : (
-                                            <button
-                                                className="flex justify-center items-center py-3 px-6 gap-2 w-full h-12 bg-blue-600 hover:bg-blue-700 shadow-md rounded-md text-white font-semibold text-sm self-stretch disabled:opacity-60"
-                                                onClick={handleEdit}
-                                                disabled={!roomDetails}
-                                            >
-                                                Edit Room
-                                            </button>
+                                            <button className="flex justify-center items-center py-3 px-6 gap-2 w-full h-12 bg-blue-600 hover:bg-blue-700 shadow-md rounded-md text-white font-semibold text-sm self-stretch disabled:opacity-60" onClick={handleEdit} disabled={!roomDetails}>Edit Room</button>
                                         )}
                                     </div>
                                 </>
@@ -317,4 +281,27 @@ export default function RoomClientView({ initialAllRoomsData, buildingLayout }) 
             </div>
         </>
     );
+}
+
+/**
+ * This is the main export. It handles the session loading state, ensuring
+ * the skeleton is shown correctly during session validation.
+ */
+export default function RoomClientView() {
+    const { status } = useSession();
+
+    if (status === 'loading') {
+        // This will be caught by the Suspense boundary in the parent page.
+        // It ensures that while the session is being validated, the skeleton is shown.
+        return <RoomPageSkeleton />;
+    }
+
+    if (status === 'unauthenticated') {
+        // Handle case where user is not logged in
+        return <div className="p-6 text-center text-red-500">You must be logged in to view this page.</div>;
+    }
+
+    // Once authenticated, render the main view component.
+    // The <Suspense> boundary in `page.jsx` will handle the data fetching loading state for RoomView.
+    return <RoomView />;
 }

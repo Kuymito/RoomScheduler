@@ -46,19 +46,23 @@ export const authOptions = {
             console.log("Decoded JWT Payload:", decodedPayload);
 
             const userRole = decodedPayload.roles && decodedPayload.roles[0];
-            // FIX: Use a specific user/instructor ID from the token payload.
-            // Assuming the backend includes a 'userId' or 'instructorId' claim.
-            const userId = decodedPayload.userId || decodedPayload.instructorId;
+            
+            // FIX: Explicitly get the numeric ID based on the role.
+            // The token contains 'adminId' for admins and 'instructorId' for instructors.
+            const userId = userRole === 'ROLE_ADMIN' 
+                ? decodedPayload.adminId 
+                : decodedPayload.instructorId;
 
             if (!userRole) {
               console.error("Role not found in JWT payload's 'roles' array!");
-              return null;
+              throw new Error("User role could not be determined from token.");
             }
             
+            // This is the critical check. If we don't have a numeric ID, authentication fails.
+            // This prevents the email/sub from being used as the ID later on.
             if (!userId) {
-                console.error("User ID ('userId' or 'instructorId') not found in JWT payload!");
-                // Fallback to 'sub' but log a warning, as the numeric ID is preferred.
-                console.warn("Falling back to 'sub' claim for user ID. This may not be the correct numeric ID for API calls.");
+                console.error("Numeric user ID ('adminId' or 'instructorId') not found in JWT payload!");
+                throw new Error("User ID is missing from token.");
             }
 
             let userName;
@@ -74,8 +78,7 @@ export const authOptions = {
             }
 
             return {
-              // Use the numeric ID from the token if available, otherwise fallback to 'sub'
-              id: userId || decodedPayload.sub,
+              id: userId, // Always use the numeric ID.
               name: userName,
               email: decodedPayload.sub, // 'sub' usually holds the email/username
               role: userRole,
@@ -95,11 +98,11 @@ export const authOptions = {
   },
   callbacks: {
     async jwt({ token, user }) {
-      // When a user signs in, the `user` object is passed.
+      // When a user signs in, the `user` object is passed from `authorize`.
       // We persist the custom properties to the token.
       if (user) {
         token.accessToken = user.accessToken;
-        token.id = user.id;
+        token.id = user.id; // This will be the numeric ID (e.g., 1)
         token.role = user.role;
         token.name = user.name;
         token.email = user.email;
@@ -108,15 +111,13 @@ export const authOptions = {
     },
     async session({ session, token }) {
       // The session callback receives the token and populates the session object.
-      if (token) {
+      if (token && session.user) {
         session.accessToken = token.accessToken;
-        session.user = {
-            ...session.user,
-            id: token.id,
-            role: token.role,
-            name: token.name,
-            email: token.email
-        };
+        // Ensure the session.user object gets the correct numeric ID.
+        session.user.id = token.id;
+        session.user.role = token.role;
+        session.user.name = token.name;
+        session.user.email = token.email;
       }
       return session;
     },

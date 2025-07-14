@@ -6,7 +6,8 @@ import Image from 'next/image';
 import { useSession } from 'next-auth/react';
 import useSWR from 'swr';
 import { authService } from '@/services/auth.service';
-import SuccessPopup from '@/app/instructor/profile/components/SuccessPopup'; // Import the new component
+import SuccessPopup from '@/app/admin/profile/components/SuccessPopup';
+import axios from 'axios';
 
 // --- Icon Components ---
 const EyeOpenIcon = ({ className = "h-5 w-5" }) => ( <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className}><path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" /></svg> );
@@ -20,17 +21,7 @@ const defaultUserIcon = ({ className }) => (
 const formatPhoneNumber = (phone) => {
     if (!phone || typeof phone !== 'string') return phone;
     const cleaned = phone.replace(/\D/g, '');
-    if (cleaned.length === 3 || cleaned.length === 4) {
-        return cleaned;
-    } else if (cleaned.length === 5 || cleaned.length === 6) {
-        return `${cleaned.slice(0, 3)}-${cleaned.slice(3)}`;
-    } else if (cleaned.length === 7 || cleaned.length === 8) {
-        return `${cleaned.slice(0, 3)}-${cleaned.slice(3, 6)}-${cleaned.slice(6)}`;
-    } else if (cleaned.length === 9) {
-        return `${cleaned.slice(0, 3)}-${cleaned.slice(3, 6)}-${cleaned.slice(6)}`;
-    } else if (cleaned.length === 10) {
-        return `${cleaned.slice(0, 1)}-${cleaned.slice(1, 4)}-${cleaned.slice(4, 7)}-${cleaned.slice(7)}`;
-    }
+    if (cleaned.length <= 10) return cleaned.replace(/(\d{3})(\d{3})(\d{4})/, '$1-$2-$3');
     return phone;
 };
 
@@ -80,6 +71,7 @@ const ProfileContent = () => {
     const [editableProfileData, setEditableProfileData] = useState(null);
     const [imagePreviewUrl, setImagePreviewUrl] = useState(null);
     const [isUploading, setIsUploading] = useState(false);
+    const [profileImageFile, setProfileImageFile] = useState(null);
     const fileInputRef = useRef(null);
     const [isEditingGeneral, setIsEditingGeneral] = useState(false);
     const [isEditingPassword, setIsEditingPassword] = useState(false);
@@ -90,17 +82,18 @@ const ProfileContent = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [showSuccessPopup, setShowSuccessPopup] = useState(false);
+    const [successMessage, setSuccessMessage] = useState('');
     const [emptyPasswordError, setEmptyPasswordError] = useState({ current: false, new: false, confirm: false });
     const [passwordVisibility, setPasswordVisibility] = useState({ current: false, new: false, confirm: false });
 
     useEffect(() => {
         if (profileResponse) {
             const initialData = {
-                firstName: profileResponse.firstName || "NA",
-                lastName: profileResponse.lastName || "NA",
-                email: profileResponse.email || "NA",
-                phoneNumber: profileResponse.phone || "NA",
-                address: profileResponse.address || "NA",
+                firstName: profileResponse.firstName || "N/A",
+                lastName: profileResponse.lastName || "N/A",
+                email: profileResponse.email || "N/A",
+                phoneNumber: profileResponse.phone || "N/A",
+                address: profileResponse.address || "N/A",
                 avatarUrl: profileResponse.profile,
             };
             setProfileData(initialData);
@@ -117,6 +110,7 @@ const ProfileContent = () => {
     const handleFileChange = (e) => {
         const file = e.target.files[0];
         if (file) {
+            setProfileImageFile(file);
             const reader = new FileReader();
             reader.onloadend = () => {
                 setImagePreviewUrl(reader.result);
@@ -142,6 +136,7 @@ const ProfileContent = () => {
         if (section === 'general') {
             setEditableProfileData({ ...profileData });
             setImagePreviewUrl(profileData.avatarUrl);
+            setProfileImageFile(null);
             setIsEditingGeneral(false);
         } else if (section === 'password') {
             setCurrentPassword('');
@@ -155,11 +150,58 @@ const ProfileContent = () => {
 
     const handleSaveClick = async (section) => {
         if (section === 'general') {
-            // Placeholder for saving general info
-            console.log("Saving general info:", editableProfileData);
-            setProfileData({ ...editableProfileData });
-            setIsEditingGeneral(false);
-            setShowSuccessPopup(true); // Show success popup for general info change
+            setLoading(true);
+            setError(null);
+
+            const adminIdToUpdate = session?.user?.id;
+
+            if (!adminIdToUpdate || !session?.accessToken) {
+                setError("Authentication error or Admin ID not found. Please log in again.");
+                setLoading(false);
+                return;
+            }
+
+            let finalImageUrl = profileData.avatarUrl;
+            if (profileImageFile) {
+                setIsUploading(true);
+                const formData = new FormData();
+                formData.append('file', profileImageFile);
+                try {
+                    const response = await axios.post('/api/upload', formData);
+                    finalImageUrl = response.data.url;
+                } catch (uploadError) {
+                    const serverErrorMessage = uploadError.response?.data?.error || uploadError.message;
+                    setError(`Image upload failed: ${serverErrorMessage}`);
+                    setLoading(false);
+                    setIsUploading(false);
+                    return;
+                } finally {
+                    setIsUploading(false);
+                }
+            }
+            
+            const payload = {
+                firstName: editableProfileData.firstName,
+                lastName: editableProfileData.lastName,
+                email: editableProfileData.email,
+                phoneNumber: editableProfileData.phoneNumber,
+                address: editableProfileData.address,
+                profile: finalImageUrl,
+            };
+
+            try {
+                await authService.updateAdminProfile(adminIdToUpdate, payload, session.accessToken);
+                mutate(); 
+                setSuccessMessage("Your profile has been updated successfully.");
+                setShowSuccessPopup(true);
+                setIsEditingGeneral(false);
+                setProfileImageFile(null);
+            } catch (err) {
+                setError(err.message || "Failed to update profile. Please try again.");
+            } finally {
+                setLoading(false);
+            }
+
         } else if (section === 'password') {
             setLoading(true);
             setError(null);
@@ -189,12 +231,12 @@ const ProfileContent = () => {
                     throw new Error("You are not authenticated.");
                 }
                 await authService.changePassword(currentPassword, newPassword, session.accessToken);
+                setSuccessMessage("Your password has been changed successfully.");
                 setShowSuccessPopup(true);
                 setCurrentPassword('');
                 setNewPassword('');
                 setConfirmNewPassword('');
                 setIsEditingPassword(false);
-                mutate();
             } catch (err) {
                 setError(err.message || "An unexpected error occurred.");
             } finally {
@@ -205,17 +247,16 @@ const ProfileContent = () => {
 
     const handleCurrentPasswordChange = (e) => {
         setCurrentPassword(e.target.value);
-        if (emptyPasswordError.current) {
-            setEmptyPasswordError(prev => ({ ...prev, current: false }));
-            setError(null);
-        }
+        if (emptyPasswordError.current) setEmptyPasswordError(prev => ({ ...prev, current: false }));
+        if (error) setError(null);
     };
-
+    
     const handleNewPasswordChange = (e) => {
         setNewPassword(e.target.value);
         if(passwordMismatchError || emptyPasswordError.new) {
             setPasswordMismatchError(false);
             setEmptyPasswordError(p => ({...p, new: false}));
+            if (error) setError(null);
         }
     };
 
@@ -224,24 +265,43 @@ const ProfileContent = () => {
          if(passwordMismatchError || emptyPasswordError.confirm) {
             setPasswordMismatchError(false);
             setEmptyPasswordError(p => ({...p, confirm: false}));
+            if (error) setError(null);
         }
     };
 
     const togglePasswordVisibility = (field) => { setPasswordVisibility(prev => ({ ...prev, [field]: !prev[field] })) };
 
-    const renderPasswordField = (label, name, value, onChange, fieldName, isReadOnly = false, hasError = false) => (
+    const renderTextField = (label, name, value, isEditing, opts = {}) => (
+        <div className="form-group flex-1 min-w-[200px]">
+            <label className="form-label block font-semibold text-xs text-gray-700 dark:text-gray-300 mb-1">{label}</label>
+            <input
+                type="text"
+                name={name}
+                value={value}
+                onChange={handleGeneralInputChange}
+                readOnly={!isEditing || opts.readOnly}
+                className={`form-input w-full py-2 px-3 border dark:border-gray-700 dark:text-gray-400 rounded-md font-medium text-xs ${
+                    !isEditing || opts.readOnly ? "bg-gray-100 dark:bg-gray-800" : "bg-white dark:bg-gray-600 "
+                }`}
+                maxLength={opts.maxLength}
+            />
+        </div>
+    );
+
+    const renderPasswordField = (label, name, value, onChange, fieldName, isReadOnly = false, hasError = false, opts = {}) => (
         <div className="form-group flex-1 min-w-[200px]">
             <label className="form-label block font-semibold text-xs text-num-dark-text dark:text-white mb-1">{label}</label>
             <div className="relative">
                 <input
                     type={passwordVisibility[fieldName] ? "text" : "password"}
                     name={name}
-                    className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs ${isReadOnly ? 'bg-gray-100 dark:bg-gray-800 border-num-gray-light dark:border-gray-700 text-gray-500 dark:text-gray-400' : 'bg-white dark:bg-gray-700 border-num-gray-light dark:border-gray-600 text-num-dark-text dark:text-white'} ${hasError ? 'border-red-500 ring-1 ring-red-500' : ''}`}
+                    className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs ${isReadOnly ? 'bg-gray-100 dark:bg-gray-800 border-num-gray-light dark:border-gray-700 text-gray-500 dark:text-gray-400' : 'bg-white dark:bg-gray-800 border-num-gray-light dark:border-gray-600 text-num-dark-text dark:text-white'} ${hasError ? 'border-red-500 ring-1 ring-red-500' : ''}`}
                     placeholder={`Enter ${label.toLowerCase()}`}
                     value={value}
                     onChange={onChange}
                     readOnly={isReadOnly}
                     disabled={loading}
+                    maxLength={opts.maxLength}
                 />
                 <button
                     type="button"
@@ -254,6 +314,7 @@ const ProfileContent = () => {
             </div>
         </div>
     );
+    
 
     if (sessionStatus === 'loading' || !profileData) {
         return <ProfileContentSkeleton />;
@@ -267,17 +328,17 @@ const ProfileContent = () => {
     const fullName = `${currentDisplayData.firstName} ${currentDisplayData.lastName}`.trim();
 
     return (
-      <div className="p-6 dark:text-white">
+      <div className="p-6">
         <SuccessPopup
           show={showSuccessPopup}
           onClose={() => setShowSuccessPopup(false)}
           title="Success"
-          message="Your profile has been updated successfully."
+          message={successMessage}
         />
-        <div className="section-title font-semibold text-lg text-num-dark-text dark:text-white mb-4">
+        <div className="section-title font-semibold text-lg text-gray-800 dark:text-gray-200 mb-4">
           Profile
         </div>
-        <hr className="border-t border-slate-300 dark:border-slate-700 mt-4 mb-8" />
+        <hr className="border-t border-gray-300 dark:border-gray-700 mt-4 mb-8" />
         {error && (
           <div
             className={`p-4 mb-4 text-sm rounded-lg bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300`}
@@ -286,7 +347,7 @@ const ProfileContent = () => {
           </div>
         )}
         <div className="profile-section flex gap-8 mb-4 flex-wrap">
-          <div className="avatar-card w-[220px] p-3 bg-white border border-num-gray-light dark:bg-gray-800 dark:border-gray-700 shadow-custom-light rounded-lg flex-shrink-0 self-start">
+          <div className="avatar-card w-[220px] p-3 bg-white border border-gray-300 dark:bg-gray-800 dark:border-gray-700 shadow-sm rounded-lg flex-shrink-0 self-start">
             <div className="avatar-content flex items-center">
               {imagePreviewUrl ? (
                 <Image
@@ -305,7 +366,7 @@ const ProfileContent = () => {
               )}
               <div className="avatar-info flex flex-col overflow-hidden">
                 <div 
-                    className="avatar-name font-semibold text-sm text-black dark:text-white mb-0.5 truncate"
+                    className="avatar-name font-semibold text-sm text-gray-800 dark:text-gray-200 mb-0.5 truncate"
                     title={fullName}
                 >
                   {fullName}
@@ -319,9 +380,9 @@ const ProfileContent = () => {
               type="button"
               onClick={handleUploadButtonClick}
               disabled={isUploading || !isEditingGeneral}
-              className="w-full rounded-md mt-3 px-3 py-2 text-xs font-semibold text-white shadow-sm bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full rounded-md mt-2 px-3 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isUploading ? "Uploading..." : "Upload Photo"}
+              {isUploading ? "Uploading..." : "Upload Picture"}
             </button>
             <input
               type="file"
@@ -332,96 +393,18 @@ const ProfileContent = () => {
             />
           </div>
 
-          <div className="info-details-wrapper flex-grow flex flex-col gap-8 min-w-[300px]">
-            <div className="info-card p-3 sm:p-4 bg-white border border-num-gray-light dark:bg-gray-800 dark:border-gray-700 shadow-custom-light rounded-lg">
-              <div className="section-title font-semibold text-sm text-num-dark-text dark:text-white mb-3">
+          <div className="info-details-wrapper flex-grow flex flex-col gap-8 min-w-[300px] ">
+            <div className="info-card p-3 sm:p-4 bg-white border border-gray-300 dark:bg-gray-800 dark:border-gray-700 shadow-sm rounded-lg">
+              <div className="section-title font-semibold text-sm text-gray-800 dark:text-gray-200 mb-3">
                 General Information
               </div>
-              <div className="space-y-3">
-                <div className="flex gap-3 flex-wrap">
-                  <div className="form-group flex-1 min-w-[200px]">
-                    <label className="form-label block font-semibold text-xs text-num-dark-text dark:text-white mb-1">
-                      First Name
-                    </label>
-                    <input
-                      type="text"
-                      name="firstName"
-                      value={currentDisplayData.firstName}
-                      onChange={handleGeneralInputChange}
-                      readOnly={!isEditingGeneral}
-                      className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs ${
-                        !isEditingGeneral
-                          ? "bg-gray-100 dark:bg-gray-800 border-num-gray-light dark:border-gray-700 text-gray-500 dark:text-gray-400"
-                          : "bg-white dark:bg-gray-700 border-num-gray-light dark:border-gray-600 text-num-dark-text dark:text-white"
-                      }`}
-                    />
-                  </div>
-                  <div className="form-group flex-1 min-w-[200px]">
-                    <label className="form-label block font-semibold text-xs text-num-dark-text dark:text-white mb-1">
-                      Last Name
-                    </label>
-                    <input
-                      type="text"
-                      name="lastName"
-                      value={currentDisplayData.lastName}
-                      onChange={handleGeneralInputChange}
-                      readOnly={!isEditingGeneral}
-                      className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs ${
-                        !isEditingGeneral
-                          ? "bg-gray-100 dark:bg-gray-800 border-num-gray-light dark:border-gray-700 text-gray-500 dark:text-gray-400"
-                          : "bg-white dark:bg-gray-700 border-num-gray-light dark:border-gray-600 text-num-dark-text dark:text-white"
-                      }`}
-                    />
-                  </div>
-                </div>
-                <div className="flex gap-3 flex-wrap">
-                  <div className="form-group flex-1 min-w-[200px]">
-                    <label className="form-label block font-semibold text-xs text-num-dark-text dark:text-white mb-1">
-                      Email
-                    </label>
-                    <input
-                      type="email"
-                      name="email"
-                      value={currentDisplayData.email}
-                      readOnly
-                      disabled
-                      className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs bg-gray-100 dark:bg-gray-800 border-num-gray-light dark:border-gray-700 text-gray-500 dark:text-gray-400`}
-                    />
-                  </div>
-                  <div className="form-group flex-1 min-w-[200px]">
-                    <label className="form-label block font-semibold text-xs text-num-dark-text dark:text-white mb-1">
-                      Phone Number
-                    </label>
-                    <input
-                      type="tel"
-                      name="phoneNumber"
-                      value={formatPhoneNumber(currentDisplayData.phoneNumber)}
-                      onChange={handleGeneralInputChange}
-                      readOnly={!isEditingGeneral}
-                      className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs ${
-                        !isEditingGeneral
-                          ? "bg-gray-100 dark:bg-gray-800 border-num-gray-light dark:border-gray-700 text-gray-500 dark:text-gray-400"
-                          : "bg-white dark:bg-gray-700 border-num-gray-light dark:border-gray-600 text-num-dark-text dark:text-white"
-                      }`}
-                    />
-                  </div>
-                </div>
-                <div className="form-group flex-1 min-w-[200px]">
-                  <label className="form-label block font-semibold text-xs text-num-dark-text dark:text-white mb-1">
-                    Address
-                  </label>
-                  <input
-                    type="text"
-                    name="address"
-                    value={currentDisplayData.address}
-                    onChange={handleGeneralInputChange}
-                    readOnly={!isEditingGeneral}
-                    className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs ${
-                      !isEditingGeneral
-                        ? "bg-gray-100 dark:bg-gray-800 border-num-gray-light dark:border-gray-700 text-gray-500 dark:text-gray-400"
-                        : "bg-white dark:bg-gray-700 border-num-gray-light dark:border-gray-600 text-num-dark-text dark:text-white"
-                    }`}
-                  />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 dark:text-gray-300">
+                {renderTextField("First Name", "firstName", currentDisplayData.firstName, isEditingGeneral, { maxLength: 20 })}
+                {renderTextField("Last Name", "lastName", currentDisplayData.lastName, isEditingGeneral, { maxLength: 30 })}
+                {renderTextField("Email", "email", currentDisplayData.email, isEditingGeneral, { maxLength: 30 })}
+                {renderTextField("Phone Number", "phoneNumber", formatPhoneNumber(currentDisplayData.phoneNumber), isEditingGeneral, { maxLength: 15 })}
+                <div className="form-group md:col-span-2">
+                    {renderTextField("Address", "address", currentDisplayData.address, isEditingGeneral)}
                 </div>
               </div>
               <div className="form-actions flex justify-end items-center gap-3 mt-4">
@@ -429,16 +412,16 @@ const ProfileContent = () => {
                   <>
                     <button
                       onClick={() => handleCancelClick("general")}
-                      className="back-button bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 shadow-custom-light rounded-md text-gray-800 dark:text-white border-none py-2 px-3 font-semibold text-xs cursor-pointer"
-                      disabled={loading}
+                      className="back-button bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 shadow-custom-light rounded-md text-gray-800 dark:text-white py-2 px-3 font-semibold text-xs"
                     >
                       Cancel
                     </button>
                     <button
                       onClick={() => handleSaveClick("general")}
                       className="save-button bg-blue-600 hover:bg-blue-700 shadow-custom-light rounded-md text-white text-xs py-2 px-3 font-semibold"
+                      disabled={loading}
                     >
-                      Save Changes
+                      {loading ? 'Saving...' : 'Save Changes'}
                     </button>
                   </>
                 ) : (
@@ -451,9 +434,10 @@ const ProfileContent = () => {
                 )}
               </div>
             </div>
-            <div className="info-card-password p-3 sm:p-4 bg-white border border-num-gray-light dark:bg-gray-800 dark:border-gray-700 shadow-custom-light rounded-lg">
-              <div className="section-title font-semibold text-sm text-num-dark-text dark:text-white mb-3">
-                Password information
+
+            <div className="info-card-password p-3 sm:p-4 bg-white border border-gray-300 dark:bg-gray-800 dark:border-gray-700 shadow-sm rounded-lg">
+              <div className="section-title font-semibold text-sm text-gray-800 dark:text-gray-200 mb-3">
+                Password Information
               </div>
               <div className="space-y-4">
                 {/* current password */}

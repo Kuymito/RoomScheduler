@@ -33,7 +33,6 @@ const getProfile = async (token) => {
             }
         });
 
-        // The key is to access response.data directly now, not response.data.payload
         if (response.data) {
             return response.data;
         }
@@ -48,6 +47,34 @@ const getProfile = async (token) => {
         throw new Error(error.response?.data?.message || "Failed to fetch profile.");
     }
 };
+
+/**
+ * Updates an admin's profile information.
+ * @param {string|number} adminId - The ID of the admin to update.
+ * @param {object} adminData - The data to update.
+ * @param {string} token - The authorization token.
+ * @returns {Promise<Object>} The response from the API.
+ */
+const updateAdminProfile = async (adminId, adminData, token) => {
+  try {
+    // This call goes through the Next.js API proxy
+    const response = await axios.patch(`${LOCAL_API_URL}/admins/${adminId}`, adminData, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    return response.data;
+  } catch (error) {
+    console.error(`Update admin profile service error for ID ${adminId}:`, {
+      message: error.message,
+      code: error.code,
+      response: error.response ? error.response.data : 'No response data'
+    });
+    throw new Error(error.response?.data?.message || `Failed to update admin profile.`);
+  }
+};
+
 
 const forgotPassword = async (email) => {
   try {
@@ -90,18 +117,10 @@ const resetPassword = async ({ email, otp, newPassword }) => {
     }
 };
 
-/**
- * Changes the user's password.
- * @param {string} currentPassword - The user's current password.
- * @param {string} newPassword - The new password.
- * @param {string} token - The authorization token.
- * @returns {Promise<Object>} A promise that resolves to the API response.
- */
 const changePassword = async (currentPassword, newPassword, token) => {
   try {
-    // Using a new, non-conflicting API route for password changes.
     const response = await axios.post(
-      `${LOCAL_API_URL}/user/change-password`, // UPDATED ENDPOINT
+      `${LOCAL_API_URL}/user/change-password`,
       { currentPassword, newPassword },
       {
         headers: {
@@ -116,15 +135,7 @@ const changePassword = async (currentPassword, newPassword, token) => {
   }
 };
 
-/**
- * Resets a specific instructor's password (Admin action).
- * @param {string|number} instructorId - The ID of the instructor whose password is to be reset.
- * @param {string} newPassword - The new password to set.
- * @param {string} token - The admin's authorization token.
- * @returns {Promise<Object>} The response from the API.
- */
 const resetInstructorPassword = async (instructorId, newPassword, token) => {
-  // Always call the local, non-conflicting API route from the client.
   const url = `${LOCAL_API_URL}/instructors/${instructorId}/reset-password`;
     
   try {
@@ -151,6 +162,7 @@ const resetInstructorPassword = async (instructorId, newPassword, token) => {
 export const authService = {
   login,
   getProfile,
+  updateAdminProfile, // Added the correct function here
   forgotPassword,
   verifyOtp,
   resetPassword,

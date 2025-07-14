@@ -1,21 +1,19 @@
 'use client';
 
 import { useState, useEffect } from "react";
-import useSWR from 'swr';
-import { useSession } from 'next-auth/react';
 import SuccessAlert from "./RequestSuccessComponent";
 import RequestChangeForm from "./RequestChangeForm";
-import InstructorRoomPageSkeleton from "./InstructorRoomPageSkeleton";
-import { scheduleService } from '@/services/schedule.service';
+import { notificationService } from '@/services/notification.service';
+import { useSession } from 'next-auth/react';
 
-// SWR fetcher for schedule data
-const scheduleFetcher = (token) => scheduleService.getAllSchedules(token);
-
+// This component now receives all its data as props from the parent server component.
+// It no longer fetches its own data, which prevents the flash of inconsistent states.
 export default function InstructorRoomClientView({ initialAllRoomsData, buildingLayout, initialScheduleMap, initialInstructorClasses }) {
     // --- State Management ---
-    const [allRoomsData, setAllRoomsData] = useState(initialAllRoomsData);
-    const [buildings, setBuildings] = useState(buildingLayout);
-    const [scheduleMap, setScheduleMap] = useState(initialScheduleMap);
+    // Initialize state directly from the props passed by the server component.
+    const [allRoomsData] = useState(initialAllRoomsData);
+    const [buildings] = useState(buildingLayout);
+    const [scheduleMap] = useState(initialScheduleMap);
     const [instructorClasses] = useState(initialInstructorClasses);
     
     const [selectedDay, setSelectedDay] = useState(() => new Date().toLocaleDateString('en-US', { weekday: 'long' }));
@@ -31,45 +29,6 @@ export default function InstructorRoomClientView({ initialAllRoomsData, building
     const [error, setError] = useState('');
 
     const { data: session } = useSession();
-    const { data: apiSchedules, error: scheduleError, isLoading: isScheduleLoading } = useSWR(
-        session?.accessToken ? ['/api/v1/schedule', session.accessToken] : null,
-        () => scheduleFetcher(session.accessToken),
-        {
-            fallbackData: Object.values(initialScheduleMap).flatMap(day => Object.values(day)), // Provide initial data to SWR
-            revalidateOnFocus: true,
-        }
-    );
-
-    // --- Effects ---
-    useEffect(() => {
-        if (apiSchedules && Array.isArray(apiSchedules)) {
-            const newScheduleMap = {};
-            const shiftNameMap = {
-                '07:00:00': 'Morning Shift', '10:30:00': 'Noon Shift', '14:00:00': 'Afternoon Shift',
-                '17:30:00': 'Evening Shift', '07:30:00': 'Weekend Shift'
-            };
-             const dayApiToFullName = {
-                MONDAY: 'Monday', TUESDAY: 'Tuesday', WEDNESDAY: 'Wednesday', THURSDAY: 'Thursday',
-                FRIDAY: 'Friday', SATURDAY: 'Saturday', SUNDAY: 'Sunday'
-            };
-
-            apiSchedules.forEach(schedule => {
-                if (schedule && schedule.dayDetails && Array.isArray(schedule.dayDetails) && schedule.shift) {
-                    const timeSlot = shiftNameMap[schedule.shift.startTime];
-                    
-                    schedule.dayDetails.forEach(dayDetail => {
-                        const dayName = dayApiToFullName[dayDetail.dayOfWeek.toUpperCase()];
-                        if (dayName && timeSlot) {
-                            if (!newScheduleMap[dayName]) newScheduleMap[dayName] = {};
-                            if (!newScheduleMap[dayName][timeSlot]) newScheduleMap[dayName][timeSlot] = {};
-                            newScheduleMap[dayName][timeSlot][schedule.roomId] = schedule.className;
-                        }
-                    });
-                }
-            });
-            setScheduleMap(newScheduleMap);
-        }
-    }, [apiSchedules]);
 
     // --- Event Handlers ---
     const resetSelection = () => { setSelectedRoomId(null); setRoomDetails(null); };
@@ -133,14 +92,6 @@ export default function InstructorRoomClientView({ initialAllRoomsData, building
         return "";
     };
 
-    if (isScheduleLoading && !apiSchedules) {
-        return <InstructorRoomPageSkeleton />;
-    }
-
-    if (scheduleError) {
-        return <div className="p-6 text-center text-red-500">Failed to load schedule data: {scheduleError.message}</div>;
-    }
-
     return (
     <>
       {showSuccessAlert && ( <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 "><SuccessAlert show={showSuccessAlert} title="Request was sent Successfully" messageLine1={`Room ${roomDetails?.name || ""} Your request was sent Successfully`} messageLine2="" confirmButtonText="Close" onConfirm={() => setShowSuccessAlert(false)} onClose={() => setShowSuccessAlert(false)}/></div>)}
@@ -200,7 +151,7 @@ export default function InstructorRoomClientView({ initialAllRoomsData, building
             <div className="w-full lg:w-[320px] shrink-0">
                 <div className="flex items-center gap-2 mb-3 sm:mb-4"><h3 className="text-sm sm:text-base font-semibold text-slate-700 dark:text-slate-300">Details</h3><hr className="flex-1 border-t border-slate-300 dark:border-slate-700" /></div>
                 <div className="flex flex-col items-start gap-6 w-full min-h-[420px] bg-white dark:bg-slate-800 p-4 rounded-lg shadow-lg">
-                    {loading ? (<InstructorRoomPageSkeleton.RoomDetailsSkeleton />) : roomDetails ? (
+                    {loading ? (<div className="text-center text-slate-500 dark:text-slate-400 w-full flex-grow flex items-center justify-center">Loading...</div>) : roomDetails ? (
                         <>
                             <div className="flex flex-col items-start self-stretch w-full flex-grow overflow-y-auto scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-slate-600 scrollbar-track-slate-100 dark:scrollbar-track-slate-700 pr-1">
                                 <div className="w-full border border-slate-200 dark:border-slate-700 rounded-md bg-white dark:bg-slate-800">
