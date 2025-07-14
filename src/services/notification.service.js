@@ -133,11 +133,35 @@ const markNotificationAsRead = async (notificationId, token) => {
     }
 };
 
+const markAllNotificationsAsRead = async (notifications, token) => {
+    // 1. Find all notifications that are currently unread.
+    const unreadNotifications = notifications.filter(n => !n.read);
+
+    if (unreadNotifications.length === 0) {
+        return; // Nothing to do
+    }
+
+    // 2. Create an array of promises, each one marking a notification as read.
+    const markAsReadPromises = unreadNotifications.map(notification =>
+        markNotificationAsRead(notification.notificationId, token)
+    );
+
+    // 3. Execute all promises concurrently.
+    try {
+        await Promise.all(markAsReadPromises);
+    } catch (error) {
+        // This will catch the first error if any of the promises fail.
+        console.error("An error occurred while marking all notifications as read.", error);
+        // Depending on requirements, you might want to throw the error or just log it.
+    }
+};
+
 export const notificationService = {
     getNotifications,
     getChangeRequests,
     submitChangeRequest,
     approveChangeRequest,
     denyChangeRequest,
-    markNotificationAsRead
+    markNotificationAsRead,
+    markAllNotificationsAsRead
 };
