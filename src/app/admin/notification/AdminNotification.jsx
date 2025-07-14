@@ -8,9 +8,10 @@ const XCircleIcon = ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" v
 const NotificationItem = ({ notification, onApprove, onDeny, onMarkAsRead }) => {
     const { data: session } = useSession();
     const [isDescriptionVisible, setIsDescriptionVisible] = useState(false);
+    const [imageError, setImageError] = useState(false);
 
     if (!notification || !notification.notificationId) {
-        return null; 
+        return null;
     }
 
     const {
@@ -20,6 +21,7 @@ const NotificationItem = ({ notification, onApprove, onDeny, onMarkAsRead }) => 
 
     const isActionable = status === 'PENDING';
     const isUnread = !isRead;
+    const isProfileUrl = profile && (profile.startsWith('http://') || profile.startsWith('https://'));
 
     const AvatarPlaceholder = ({ name }) => (
         <div className="w-12 h-12 rounded-full bg-blue-600 text-white flex items-center justify-center text-lg font-semibold flex-shrink-0">
@@ -27,11 +29,7 @@ const NotificationItem = ({ notification, onApprove, onDeny, onMarkAsRead }) => 
         </div>
     );
 
-    // --- FIX: This function will now correctly handle marking an item as read ---
     const handleItemClick = () => {
-        // If the item is unread and a handler exists, call it.
-        // This makes both standard notifications and actionable requests get marked
-        // as read when you click on them.
         if (isUnread && typeof onMarkAsRead === 'function') {
             onMarkAsRead(notificationId);
         }
@@ -56,7 +54,7 @@ const NotificationItem = ({ notification, onApprove, onDeny, onMarkAsRead }) => 
     return (
         <div
             className={`w-full transition-colors duration-200 ${isUnread ? 'bg-blue-50 dark:bg-gray-700 hover:bg-blue-100 dark:hover:bg-gray-600 cursor-pointer' : 'bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700'}`}
-            onClick={handleItemClick} // The main div now handles the click
+            onClick={handleItemClick}
         >
             <div className="flex flex-row items-start p-4 md:p-5 gap-4 relative animate-fade-in-scale">
                 {isUnread && (
@@ -65,24 +63,42 @@ const NotificationItem = ({ notification, onApprove, onDeny, onMarkAsRead }) => 
                     </div>
                 )}
                 <div className="w-12 h-12 rounded-full flex-shrink-0 bg-slate-200 dark:bg-slate-500">
-                    <AvatarPlaceholder name={profile} />
+                    {isProfileUrl && !imageError ? (
+                        <img
+                            src={profile}
+                            alt="Profile"
+                            className="w-12 h-12 rounded-full object-cover"
+                            onError={() => setImageError(true)}
+                        />
+                    ) : (
+                        <AvatarPlaceholder name={isProfileUrl ? '??' : profile} />
+                    )}
                 </div>
                 <div className="flex flex-col gap-1 flex-1 min-w-0">
-                    <div className="font-inter font-semibold text-sm leading-normal text-slate-700 dark:text-gray-300 self-stretch flex items-baseline gap-2 flex-wrap">
-                        {status === 'APPROVED' && <CheckCircleIcon className="w-5 h-5 text-green-500 flex-shrink-0" />}
-                        {status === 'DENIED' && <XCircleIcon className="w-5 h-5 text-red-500 flex-shrink-0" />}
-                        <span>{message}</span>
-                        {description && (
-                            <button
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    setIsDescriptionVisible(!isDescriptionVisible);
-                                }}
-                                className="text-blue-600 dark:text-blue-400 font-medium text-xs hover:underline ml-1"
-                            >
-                                {isDescriptionVisible ? 'View Less' : 'View More'}
-                            </button>
-                        )}
+                    {/* --- FIX: This container now correctly aligns the icon and text --- */}
+                    <div className="flex items-start gap-2">
+                        {/* Status Icon */}
+                        <div className="mt-0.5 flex-shrink-0">
+                            {status === 'APPROVED' && <CheckCircleIcon className="w-5 h-5 text-green-500" />}
+                            {status === 'DENIED' && <XCircleIcon className="w-5 h-5 text-red-500" />}
+                            {/* Assuming PENDING status also shows a red X icon based on screenshot */}
+                            {status === 'PENDING' && <XCircleIcon className="w-5 h-5 text-red-500" />}
+                        </div>
+                        
+                        {/* Text and "View More" are grouped in their own container */}
+                        <div className="flex flex-col items-start">
+                            <p className="font-inter font-semibold text-sm leading-normal text-slate-700 dark:text-gray-300">
+                                {message}
+                            </p>
+                            {description && (
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); setIsDescriptionVisible(!isDescriptionVisible); }}
+                                    className="text-blue-600 dark:text-blue-400 font-medium text-xs hover:underline mt-0.5"
+                                >
+                                    {isDescriptionVisible ? 'View Less' : 'View More'}
+                                </button>
+                            )}
+                        </div>
                     </div>
                     {isDescriptionVisible && description && (
                         <p className="font-inter text-sm text-slate-600 dark:text-gray-400 mt-1 animate-fade-in">
