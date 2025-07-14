@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import SuccessAlert from './UpdateSuccessComponent';
+import Toast from '@/components/Toast';
 import { getAllRooms, updateRoom } from '@/services/room.service';
 import { useSession } from 'next-auth/react';
 import useSWR from 'swr';
@@ -77,8 +77,7 @@ const RoomView = () => {
     const [loading, setLoading] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
     const [editableRoomDetails, setEditableRoomDetails] = useState(null);
-    const [showSuccessAlert, setShowSuccessAlert] = useState(false);
-    const [error, setError] = useState('');
+    const [toast, setToast] = useState({ show: false, message: '', type: 'info' });
     const [formError, setFormError] = useState({ field: '', message: '' });
 
     // This effect will run when the building data changes, ensuring the selected building is valid.
@@ -95,11 +94,11 @@ const RoomView = () => {
     const handleRoomClick = (roomId) => {
         setSelectedRoomId(roomId);
         setIsEditing(false);
-        setError('');
+        setToast({ show: false, message: '', type: 'info' });
         setFormError({ field: '', message: '' });
         const data = allRoomsData[roomId];
         if (!data) {
-            setError("Could not load room details.");
+            setToast({ show: true, message: 'Could not load room details.', type: 'error' });
             setRoomDetails(null);
         } else {
             setRoomDetails(data);
@@ -120,7 +119,7 @@ const RoomView = () => {
         setIsEditing(false);
         setEditableRoomDetails(null);
         setFormError({ field: '', message: '' });
-        setError('');
+        setToast({ show: false, message: '', type: 'info' });
     };
 
     const validateRoomName = (newName) => {
@@ -145,17 +144,28 @@ const RoomView = () => {
         if (name === 'name' && formError.field === 'name') {
             setFormError({ field: '', message: '' });
         }
-        setEditableRoomDetails((prev) => ({
-            ...prev,
-            [name]: (name === 'capacity') ? parseInt(value, 10) || 0 : value,
-        }));
+        
+        if (name === 'capacity') {
+            // Enforce a maximum length of 3 for the capacity field.
+            // The maxLength attribute does not work for inputs of type="number".
+            const slicedValue = value.slice(0, 3);
+            setEditableRoomDetails((prev) => ({
+                ...prev,
+                [name]: parseInt(slicedValue, 10) || 0,
+            }));
+        } else {
+            setEditableRoomDetails((prev) => ({
+                ...prev,
+                [name]: value,
+            }));
+        }
     };
 
     const handleSaveChanges = async () => {
         if (!editableRoomDetails) return;
         if (!validateRoomName(editableRoomDetails.name)) return;
         setLoading(true);
-        setError('');
+        setToast({ show: false, message: '', type: 'info' });
         const roomUpdateDto = {
             roomName: editableRoomDetails.name,
             capacity: editableRoomDetails.capacity,
@@ -166,9 +176,9 @@ const RoomView = () => {
             await updateRoom(selectedRoomId, roomUpdateDto);
             mutateRooms(); 
             setIsEditing(false);
-            setShowSuccessAlert(true);
+            setToast({ show: true, message: `Room '${roomUpdateDto.roomName}' updated successfully.`, type: 'success' });
         } catch (err) {
-            setError(err.message || 'An error occurred while saving.');
+            setToast({ show: true, message: err.message || 'An error occurred while saving.', type: 'error' });
         } finally {
             setLoading(false);
         }
@@ -202,10 +212,9 @@ const RoomView = () => {
 
     return (
         <>
-            {showSuccessAlert && ( <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60"><SuccessAlert show={showSuccessAlert} title="Room Updated" messageLine1={`Room ${editableRoomDetails?.name || ''} has been updated successfully.`} messageLine2="You can continue managing rooms." confirmButtonText="OK" onConfirm={() => setShowSuccessAlert(false)} onClose={() => setShowSuccessAlert(false)}/></div> )}
+            {toast.show && <Toast message={toast.message} type={toast.type} onClose={() => setToast({ ...toast, show: false })} />}
             <div className='p-4 sm:p-6 min-h-full'>
                 <div className="mb-4 w-full"><h2 className="text-xl font-semibold text-slate-800 dark:text-white">Room</h2><hr className="border-t border-slate-300 dark:border-slate-700 mt-3" /></div>
-                {error && <p className="text-red-500 text-center mb-4">{error}</p>}
                 <div className="flex flex-col lg:flex-row gap-6">
                     <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-3 sm:mb-4">
@@ -259,9 +268,9 @@ const RoomView = () => {
                                         </div>
                                         <div className="flex items-center self-stretch w-full min-h-[56px] border-b border-slate-200 dark:border-slate-700"><div className="p-3 sm:p-4 w-[120px]"><span className={textLabelDefault}>Building</span></div><div className="px-2 sm:px-3 flex-1 py-2"><span className={textValueDefaultDisplay}>{roomDetails.building}</span></div></div>
                                         <div className="flex items-center self-stretch w-full min-h-[56px] border-b border-slate-200 dark:border-slate-700"><div className="p-3 sm:p-4 w-[120px]"><span className={textLabelDefault}>Floor</span></div><div className="px-2 sm:px-3 flex-1 py-2"><span className={textValueDefaultDisplay}>{roomDetails.floor}</span></div></div>
-                                        <div className="flex items-center self-stretch w-full min-h-[56px] border-b border-slate-200 dark:border-slate-700"><div className="p-3 sm:p-4 w-[120px]"><span className={textLabelDefault}>Capacity</span></div><div className="px-2 sm:px-3 flex-1 py-2">{isEditing && editableRoomDetails ? (<div className={`flex flex-col items-start self-stretch ${inputContainerSizeDefault}`}><input type="number" name="capacity" value={editableRoomDetails.capacity} onChange={handleInputChange} className={inputStyle} maxLength={3} /></div>) : (<span className={textValueDefaultDisplay}>{roomDetails.capacity}</span>)}</div></div>
-                                        <div className="flex items-center self-stretch w-full min-h-[56px] border-b border-slate-200 dark:border-slate-700"><div className="p-3 sm:p-4 w-[120px]"><span className={textLabelDefault}>Type</span></div><div className="px-2 sm:px-3 flex-1 py-2">{isEditing && editableRoomDetails ? (<div className={`flex flex-col items-start self-stretch ${inputContainerSizeDefault}`}><input type="text" name="type" value={editableRoomDetails.type} onChange={handleInputChange} className={inputStyle} maxLength={30} /></div>) : (<span className={textValueDefaultDisplay}>{roomDetails.type}</span>)}</div></div>
-                                        <div className="flex items-start self-stretch w-full min-h-[92px]"><div className="p-3 sm:p-4 w-[120px] pt-5"><span className={textLabelDefault}>Equipment</span></div><div className="px-2 sm:px-3 flex-1 py-2 pt-3">{isEditing && editableRoomDetails ? (<div className={`flex flex-col items-start self-stretch ${equipmentInputContainerSize}`}><textarea name="equipment" value={editableRoomDetails.equipment} onChange={handleInputChange} className={textareaStyle} placeholder="Item1, Item2..."></textarea></div>) : (<span className={`${textValueDefaultDisplay} pt-1`}>{Array.isArray(roomDetails.equipment) ? roomDetails.equipment.join(", ") : ''}</span>)}</div></div>
+                                        <div className="flex items-center self-stretch w-full min-h-[56px] border-b border-slate-200 dark:border-slate-700"><div className="p-3 sm:p-4 w-[120px]"><span className={textLabelDefault}>Capacity</span></div><div className="px-2 sm:px-3 flex-1 py-2">{isEditing && editableRoomDetails ? (<div className={`flex flex-col items-start self-stretch ${inputContainerSizeDefault}`}><input maxLength={3} type="number" name="capacity" value={editableRoomDetails.capacity} onChange={handleInputChange} className={inputStyle} /></div>) : (<span className={textValueDefaultDisplay}>{roomDetails.capacity}</span>)}</div></div>
+                                        <div className="flex items-center self-stretch w-full min-h-[56px] border-b border-slate-200 dark:border-slate-700"><div className="p-3 sm:p-4 w-[120px]"><span className={textLabelDefault}>Type</span></div><div className="px-2 sm:px-3 flex-1 py-2">{isEditing && editableRoomDetails ? (<div className={`flex flex-col items-start self-stretch ${inputContainerSizeDefault}`}><input maxLength={30}  type="text" name="type" value={editableRoomDetails.type} onChange={handleInputChange} className={inputStyle} /></div>) : (<span className={textValueDefaultDisplay}>{roomDetails.type}</span>)}</div></div>
+                                        <div className="flex items-start self-stretch w-full min-h-[92px]"><div className="p-3 sm:p-4 w-[120px] pt-5"><span className={textLabelDefault}>Equipment</span></div><div className="px-2 sm:px-3 flex-1 py-2 pt-3">{isEditing && editableRoomDetails ? (<div className={`flex flex-col items-start self-stretch ${equipmentInputContainerSize}`}><textarea maxLength={30} name="equipment" value={editableRoomDetails.equipment} onChange={handleInputChange} className={textareaStyle} placeholder="Item1, Item2..."></textarea></div>) : (<span className={`${textValueDefaultDisplay} pt-1`}>{Array.isArray(roomDetails.equipment) ? roomDetails.equipment.join(", ") : ''}</span>)}</div></div>
                                     </div>
                                     <div className="w-full mt-auto">
                                         {isEditing ? (

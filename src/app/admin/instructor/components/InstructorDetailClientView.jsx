@@ -6,7 +6,7 @@ import Image from 'next/image';
 import { useSession } from 'next-auth/react';
 import { instructorService } from '@/services/instructor.service';
 import { authService } from '@/services/auth.service';
-import SuccessPopup from '../../profile/components/SuccessPopup';
+import Toast from '@/components/Toast';
 import axios from 'axios';
 
 
@@ -28,8 +28,7 @@ export default function InstructorDetailClientView({ initialInstructor, allDepar
     const [editableInstructorDetails, setEditableInstructorDetails] = useState({ ...initialInstructor });
     const [loading, setLoading] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
-    const [error, setError] = useState(null);
-    const [successMessage, setSuccessMessage] = useState(null);
+    const [toast, setToast] = useState({ show: false, message: '', type: 'info' });
     const [imagePreviewUrl, setImagePreviewUrl] = useState(initialInstructor.profileImage || null);
     const [profileImageFile, setProfileImageFile] = useState(null);
     const fileInputRef = useRef(null);
@@ -43,8 +42,7 @@ export default function InstructorDetailClientView({ initialInstructor, allDepar
 
     const saveGeneralInfo = async () => {
         setLoading(true);
-        setError(null);
-        setSuccessMessage(null);
+        setToast({ show: false, message: '', type: 'info' });
 
         let finalImageUrl = instructorDetails.profileImage;
 
@@ -56,7 +54,7 @@ export default function InstructorDetailClientView({ initialInstructor, allDepar
                 const response = await axios.post('/api/upload', formData);
                 finalImageUrl = response.data.url;
             } catch (uploadError) {
-                setError('Image upload failed. Please try again.');
+                setToast({ show: true, message: 'Image upload failed. Please try again.', type: 'error' });
                 setLoading(false);
                 setIsUploading(false);
                 return;
@@ -70,7 +68,7 @@ export default function InstructorDetailClientView({ initialInstructor, allDepar
         );
 
         if (!selectedDepartment) {
-            setError("Invalid department selected. Please choose from the list.");
+            setToast({ show: true, message: "Invalid department selected. Please choose from the list.", type: 'error' });
             setLoading(false);
             return;
         }
@@ -117,9 +115,9 @@ export default function InstructorDetailClientView({ initialInstructor, allDepar
             setProfileImageFile(null);
             
             setIsEditingGeneral(false);
-            setSuccessMessage("General information updated successfully!");
+            setToast({ show: true, message: "General information updated successfully!", type: 'success' });
         } catch (err) {
-            setError(`Error saving general info: ${err.message}`);
+            setToast({ show: true, message: `Error saving general info: ${err.message}`, type: 'error' });
         } finally {
             setLoading(false);
         }
@@ -127,8 +125,7 @@ export default function InstructorDetailClientView({ initialInstructor, allDepar
 
     const savePassword = async () => {
         setLoading(true);
-        setError(null);
-        setSuccessMessage(null);
+        setToast({ show: false, message: '', type: 'info' });
         setPasswordMismatchError(false);
         setEmptyPasswordError({ new: false, confirm: false });
         
@@ -136,14 +133,14 @@ export default function InstructorDetailClientView({ initialInstructor, allDepar
         const isConfirmPasswordEmpty = !confirmNewPassword;
 
         if (isNewPasswordEmpty || isConfirmPasswordEmpty) {
-            setError("New and confirm password fields are required.");
+            setToast({ show: true, message: "New and confirm password fields are required.", type: 'error' });
             setEmptyPasswordError({ new: isNewPasswordEmpty, confirm: isConfirmPasswordEmpty });
             setLoading(false);
             return;
         }
 
         if (newPassword !== confirmNewPassword) {
-            setError("New passwords do not match.");
+            setToast({ show: true, message: "New passwords do not match.", type: 'error' });
             setPasswordMismatchError(true);
             setLoading(false);
             return;
@@ -158,9 +155,9 @@ export default function InstructorDetailClientView({ initialInstructor, allDepar
             setNewPassword('');
             setConfirmNewPassword('');
             setIsEditingPassword(false);
-            setSuccessMessage("Password reset successfully!");
+            setToast({ show: true, message: "Password reset successfully!", type: 'success' });
         } catch (err) {
-            setError(`Error changing password: ${err.message}`);
+            setToast({ show: true, message: `Error changing password: ${err.message}`, type: 'error' });
         } finally {
             setLoading(false);
         }
@@ -175,8 +172,7 @@ export default function InstructorDetailClientView({ initialInstructor, allDepar
     }, [editableInstructorDetails?.firstName, editableInstructorDetails?.lastName, isEditingGeneral]);
 
     const handleEditClick = (section) => {
-        setError(null);
-        setSuccessMessage(null);
+        setToast({ show: false, message: '', type: 'info' });
         if (section === 'general') {
             setEditableInstructorDetails({ ...instructorDetails });
             setImagePreviewUrl(instructorDetails.profileImage);
@@ -187,8 +183,7 @@ export default function InstructorDetailClientView({ initialInstructor, allDepar
     };
 
     const handleCancelClick = (section) => {
-        setError(null);
-        setSuccessMessage(null);
+        setToast({ show: false, message: '', type: 'info' });
         if (section === 'general') {
             setEditableInstructorDetails({ ...instructorDetails });
             setImagePreviewUrl(instructorDetails.profileImage);
@@ -234,11 +229,11 @@ export default function InstructorDetailClientView({ initialInstructor, allDepar
         setNewPassword(e.target.value);
         if (emptyPasswordError.new) {
             setEmptyPasswordError(prev => ({ ...prev, new: false }));
-            setError(null);
+            setToast({ show: false, message: '', type: 'info' });
         }
         if (passwordMismatchError) {
              setPasswordMismatchError(false);
-             setError(null);
+             setToast({ show: false, message: '', type: 'info' });
         }
     };
 
@@ -246,11 +241,11 @@ export default function InstructorDetailClientView({ initialInstructor, allDepar
         setConfirmNewPassword(e.target.value);
         if (passwordMismatchError) {
             setPasswordMismatchError(false);
-            setError(null);
+            setToast({ show: false, message: '', type: 'info' });
         }
         if (emptyPasswordError.confirm) {
             setEmptyPasswordError(prev => ({ ...prev, confirm: false }));
-            setError(null);
+            setToast({ show: false, message: '', type: 'info' });
         }
     };
     
@@ -296,18 +291,7 @@ export default function InstructorDetailClientView({ initialInstructor, allDepar
     
     return (
         <div className='p-6 dark:text-white'>
-            <SuccessPopup 
-                show={!!successMessage}
-                onClose={() => setSuccessMessage(null)}
-                title="Update Successful"
-                message={successMessage}
-            />
-            {error && (
-                <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
-                    <strong className="font-bold">Error: </strong>
-                    <span className="block sm:inline">{error}</span>
-                </div>
-            )}
+            {toast.show && <Toast message={toast.message} type={toast.type} onClose={() => setToast({ ...toast, show: false })} />}
             <div className="section-title font-semibold text-lg text-num-dark-text dark:text-white mb-4">Instructor Details</div>
             <hr className="border-t border-slate-300 dark:border-slate-700 mt-4 mb-8" />
             <div className="profile-section flex gap-8 mb-4 flex-wrap">

@@ -453,10 +453,13 @@ const ScheduleClientView = ({
         }
     };
 
-    const getRoomColSpan = (building, roomName) => {
-        if (building === "Building A" && roomName === "Conference Room") return "col-span-2";
-        if (building === "Building B" && roomName === "Conference Room") return "col-span-4";
-        if (building === "Building D" && roomName.includes("Library Room")) return "col-span-full";
+    const getRoomColSpan = (room) => {
+        if (!room) return "";
+        const id = room.roomId;
+        const building = room.buildingName;
+        if (id === 10 && building === "Building A") return "col-span-2";
+        if (id === 34 && building === "Building B") return "col-span-4";
+        if ([47, 48, 49].includes(id) && building === "Building D") return "col-span-full";
         return "";
     };
 
@@ -562,7 +565,7 @@ const ScheduleClientView = ({
                                                     onDragStart: (event) => { if (classData && scheduleInfo) { handleDragStart(event, classData, 'scheduled', { day: selectedDay, time: selectedTime, roomId: room.roomId, scheduleId: scheduleInfo.scheduleId }); } },
                                                     onDragEnd: handleDragEnd,
                                                 }}
-                                                className={getRoomColSpan(selectedBuilding, room.roomName)}
+                                                className={getRoomColSpan(room)}
                                             />
                                         );
                                     })}
