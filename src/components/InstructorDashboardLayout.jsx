@@ -1,11 +1,10 @@
 // src/components/InstructorDashboardLayout.jsx
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import InstructorSidebar from '@/components/InstructorSidebar';
 import InstructorTopbar from '@/components/InstructorTopbar';
 import InstructorPopup from 'src/app/instructor/profile/components/InstructorPopup';
-import LogoutAlert from '@/components/LogoutAlert';
 import Footer from '@/components/Footer';
 import InstructorNotificationPopup from '@/app/instructor/notification/InstructorNotificationPopup';
 import { usePathname, useRouter } from 'next/navigation';
@@ -14,6 +13,9 @@ import useSWR, { mutate } from 'swr';
 import { authService } from '@/services/auth.service';
 import { notificationService } from '@/services/notification.service';
 import { moul } from './fonts';
+
+// Dynamically import the LogoutAlert component.
+const LogoutAlert = lazy(() => import('@/components/LogoutAlert'));
 
 const profileFetcher = ([, token]) => authService.getProfile(token);
 const notificationsFetcher = ([, token]) => notificationService.getNotifications(token);
@@ -284,7 +286,11 @@ export default function InstructorDashboardLayout({ children, activeItem, pageTi
                     anchorRef={notificationIconRef} 
                 />
             </div>
-            <LogoutAlert show={showLogoutAlert} onClose={handleCloseLogoutAlert} onConfirmLogout={handleConfirmLogout} />
+            {showLogoutAlert && (
+                <Suspense fallback={<div className="fixed inset-0 bg-black bg-opacity-50 z-[1002] flex items-center justify-center"><div className="w-10 h-10 border-4 border-t-transparent border-white rounded-full animate-spin"></div></div>}>
+                    <LogoutAlert show={showLogoutAlert} onClose={handleCloseLogoutAlert} onConfirmLogout={handleConfirmLogout} />
+                </Suspense>
+            )}
         </div>
     );
 }

@@ -1,11 +1,10 @@
 // src/components/DashboardLayout.jsx
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import Sidebar from '@/components/Sidebar';
 import Topbar from '@/components/Topbar';
 import AdminPopup from 'src/app/admin/profile/components/AdminPopup';
-import LogoutAlert from '@/components/LogoutAlert';
 import Footer from '@/components/Footer';
 import NotificationPopup from '@/app/admin/notification/AdminNotificationPopup';
 import { usePathname, useRouter } from 'next/navigation';
@@ -14,6 +13,10 @@ import useSWR, { mutate } from 'swr';
 import { authService } from '@/services/auth.service';
 import { notificationService } from '@/services/notification.service';
 import { moul } from './fonts';
+
+// Dynamically import the LogoutAlert component.
+// This creates a separate JavaScript chunk for the component, loaded only when needed.
+const LogoutAlert = lazy(() => import('@/components/LogoutAlert'));
 
 const TOPBAR_HEIGHT = '90px';
 const profileFetcher = ([, token]) => authService.getProfile(token);
@@ -102,7 +105,7 @@ export default function DashboardLayout({ children, activeItem, pageTitle }) {
         }
     );
 
-    const breadcrumbs = [{ label: pageTitle }];
+    const finalBreadcrumbs = [{ label: pageTitle }];
 
     const toggleSidebar = () => {
         if (!isSmallScreen) {
@@ -222,7 +225,7 @@ export default function DashboardLayout({ children, activeItem, pageTitle }) {
             <Sidebar isCollapsed={isSidebarCollapsed} activeItem={activeItem} onNavItemClick={handleNavItemClick} navigatingTo={navigatingTo} profile={profile} isProfileLoading={isProfileLoading} />
             <div className="flex flex-col flex-grow transition-all duration-300 ease-in-out" style={{ marginLeft: sidebarWidth, width: `calc(100% - ${sidebarWidth})`, height: '100vh', overflowY: 'auto' }}>
                 <div className="fixed top-0 bg-white dark:bg-gray-900 shadow-custom-medium p-5 flex justify-between items-center z-30 transition-all duration-300 ease-in-out" style={{ left: sidebarWidth, width: `calc(100% - ${sidebarWidth})`, height: TOPBAR_HEIGHT }}>
-                    <Topbar onToggleSidebar={toggleSidebar} isSidebarCollapsed={isSidebarCollapsed} onUserIconClick={handleUserIconClick} breadcrumbs={breadcrumbs} userIconRef={userIconRef} onNotificationIconClick={handleToggleNotificationPopup} notificationIconRef={notificationIconRef} hasUnreadNotifications={hasUnreadNotifications} showToggleButton={!isSmallScreen} />
+                    <Topbar onToggleSidebar={toggleSidebar} isSidebarCollapsed={isSidebarCollapsed} onUserIconClick={handleUserIconClick} breadcrumbs={finalBreadcrumbs} userIconRef={userIconRef} onNotificationIconClick={handleToggleNotificationPopup} notificationIconRef={notificationIconRef} hasUnreadNotifications={hasUnreadNotifications} showToggleButton={!isSmallScreen} />
                 </div>
                 <div className="flex flex-col flex-grow" style={{ paddingTop: TOPBAR_HEIGHT }}>
                     <main className="content-area flex-grow m-6">{children}</main>
@@ -252,7 +255,12 @@ export default function DashboardLayout({ children, activeItem, pageTitle }) {
                     onClose={() => setShowNotificationPopup(false)}
                 />
             </div>
-            <LogoutAlert show={showLogoutAlert} onClose={handleCloseLogoutAlert} onConfirmLogout={handleConfirmLogout} />
+            {/* Wrap the LogoutAlert component in a Suspense boundary */}
+            {showLogoutAlert && (
+                <Suspense fallback={<div className="fixed inset-0 bg-black bg-opacity-50 z-[1002] flex items-center justify-center"><div className="w-10 h-10 border-4 border-t-transparent border-white rounded-full animate-spin"></div></div>}>
+                    <LogoutAlert show={showLogoutAlert} onClose={handleCloseLogoutAlert} onConfirmLogout={handleConfirmLogout} />
+                </Suspense>
+            )}
         </div>
     );
 }
