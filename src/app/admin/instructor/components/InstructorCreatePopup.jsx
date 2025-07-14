@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect, useMemo } from 'react';
+import axios from 'axios'; // Import axios for the upload request
 
 // A default SVG icon for the avatar placeholder.
 const DefaultAvatarIcon = ({ className = "w-full h-full" }) => (
@@ -33,18 +34,20 @@ const InstructorCreatePopup = ({ isOpen, onClose, onSave, departments, departmen
         departmentId: departments?.[0]?.departmentId || '',
         password: '',
         roleId: 2, // Default roleId as per API requirements.
-        profile: null, // Use null for the image data.
     });
 
     const [newInstructor, setNewInstructor] = useState(getInitialState());
     const [imagePreviewUrl, setImagePreviewUrl] = useState(null);
+    const [profileImageFile, setProfileImageFile] = useState(null); // State to hold the file object
     const [formError, setFormError] = useState({ fields: [], message: '' });
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     // Effect to reset the form state whenever the popup is opened or department data changes.
     useEffect(() => {
         if (isOpen) {
             setNewInstructor(getInitialState());
             setImagePreviewUrl(null);
+            setProfileImageFile(null);
             setFormError({ fields: [], message: '' });
         }
     }, [isOpen, departments]);
@@ -62,10 +65,10 @@ const InstructorCreatePopup = ({ isOpen, onClose, onSave, departments, departmen
     const handleFileChange = (e) => {
         const file = e.target.files[0];
         if (file) {
+            setProfileImageFile(file); // Store the raw file
             const reader = new FileReader();
             reader.onloadend = () => {
-                setNewInstructor(prev => ({ ...prev, profile: reader.result }));
-                setImagePreviewUrl(reader.result);
+                setImagePreviewUrl(reader.result); // Set preview URL
             };
             reader.readAsDataURL(file);
         }
@@ -78,17 +81,18 @@ const InstructorCreatePopup = ({ isOpen, onClose, onSave, departments, departmen
 
     // Removes the selected profile image.
     const handleRemoveImage = () => {
-        setNewInstructor(prev => ({ ...prev, profile: null }));
         setImagePreviewUrl(null);
+        setProfileImageFile(null);
         if(fileInputRef.current) {
             fileInputRef.current.value = "";
         }
     };
 
     // Handles the form submission.
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
         setFormError({ fields: [], message: '' });
+        setIsSubmitting(true);
 
         // --- DUPLICATE EMAIL CHECK ---
         const isDuplicateEmail = existingInstructors.some(
@@ -100,23 +104,48 @@ const InstructorCreatePopup = ({ isOpen, onClose, onSave, departments, departmen
                 fields: ['email'],
                 message: `An instructor with the email "${newInstructor.email}" already exists.`
             });
-            return; // Stop submission
-        }
-        // --- END DUPLICATE EMAIL CHECK ---
-
-        if (!newInstructor.firstName.trim() || !newInstructor.lastName.trim() || !newInstructor.email.trim() || !newInstructor.phone.trim() || !newInstructor.major || !newInstructor.degree || !newInstructor.address.trim() || !newInstructor.departmentId || !newInstructor.password) {
-            alert('Please fill in all required fields.');
+            setIsSubmitting(false);
             return;
         }
+        
+        // --- UPLOAD IMAGE FIRST (if one is selected) ---
+        let finalImageUrl = '';
+        if (profileImageFile) {
+            const formData = new FormData();
+            formData.append('file', profileImageFile);
+            try {
+                const response = await axios.post('/api/upload', formData);
+                finalImageUrl = response.data.url;
+            } catch (uploadError) {
+                console.error("Image upload failed:", uploadError);
+                setFormError({ fields: [], message: 'Image upload failed. Please try again.' });
+                setIsSubmitting(false);
+                return; // Stop submission if upload fails
+            }
+        }
 
+        // --- PREPARE AND VALIDATE PAYLOAD ---
         const payload = {
             ...newInstructor,
             departmentId: Number(newInstructor.departmentId),
-            profile: newInstructor.profile || '',
+            profile: finalImageUrl, // Use the uploaded image URL
         };
 
-        onSave(payload);
-        onClose();
+        if (!payload.firstName.trim() || !payload.lastName.trim() || !payload.email.trim() || !payload.phone.trim() || !payload.major || !payload.degree || !payload.address.trim() || !payload.departmentId || !payload.password) {
+            alert('Please fill in all required fields.');
+            setIsSubmitting(false);
+            return;
+        }
+
+        try {
+            await onSave(payload);
+            onClose();
+        } catch (error) {
+            console.error("Error during onSave:", error);
+            setFormError({ fields: [], message: 'Failed to create instructor.' });
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     // Effect to handle clicks outside the popup to close it.
@@ -255,7 +284,9 @@ const InstructorCreatePopup = ({ isOpen, onClose, onSave, departments, departmen
                     )}
                     <div className="flex justify-end gap-2 pt-2">
                         <button type="button" onClick={onClose} className="px-4 py-2 text-xs font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600">Cancel</button>
-                        <button type="submit" className="px-4 py-2 text-xs font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700">Create Instructor</button>
+                        <button type="submit" disabled={isSubmitting} className="px-4 py-2 text-xs font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed">
+                            {isSubmitting ? 'Creating...' : 'Create Instructor'}
+                        </button>
                     </div>
                 </form>
             </div>
