@@ -1,13 +1,16 @@
 'use client';
 
-import { useState, useMemo, useTransition, useEffect, useRef } from 'react';
-import InstructorCreatePopup from './InstructorCreatePopup';
+import { useState, useMemo, useTransition, useEffect, useRef, lazy, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
 import useSWR from 'swr';
 import { useSession } from 'next-auth/react';
 import { instructorService } from '@/services/instructor.service';
 import InstructorPageSkeleton from './InstructorPageSkeleton';
-import Toast from '@/components/Toast'; // Import the new Toast component
+import Toast from '@/components/Toast';
+
+// Dynamically import the InstructorCreatePopup component.
+// This creates a separate JavaScript chunk for the popup, which is loaded only when needed.
+const InstructorCreatePopup = lazy(() => import('./InstructorCreatePopup'));
 
 // --- Reusable Icon and Spinner Components ---
 const Spinner = () => ( <svg className="animate-spin h-5 w-5 text-gray-500 dark:text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> );
@@ -363,7 +366,7 @@ export default function InstructorClientView({ initialInstructors, initialDepart
                 </span>
                 <div className="flex items-center gap-2 text-xs">
                     <label htmlFor="items-per-page" className="text-xs font-normal text-gray-500 dark:text-gray-400">Items per page:</label>
-                    <select id="items-per-page" className="bg-gray-50 text-xs border border-gray-300 text-gray-900 rounded-full focus:ring-blue-500 focus:border-blue-500 px-2 py-1 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white" value={itemsPerPage} onChange={handleItemsPerPageChange}>
+                    <select id="items-per-page" value={itemsPerPage} onChange={handleItemsPerPageChange} className="bg-gray-50 text-xs border border-gray-300 text-gray-900 rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-1.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white">
                         {itemsPerPageOptions.map(option => (<option key={option} value={option}>{option}</option>))}
                     </select>
                 </div>
@@ -375,15 +378,25 @@ export default function InstructorClientView({ initialInstructors, initialDepart
                     <li><button onClick={goToNextPage} disabled={currentPage === totalPages || isPending} className="flex items-center justify-center px-3 h-8 leading-tight text-gray-500 bg-white border border-gray-300 rounded-e-lg hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white disabled:opacity-50 disabled:cursor-not-allowed">Next</button></li>
                 </ul>
             </nav>
-
-            <InstructorCreatePopup 
-                isOpen={showCreateInstructorPopup} 
-                onClose={() => setShowCreateInstructorPopup(false)} 
-                onSave={handleSaveNewInstructor}
-                departments={departments || []}
-                departmentsError={departmentsError}
-                existingInstructors={instructorData}
-            />
+            
+            {showCreateInstructorPopup && (
+                <Suspense fallback={
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60">
+                        <div className="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-lg">
+                            <Spinner />
+                        </div>
+                    </div>
+                }>
+                    <InstructorCreatePopup 
+                        isOpen={showCreateInstructorPopup} 
+                        onClose={() => setShowCreateInstructorPopup(false)} 
+                        onSave={handleSaveNewInstructor}
+                        departments={departments || []}
+                        departmentsError={departmentsError}
+                        existingInstructors={instructorData}
+                    />
+                </Suspense>
+            )}
         </div>
     );
 }

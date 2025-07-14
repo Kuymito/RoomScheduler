@@ -1,11 +1,10 @@
 // src/components/AdminLayout.jsx
 'use client';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
 import Topbar from '@/components/Topbar';
 import AdminPopup from 'src/app/admin/profile/components/AdminPopup';
-import LogoutAlert from '@/components/LogoutAlert';
 import Footer from '@/components/Footer';
 import NotificationPopup from '@/app/admin/notification/AdminNotificationPopup';
 import { signOut, useSession } from 'next-auth/react';
@@ -13,6 +12,10 @@ import useSWR, { mutate } from 'swr';
 import { authService } from '@/services/auth.service';
 import { notificationService } from '@/services/notification.service';
 import { moul } from './fonts';
+
+// Dynamically import the LogoutAlert component.
+// This creates a separate JavaScript chunk for the component, loaded only when needed.
+const LogoutAlert = lazy(() => import('@/components/LogoutAlert'));
 
 const TOPBAR_HEIGHT = '90px';
 const profileFetcher = ([, token]) => authService.getProfile(token);
@@ -258,7 +261,12 @@ export default function AdminLayout({ children, activeItem, pageTitle, breadcrum
                     onClose={() => setShowNotificationPopup(false)}
                 />
             </div>
-            <LogoutAlert show={showLogoutAlert} onClose={handleCloseLogoutAlert} onConfirmLogout={handleConfirmLogout} />
+            {/* Wrap the LogoutAlert component in a Suspense boundary */}
+            {showLogoutAlert && (
+                <Suspense fallback={<div className="fixed inset-0 bg-black bg-opacity-50 z-[1002] flex items-center justify-center"><div className="w-10 h-10 border-4 border-t-transparent border-white rounded-full animate-spin"></div></div>}>
+                    <LogoutAlert show={showLogoutAlert} onClose={handleCloseLogoutAlert} onConfirmLogout={handleConfirmLogout} />
+                </Suspense>
+            )}
         </div>
     );
 }

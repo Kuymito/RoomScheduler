@@ -29,16 +29,21 @@ const shiftIdToFullNameMap = {
 
 /**
  * This is the Client Component for the Instructor Class page.
- * It now handles its own data fetching using useSWR.
+ * It now receives initial data from its parent Server Component.
  */
-export default function InstructorClassClientView() {
+export default function InstructorClassClientView({ initialClasses }) {
     const router = useRouter();
     const { data: session } = useSession();
     const token = session?.accessToken;
 
+    // useSWR will use `initialClasses` as the initial data.
+    // It will then revalidate in the background to keep the data fresh.
     const { data: apiData, error, isLoading } = useSWR(
         token ? ['assignedClasses', token] : null,
-        assignedClassesFetcher
+        assignedClassesFetcher,
+        {
+            fallbackData: initialClasses,
+        }
     );
 
     const [classData, setClassData] = useState([]);
@@ -171,7 +176,7 @@ export default function InstructorClassClientView() {
         { key: 'shift', label: 'Shift', className: 'sm:table-cell hidden' },
     ];
 
-    if (isLoading) {
+    if (isLoading && !initialClasses.length) {
         return <InstructorClassPageSkeleton />;
     }
 

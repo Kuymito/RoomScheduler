@@ -8,13 +8,13 @@ import useSWR from 'swr';
 import RoomPageSkeleton from './RoomPageSkeleton'; // Import the skeleton
 
 // SWR fetcher for rooms
-const roomsFetcher = (token) => getAllRooms(token);
+const roomsFetcher = ([, token]) => getAllRooms(token);
 
 /**
- * An internal component to handle the data-dependent rendering.
- * This component will only be rendered when the session is authenticated and data is ready.
+ * The main client view for the room management page.
+ * It now receives initial data from the server to provide a faster first-load experience.
  */
-const RoomView = () => {
+export default function RoomClientView({ initialRooms }) {
     // --- Style Constants ---
     const textLabelRoom = "font-medium text-base leading-7 text-slate-700 dark:text-slate-300 tracking-[-0.01em]";
     const textValueRoomDisplay = "font-medium text-base leading-7 text-slate-900 dark:text-slate-100 tracking-[-0.01em]";
@@ -27,17 +27,16 @@ const RoomView = () => {
     
     const { data: session } = useSession();
 
-    // The key is guaranteed to be valid here because RoomView is only rendered when authenticated.
-    const { data: swrRooms, error: swrError, mutate: mutateRooms } = useSWR(
-        ['/api/v1/room', session.accessToken],
-        () => roomsFetcher(session.accessToken),
+    // SWR will use `initialRooms` for the first render, then revalidate in the background.
+    const { data: swrRooms, error: swrError, mutate: mutateRooms, isLoading: isSWRLoading } = useSWR(
+        session?.accessToken ? ['/api/v1/room', session.accessToken] : null,
+        roomsFetcher,
         {
-            suspense: true, // Let Suspense boundary handle the loading state
+            fallbackData: initialRooms,
         }
     );
 
     // Process the data directly from the SWR response.
-    // useMemo ensures this logic only re-runs when swrRooms changes.
     const { allRoomsData, buildings } = useMemo(() => {
         if (!swrRooms) return { allRoomsData: {}, buildings: {} };
 
@@ -80,7 +79,6 @@ const RoomView = () => {
     const [toast, setToast] = useState({ show: false, message: '', type: 'info' });
     const [formError, setFormError] = useState({ field: '', message: '' });
 
-    // This effect will run when the building data changes, ensuring the selected building is valid.
     useEffect(() => {
         const buildingKeys = Object.keys(buildings);
         if (buildingKeys.length > 0 && !buildingKeys.includes(selectedBuilding)) {
@@ -146,8 +144,6 @@ const RoomView = () => {
         }
         
         if (name === 'capacity') {
-            // Enforce a maximum length of 3 for the capacity field.
-            // The maxLength attribute does not work for inputs of type="number".
             const slicedValue = value.slice(0, 3);
             setEditableRoomDetails((prev) => ({
                 ...prev,
@@ -205,6 +201,11 @@ const RoomView = () => {
     };
 
     const floors = buildings[selectedBuilding] || [];
+
+    // Show skeleton only if there's no initial data and SWR is loading.
+    if (isSWRLoading && initialRooms.length === 0) {
+        return <RoomPageSkeleton />;
+    }
 
     if (swrError) {
         return <div className="p-6 text-center text-red-500">Error loading room data: {swrError.message}</div>;
@@ -290,27 +291,4 @@ const RoomView = () => {
             </div>
         </>
     );
-}
-
-/**
- * This is the main export. It handles the session loading state, ensuring
- * the skeleton is shown correctly during session validation.
- */
-export default function RoomClientView() {
-    const { status } = useSession();
-
-    if (status === 'loading') {
-        // This will be caught by the Suspense boundary in the parent page.
-        // It ensures that while the session is being validated, the skeleton is shown.
-        return <RoomPageSkeleton />;
-    }
-
-    if (status === 'unauthenticated') {
-        // Handle case where user is not logged in
-        return <div className="p-6 text-center text-red-500">You must be logged in to view this page.</div>;
-    }
-
-    // Once authenticated, render the main view component.
-    // The <Suspense> boundary in `page.jsx` will handle the data fetching loading state for RoomView.
-    return <RoomView />;
 }

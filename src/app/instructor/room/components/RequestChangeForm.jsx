@@ -87,7 +87,6 @@ const CustomDatePicker = ({ selectedDate, onDateChange, minDate, maxDate, allowe
                     const isBeforeMin = minDate && date < minDate && !isSameDay(date, minDate);
                     const isAfterMax = maxDate && date > maxDate;
                     
-                    // FIX: Check if the day is the allowed day of the week
                     const isWrongDay = allowedDayIndex !== undefined && date.getDay() !== allowedDayIndex;
 
                     const isDisabled = isBeforeMin || isAfterMax || isWrongDay;
@@ -138,7 +137,6 @@ const RequestChangeForm = ({ isOpen, onClose, onSave, roomDetails, instructorCla
     const [toast, setToast] = useState({ show: false, message: '', type: 'info' });
     const popupRef = useRef(null);
     
-    // FIX: Map the selected day name to its numerical index for the calendar
     const dayIndexMap = { "Monday": 1, "Tuesday": 2, "Wednesday": 3, "Thursday": 4, "Friday": 5, "Saturday": 6, "Sunday": 0 };
     const allowedDayIndex = dayIndexMap[selectedDay];
 
@@ -177,14 +175,12 @@ const RequestChangeForm = ({ isOpen, onClose, onSave, roomDetails, instructorCla
                 description: requestData.description || '',
             };
     
-            await notificationService.submitChangeRequest(payload, session.accessToken);
-            
-            onSave(payload);
-            onClose();
+            // The `onSave` prop (handleSaveRequest in the parent) will now handle the API call.
+            await onSave(payload);
             
         } catch (error) {
             console.error('Submission failed:', error);
-            setToast({ show: true, message: `Submission failed: ${error.message}`, type: 'error' });
+            // The parent component will show the toast on failure.
         } finally {
             setIsSubmitting(false);
         }

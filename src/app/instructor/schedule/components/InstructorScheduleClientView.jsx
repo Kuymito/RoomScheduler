@@ -1,8 +1,9 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
+
+// NOTE: jsPDF and html2canvas are now dynamically imported in the handleDownloadPdf function
+// to reduce the initial bundle size.
 
 const DAYS_OF_WEEK = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
@@ -36,9 +37,9 @@ export default function InstructorScheduleClientView({ initialScheduleData, inst
     const { instructorName, publicDate } = instructorDetails;
     const [classAssignCount, setClassAssignCount] = useState(0);
     const [availableShiftCount, setAvailableShiftCount] = useState(0);
+    const [isDownloading, setIsDownloading] = useState(false); // State for download process
     const scheduleRef = useRef(null);
 
-    // --- THIS IS THE FIX ---
     // Dynamically create the time slots and row config from the fetched shifts data.
     const { TIME_SLOTS, ROW_CONFIG } = useMemo(() => {
         if (!allShifts || allShifts.length === 0) {
@@ -49,7 +50,6 @@ export default function InstructorScheduleClientView({ initialScheduleData, inst
         
         const rowConfig = {};
         timeSlots.forEach(slot => {
-            // You can add more complex height logic here if needed
             rowConfig[slot] = { heightClass: 'h-36' };
         });
 
@@ -66,25 +66,37 @@ export default function InstructorScheduleClientView({ initialScheduleData, inst
         setAvailableShiftCount(totalSlots - assigned);
     }, [scheduleData, TIME_SLOTS]); 
 
-    const handleDownloadPdf = () => {
-        if (scheduleRef.current) {
-            html2canvas(scheduleRef.current, {
+    const handleDownloadPdf = async () => {
+        if (!scheduleRef.current || isDownloading) return;
+
+        setIsDownloading(true);
+
+        try {
+            // Dynamically import the libraries when the function is called.
+            const { default: jsPDF } = await import('jspdf');
+            const { default: html2canvas } = await import('html2canvas');
+
+            const canvas = await html2canvas(scheduleRef.current, {
                 scale: 2,
                 useCORS: true,
                 logging: true,
                 backgroundColor: document.documentElement.classList.contains('dark') ? '#1f2937' : '#ffffff',
-            }).then(canvas => {
-                const imgData = canvas.toDataURL('image/png');
-                const pdf = new jsPDF({
-                    orientation: 'landscape',
-                    unit: 'px',
-                    format: [canvas.width, canvas.height]
-                });
-                pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
-                pdf.save(`${instructorName}_Schedule.pdf`);
-            }).catch(err => {
-                console.error("Error generating PDF:", err);
             });
+            
+            const imgData = canvas.toDataURL('image/png');
+            const pdf = new jsPDF({
+                orientation: 'landscape',
+                unit: 'px',
+                format: [canvas.width, canvas.height]
+            });
+            pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
+            pdf.save(`${instructorName}_Schedule.pdf`);
+
+        } catch (err) {
+            console.error("Error generating PDF:", err);
+            // Optionally, show a toast notification for the error
+        } finally {
+            setIsDownloading(false);
         }
     };
     
@@ -136,9 +148,10 @@ export default function InstructorScheduleClientView({ initialScheduleData, inst
       <div className="mt-8 flex flex-col sm:flex-row justify-between items-center">
         <button
           onClick={handleDownloadPdf}
-          className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 px-6 rounded-md shadow-sm order-1 sm:order-2 mb-4 sm:mb-0"
+          disabled={isDownloading}
+          className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 px-6 rounded-md shadow-sm order-1 sm:order-2 mb-4 sm:mb-0 disabled:bg-blue-400 disabled:cursor-not-allowed"
         >
-          Download PDF file
+          {isDownloading ? 'Generating...' : 'Download PDF file'}
         </button>
         <p className="text-sm text-gray-500 dark:text-gray-400 order-2 sm:order-1">
           Public Date : {publicDate}
