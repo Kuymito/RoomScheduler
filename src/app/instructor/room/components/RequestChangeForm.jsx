@@ -319,7 +319,7 @@ const RequestChangeForm = ({ isOpen, onClose, onSave, roomDetails, instructorCla
 
                         <div>
                             <label htmlFor="description" className="block mb-2 text-xs font-medium text-gray-900 dark:text-white">
-                                Description <span className="text-gray-500">(Optional)</span>
+                                Description <span className="text-gray-500 dark:text-white">(Optional)</span>
                             </label>
                             <textarea
                                 id="description"
@@ -327,7 +327,7 @@ const RequestChangeForm = ({ isOpen, onClose, onSave, roomDetails, instructorCla
                                 value={requestData.description}
                                 onChange={handleInputChange}
                                 rows="3"
-                                className="bg-gray-50 border border-gray-300 text-gray-900 text-xs rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600"
+                                className="bg-gray-50 border border-gray-300 text-gray-900 dark:text-white text-xs rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600"
                                 placeholder="Provide any additional details..."
                             ></textarea>
                         </div>
