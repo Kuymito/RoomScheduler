@@ -8,13 +8,9 @@ import RequestChangeForm from "./RequestChangeForm";
 import InstructorRoomPageSkeleton from "./InstructorRoomPageSkeleton";
 import { scheduleService } from '@/services/schedule.service';
 
-// Fetcher for useSWR
-const scheduleFetcher = ([, token]) => scheduleService.getAllSchedules(token);
+// SWR fetcher for schedule data
+const scheduleFetcher = (token) => scheduleService.getAllSchedules(token);
 
-/**
- * This is the Client Component for the Instructor Room page.
- * It receives its initial data from props and handles all user interactions.
- */
 export default function InstructorRoomClientView({ initialAllRoomsData, buildingLayout, initialScheduleMap, initialInstructorClasses }) {
     // --- State Management ---
     const [allRoomsData, setAllRoomsData] = useState(initialAllRoomsData);
@@ -23,69 +19,57 @@ export default function InstructorRoomClientView({ initialAllRoomsData, building
     const [instructorClasses] = useState(initialInstructorClasses);
     
     const [selectedDay, setSelectedDay] = useState(() => new Date().toLocaleDateString('en-US', { weekday: 'long' }));
-    // UPDATED: Use shift names consistent with the schedule page
     const TIME_SLOTS = ['Morning Shift', 'Noon Shift', 'Afternoon Shift', 'Evening Shift', 'Weekend Shift'];
     const [selectedTimeSlot, setSelectedTimeSlot] = useState(TIME_SLOTS[0]);
     
     const [selectedBuilding, setSelectedBuilding] = useState(Object.keys(buildingLayout)[0] || "");
-
     const [selectedRoomId, setSelectedRoomId] = useState(null);
     const [roomDetails, setRoomDetails] = useState(null);
     const [loading, setLoading] = useState(false);
-
-    const [showSuccessAlert, setShowSuccessAlert] = useState(false);
     const [isFormOpen, setIsFormOpen] = useState(false);
+    const [showSuccessAlert, setShowSuccessAlert] = useState(false);
     const [error, setError] = useState('');
 
-    // --- SWR for live schedule data ---
     const { data: session } = useSession();
     const { data: apiSchedules, error: scheduleError, isLoading: isScheduleLoading } = useSWR(
         session?.accessToken ? ['/api/v1/schedule', session.accessToken] : null,
-        scheduleFetcher,
+        () => scheduleFetcher(session.accessToken),
         {
-            fallbackData: initialScheduleMap,
+            fallbackData: Object.values(initialScheduleMap).flatMap(day => Object.values(day)), // Provide initial data to SWR
             revalidateOnFocus: true,
-            revalidateOnReconnect: true,
         }
     );
 
     // --- Effects ---
-    // Update scheduleMap when SWR fetches new data
     useEffect(() => {
         if (apiSchedules && Array.isArray(apiSchedules)) {
             const newScheduleMap = {};
+            const shiftNameMap = {
+                '07:00:00': 'Morning Shift', '10:30:00': 'Noon Shift', '14:00:00': 'Afternoon Shift',
+                '17:30:00': 'Evening Shift', '07:30:00': 'Weekend Shift'
+            };
+             const dayApiToFullName = {
+                MONDAY: 'Monday', TUESDAY: 'Tuesday', WEDNESDAY: 'Wednesday', THURSDAY: 'Thursday',
+                FRIDAY: 'Friday', SATURDAY: 'Saturday', SUNDAY: 'Sunday'
+            };
+
             apiSchedules.forEach(schedule => {
-                // FIX: Check for the new `dayDetails` array structure
                 if (schedule && schedule.dayDetails && Array.isArray(schedule.dayDetails) && schedule.shift) {
-                    const timeSlot = `${schedule.shift.startTime.substring(0, 5)}-${schedule.shift.endTime.substring(0, 5)}`;
+                    const timeSlot = shiftNameMap[schedule.shift.startTime];
                     
-                    // Iterate over the `dayDetails` array instead of splitting a string
                     schedule.dayDetails.forEach(dayDetail => {
-                        const dayName = dayDetail.dayOfWeek.charAt(0).toUpperCase() + dayDetail.dayOfWeek.slice(1).toLowerCase();
-                        if (!newScheduleMap[dayName]) {
-                            newScheduleMap[dayName] = {};
+                        const dayName = dayApiToFullName[dayDetail.dayOfWeek.toUpperCase()];
+                        if (dayName && timeSlot) {
+                            if (!newScheduleMap[dayName]) newScheduleMap[dayName] = {};
+                            if (!newScheduleMap[dayName][timeSlot]) newScheduleMap[dayName][timeSlot] = {};
+                            newScheduleMap[dayName][timeSlot][schedule.roomId] = schedule.className;
                         }
-                        if (!newScheduleMap[dayName][timeSlot]) {
-                            newScheduleMap[dayName][timeSlot] = {};
-                        }
-                        newScheduleMap[dayName][timeSlot][schedule.roomId] = schedule.className;
                     });
                 }
             });
             setScheduleMap(newScheduleMap);
-        } else if (apiSchedules) {
-            // Handle cases where the initial data might still be in the old format
-            setScheduleMap(apiSchedules);
         }
     }, [apiSchedules]);
-
-    // Reset component state if initial server props change
-    useEffect(() => {
-        setAllRoomsData(initialAllRoomsData);
-        setBuildings(buildingLayout);
-        setSelectedBuilding(Object.keys(buildingLayout)[0] || "");
-        resetSelection();
-    }, [initialAllRoomsData, buildingLayout]);
 
     // --- Event Handlers ---
     const resetSelection = () => { setSelectedRoomId(null); setRoomDetails(null); };
@@ -93,18 +77,9 @@ export default function InstructorRoomClientView({ initialAllRoomsData, building
     const handleTimeChange = (event) => { setSelectedTimeSlot(event.target.value); resetSelection(); };
     const handleBuildingChange = (event) => { setSelectedBuilding(event.target.value); resetSelection(); };
 
-    const shiftNameToTimeRange = {
-        'Morning Shift': '07:00-10:00',
-        'Noon Shift': '10:30-13:30',
-        'Afternoon Shift': '14:00-17:00',
-        'Evening Shift': '17:30-20:30',
-        'Weekend Shift': '07:30-17:00'
-    };
-
     const handleRoomClick = async (roomId) => {
-        const timeRange = shiftNameToTimeRange[selectedTimeSlot];
-        const isOccupied = scheduleMap[selectedDay]?.[timeRange]?.[roomId];
-        if (isOccupied) return; // Prevent clicking occupied rooms
+        const isOccupied = scheduleMap[selectedDay]?.[selectedTimeSlot]?.[roomId];
+        if (isOccupied) return;
 
         setSelectedRoomId(roomId);
         setLoading(true);
@@ -147,10 +122,14 @@ export default function InstructorRoomClientView({ initialAllRoomsData, building
         }
     };
 
-    const getRoomColSpan = (building, roomName) => {
-        if (building === "Building A" && roomName === "Conference Room") return "col-span-2"; 
-        if (building === "Building B" && roomName === "Conference Room") return "col-span-4";
-        if (building === "Building D" && roomName?.includes("Library")) return "col-span-full";
+    const getRoomColSpan = (room) => {
+        if (!room) return "";
+        const id = room.id;
+        if (id === 10 && room.building === "Building A") return "col-span-2";
+        if (id === 34 && room.building === "Building B") return "col-span-4";
+        if ([47, 48, 49].includes(id) && room.building === "Building D") {
+            return "col-span-full";
+        }
         return "";
     };
 
@@ -165,7 +144,7 @@ export default function InstructorRoomClientView({ initialAllRoomsData, building
     return (
     <>
       {showSuccessAlert && ( <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 "><SuccessAlert show={showSuccessAlert} title="Request was sent Successfully" messageLine1={`Room ${roomDetails?.name || ""} Your request was sent Successfully`} messageLine2="" confirmButtonText="Close" onConfirm={() => setShowSuccessAlert(false)} onClose={() => setShowSuccessAlert(false)}/></div>)}
-      <RequestChangeForm isOpen={isFormOpen} onClose={() => setIsFormOpen(false)} onSave={handleSaveRequest} roomDetails={roomDetails} instructorClasses={instructorClasses} selectedDay={selectedDay} selectedTime={shiftNameToTimeRange[selectedTimeSlot]}/>
+      <RequestChangeForm isOpen={isFormOpen} onClose={() => setIsFormOpen(false)} onSave={handleSaveRequest} roomDetails={roomDetails} instructorClasses={instructorClasses} selectedDay={selectedDay} selectedTime={selectedTimeSlot}/>
       <div className="p-4 sm:p-6 min-h-full">
         <div className="mb-4 w-full"><h2 className="text-xl font-semibold text-slate-800 dark:text-white">Room</h2><hr className="border-t border-slate-300 dark:border-slate-700 mt-3" /></div>
         <div className="flex flex-col lg:flex-row gap-6">
@@ -192,15 +171,14 @@ export default function InstructorRoomClientView({ initialAllRoomsData, building
                         <div key={floor} className="space-y-3">
                             <div className="flex items-center gap-2 mb-2"><h4 className="text-xs sm:text-sm font-medium text-slate-600 dark:text-slate-400 whitespace-nowrap">Floor {floor}</h4><hr className="flex-1 border-t border-slate-300 dark:border-slate-700" /></div>
                             <div className={`grid gap-3 sm:gap-4 ${getGridColumnClasses(selectedBuilding, floor)}`}>
-                                {rooms.map((roomName) => {
-                                    const room = Object.values(allRoomsData).find(r => r.name === roomName);
+                                {rooms.map((roomId) => {
+                                    const room = allRoomsData[roomId];
                                     if (!room) return null;
                                     const isSelected = selectedRoomId === room.id;
-                                    const timeRange = shiftNameToTimeRange[selectedTimeSlot];
-                                    const scheduledClass = scheduleMap[selectedDay]?.[timeRange]?.[room.id];
+                                    const scheduledClass = scheduleMap[selectedDay]?.[selectedTimeSlot]?.[room.id];
                                     const isOccupied = !!scheduledClass;
                                     return (
-                                        <div key={room.id} className={`h-[90px] sm:h-[100px] border rounded-md flex flex-col transition-all duration-150 shadow-sm ${getRoomColSpan(selectedBuilding, room.name)} ${isOccupied ? 'cursor-not-allowed bg-slate-50 dark:bg-slate-800/50 opacity-70' : 'cursor-pointer hover:shadow-md bg-white dark:bg-slate-800'} ${isSelected ? "border-blue-500 ring-2 ring-blue-500 dark:border-blue-500" : isOccupied ? "border-slate-200 dark:border-slate-700" : "border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600"}`}
+                                        <div key={room.id} className={`h-[90px] sm:h-[100px] border rounded-md flex flex-col transition-all duration-150 shadow-sm ${getRoomColSpan(room)} ${isOccupied ? 'cursor-not-allowed bg-slate-50 dark:bg-slate-800/50 opacity-70' : 'cursor-pointer hover:shadow-md bg-white dark:bg-slate-800'} ${isSelected ? "border-blue-500 ring-2 ring-blue-500 dark:border-blue-500" : isOccupied ? "border-slate-200 dark:border-slate-700" : "border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600"}`}
                                             onClick={() => !isOccupied && handleRoomClick(room.id)}>
                                             <div className={`h-[30px] rounded-t-md flex items-center justify-center px-2 relative border-b ${isSelected ? 'border-b-transparent' : 'border-slate-200 dark:border-slate-600'} ${isOccupied ? 'bg-slate-100 dark:bg-slate-700/60' : 'bg-slate-50 dark:bg-slate-700'}`}>
                                                 <div className={`absolute left-2 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full ${isSelected ? 'bg-blue-500' : isOccupied ? 'bg-red-500' : 'bg-green-500'}`}></div>

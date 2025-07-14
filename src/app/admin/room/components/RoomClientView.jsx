@@ -2,8 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import SuccessAlert from './UpdateSuccessComponent';
-import { updateRoom } from '@/services/room.service';
-import RoomPageSkeleton from './RoomPageSkeleton'; // Import skeleton for loading state
+import { getAllRooms, updateRoom } from '@/services/room.service';
+import RoomPageSkeleton from './RoomPageSkeleton';
+import { useSession } from 'next-auth/react';
+import useSWR from 'swr';
+
+// SWR fetcher for rooms
+const roomsFetcher = (token) => getAllRooms(token);
 
 export default function RoomClientView({ initialAllRoomsData, buildingLayout }) {
     // --- Style Constants ---
@@ -29,15 +34,49 @@ export default function RoomClientView({ initialAllRoomsData, buildingLayout }) 
     const [error, setError] = useState('');
     const [formError, setFormError] = useState({ field: '', message: '' });
 
+    const { data: session } = useSession();
+    const { data: swrRooms, error: swrError, isLoading: isSWRLoading, mutate: mutateRooms } = useSWR(session?.accessToken ? ['/api/v1/room', session.accessToken] : null, () => roomsFetcher(session.accessToken));
+
     // --- Effects ---
-    // Update main state when initial props change
     useEffect(() => {
-        setAllRoomsData(initialAllRoomsData);
-        setBuildings(buildingLayout);
-        const firstBuilding = Object.keys(buildingLayout)[0] || "";
-        setSelectedBuilding(firstBuilding);
-        resetSelection();
-    }, [initialAllRoomsData, buildingLayout]);
+        if (swrRooms) {
+            const newRoomsDataMap = {};
+            const newPopulatedLayout = {};
+
+            swrRooms.forEach(room => {
+                const { roomId, roomName, buildingName, floor, capacity, type, equipment } = room;
+
+                if (!newPopulatedLayout[buildingName]) {
+                    newPopulatedLayout[buildingName] = [];
+                }
+                let floorObj = newPopulatedLayout[buildingName].find(f => f.floor === floor);
+                if (!floorObj) {
+                    floorObj = { floor: floor, rooms: [] };
+                    newPopulatedLayout[buildingName].push(floorObj);
+                }
+                if (!floorObj.rooms.includes(roomId)) {
+                    floorObj.rooms.push(roomId);
+                }
+
+                newRoomsDataMap[roomId] = {
+                    id: roomId,
+                    name: roomName,
+                    building: buildingName,
+                    floor: floor,
+                    capacity: capacity,
+                    type: type,
+                    equipment: typeof equipment === 'string' ? equipment.split(',').map(e => e.trim()).filter(Boolean) : [],
+                };
+            });
+
+            for (const building in newPopulatedLayout) {
+                newPopulatedLayout[building].sort((a, b) => b.floor - a.floor);
+            }
+            
+            setAllRoomsData(newRoomsDataMap);
+            setBuildings(newPopulatedLayout);
+        }
+    }, [swrRooms]);
 
     // --- Event Handlers ---
     const resetSelection = () => { setSelectedRoomId(null); setRoomDetails(null); setIsEditing(false); };
@@ -46,25 +85,19 @@ export default function RoomClientView({ initialAllRoomsData, buildingLayout }) 
     const handleRoomClick = (roomId) => {
         setSelectedRoomId(roomId);
         setIsEditing(false);
-        setLoading(true);
         setError('');
         setFormError({ field: '', message: '' });
-        try {
-            const data = allRoomsData[roomId];
-            if (!data) throw new Error("Room data not found.");
-            setRoomDetails(data);
-        } catch (err) {
+        const data = allRoomsData[roomId];
+        if (!data) {
             setError("Could not load room details.");
             setRoomDetails(null);
-        } finally {
-            setLoading(false);
+        } else {
+            setRoomDetails(data);
         }
     };
 
-    const handleEditToggle = () => {
-        if (isEditing) {
-            handleSaveChanges();
-        } else if (roomDetails) {
+    const handleEdit = () => {
+        if (roomDetails) {
             setIsEditing(true);
             setEditableRoomDetails({
                 ...roomDetails,
@@ -73,10 +106,17 @@ export default function RoomClientView({ initialAllRoomsData, buildingLayout }) 
         }
     };
 
+    const handleCancel = () => {
+        setIsEditing(false);
+        setEditableRoomDetails(null);
+        setFormError({ field: '', message: '' });
+        setError('');
+    };
+
     const validateRoomName = (newName) => {
         const trimmedName = newName.trim();
         if (!trimmedName) {
-            setFormError({ field: 'name'});
+            setFormError({ field: 'name', message: 'Room name cannot be empty.' });
             return false;
         }
 
@@ -85,7 +125,7 @@ export default function RoomClientView({ initialAllRoomsData, buildingLayout }) 
         );
 
         if (isDuplicate) {
-            setFormError({ field: 'name'});
+            setFormError({ field: 'name', message: 'This room name already exists.' });
             return false;
         }
 
@@ -96,7 +136,6 @@ export default function RoomClientView({ initialAllRoomsData, buildingLayout }) 
     const handleInputChange = (event) => {
         const { name, value } = event.target;
 
-        // Clear error message when user starts typing in the problematic field
         if (name === 'name' && formError.field === 'name') {
             setFormError({ field: '', message: '' });
         }
@@ -110,7 +149,6 @@ export default function RoomClientView({ initialAllRoomsData, buildingLayout }) 
     const handleSaveChanges = async () => {
         if (!editableRoomDetails) return;
 
-        // Validation is now only performed on save.
         if (!validateRoomName(editableRoomDetails.name)) {
             return;
         }
@@ -131,6 +169,7 @@ export default function RoomClientView({ initialAllRoomsData, buildingLayout }) 
             setAllRoomsData(prev => ({ ...prev, [selectedRoomId]: updatedLocalData }));
             setIsEditing(false);
             setShowSuccessAlert(true);
+            mutateRooms();
         } catch (err) {
             setError(err.message || 'An error occurred while saving.');
         } finally {
@@ -138,6 +177,17 @@ export default function RoomClientView({ initialAllRoomsData, buildingLayout }) 
         }
     };
 
+    const getRoomColSpan = (room) => {
+        if (!room) return "";
+        const id = room.id;
+        if (id === 10 && room.building === "Building A") return "col-span-2";
+        if (id === 34 && room.building === "Building B") return "col-span-4";
+        if ([47, 48, 49].includes(id) && room.building === "Building D") {
+            return "col-span-full";
+        }
+        return "";
+    };
+    
     const getGridColumnClasses = (building, floorNumber) => {
         switch (building) {
             case "Building A": return "xl:grid-cols-5 lg:grid-cols-3 md:grid-cols-2 grid-cols-[repeat(auto-fit,minmax(160px,1fr))]";
@@ -149,14 +199,15 @@ export default function RoomClientView({ initialAllRoomsData, buildingLayout }) 
         }
     };
 
-    const getRoomColSpan = (building, roomName) => {
-        if (building === "Building A" && roomName === "Conference Room") return "col-span-2";
-        if (building === "Building B" && roomName === "Conference Room") return "col-span-4";
-        if (building === "Building D" && roomName?.includes("Library")) return "col-span-full";
-        return "";
-    };
-
     const floors = buildings[selectedBuilding] || [];
+
+    if (isSWRLoading) {
+        return <RoomPageSkeleton />;
+    }
+
+    if (swrError) {
+        return <div className="p-6 text-center text-red-500">Error loading room data: {swrError.message}</div>;
+    }
 
     return (
         <>
@@ -177,12 +228,12 @@ export default function RoomClientView({ initialAllRoomsData, buildingLayout }) 
                                 <div key={floor} className="space-y-3">
                                     <div className="flex items-center gap-2 mb-2"><h4 className="text-xs sm:text-sm font-medium text-slate-600 dark:text-slate-400 whitespace-nowrap">Floor {floor}</h4><hr className="flex-1 border-t border-slate-300 dark:border-slate-700" /></div>
                                     <div className={`grid gap-3 sm:gap-4 ${getGridColumnClasses(selectedBuilding, floor)}`}>
-                                        {rooms.map((roomName) => {
-                                            const room = Object.values(allRoomsData).find(r => r.name === roomName);
+                                        {rooms.map((roomId) => {
+                                            const room = allRoomsData[roomId];
                                             if (!room) return null;
                                             const isSelected = selectedRoomId === room.id;
                                             return (
-                                                <div key={room.id} className={`h-[90px] sm:h-[100px] border rounded-md flex flex-col transition-all duration-150 shadow-sm cursor-pointer hover:shadow-md bg-white dark:bg-slate-800 ${getRoomColSpan(selectedBuilding, room.name)} ${isSelected ? "border-blue-500 ring-2 ring-blue-500 dark:border-blue-500" : "border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600"}`}
+                                                <div key={room.id} className={`h-[90px] sm:h-[100px] border rounded-md flex flex-col transition-all duration-150 shadow-sm cursor-pointer hover:shadow-md bg-white dark:bg-slate-800 ${getRoomColSpan(room)} ${isSelected ? "border-blue-500 ring-2 ring-blue-500 dark:border-blue-500" : "border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600"}`}
                                                     onClick={() => handleRoomClick(room.id)}>
                                                     <div className={`h-[30px] rounded-t-md flex items-center justify-center px-2 relative border-b ${isSelected ? 'border-b-transparent' : 'border-slate-200 dark:border-slate-600'} bg-slate-50 dark:bg-slate-700`}>
                                                         <span className={`text-xs sm:text-sm font-medium ${isSelected ? 'text-blue-700 dark:text-blue-300' : 'text-slate-700 dark:text-slate-300'}`}>{room.name}</span>
@@ -202,7 +253,7 @@ export default function RoomClientView({ initialAllRoomsData, buildingLayout }) 
                     <div className="w-full lg:w-[320px] shrink-0">
                         <div className="flex items-center gap-2 mb-3 sm:mb-4"><h3 className="text-sm sm:text-base font-semibold text-slate-700 dark:text-slate-300">Details</h3><hr className="flex-1 border-t border-slate-300 dark:border-slate-700" /></div>
                         <div className="flex flex-col items-start gap-6 w-full min-h-[420px] bg-white dark:bg-slate-800 p-4 rounded-lg shadow-lg">
-                            {loading && !isEditing ? ( <div className="text-center text-slate-500 dark:text-slate-400 w-full flex-grow flex items-center justify-center">Loading...</div> ) : roomDetails ? (
+                            {roomDetails ? (
                                 <>
                                     <div className="w-full border border-slate-200 dark:border-slate-700 rounded-md bg-white dark:bg-slate-800">
                                         <div className="flex items-center self-stretch w-full min-h-[56px] border-b border-slate-200 dark:border-slate-700"><div className="p-3 sm:p-4 w-[120px]"><span className={textLabelRoom}>Room</span></div>
@@ -217,6 +268,7 @@ export default function RoomClientView({ initialAllRoomsData, buildingLayout }) 
                                                             className={`${inputStyle} ${formError.field === 'name' ? 'border-red-500 ring-1 ring-red-500' : ''}`}
                                                             maxLength={20}
                                                         />
+                                                        {formError.field === 'name' && <p className="text-red-500 text-xs mt-1">{formError.message}</p>}
                                                     </div>
                                                 ) : (
                                                     <span className={textValueRoomDisplay}>{roomDetails.name}</span>
@@ -229,12 +281,34 @@ export default function RoomClientView({ initialAllRoomsData, buildingLayout }) 
                                         <div className="flex items-center self-stretch w-full min-h-[56px] border-b border-slate-200 dark:border-slate-700"><div className="p-3 sm:p-4 w-[120px]"><span className={textLabelDefault}>Type</span></div><div className="px-2 sm:px-3 flex-1 py-2">{isEditing && editableRoomDetails ? (<div className={`flex flex-col items-start self-stretch ${inputContainerSizeDefault}`}><input type="text" name="type" value={editableRoomDetails.type} onChange={handleInputChange} className={inputStyle} maxLength={30} /></div>) : (<span className={textValueDefaultDisplay}>{roomDetails.type}</span>)}</div></div>
                                         <div className="flex items-start self-stretch w-full min-h-[92px]"><div className="p-3 sm:p-4 w-[120px] pt-5"><span className={textLabelDefault}>Equipment</span></div><div className="px-2 sm:px-3 flex-1 py-2 pt-3">{isEditing && editableRoomDetails ? (<div className={`flex flex-col items-start self-stretch ${equipmentInputContainerSize}`}><textarea name="equipment" value={editableRoomDetails.equipment} onChange={handleInputChange} className={textareaStyle} placeholder="Item1, Item2..."></textarea></div>) : (<span className={`${textValueDefaultDisplay} pt-1`}>{Array.isArray(roomDetails.equipment) ? roomDetails.equipment.join(", ") : ''}</span>)}</div></div>
                                     </div>
-                                    <button
-                                        className="flex justify-center items-center py-3 px-6 gap-2 w-full h-12 bg-blue-600 hover:bg-blue-700 shadow-md rounded-md text-white font-semibold text-sm self-stretch disabled:opacity-60"
-                                        onClick={handleEditToggle}
-                                        disabled={(loading && isEditing) || !!formError.field}>
-                                        {loading && isEditing ? "Saving..." : isEditing ? "Save Changes" : "Edit Room"}
-                                    </button>
+                                    <div className="w-full mt-auto">
+                                        {isEditing ? (
+                                            <div className="flex justify-center gap-3">
+                                                <button
+                                                    onClick={handleCancel}
+                                                    className="px-6 py-3 w-full h-12 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
+                                                    disabled={loading}
+                                                >
+                                                    Cancel
+                                                </button>
+                                                <button
+                                                    onClick={handleSaveChanges}
+                                                    className="px-6 py-3 w-full h-12 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:bg-blue-400"
+                                                    disabled={loading || !!formError.field}
+                                                >
+                                                    {loading ? "Saving..." : "Save"}
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            <button
+                                                className="flex justify-center items-center py-3 px-6 gap-2 w-full h-12 bg-blue-600 hover:bg-blue-700 shadow-md rounded-md text-white font-semibold text-sm self-stretch disabled:opacity-60"
+                                                onClick={handleEdit}
+                                                disabled={!roomDetails}
+                                            >
+                                                Edit Room
+                                            </button>
+                                        )}
+                                    </div>
                                 </>
                             ) : ( <div className="text-center text-slate-500 dark:text-slate-400 w-full flex-grow flex items-center justify-center">Select a room to view details.</div> )}
                         </div>

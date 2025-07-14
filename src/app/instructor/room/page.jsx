@@ -1,3 +1,4 @@
+// src/app/instructor/room/page.jsx
 import { Suspense } from 'react';
 import InstructorLayout from "@/components/InstructorLayout";
 import InstructorRoomPageSkeleton from "./components/InstructorRoomPageSkeleton";
@@ -27,18 +28,15 @@ async function fetchAllRoomsAndSchedules() {
     }
 
     try {
-        // Fetch rooms, all schedules, and the instructor's specific schedules in parallel
         const [apiRooms, apiSchedules, apiInstructorSchedules] = await Promise.all([
             getAllRooms(token),
             scheduleService.getAllSchedules(token),
-            // FIX: Call getMySchedule to get entries with a scheduleId
             scheduleService.getMySchedule(token) 
         ]);
 
         const roomsDataMap = {};
         const populatedLayout = {};
 
-        // Process all rooms to build the main data map and UI layout
         apiRooms.forEach(room => {
             const { roomId, roomName, buildingName, floor, capacity, type, equipment } = room;
 
@@ -50,8 +48,8 @@ async function fetchAllRoomsAndSchedules() {
                 floorObj = { floor: floor, rooms: [] };
                 populatedLayout[buildingName].push(floorObj);
             }
-            if (!floorObj.rooms.includes(roomName)) {
-                 floorObj.rooms.push(roomName);
+            if (!floorObj.rooms.includes(roomId)) {
+                 floorObj.rooms.push(roomId);
             }
 
             roomsDataMap[roomId] = {
@@ -65,33 +63,37 @@ async function fetchAllRoomsAndSchedules() {
             };
         });
 
-        // Create a schedule map for quick lookup of occupied rooms
+        const shiftNameMap = {
+            '07:00:00': 'Morning Shift', '10:30:00': 'Noon Shift', '14:00:00': 'Afternoon Shift',
+            '17:30:00': 'Evening Shift', '07:30:00': 'Weekend Shift'
+        };
+        const dayApiToFullName = {
+             MONDAY: 'Monday', TUESDAY: 'Tuesday', WEDNESDAY: 'Wednesday', THURSDAY: 'Thursday',
+             FRIDAY: 'Friday', SATURDAY: 'Saturday', SUNDAY: 'Sunday'
+        };
+
         const scheduleMap = {};
         apiSchedules.forEach(schedule => {
             if (schedule && schedule.dayDetails && Array.isArray(schedule.dayDetails) && schedule.shift) {
-                const timeSlot = `${schedule.shift.startTime.substring(0, 5)}-${schedule.shift.endTime.substring(0, 5)}`;
+                const timeSlot = shiftNameMap[schedule.shift.startTime];
                 
                 schedule.dayDetails.forEach(dayDetail => {
-                    const dayName = dayDetail.dayOfWeek.charAt(0).toUpperCase() + dayDetail.dayOfWeek.slice(1).toLowerCase();
-                    if (!scheduleMap[dayName]) {
-                        scheduleMap[dayName] = {};
+                    const dayName = dayApiToFullName[dayDetail.dayOfWeek.toUpperCase()];
+                    if (dayName && timeSlot) {
+                        if (!scheduleMap[dayName]) scheduleMap[dayName] = {};
+                        if (!scheduleMap[dayName][timeSlot]) scheduleMap[dayName][timeSlot] = {};
+                        scheduleMap[dayName][timeSlot][schedule.roomId] = schedule.className;
                     }
-                    if (!scheduleMap[dayName][timeSlot]) {
-                        scheduleMap[dayName][timeSlot] = {};
-                    }
-                    scheduleMap[dayName][timeSlot][schedule.roomId] = schedule.className;
                 });
             }
         });
         
-        // Format instructor's schedules for the request form dropdown
         const formattedClasses = apiInstructorSchedules.map(cls => ({
-            id: cls.scheduleId, // Use scheduleId as the value for the dropdown
+            id: cls.scheduleId,
             name: cls.className,
             shift: `${cls.shift.startTime}-${cls.shift.endTime}`,
         }));
 
-        // Sort floors in descending order
         for (const building in populatedLayout) {
             populatedLayout[building].sort((a, b) => b.floor - a.floor);
         }
