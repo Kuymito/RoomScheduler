@@ -180,8 +180,11 @@ function ProfileContent() {
                 }
                 
                 const profilePayload = {
-                    ...editableProfileState,
-                    avatarUrl: finalImageURL,
+                    firstName: editableProfileState.firstName,
+                    lastName: editableProfileState.lastName,
+                    phone: editableProfileState.phoneNumber,
+                    address: editableProfileState.address,
+                    profile: finalImageURL,
                 };
                 
                 await authService.updateAdminProfile(sessionData.user.id, profilePayload, sessionData.accessToken);
