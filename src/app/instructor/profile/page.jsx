@@ -6,10 +6,11 @@ import Image from 'next/image';
 import { useSession } from 'next-auth/react';
 import useSWR from 'swr';
 import { authService as authenticationService } from '@/services/auth.service';
-import SuccessPopup from '@/app/instructor/profile/components/SuccessPopup';
+import { instructorService } from '@/services/instructor.service';
 import PasswordConfirmationModal from '@/components/PasswordConfirmationModal';
 import { departmentService } from '@/services/department.service';
 import axios from 'axios';
+import Toast from '@/components/Toast';
 
 
 // --- Icon Components ---
@@ -79,8 +80,7 @@ function ProfileContent() {
     const [confirmNewPasswordValue, setConfirmNewPasswordValue] = useState('');
     const [passwordMismatchError, setPasswordMismatchError] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
-    const [errorMessage, setErrorMessage] = useState(null);
-    const [isSuccessPopupVisible, setIsSuccessPopupVisible] = useState(false);
+    const [toast, setToast] = useState({ show: false, message: '', type: 'info' });
     const [emptyPasswordError, setEmptyPasswordError] = useState({ new: false, confirm: false });
     const [passwordVisibility, setPasswordVisibility] = useState({ new: false, confirm: false });
     const [isConfirmationModalOpen, setIsConfirmationModalOpen] = useState(false);
@@ -133,7 +133,7 @@ function ProfileContent() {
     const handleUploadButtonClick = () => fileInputReference.current?.click();
 
     const handleEditClick = (section) => {
-        setErrorMessage(null);
+        setToast({ show: false, message: '', type: 'info' });
         setModalErrorMessage(null);
         if (section === 'general') {
             setEditableProfileState({ ...profileState });
@@ -144,7 +144,7 @@ function ProfileContent() {
     };
 
     const handleCancelClick = (section) => {
-        setErrorMessage(null);
+        setToast({ show: false, message: '', type: 'info' });
         setModalErrorMessage(null);
         if (section === 'general') {
             setEditableProfileState({ ...profileState });
@@ -161,12 +161,13 @@ function ProfileContent() {
     };
 
     const handleSaveChanges = async (section) => {
+        setToast({ show: false, message: '', type: 'info' });
+    
         if (section === 'general') {
             setIsLoading(true);
-            setErrorMessage(null);
     
             if (!sessionData?.user?.id || !sessionData?.accessToken) {
-                setErrorMessage("Authentication error or user ID not found. Please log in again.");
+                setToast({ show: true, message: "Authentication error or user ID not found. Please log in again.", type: 'error' });
                 setIsLoading(false);
                 return;
             }
@@ -180,7 +181,7 @@ function ProfileContent() {
                     const response = await axios.post('/api/upload', formData);
                     finalImageUrl = response.data.url;
                 } catch (uploadError) {
-                    setErrorMessage('Image upload failed. Please try again.');
+                    setToast({ show: true, message: 'Image upload failed. Please try again.', type: 'error' });
                     setIsLoading(false);
                     setIsUploadingImage(false);
                     return;
@@ -201,13 +202,13 @@ function ProfileContent() {
             };
     
             try {
-                await authenticationService.updateInstructorProfile(sessionData.user.id, payload, sessionData.accessToken);
+                await instructorService.updateInstructor(sessionData.user.id, payload, sessionData.accessToken);
                 mutateProfileData(); 
-                setIsSuccessPopupVisible(true);
+                setToast({ show: true, message: "Profile updated successfully!", type: 'success' });
                 setIsEditingGeneralInformation(false);
                 setSelectedFile(null);
             } catch (err) {
-                setErrorMessage(err.message || "Failed to update profile. Please try again.");
+                setToast({ show: true, message: err.message || "Failed to update profile. Please try again.", type: 'error' });
             } finally {
                 setIsLoading(false);
             }
@@ -219,13 +220,13 @@ function ProfileContent() {
             const isConfirmEmpty = !confirmNewPasswordValue;
 
             if (isNewEmpty || isConfirmEmpty) {
-                setErrorMessage("New password fields cannot be empty.");
+                setToast({ show: true, message: "New password fields cannot be empty.", type: 'error' });
                 setEmptyPasswordError({ new: isNewEmpty, confirm: isConfirmEmpty });
                 return;
             }
 
             if (newPasswordValue !== confirmNewPasswordValue) {
-                setErrorMessage("New passwords do not match.");
+                setToast({ show: true, message: "New passwords do not match.", type: 'error' });
                 setPasswordMismatchError(true);
                 return;
             }
@@ -249,7 +250,7 @@ function ProfileContent() {
             }
             await authenticationService.changePassword(currentPassword, newPasswordValue, sessionData.accessToken);
 
-            setIsSuccessPopupVisible(true);
+            setToast({ show: true, message: "Password changed successfully!", type: 'success' });
             setIsConfirmationModalOpen(false);
             setNewPasswordValue('');
             setConfirmNewPasswordValue('');
@@ -266,7 +267,7 @@ function ProfileContent() {
         setNewPasswordValue(event.target.value);
         if(passwordMismatchError || emptyPasswordError.new) {
             setPasswordMismatchError(false);
-            setErrorMessage(null);
+            setToast({ show: false, message: '', type: 'info' });
             setEmptyPasswordError(previousState => ({...previousState, new: false}));
         }
     };
@@ -275,7 +276,7 @@ function ProfileContent() {
         setConfirmNewPasswordValue(event.target.value);
          if(passwordMismatchError || emptyPasswordError.confirm) {
             setPasswordMismatchError(false);
-            setErrorMessage(null);
+            setToast({ show: false, message: '', type: 'info' });
             setEmptyPasswordError(previousState => ({...previousState, confirm: false}));
         }
     };
@@ -368,6 +369,7 @@ function ProfileContent() {
 
     return (
         <div className="p-6">
+            {toast.show && <Toast message={toast.message} type={toast.type} onClose={() => setToast({ ...toast, show: false })} />}
             <PasswordConfirmationModal
                 show={isConfirmationModalOpen}
                 onClose={() => setIsConfirmationModalOpen(false)}
@@ -375,21 +377,10 @@ function ProfileContent() {
                 loading={isLoading}
                 error={modalErrorMessage}
             />
-            <SuccessPopup
-                show={isSuccessPopupVisible}
-                onClose={() => setIsSuccessPopupVisible(false)}
-                title="Success"
-                message="Your profile has been updated successfully."
-            />
             <div className="section-title font-semibold text-lg text-gray-800 dark:text-gray-200 mb-4">
                 Profile
             </div>
             <hr className="border-t border-gray-300 dark:border-gray-700 mt-4 mb-8" />
-            {errorMessage && (
-                <div className={`p-4 mb-4 text-sm rounded-lg bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300`}>
-                    {errorMessage}
-                </div>
-            )}
             <div className="profile-section flex gap-8 mb-4 flex-wrap">
                 <div className="avatar-card w-[220px] p-3 bg-white border border-gray-300 dark:bg-gray-800 dark:border-gray-700 shadow-sm rounded-lg flex-shrink-0 self-start">
                     <div className="avatar-content flex items-center">

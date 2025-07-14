@@ -7,7 +7,6 @@ import useSWR from 'swr';
 import { useSession } from 'next-auth/react';
 import { instructorService } from '@/services/instructor.service';
 import InstructorPageSkeleton from './InstructorPageSkeleton';
-import SuccessPopup from '../../profile/components/SuccessPopup';
 import Toast from '@/components/Toast'; // Import the new Toast component
 
 // --- Reusable Icon and Spinner Components ---
@@ -52,7 +51,6 @@ export default function InstructorClientView({ initialInstructors, initialDepart
     const [isPending, startTransition] = useTransition();
     const [rowLoadingId, setRowLoadingId] = useState(null);
     const [showCreateInstructorPopup, setShowCreateInstructorPopup] = useState(false);
-    const [showSuccessPopup, setShowSuccessPopup] = useState(false);
     const [statusFilter, setStatusFilter] = useState('active');
     const [isFilterMenuOpen, setIsFilterMenuOpen] = useState(false);
     const [sortColumn, setSortColumn] = useState(null);
@@ -109,9 +107,10 @@ export default function InstructorClientView({ initialInstructors, initialDepart
         try {
             await instructorService.createInstructor(newInstructorData, session.accessToken);
             mutateInstructors();
-            setShowSuccessPopup(true);
+            setToast({ show: true, message: `Instructor "${newInstructorData.firstName} ${newInstructorData.lastName}" created successfully.`, type: 'success' });
         } catch (error) {
             console.error("Failed to create instructor:", error);
+            setToast({ show: true, message: `Failed to create instructor: ${error.message}`, type: 'error' });
         }
     };
 
@@ -254,12 +253,6 @@ export default function InstructorClientView({ initialInstructors, initialDepart
     return (
         <div className="p-6 dark:text-white">
             {toast.show && <Toast message={toast.message} type={toast.type} onClose={() => setToast({ ...toast, show: false })} />}
-            <SuccessPopup
-                show={showSuccessPopup}
-                onClose={() => setShowSuccessPopup(false)}
-                title="Instructor Created"
-                message="The new instructor has been added successfully."
-            />
             <div className="flex items-center justify-between">
                 <h1 className="text-lg font-bold">Instructor List</h1>
             </div>

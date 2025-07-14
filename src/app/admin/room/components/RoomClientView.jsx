@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import SuccessAlert from './UpdateSuccessComponent';
+import Toast from '@/components/Toast';
 import { getAllRooms, updateRoom } from '@/services/room.service';
 import { useSession } from 'next-auth/react';
 import useSWR from 'swr';
@@ -77,8 +77,7 @@ const RoomView = () => {
     const [loading, setLoading] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
     const [editableRoomDetails, setEditableRoomDetails] = useState(null);
-    const [showSuccessAlert, setShowSuccessAlert] = useState(false);
-    const [error, setError] = useState('');
+    const [toast, setToast] = useState({ show: false, message: '', type: 'info' });
     const [formError, setFormError] = useState({ field: '', message: '' });
 
     // This effect will run when the building data changes, ensuring the selected building is valid.
@@ -95,11 +94,11 @@ const RoomView = () => {
     const handleRoomClick = (roomId) => {
         setSelectedRoomId(roomId);
         setIsEditing(false);
-        setError('');
+        setToast({ show: false, message: '', type: 'info' });
         setFormError({ field: '', message: '' });
         const data = allRoomsData[roomId];
         if (!data) {
-            setError("Could not load room details.");
+            setToast({ show: true, message: 'Could not load room details.', type: 'error' });
             setRoomDetails(null);
         } else {
             setRoomDetails(data);
@@ -120,7 +119,7 @@ const RoomView = () => {
         setIsEditing(false);
         setEditableRoomDetails(null);
         setFormError({ field: '', message: '' });
-        setError('');
+        setToast({ show: false, message: '', type: 'info' });
     };
 
     const validateRoomName = (newName) => {
@@ -166,7 +165,7 @@ const RoomView = () => {
         if (!editableRoomDetails) return;
         if (!validateRoomName(editableRoomDetails.name)) return;
         setLoading(true);
-        setError('');
+        setToast({ show: false, message: '', type: 'info' });
         const roomUpdateDto = {
             roomName: editableRoomDetails.name,
             capacity: editableRoomDetails.capacity,
@@ -177,9 +176,9 @@ const RoomView = () => {
             await updateRoom(selectedRoomId, roomUpdateDto);
             mutateRooms(); 
             setIsEditing(false);
-            setShowSuccessAlert(true);
+            setToast({ show: true, message: `Room '${roomUpdateDto.roomName}' updated successfully.`, type: 'success' });
         } catch (err) {
-            setError(err.message || 'An error occurred while saving.');
+            setToast({ show: true, message: err.message || 'An error occurred while saving.', type: 'error' });
         } finally {
             setLoading(false);
         }
@@ -213,10 +212,9 @@ const RoomView = () => {
 
     return (
         <>
-            {showSuccessAlert && ( <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60"><SuccessAlert show={showSuccessAlert} title="Room Updated" messageLine1={`Room ${editableRoomDetails?.name || ''} has been updated successfully.`} messageLine2="You can continue managing rooms." confirmButtonText="OK" onConfirm={() => setShowSuccessAlert(false)} onClose={() => setShowSuccessAlert(false)}/></div> )}
+            {toast.show && <Toast message={toast.message} type={toast.type} onClose={() => setToast({ ...toast, show: false })} />}
             <div className='p-4 sm:p-6 min-h-full'>
                 <div className="mb-4 w-full"><h2 className="text-xl font-semibold text-slate-800 dark:text-white">Room</h2><hr className="border-t border-slate-300 dark:border-slate-700 mt-3" /></div>
-                {error && <p className="text-red-500 text-center mb-4">{error}</p>}
                 <div className="flex flex-col lg:flex-row gap-6">
                     <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-3 sm:mb-4">

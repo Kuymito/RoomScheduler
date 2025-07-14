@@ -6,8 +6,7 @@ import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { classService } from '@/services/class.service';
 import { useSession } from 'next-auth/react';
-import SuccessPopup from '../../profile/components/SuccessPopup';
-import Toast from '@/components/Toast'; // Import the new Toast component
+import Toast from '@/components/Toast';
 
 const DefaultAvatarIcon = ({ className = "w-9 h-9" }) => (
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1} stroke="currentColor" className={className}>
@@ -90,10 +89,7 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
 
     const [isEditing, setIsEditing] = useState(false);
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState('');
     const [isNameManuallySet, setIsNameManuallySet] = useState(false);
-    const [showSuccessPopup, setShowSuccessPopup] = useState(false);
-    const [successPopupMessage, setSuccessPopupMessage] = useState('');
     const [toast, setToast] = useState({ show: false, message: '', type: 'info' });
     
     const daysOfWeek = useMemo(() => ['Mon', 'Tue', 'Wed', 'Thur', 'Fri', 'Sat', 'Sun'], []);
@@ -169,7 +165,7 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
             const expectedName = `NUM${classData.generation}-${classData.group}`;
             setIsNameManuallySet(classData.name !== expectedName);
             setIsEditing(true);
-            setError('');
+            setToast({ show: false, message: '', type: 'info' });
         }
     };
     
@@ -177,7 +173,7 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
         if (backupData) setClassData(backupData);
         setIsEditing(false);
         setBackupData(null); 
-        setError('');
+        setToast({ show: false, message: '', type: 'info' });
     };
 
     const handleInputChange = (e) => {
@@ -188,17 +184,17 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
 
     const handleSaveDetails = async () => {
         setLoading(true);
-        setError('');
+        setToast({ show: false, message: '', type: 'info' });
 
         if (!session?.accessToken) {
-            setError("You are not authenticated.");
+            setToast({ show: true, message: "You are not authenticated.", type: 'error' });
             setLoading(false);
             return;
         }
 
         const selectedDepartment = allDepartments.find(dep => dep.name === classData.faculty);
         if (!selectedDepartment) {
-            setError("Invalid department selected.");
+            setToast({ show: true, message: "Invalid department selected.", type: 'error' });
             setLoading(false);
             return;
         }
@@ -206,7 +202,7 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
         const shiftIdValue = shiftMap[classData.shift];
         
         if (!shiftIdValue) {
-            setError("Invalid shift selected.");
+            setToast({ show: true, message: "Invalid shift selected.", type: 'error' });
             setLoading(false);
             return;
         }
@@ -228,12 +224,11 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
 
         try {
             await classService.patchClass(classData.id, apiPayload, session.accessToken);
-            setSuccessPopupMessage("Class details have been updated successfully.");
-            setShowSuccessPopup(true);
+            setToast({ show: true, message: "Class details have been updated successfully.", type: 'success' });
             setIsEditing(false);
             setBackupData(null);
         } catch (err) {
-            setError(err.message || "Failed to update class.");
+            setToast({ show: true, message: err.message || "Failed to update class.", type: 'error' });
             if (backupData) setClassData(backupData);
         } finally {
             setLoading(false);
@@ -288,8 +283,7 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
         if (draggedItem?.type === 'scheduled' && e.dataTransfer.dropEffect === 'none') {
             setSchedule(prevSchedule => ({ ...prevSchedule, [draggedItem.originDay]: null }));
         }
-        setDraggedItem(null);
-        setDragOverDay(null);
+        setDraggedItem(null); setDragOverDay(null);
     };
 
     const handleDayDragOver = (e) => { e.preventDefault(); if (draggedItem) e.dataTransfer.dropEffect = 'move'; };
@@ -308,21 +302,21 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
     
         const newSchedule = { ...schedule };
         if (draggedItem.type === 'new') {
-            newSchedule[targetDay] = { instructor: {id: draggedItem.item.id, name: draggedItem.item.name, profileImage: draggedItem.item.profileImage, degree: draggedItem.item.degree}, studyMode: 'in-class', };
+            newSchedule[targetDay] = {
+                instructor: {id: draggedItem.item.id, name: draggedItem.item.name, profileImage: draggedItem.item.profileImage, degree: draggedItem.item.degree,},
+                studyMode: 'in-class',
+            };
         } else if (draggedItem.type === 'scheduled') {
             const originDay = draggedItem.originDay;
-            if (originDay === targetDay) {
-                setDragOverDay(null);
-                return;
-            }
+            if (originDay === targetDay) { setDragOverDay(null); return; }
             const dataFromOriginDay = schedule[originDay];
             const dataFromTargetDay = schedule[targetDay];
-            if (dataFromTargetDay?.instructor) { // Swap
-                newSchedule[originDay] = { instructor: dataFromTargetDay.instructor, studyMode: dataFromTargetDay.studyMode};
-                newSchedule[targetDay] = { instructor: draggedItem.item, studyMode: dataFromOriginDay.studyMode};
-            } else { // Move
-                newSchedule[targetDay] = { instructor: draggedItem.item, studyMode: dataFromOriginDay.studyMode};
-                if (originDay) newSchedule[originDay] = null;
+            if (dataFromTargetDay?.instructor) { // SWAP
+                newSchedule[originDay] = { instructor: dataFromTargetDay.instructor, studyMode: dataFromTargetDay.studyMode,};
+                newSchedule[targetDay] = { instructor: draggedItem.item, studyMode: dataFromOriginDay.studyMode,};
+            } else { // MOVE TO EMPTY
+                newSchedule[targetDay] = { instructor: draggedItem.item, studyMode: dataFromOriginDay.studyMode,};
+                if (originDay) { newSchedule[originDay] = null;}
             }
         }
         setSchedule(newSchedule);
@@ -340,7 +334,7 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
     
     const handleSaveSchedule = async () => {
         if (!session?.accessToken) {
-            setError("Authentication session has expired. Please log in again.");
+            setToast({ show: true, message: "Authentication session has expired. Please log in again.", type: 'error' });
             return;
         }
         setIsSaving(true);
@@ -510,12 +504,6 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
             )}
 
             {toast.show && <Toast message={toast.message} type={toast.type} onClose={() => setToast({ ...toast, show: false })} />}
-            <SuccessPopup
-                show={showSuccessPopup}
-                onClose={() => setShowSuccessPopup(false)}
-                title="Update Successful"
-                message={successPopupMessage}
-            />
             <div className="section-title font-semibold text-lg text-num-dark-text dark:text-white mb-1">Class Details</div>
             <hr className="border-t border-slate-300 dark:border-slate-700 mt-4 mb-8" />
             <div className="class-section flex flex-col gap-6">
@@ -547,7 +535,6 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
                                 </>
                             )}
                         </div>
-                           {error && <p className="text-red-500 text-xs mt-2 text-right">{error}</p>}
                     </div>
                 </div>
                 <div className='flex-grow flex flex-col lg:flex-row gap-6 min-w-[300px]'>
