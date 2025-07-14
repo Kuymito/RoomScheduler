@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { scheduleService } from '@/services/schedule.service';
 import ConfirmationModal from './ConfirmationModal';
 import { useSession } from 'next-auth/react';
+import Toast from '@/components/Toast'; // Import the new Toast component
 
 // --- Child Components ---
 
@@ -116,7 +117,7 @@ const ScheduleClientView = ({
     const [draggedItem, setDraggedItem] = useState(null);
     const [dragOverCell, setDragOverCell] = useState(null);
     const [warningCellId, setWarningCellId] = useState(null);
-    const [toastMessage, setToastMessage] = useState('');
+    const [toast, setToast] = useState({ show: false, message: '', type: 'info' });
     const [selectedDegree, setSelectedDegree] = useState('All');
     const [selectedGeneration, setSelectedGeneration] = useState('All');
     const [searchTerm, setSearchTerm] = useState('');
@@ -139,9 +140,8 @@ const ScheduleClientView = ({
         FRIDAY: 'Fr', SATURDAY: 'Sa', SUNDAY: 'Su'
     };
 
-    const showToast = (message, isError = false) => {
-        setToastMessage({ text: message, isError });
-        setTimeout(() => setToastMessage(null), 2500);
+    const showToast = (message, type = 'info') => {
+        setToast({ show: true, message, type });
     };
 
     // --- Memoized Calculations ---
@@ -226,7 +226,7 @@ const ScheduleClientView = ({
 
     const handleUnassign = async (origin) => {
         if (!origin || !origin.scheduleId) {
-            showToast("Cannot unassign: Schedule ID is missing.", true);
+            showToast("Cannot unassign: Schedule ID is missing.", 'error');
             return;
         }
         if (unassignmentProcessed.current) return;
@@ -241,9 +241,9 @@ const ScheduleClientView = ({
                 }
                 return newSchedules;
             });
-            showToast("Class unassigned successfully.");
+            showToast("Class unassigned successfully.", 'success');
         } catch (error) {
-            showToast(`Failed to unassign class: ${error.message}`, true);
+            showToast(`Failed to unassign class: ${error.message}`, 'error');
         } finally {
             setIsAssigning(false);
         }
@@ -354,9 +354,9 @@ const ScheduleClientView = ({
                     }
                     return newSchedules;
                 });
-                showToast("Class moved successfully!");
+                showToast("Class moved successfully!", 'success');
             } catch (error) {
-                showToast(`Move failed: ${error.message}`, true);
+                showToast(`Move failed: ${error.message}`, 'error');
             } finally {
                 setIsAssigning(false);
                 setDraggedItem(null);
@@ -370,7 +370,7 @@ const ScheduleClientView = ({
             const shiftId = draggedClass.shift?.shiftId;
             const dayOfWeekForAPI = Object.keys(dayApiToAbbrMap).find(key => dayApiToAbbrMap[key] === selectedDay);
             if (!shiftId || !dayOfWeekForAPI) {
-                showToast("Cannot schedule: Class is missing shift or day information.", true);
+                showToast("Cannot schedule: Class is missing shift or day information.", 'error');
                 return;
             }
             const payload = { classId: draggedClass.classId, roomId: targetRoomId, dayOfWeek: dayOfWeekForAPI, shiftId, isOnline: false };
@@ -386,9 +386,9 @@ const ScheduleClientView = ({
                     };
                     return newSchedules;
                 });
-                showToast(response.message || "Class scheduled successfully!");
+                showToast(response.message || "Class scheduled successfully!", 'success');
             } catch (error) {
-                showToast(error.message || "Failed to schedule class.", true);
+                showToast(error.message || "Failed to schedule class.", 'error');
             } finally {
                 setDraggedItem(null);
             }
@@ -397,7 +397,7 @@ const ScheduleClientView = ({
 
         // CASE 4: INVALID DROP - Dragging a NEW class to an OCCUPIED room.
         if (draggedType === 'new' && targetScheduleInfo) {
-            showToast("This room is already occupied.", true);
+            showToast("This room is already occupied.", 'error');
         }
     };
 
@@ -431,10 +431,10 @@ const ScheduleClientView = ({
                 }
                 return newSchedules;
             });
-            showToast("Classes swapped successfully!");
+            showToast("Classes swapped successfully!", 'success');
 
         } catch (error) {
-            showToast(`Swap failed: ${error.message}`, true);
+            showToast(`Swap failed: ${error.message}`, 'error');
         } finally {
             setIsAssigning(false);
         }
@@ -464,11 +464,7 @@ const ScheduleClientView = ({
 
     return (
         <>
-            {toastMessage && (
-                <div className={`fixed top-20 right-6 ${toastMessage.isError ? 'bg-red-500' : 'bg-green-500'} text-white py-2 px-4 rounded-lg shadow-lg z-50 animate-fade-in-out`}>
-                    <p className="font-semibold">{toastMessage.text}</p>
-                </div>
-            )}
+            {toast.show && <Toast message={toast.message} type={toast.type} onClose={() => setToast({ ...toast, show: false })} />}
 
             <ConfirmationModal
                 isOpen={swapConfirmation.isOpen}
