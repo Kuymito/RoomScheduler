@@ -25,7 +25,7 @@ const ErrorPage = ({ error, reset }) => {
 
   const statusCode = error.digest || '500'; 
   const title = "An Error Occurred";
-  const description = error.message || "Something went wrong on our end. Please try again in a moment.";
+  const description = "Something went wrong on our end. Please try again in a moment.";
 
   return (
     <div className="min-h-screen w-screen flex flex-col items-center justify-center bg-[#E0E4F3] text-center p-6">

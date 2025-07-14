@@ -8,6 +8,14 @@ import { useSession } from 'next-auth/react';
 
 // --- Child Components ---
 
+const SpinnerIcon = ({ className }) => (
+    <svg className={`animate-spin ${className}`} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+    </svg>
+);
+
+
 const RoomCardSkeleton = () => (
     <div className="h-28 sm:h-32 bg-gray-200 dark:bg-gray-800 rounded-lg animate-pulse"></div>
 );
@@ -24,8 +32,7 @@ const ScheduledClassCard = ({ classData, onDragStart, onDragEnd }) => (
     </div>
 );
 
-const RoomCard = React.memo(({ room, classData, isDragOver, isWarning, dragHandlers, className }) => {
-    const router = useRouter();
+const RoomCard = React.memo(({ room, classData, isDragOver, isWarning, dragHandlers, className, isNavigating, onHeaderClick }) => {
     const isOccupied = !!classData;
     const isUnavailable = room.status === "unavailable";
 
@@ -33,10 +40,6 @@ const RoomCard = React.memo(({ room, classData, isDragOver, isWarning, dragHandl
         if (isWarning) return 'border-red-500 dark:border-red-400 shadow-lg scale-105';
         if (isDragOver) return 'border-emerald-400 dark:border-emerald-500 shadow-lg scale-105';
         return 'border-gray-300 dark:border-gray-700 shadow-sm';
-    };
-
-    const handleHeaderClick = () => {
-        router.push(`/admin/schedule/${room.roomId}`);
     };
 
     return (
@@ -47,8 +50,8 @@ const RoomCard = React.memo(({ room, classData, isDragOver, isWarning, dragHandl
             `}
         >
             <div
-                onClick={handleHeaderClick}
-                className={`px-2 py-1 flex justify-between items-center border-b-2 transition-colors cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700
+                onClick={() => !isNavigating && onHeaderClick(room.roomId)}
+                className={`px-2 py-1 flex justify-between items-center border-b-2 transition-colors ${isNavigating ? 'cursor-wait' : 'cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700'}
                 ${isWarning ? 'bg-red-100 dark:bg-red-800/50' : (isUnavailable ? 'bg-slate-100 dark:bg-slate-700/60' : 'bg-gray-50 dark:bg-gray-800')}
                 `}
             >
@@ -57,7 +60,11 @@ const RoomCard = React.memo(({ room, classData, isDragOver, isWarning, dragHandl
                     `}
                     title={isOccupied || isUnavailable ? 'Occupied/Unavailable' : 'Available'}
                 ></div>
-                <span className={`text-xs font-bold ${isUnavailable ? 'text-slate-500 dark:text-slate-400' : 'text-gray-700 dark:text-gray-300'}`}>{room.roomName}</span>
+                {isNavigating ? (
+                    <SpinnerIcon className="h-4 w-4 text-gray-500" />
+                ) : (
+                    <span className={`text-xs font-bold ${isUnavailable ? 'text-slate-500 dark:text-slate-400' : 'text-gray-700 dark:text-gray-300'}`}>{room.roomName}</span>
+                )}
             </div>
             <div
                 onDragOver={!isUnavailable ? dragHandlers.onDragOver : null}
@@ -99,6 +106,7 @@ const ScheduleClientView = ({
     const { data: session } = useSession();
     const token = session?.accessToken;
     const { degrees, generations, buildings, weekdays, timeSlots } = constants;
+    const router = useRouter();
 
     const [schedules, setSchedules] = useState(initialSchedules);
     const [isAssigning, setIsAssigning] = useState(false);
@@ -112,6 +120,7 @@ const ScheduleClientView = ({
     const [selectedDegree, setSelectedDegree] = useState('All');
     const [selectedGeneration, setSelectedGeneration] = useState('All');
     const [searchTerm, setSearchTerm] = useState('');
+    const [navigatingToRoomId, setNavigatingToRoomId] = useState(null);
     
     // State for the swap confirmation modal
     const [swapConfirmation, setSwapConfirmation] = useState({
@@ -209,6 +218,11 @@ const ScheduleClientView = ({
     }, []);
 
     // --- Handlers ---
+
+    const handleRoomCardClick = (roomId) => {
+        setNavigatingToRoomId(roomId);
+        router.push(`/admin/schedule/${roomId}`);
+    };
 
     const handleUnassign = async (origin) => {
         if (!origin || !origin.scheduleId) {
@@ -428,7 +442,6 @@ const ScheduleClientView = ({
 
 
     const getGridColumnClasses = (building, floorNumber) => {
-        // ... (implementation as provided)
         switch (building) {
             case "Building A": return "xl:grid-cols-5 lg:grid-cols-3 md:grid-cols-2 grid-cols-[repeat(auto-fit,minmax(160px,1fr))]";
             case "Building B": return floorNumber === 2 ? "grid-cols-5" : "xl:grid-cols-5 lg:grid-cols-3 md:grid-cols-2 grid-cols-[repeat(auto-fit,minmax(160px,1fr))]";
@@ -441,7 +454,6 @@ const ScheduleClientView = ({
     };
 
     const getRoomColSpan = (building, roomName) => {
-        // ... (implementation as provided)
         if (building === "Building A" && roomName === "Conference Room") return "col-span-2";
         if (building === "Building B" && roomName === "Conference Room") return "col-span-4";
         if (building === "Building D" && roomName.includes("Library Room")) return "col-span-full";
@@ -541,7 +553,11 @@ const ScheduleClientView = ({
                                         const classData = getClassForRoom(room.roomId);
                                         const scheduleInfo = schedules[selectedDay]?.[selectedTime]?.[room.roomId];
                                         return (
-                                            <RoomCard key={room.roomId} room={room} classData={classData} isDragOver={dragOverCell?.roomId === room.roomId} isWarning={warningCellId === room.roomId}
+                                            <RoomCard key={room.roomId} room={room} classData={classData} 
+                                                isDragOver={dragOverCell?.roomId === room.roomId} 
+                                                isWarning={warningCellId === room.roomId}
+                                                isNavigating={navigatingToRoomId === room.roomId}
+                                                onHeaderClick={handleRoomCardClick}
                                                 dragHandlers={{
                                                     onDragOver: handleGridCellDragOver,
                                                     onDragEnter: (event) => handleGridCellDragEnter(event, room.roomId),
