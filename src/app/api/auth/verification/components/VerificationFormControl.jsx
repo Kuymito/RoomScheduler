@@ -37,7 +37,7 @@ const VerificationFormControl = () => {
             </div>
 
             {/* Right Column (Form Section) */}
-            <div className="w-full h-full md:w-2/5 bg-[#E0E4F3] flex items-center justify-center p-6 sm:p-8 md:p-12 lg:p-16">
+            <div className="w-full md:w-2/5 bg-[#E0E4F3] flex items-center justify-center p-6 sm:p-8 md:p-12 lg:p-16 min-h-screen">
                 <Suspense fallback={<RightVerificationSectionSkeleton />}>
                     <RightVerificationSection />
                 </Suspense>
