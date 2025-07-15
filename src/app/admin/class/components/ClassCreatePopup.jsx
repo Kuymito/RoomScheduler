@@ -13,7 +13,28 @@ const shiftMap = {
 
 const ClassCreatePopup = ({ isOpen, onClose, onSave, departments, departmentsError, existingClasses }) => {
     // --- State and Options ---
-    const generationOptions = ['30', '31', '32', '33', '34', '35'];
+    
+    // --- UPDATED: Dynamic Generation Logic ---
+    const generationOptions = useMemo(() => {
+        // Base year and generation as per user's requirement
+        const BASE_YEAR = 2025;
+        const BASE_GENERATION = 34;
+        
+        // Get the current year
+        const currentYear = new Date().getFullYear();
+        
+        // Calculate the current generation based on the difference from the base year
+        const currentGeneration = BASE_GENERATION + (currentYear - BASE_YEAR);
+        
+        // Create an array for the current generation and the next 3 years (total of 4 years)
+        const options = [];
+        for (let i = 0; i < 4; i++) {
+            options.push(String(currentGeneration + i));
+        }
+        
+        return options;
+    }, []); // Empty dependency array ensures this runs only once on component mount
+
     const degreesOptions = ['Bachelor', 'Master', 'PhD', 'Doctor'];
     const semesterOptions = ['Semester 1', 'Semester 2', 'Semester 3', 'Semester 4', 'Semester 5', 'Semester 6', 'Semester 7', 'Semester 8'];
     const shiftOptions = Object.keys(shiftMap);
@@ -49,7 +70,7 @@ const ClassCreatePopup = ({ isOpen, onClose, onSave, departments, departmentsErr
             setNewClass(getInitialState());
             setFormError({ fields: [], message: '' }); // Reset errors when popup opens
         }
-    }, [isOpen, departments]);
+    }, [isOpen, departments, generationOptions]); // Add generationOptions to dependencies
 
     // --- Handlers ---
     const handleInputChange = (e) => {

@@ -11,6 +11,31 @@ import { scheduleService } from '@/services/schedule.service';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 
+/**
+ * Helper function to calculate the academic year from the generation number.
+ * @param {string | number} generation - The generation number of the class.
+ * @returns {number | null} The calculated academic year, or null if invalid.
+ */
+const mapGenerationToYear = (generation) => {
+    if (!generation) return null;
+    const genNumber = parseInt(generation, 10);
+    if (isNaN(genNumber)) return null;
+
+    // Define the base generation and year for calculation.
+    const BASE_GENERATION = 34; // This is the generation for the first year students in BASE_YEAR.
+    const BASE_YEAR = 2025; 
+
+    const currentYear = new Date().getFullYear();
+    
+    // Calculate what generation is currently in their first year.
+    const currentFirstYearGeneration = BASE_GENERATION + (currentYear - BASE_YEAR);
+
+    // Calculate the academic year for the given generation.
+    const academicYear = currentFirstYearGeneration - genNumber + 1;
+    
+    return academicYear > 0 ? academicYear : null;
+};
+
 // This function now transforms the data to have a consistent structure.
 const fetchSchedulePageData = async () => {
     const session = await getServerSession(authOptions);
@@ -29,12 +54,13 @@ const fetchSchedulePageData = async () => {
         ]);
         
         // --- Constants and Mappings ---
+        const timeSlotsList = ['Morning Shift', 'Noon Shift', 'Afternoon Shift', 'Evening Shift', 'Weekend Shift'];
         const constants = {
             degrees: [...new Set(classes.map(c => c.degreeName))].filter(Boolean),
             generations: [...new Set(classes.map(c => c.generation))].filter(Boolean),
             buildings: [...new Set(rooms.map(r => r.buildingName))].filter(Boolean),
             weekdays: ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'],
-            timeSlots: ['Morning Shift', 'Noon Shift', 'Afternoon Shift', 'Evening Shift', 'Weekend Shift']
+            timeSlots: timeSlotsList
         };
 
         const shiftNameMap = {
@@ -66,11 +92,12 @@ const fetchSchedulePageData = async () => {
         // Process schedules
         const scheduleMap = {};
         schedules.forEach(schedule => {
-            if (!schedule.roomId || schedule.roomName === "Unassigned") {
-                return;
+            if (!schedule.roomId || schedule.roomName === "Unassigned" || !schedule.dayDetails || !Array.isArray(schedule.dayDetails) || !schedule.shift) {
+                return; // Skip malformed entries
             }
 
-            if (schedule.dayDetails && Array.isArray(schedule.dayDetails) && schedule.shift) {
+            if (schedule.shift.startTime) {
+                // --- Handle REGULAR class schedules ---
                 const timeSlotName = shiftNameMap[schedule.shift.startTime];
                 if (timeSlotName) {
                     schedule.dayDetails.forEach(dayDetail => {
@@ -79,16 +106,38 @@ const fetchSchedulePageData = async () => {
                             if (!scheduleMap[dayAbbr]) scheduleMap[dayAbbr] = {};
                             if (!scheduleMap[dayAbbr][timeSlotName]) scheduleMap[dayAbbr][timeSlotName] = {};
                             
+                            const academicYear = mapGenerationToYear(schedule.year);
                             scheduleMap[dayAbbr][timeSlotName][schedule.roomId] = {
                                 classId: schedule.classId,
                                 scheduleId: schedule.scheduleId,
                                 className: schedule.className,
                                 majorName: schedule.majorName,
-                                year: schedule.generation
+                                year: academicYear ? `Year ${academicYear}` : 'Year N/A'
                             };
                         }
                     });
                 }
+            } else if (schedule.shift.name === 'Booked') {
+                // --- Handle CONFERENCE room bookings ---
+                schedule.dayDetails.forEach(dayDetail => {
+                    const dayAbbr = dayApiToAbbrMap[dayDetail.dayOfWeek.toUpperCase()];
+                    if (dayAbbr) {
+                        if (!scheduleMap[dayAbbr]) scheduleMap[dayAbbr] = {};
+                        // Mark room as booked for ALL time slots on that day
+                        timeSlotsList.forEach(timeSlot => {
+                            if (!scheduleMap[dayAbbr][timeSlot]) {
+                                scheduleMap[dayAbbr][timeSlot] = {};
+                            }
+                            scheduleMap[dayAbbr][timeSlot][schedule.roomId] = {
+                                classId: null,
+                                scheduleId: null,
+                                className: schedule.className, // "Booked by John Doe"
+                                majorName: "Booking",
+                                year: "N/A"
+                            };
+                        });
+                    }
+                });
             }
         });
 
@@ -101,9 +150,6 @@ const fetchSchedulePageData = async () => {
         });
 
         return {
-            // FIX: Pass the complete list of transformed classes. The client component
-            // will handle filtering for its "unassigned" list, but it needs the
-            // full list to look up data for already-scheduled classes.
             initialClasses: transformedClasses,
             initialRooms: rooms,
             initialSchedules: scheduleMap,

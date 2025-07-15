@@ -4,9 +4,10 @@ import React, { useState, useMemo, useEffect, useRef, lazy, Suspense } from 'rea
 import { useRouter } from 'next/navigation';
 import { scheduleService } from '@/services/schedule.service';
 import { useSession } from 'next-auth/react';
-import Toast from '@/components/Toast'; // Import the new Toast component
+import Toast from '@/components/Toast';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
-// Dynamically import the ConfirmationModal. It will now be loaded only when needed.
 const ConfirmationModal = lazy(() => import('./ConfirmationModal'));
 
 // --- Child Components ---
@@ -125,12 +126,13 @@ const ScheduleClientView = ({
     const [searchTerm, setSearchTerm] = useState('');
     const [navigatingToRoomId, setNavigatingToRoomId] = useState(null);
     
-    // State for the swap confirmation modal
     const [swapConfirmation, setSwapConfirmation] = useState({
         isOpen: false,
         details: null
     });
 
+    const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+    const schedulePageRef = useRef(null);
     const unassignmentProcessed = useRef(false);
 
     const generationColorMap = {
@@ -148,51 +150,80 @@ const ScheduleClientView = ({
 
     // --- Memoized Calculations ---
 
-    const allFilteredClasses = useMemo(() => {
+    const allFilteredAndSortedClasses = useMemo(() => {
         const assignedClassIds = new Set();
         const selectedDayFull = Object.entries(dayApiToAbbrMap).find(([_, abbr]) => abbr === selectedDay)?.[0] || '';
         
-        if (schedules[selectedDay] && schedules[selectedDay][selectedTime]) {
-            Object.values(schedules[selectedDay][selectedTime]).forEach(scheduleInfo => {
-                if (scheduleInfo?.classId) assignedClassIds.add(scheduleInfo.classId);
+        // Correctly populate assignedClassIds by checking all time slots for the selected day
+        if (schedules[selectedDay]) {
+            Object.values(schedules[selectedDay]).forEach(timeSlotSchedule => {
+                Object.values(timeSlotSchedule).forEach(scheduleInfo => {
+                    if (scheduleInfo?.classId) assignedClassIds.add(scheduleInfo.classId);
+                });
             });
         }
 
-        return initialClasses.filter(classItem => {
-            const isAssignedInCurrentView = assignedClassIds.has(classItem.classId);
-            if (isAssignedInCurrentView) return false;
+        const filtered = initialClasses.filter(classItem => {
+            if (classItem.archived) return false;
+
+            // This check now correctly excludes any class already scheduled on this day
+            const isAssignedOnThisDay = assignedClassIds.has(classItem.classId);
+            if (isAssignedOnThisDay) return false;
 
             const occursOnSelectedDay = classItem.dayDetails?.some(day => day.dayOfWeek === selectedDayFull && !day.online);
-            const shiftForClass = classItem.shift?.name;
-            const shiftMatch = selectedTime === 'All' || shiftForClass === selectedTime;
             const degreeMatch = selectedDegree === 'All' || classItem.degreeName === selectedDegree;
             const generationMatch = selectedGeneration === 'All' || classItem.generation === selectedGeneration;
             const searchTermMatch = searchTerm === '' || classItem.className.toLowerCase().includes(searchTerm.toLowerCase()) || (classItem.majorName && classItem.majorName.toLowerCase().includes(searchTerm.toLowerCase()));
 
-            return occursOnSelectedDay && shiftMatch && degreeMatch && generationMatch && searchTermMatch;
+            return occursOnSelectedDay && degreeMatch && generationMatch && searchTermMatch;
         });
-    }, [schedules, selectedDay, selectedTime, selectedDegree, selectedGeneration, searchTerm, initialClasses]);
+
+        // Sort the filtered list. Classes matching the selected time come first.
+        return filtered.sort((a, b) => {
+            const shiftA = a.shift?.name;
+            const shiftB = b.shift?.name;
+
+            if (selectedTime !== 'All') {
+                const aMatches = shiftA === selectedTime;
+                const bMatches = shiftB === selectedTime;
+
+                if (aMatches && !bMatches) return -1;
+                if (!aMatches && bMatches) return 1;
+            }
+            
+            const indexA = timeSlots.indexOf(shiftA);
+            const indexB = timeSlots.indexOf(shiftB);
+
+            if(indexA !== indexB) return indexA - indexB;
+
+            return a.className.localeCompare(b.className);
+        });
+    }, [schedules, selectedDay, selectedTime, selectedDegree, selectedGeneration, searchTerm, initialClasses, timeSlots, dayApiToAbbrMap]);
 
     const groupedClassesByShift = useMemo(() => {
+        // Group all the (now sorted and filtered) classes by their shift time.
         const groups = {};
-        const relevantTimeSlots = selectedTime === 'All' ? timeSlots : [selectedTime];
-        relevantTimeSlots.forEach(slot => {
-            groups[slot] = allFilteredClasses.filter(classItem => classItem.shift?.name === slot);
+        allFilteredAndSortedClasses.forEach(classItem => {
+            const shiftName = classItem.shift?.name || 'Unassigned';
+            if (!groups[shiftName]) {
+                groups[shiftName] = [];
+            }
+            groups[shiftName].push(classItem);
         });
         return groups;
-    }, [allFilteredClasses, selectedTime, timeSlots]);
-
-    const getClassForRoom = (roomId) => {
-        const scheduleInfo = schedules[selectedDay]?.[selectedTime]?.[roomId];
-        if (!scheduleInfo) return null;
-        return initialClasses.find(c => c.classId === scheduleInfo.classId) || { ...scheduleInfo, generation: scheduleInfo.year };
-    };
+    }, [allFilteredAndSortedClasses]);
 
     const orderedTimeSlots = useMemo(() => {
         if (selectedTime === 'All') return timeSlots;
         const otherTimes = timeSlots.filter(slot => slot !== selectedTime);
         return [selectedTime, ...otherTimes];
     }, [selectedTime, timeSlots]);
+
+    const getClassForRoom = (roomId) => {
+        const scheduleInfo = schedules[selectedDay]?.[selectedTime]?.[roomId];
+        if (!scheduleInfo) return null;
+        return initialClasses.find(c => c.classId === scheduleInfo.classId) || { ...scheduleInfo, generation: scheduleInfo.year };
+    };
 
     const currentGrid = useMemo(() => buildingLayout[selectedBuilding] ?? {}, [buildingLayout, selectedBuilding]);
     
@@ -309,9 +340,8 @@ const ScheduleClientView = ({
         const { item: draggedClass, type: draggedType, origin: dragOrigin } = draggedItem;
         const targetScheduleInfo = schedules[selectedDay]?.[selectedTime]?.[targetRoomId];
 
-        // --- SWAP LOGIC WITH CONFIRMATION ---
         if (draggedType === 'scheduled' && targetScheduleInfo) {
-            if (dragOrigin.roomId === targetRoomId) return; // Dropped on itself
+            if (dragOrigin.roomId === targetRoomId) return; 
 
             const sourceClassData = draggedClass;
             const targetClassData = getClassForRoom(targetRoomId);
@@ -335,13 +365,11 @@ const ScheduleClientView = ({
                     },
                 },
             });
-            setDraggedItem(null); // Reset dragged item to prevent other actions
+            setDraggedItem(null); 
             return;
         }
 
-        // CASE 2: MOVE - Dragging a scheduled class to an EMPTY room.
         if (draggedType === 'scheduled' && !targetScheduleInfo) {
-            console.log(`✅ MOVE DETECTED: Moving schedule ${dragOrigin.scheduleId} to room ${targetRoomId}`);
             setIsAssigning(true);
             try {
                 await scheduleService.moveScheduleToRoom(dragOrigin.scheduleId, targetRoomId, token);
@@ -366,9 +394,7 @@ const ScheduleClientView = ({
             return;
         }
 
-        // CASE 3: ASSIGN - Dragging a NEW class to an EMPTY room.
         if (draggedType === 'new' && !targetScheduleInfo) {
-            console.log("ASSIGNING NEW CLASS:", draggedClass.className);
             const shiftId = draggedClass.shift?.shiftId;
             const dayOfWeekForAPI = Object.keys(dayApiToAbbrMap).find(key => dayApiToAbbrMap[key] === selectedDay);
             if (!shiftId || !dayOfWeekForAPI) {
@@ -397,7 +423,6 @@ const ScheduleClientView = ({
             return;
         }
 
-        // CASE 4: INVALID DROP - Dragging a NEW class to an OCCUPIED room.
         if (draggedType === 'new' && targetScheduleInfo) {
             showToast("This room is already occupied.", 'error');
         }
@@ -412,13 +437,12 @@ const ScheduleClientView = ({
         const { from, to } = swapConfirmation.details;
         
         setIsAssigning(true);
-        setSwapConfirmation({ isOpen: false, details: null }); // Close modal immediately
+        setSwapConfirmation({ isOpen: false, details: null }); 
 
         try {
             const payload = { scheduleId1: from.scheduleId, scheduleId2: to.scheduleId };
             await scheduleService.swapSchedules(payload, token);
             
-            // Optimistically update UI
             setSchedules(prev => {
                 const newSchedules = JSON.parse(JSON.stringify(prev));
                 const day = selectedDay;
@@ -465,7 +489,124 @@ const ScheduleClientView = ({
         return "";
     };
 
-    // --- Render Method ---
+    const handleDownloadPdf = async () => {
+        setIsGeneratingPdf(true);
+
+        const printElement = document.createElement('div');
+        printElement.style.position = 'absolute';
+        printElement.style.left = '-9999px';
+        printElement.style.width = '1123px'; 
+        printElement.style.padding = '40px';
+        printElement.style.backgroundColor = document.documentElement.classList.contains('dark') ? '#111827' : '#ffffff';
+        printElement.style.color = document.documentElement.classList.contains('dark') ? '#d1d5db' : '#1f2937';
+        printElement.style.fontFamily = 'sans-serif';
+
+        let floorsHtml = '';
+        const floors = Object.entries(currentGrid).sort(([floorA], [floorB]) => Number(floorB) - Number(floorA));
+        if (floors && floors.length > 0) {
+            floors.forEach(([floor, rooms]) => {
+                floorsHtml += `
+                    <div style="margin-bottom: 20px;">
+                        <h4 style="font-size: 16px; font-weight: 600; margin-bottom: 12px; border-bottom: 1px solid #4b5563; padding-bottom: 4px;">Floor ${floor}</h4>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px;">
+                `;
+                rooms.forEach(room => {
+                    const classData = getClassForRoom(room.roomId);
+                    const isOccupied = !!classData;
+                    const isUnavailable = room.status === 'unavailable';
+                    const borderColor = isUnavailable || isOccupied ? '#ef4444' : '#22c55e';
+                    const bgColor = isUnavailable || isOccupied ? '#fee2e2' : '#f0fdf4';
+                    const textColor = isUnavailable || isOccupied ? '#7f1d1d' : '#14532d';
+                    const roomNameColor = document.documentElement.classList.contains('dark') ? '#e5e7eb' : '#1f2937';
+
+                    floorsHtml += `
+                        <div
+                            style="
+                                border: 1px solid ${borderColor};
+                                border-radius: 8px;
+                                padding: 10px;
+                                background-color: ${bgColor};
+                                color: ${textColor};
+                                text-align: center;
+                                font-size: 12px;
+                                word-break: break-word;
+                                min-height: 90px;
+                                display: flex;
+                                flex-direction: column;
+                                justify-content: center;
+                                align-items: center;
+                            "
+                        >
+                            <div style="font-weight: bold; font-size: 14px; margin-bottom: 4px; color: ${roomNameColor};">${room.roomName}</div>
+                            ${isOccupied ? `
+                                <div style="font-weight: 500; font-size: 13px;">${classData.className}</div>
+                                <div style="font-size: 11px; opacity: 0.8;">${classData.majorName}</div>
+                            ` : `
+                                <div style="font-style: italic; opacity: 0.9;">${isUnavailable ? 'Unavailable' : 'Available'}</div>
+                            `}
+                        </div>
+                    `;
+                });
+                floorsHtml += `</div></div>`;
+            });
+        } else {
+             floorsHtml += `<p style="text-align: center; font-style: italic; color: ${document.documentElement.classList.contains('dark') ? '#9ca3af' : '#6b7280'};">No layout data found for ${selectedBuilding}.</p>`;
+        }
+
+
+        const headerHtml = `
+            <div style="text-align: center; margin-bottom: 24px;">
+                <h1 style="font-size: 24px; font-weight: bold;">Room Schedule</h1>
+                <h2 style="font-size: 18px; color: #4b5563;">${selectedBuilding}</h2>
+                <p style="font-size: 14px; color: #6b7280;">${selectedDay} | ${selectedTime}</p>
+            </div>
+        `;
+        
+        const footerHtml = `
+            <div style="margin-top: 32px; border-top: 1px solid #e5e7eb; padding-top: 16px; font-size: 12px; text-align: center; color: #6b7280;">
+                <p>Available Rooms: <span style="font-weight: bold; color: ${document.documentElement.classList.contains('dark') ? '#90EE90' : '#228B22'};">${availableRoomsCount}</span> &nbsp;|&nbsp;
+                    Unavailable Rooms: <span style="font-weight: bold; color: ${document.documentElement.classList.contains('dark') ? '#FA8072' : '#B22222'};">${unavailableRoomsCount}</span>
+                </p>
+                <p style="margin-top: 8px;">© ${new Date().getFullYear()} NUM-FIT Digital Center. All Rights Reserved.</p>
+            </div>
+        `;
+
+        printElement.innerHTML = headerHtml + floorsHtml + footerHtml;
+        document.body.appendChild(printElement); 
+
+        const options = {
+            scale: 2,
+            useCORS: true,
+            logging: true,
+            backgroundColor: document.documentElement.classList.contains('dark') ? '#030712' : '#f9fafb',
+            windowHeight: printElement.scrollHeight,
+            windowWidth: printElement.scrollWidth,
+            ignoreElements: (element) => {
+                return element.classList.contains('no-print');
+            }
+        };
+
+        try {
+            const canvas = await html2canvas(printElement, options);
+            const imgData = canvas.toDataURL('image/png');
+            const pdf = new jsPDF({
+                orientation: 'landscape',
+                unit: 'px',
+                format: [canvas.width, canvas.height],
+            });
+
+            pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
+
+            const date = new Date().toISOString().slice(0, 10);
+            pdf.save(`Schedule_${selectedBuilding}_${selectedDay}_${selectedTime}_${date}.pdf`);
+        } catch (err) {
+            console.error("PDF generation error:", err);
+            showToast("An error occurred while generating the PDF.", 'error');
+        } finally {
+            document.body.removeChild(printElement);
+            setIsGeneratingPdf(false);
+        }
+    };
 
     return (
         <>
@@ -483,7 +624,6 @@ const ScheduleClientView = ({
             )}
             
             <div className='p-6 dark:text-white flex flex-col lg:flex-row gap-6 h-[calc(100vh-100px)]'>
-                {/* Class List Column */}
                 <div 
                     onDragOver={handleGridCellDragOver}
                     onDrop={handleDropOnClassList}
@@ -531,10 +671,8 @@ const ScheduleClientView = ({
                         {Object.values(groupedClassesByShift).every(array => array.length === 0) && (<div className="text-center text-gray-400 dark:text-gray-600 mt-4">No classes available for the selected filters.</div>)}
                     </div>
                 </div>
-
-                {/* Schedule Grid Column */}
-                <div className='flex-1 p-4 sm:p-6 bg-white dark:bg-gray-900 border dark:border-gray-700 shadow-xl rounded-xl flex flex-col overflow-y-auto'>
-                    <div className="flex flex-row items-center justify-between mb-4 border-b dark:border-gray-600 pb-3">
+                <div ref={schedulePageRef} className='flex-1 p-4 sm:p-6 bg-white dark:bg-gray-900 border dark:border-gray-700 shadow-xl rounded-xl flex flex-col overflow-y-auto'>
+                    <div className="flex flex-row items-center justify-between mb-4 border-b dark:border-gray-600 pb-3 no-print">
                         <div className="flex rounded-lg border border-gray-300 dark:border-gray-600 overflow-hidden">
                             {weekdays.map(day => (<button key={day} onClick={() => setSelectedDay(day)} className={`px-3.5 py-1.5 text-sm font-medium transition-colors ${selectedDay === day ? 'bg-blue-600 dark:bg-blue-600 hover:bg-blue-700 dark:hover:bg-blue-700 text-white shadow' : 'border-r hover:bg-gray-50 dark:hover:bg-gray-800 dark:border-r-gray-500 last:border-r-0'}`}>{day}</button>))}
                         </div>
@@ -545,7 +683,7 @@ const ScheduleClientView = ({
                             </select>
                         </div>
                     </div>
-                    <div className="flex flex-col sm:flex-row justify-between items-center gap-2">
+                    <div className="flex flex-col sm:flex-row justify-between items-center gap-2 no-print">
                         <div className="flex items-center"><select id="building-select" value={selectedBuilding} onChange={(event) => setSelectedBuilding(event.target.value)} className="block w-full p-2 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white">{buildings.map(building => (<option key={building} value={building}>{building}</option>))}</select></div>
                         <hr className="flex-1 border-t border-slate-300 dark:border-slate-700" />
                     </div>
@@ -579,12 +717,18 @@ const ScheduleClientView = ({
                             </div>
                         ))}
                     </div>
-                    <div className="mt-auto pt-4 border-t border-gray-200 dark:border-gray-700 flex flex-wrap justify-between items-center gap-3">
+                    <div className="mt-auto pt-4 border-t border-gray-200 dark:border-gray-700 flex flex-wrap justify-between items-center gap-3 no-print">
                         <div className="text-xs text-gray-600 dark:text-gray-400 space-y-0.5">
                             <p><span className="inline-block w-2.5 h-2.5 bg-green-500 rounded-full mr-1.5 align-middle"></span> Available Rooms: {availableRoomsCount}</p>
                             <p><span className="inline-block w-2.5 h-2.5 bg-red-500 rounded-full mr-1.5 align-middle"></span> Unavailable Rooms: {unavailableRoomsCount}</p>
                         </div>
-                        <button onClick={() => alert('Download PDF functionality to be implemented.')} className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-md text-sm transition-colors">Download PDF</button>
+                        <button
+                            onClick={handleDownloadPdf}
+                            disabled={isGeneratingPdf}
+                            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-md text-sm transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+                        >
+                            {isGeneratingPdf ? 'Generating...' : 'Download PDF'}
+                        </button>
                     </div>
                 </div>
             </div>

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 
-// NOTE: jsPDF and html2canvas are now dynamically imported in the handleDownloadPdf function
+// NOTE: jsPDF and html2canvas will be dynamically imported in the handleDownloadPdf function
 // to reduce the initial bundle size.
 
 const DAYS_OF_WEEK = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
@@ -22,14 +22,11 @@ const SCHEDULE_ITEM_BG_COLOR = 'bg-green-50 dark:bg-green-900/40';
 const ScheduleItemCard = ({ item }) => (
   <div className={`${SCHEDULE_ITEM_BG_COLOR} p-2 h-full w-full flex flex-col text-xs rounded-md shadow-sm border border-green-200 dark:border-green-800/60`}>
     <div className="flex justify-between items-start mb-1">
-      {/* Subject remains at the top */}
       <span className="font-semibold text-[13px] text-gray-800 dark:text-gray-200">{item.subject}</span>
     </div>
     <div className="text-gray-700 dark:text-gray-300 text-[11px]">{item.year}</div>
-    <div className="mt-auto flex justify-between items-end">
-      <span className="text-gray-500 dark:text-gray-400 text-[11px]">{item.semester}</span>
-      <span className="text-gray-500 dark:text-gray-400 text-[10px]">{item.timeDisplay}</span>
-    </div>
+    <div className="mt-10 text-right text-gray-500 dark:text-gray-400 text-[10px]">{item.timeDisplay}</div>
+    <div className="mt-auto text-right text-gray-500 dark:text-gray-400 text-[11px]">{item.semester}</div>
   </div>
 );
 export default function InstructorScheduleClientView({ initialScheduleData, instructorDetails, allShifts }) {
@@ -37,8 +34,8 @@ export default function InstructorScheduleClientView({ initialScheduleData, inst
     const { instructorName, publicDate } = instructorDetails;
     const [classAssignCount, setClassAssignCount] = useState(0);
     const [availableShiftCount, setAvailableShiftCount] = useState(0);
-    const [isDownloading, setIsDownloading] = useState(false); // State for download process
-    const scheduleRef = useRef(null);
+    const [isGeneratingPdf, setIsGeneratingPdf] = useState(false); // Changed state name for clarity
+    const scheduleContainerRef = useRef(null); // Renamed ref for clarity
 
     // Dynamically create the time slots and row config from the fetched shifts data.
     const { TIME_SLOTS, ROW_CONFIG } = useMemo(() => {
@@ -67,16 +64,36 @@ export default function InstructorScheduleClientView({ initialScheduleData, inst
     }, [scheduleData, TIME_SLOTS]); 
 
     const handleDownloadPdf = async () => {
-        if (!scheduleRef.current || isDownloading) return;
+        const captureElement = scheduleContainerRef.current;
+        if (!captureElement || isGeneratingPdf) return;
 
-        setIsDownloading(true);
+        setIsGeneratingPdf(true);
+
+        // Dynamically create stats and footer elements to append for PDF capture
+        const statsContainer = document.createElement('div');
+        const footer = document.createElement('div');
+        
+        // Style and populate the stats container
+        statsContainer.className = 'mt-6 text-sm text-gray-700 dark:text-gray-300 space-y-1 p-4';
+        statsContainer.innerHTML = `
+            <p>• Class assign <span class="font-semibold">: ${classAssignCount}</span></p>
+            <p>• Available shift <span class="font-semibold">: ${availableShiftCount}</span></p>
+        `;
+
+        // Style and populate the footer
+        const currentYear = new Date().getFullYear();
+        footer.className = 'mt-8 text-center text-sm text-gray-500 dark:text-gray-400 py-4 border-t border-gray-200 dark:border-gray-700';
+        footer.innerHTML = `Copyright @${currentYear} NUM-FIT Digital Center. All rights reserved.`;
+        
+        // Append the new elements to the capture area
+        captureElement.appendChild(statsContainer);
+        captureElement.appendChild(footer);
 
         try {
-            // Dynamically import the libraries when the function is called.
             const { default: jsPDF } = await import('jspdf');
             const { default: html2canvas } = await import('html2canvas');
 
-            const canvas = await html2canvas(scheduleRef.current, {
+            const canvas = await html2canvas(captureElement, {
                 scale: 2,
                 useCORS: true,
                 logging: true,
@@ -94,9 +111,11 @@ export default function InstructorScheduleClientView({ initialScheduleData, inst
 
         } catch (err) {
             console.error("Error generating PDF:", err);
-            // Optionally, show a toast notification for the error
         } finally {
-            setIsDownloading(false);
+            // Clean up by removing the temporary elements from the DOM
+            captureElement.removeChild(statsContainer);
+            captureElement.removeChild(footer);
+            setIsGeneratingPdf(false);
         }
     };
     
@@ -107,7 +126,7 @@ export default function InstructorScheduleClientView({ initialScheduleData, inst
         <hr className="border-t border-gray-200 dark:border-gray-700 mt-3" />
       </div>
 
-      <div ref={scheduleRef} className="bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-lg shadow-md border border-gray-200 dark:border-gray-700">
+      <div ref={scheduleContainerRef} className="bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-lg shadow-md border border-gray-200 dark:border-gray-700">
         <h2 className="text-xl font-medium text-gray-700 dark:text-gray-300 mb-4">{instructorName}</h2>
 
         <div className="overflow-x-auto">
@@ -123,13 +142,13 @@ export default function InstructorScheduleClientView({ initialScheduleData, inst
             {/* Data Rows */}
             {TIME_SLOTS.map(timeSlot => (
               <React.Fragment key={timeSlot}>
-                <div className={`p-3 text-sm font-medium text-gray-600 dark:text-gray-400 text-center border-r border-gray-300 dark:border-gray-600 ${timeSlot !== TIME_SLOTS[TIME_SLOTS.length - 1] ? 'border-b dark:border-b-gray-600' : ''} ${ROW_CONFIG[timeSlot].heightClass} flex items-center justify-center dark:bg-gray-700/50`}>
+                <div className={`p-3 text-sm font-medium text-gray-600 dark:text-gray-400 text-center border-r border-gray-300 dark:border-gray-600 ${timeSlot !== TIME_SLOTS[TIME_SLOTS.length - 1] ? 'border-b dark:border-b-gray-600' : ''} ${ROW_CONFIG[timeSlot]?.heightClass || 'h-36'} flex items-center justify-center dark:bg-gray-700/50`}>
                   {timeSlot}
                 </div>
                 {DAYS_OF_WEEK.map(day => {
                   const item = scheduleData[day]?.[timeSlot];
                   return (
-                    <div key={`${day}-${timeSlot}`} className={`p-1.5 border-gray-300 dark:border-gray-600 ${day !== 'Sunday' ? 'border-r dark:border-r-gray-600' : ''} ${timeSlot !== TIME_SLOTS[TIME_SLOTS.length - 1] ? 'border-b dark:border-b-gray-600' : ''} ${ROW_CONFIG[timeSlot].heightClass} flex items-stretch justify-stretch`}>
+                    <div key={`${day}-${timeSlot}`} className={`p-1.5 border-gray-300 dark:border-gray-600 ${day !== 'Sunday' ? 'border-r dark:border-r-gray-600' : ''} ${timeSlot !== TIME_SLOTS[TIME_SLOTS.length - 1] ? 'border-b dark:border-b-gray-600' : ''} ${ROW_CONFIG[timeSlot]?.heightClass || 'h-36'} flex items-stretch justify-stretch`}>
                       {item ? <ScheduleItemCard item={item} /> : <div className="w-full h-full"></div>}
                     </div>
                   );
@@ -140,18 +159,15 @@ export default function InstructorScheduleClientView({ initialScheduleData, inst
         </div>
       </div>
 
-      <div className="mt-6 text-sm text-gray-700 dark:text-gray-300 space-y-1">
-        <p>• Class assign <span className="font-semibold">: {classAssignCount}</span></p>
-        <p>• Available shift <span className="font-semibold">: {availableShiftCount}</span></p>
-      </div>
+      {/* The stats are now dynamically added during PDF generation, so they are removed from the main JSX */}
 
       <div className="mt-8 flex flex-col sm:flex-row justify-between items-center">
         <button
           onClick={handleDownloadPdf}
-          disabled={isDownloading}
-          className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 px-6 rounded-md shadow-sm order-1 sm:order-2 mb-4 sm:mb-0 disabled:bg-blue-400 disabled:cursor-not-allowed"
+          disabled={isGeneratingPdf}
+          className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 px-6 rounded-md shadow-sm order-1 sm:order-2 mb-4 sm:mb-0 disabled:bg-blue-400 disabled:cursor-wait"
         >
-          {isDownloading ? 'Generating...' : 'Download PDF file'}
+          {isGeneratingPdf ? 'Generating...' : 'Download PDF file'}
         </button>
         <p className="text-sm text-gray-500 dark:text-gray-400 order-2 sm:order-1">
           Public Date : {publicDate}

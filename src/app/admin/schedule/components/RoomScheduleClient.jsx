@@ -47,20 +47,22 @@ const SkeletonCard = () => (
     </div>
 );
 
+// Simplified ScheduleItemCard without drag-and-drop props
 const ScheduleItemCard = React.memo(({ item }) => (
     <div
         className={`p-2 h-full w-full flex flex-col text-xs rounded-md shadow-sm border border-green-200 dark:border-green-800/60 ${SCHEDULE_ITEM_BG_COLOR}`}
     >
         <div className="flex justify-between items-start mb-1">
             <span className="font-semibold text-[13px] text-gray-800 dark:text-gray-200">{item.subject}</span>
-            <span className="text-gray-500 dark:text-gray-400 text-[10px] leading-tight pt-0.5">{item.timeDisplay}</span>
         </div>
         <div className="text-gray-700 dark:text-gray-300 text-[11px]">{item.year}</div>
+        <div className="mt-10 text-right text-gray-500 dark:text-gray-400 text-[10px]">{item.timeDisplay}</div>
         <div className="mt-auto text-right text-gray-500 dark:text-gray-400 text-[11px]">{item.semester}</div>
     </div>
 ));
 ScheduleItemCard.displayName = 'ScheduleItemCard';
 
+// Simplified ScheduleGrid without drag-and-drop props
 const ScheduleGrid = ({ scheduleData, loading }) => (
     <div className="overflow-x-auto">
         <div className="grid grid-cols-[minmax(120px,1fr)_repeat(7,minmax(150px,1.5fr))] border-t border-l border-gray-300 dark:border-gray-600 min-w-[1024px]">
@@ -90,6 +92,7 @@ const ScheduleGrid = ({ scheduleData, loading }) => (
     </div>
 );
 
+// Simplified ScheduleList without drag-and-drop props
 const ScheduleList = ({ scheduleData, loading }) => (
     <div className="space-y-4">
         {DAYS_OF_WEEK.map(day => (
@@ -128,6 +131,7 @@ const RoomScheduleClient = ({ initialScheduleData, roomId, roomName }) => {
     const [classAssignCount, setClassAssignCount] = useState(0);
     const [availableShiftCount, setAvailableShiftCount] = useState(0);
     const [hasMounted, setHasMounted] = useState(false);
+    const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
 
     const isDesktop = useMediaQuery('(min-width: 1024px)');
 
@@ -146,17 +150,47 @@ const RoomScheduleClient = ({ initialScheduleData, roomId, roomName }) => {
         setAvailableShiftCount(totalSlots - assignedCount);
     }, [scheduleData]);
 
-    const handleDownloadPdf = () => {
-        if (scheduleRef.current) {
-            html2canvas(scheduleRef.current, {
+    const handleDownloadPdf = async () => {
+        const captureElement = scheduleRef.current;
+        if (!captureElement) return;
+        setIsGeneratingPdf(true);
+
+        const statsContainer = document.createElement('div');
+        const footer = document.createElement('div');
+        const totalShifts = DAYS_OF_WEEK.length * TIME_SLOTS.length;
+
+        statsContainer.className = 'mt-6 p-4 text-sm text-gray-700 dark:text-gray-300 space-y-1 border-t dark:border-gray-600';
+        statsContainer.innerHTML = `
+            <ul>
+                <li>Assigned Classes: <span style="font-weight: 500;">${classAssignCount}</span></li>
+                <li>Available Shifts: <span style="font-weight: 500;">${availableShiftCount}</span></li>
+                <li>Total Shifts: <span style="font-weight: 500;">${totalShifts}</span></li>
+            </ul>
+            <p style="margin-top: 8px;">Public Date: ${publicDate}</p>
+        `;
+
+        const currentYear = new Date().getFullYear();
+        footer.className = 'mt-6 pt-4 text-center text-xs text-gray-500 dark:text-gray-400 border-t dark:border-gray-600';
+        footer.innerHTML = `Copyright @${currentYear} NUM-FIT Digital Center. All rights reserved.`;
+
+        captureElement.appendChild(statsContainer);
+        captureElement.appendChild(footer);
+
+        try {
+            const canvas = await html2canvas(captureElement, {
                 scale: 2, useCORS: true, logging: true,
                 backgroundColor: document.documentElement.classList.contains('dark') ? '#1f2937' : '#ffffff',
-            }).then(canvas => {
-                const imgData = canvas.toDataURL('image/png');
-                const pdf = new jsPDF({ orientation: 'landscape', unit: 'px', format: [canvas.width, canvas.height] });
-                pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
-                pdf.save(`Room_${roomName}_Schedule.pdf`);
             });
+            const imgData = canvas.toDataURL('image/png');
+            const pdf = new jsPDF({ orientation: 'landscape', unit: 'px', format: [canvas.width, canvas.height] });
+            pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
+            pdf.save(`Room_${roomName}_Schedule.pdf`);
+        } catch (err) {
+            console.error("Error generating PDF:", err);
+        } finally {
+            captureElement.removeChild(statsContainer);
+            captureElement.removeChild(footer);
+            setIsGeneratingPdf(false);
         }
     };
 
@@ -182,17 +216,17 @@ const RoomScheduleClient = ({ initialScheduleData, roomId, roomName }) => {
                 {renderSchedule()}
             </div>
 
-            <div className="mt-4 flex flex-col sm:flex-row justify-between items-center">
+            <div className="mt-4 flex flex-col sm:flex-row justify-between items-center no-print">
                  <div className="text-sm text-gray-500 dark:text-gray-400 order-2 sm:order-1 mt-4 sm:mt-0">
-                    <ul>
+                    <ul className="mb-2">
                         <li>Assigned Classes: <span className="font-medium text-gray-700 dark:text-gray-300">{classAssignCount}</span></li>
                         <li>Available Shifts: <span className="font-medium text-gray-700 dark:text-gray-300">{availableShiftCount}</span></li>
                         <li>Total Shifts: <span className="font-medium text-gray-700 dark:text-gray-300">{DAYS_OF_WEEK.length * TIME_SLOTS.length}</span></li>
                     </ul>
-                    <p className="mt-2">Public Date: {publicDate}</p>
+                    Public Date: {publicDate}
                 </div>
-                <button onClick={handleDownloadPdf} disabled={loading} className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 px-6 rounded-md shadow-sm order-1 sm:order-2 disabled:bg-gray-400 disabled:cursor-not-allowed w-full sm:w-auto">
-                    Download PDF file
+                <button onClick={handleDownloadPdf} disabled={loading || isGeneratingPdf} className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 px-6 rounded-md shadow-sm order-1 sm:order-2 disabled:bg-gray-400 disabled:cursor-not-allowed w-full sm:w-auto">
+                    {isGeneratingPdf ? 'Generating PDF...' : 'Download PDF file'}
                 </button>
             </div>
         </div>

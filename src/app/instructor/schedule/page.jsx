@@ -5,7 +5,32 @@ import InstructorScheduleClientView from './components/InstructorScheduleClientV
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import { scheduleService } from '@/services/schedule.service';
-import { getAllShifts } from '@/services/shift.service'; // FIX: Import the function directly
+import { getAllShifts } from '@/services/shift.service'; 
+
+/**
+ * Helper function to calculate the academic year from the generation number.
+ * @param {string | number} generation - The generation number of the class.
+ * @returns {number | null} The calculated academic year, or null if invalid.
+ */
+const mapGenerationToYear = (generation) => {
+    if (!generation) return null;
+    const genNumber = parseInt(generation, 10);
+    if (isNaN(genNumber)) return null;
+
+    // Define the base generation and year for calculation.
+    const BASE_GENERATION = 34; // This is the generation for the first year students in BASE_YEAR.
+    const BASE_YEAR = 2025; 
+
+    const currentYear = new Date().getFullYear();
+    
+    // Calculate what generation is currently in their first year.
+    const currentFirstYearGeneration = BASE_GENERATION + (currentYear - BASE_YEAR);
+
+    // Calculate the academic year for the given generation.
+    const academicYear = currentFirstYearGeneration - genNumber + 1;
+    
+    return academicYear > 0 ? academicYear : null;
+};
 
 /**
  * Fetches and processes the schedule for the currently logged-in instructor.
@@ -22,7 +47,7 @@ const fetchScheduleData = async () => {
   try {
       const [apiSchedulesResponse, allShifts] = await Promise.all([
           scheduleService.getMySchedule(token),
-          getAllShifts(token) // FIX: Call the function directly
+          getAllShifts(token)
       ]);
 
       const apiSchedules = Array.isArray(apiSchedulesResponse) ? apiSchedulesResponse : (apiSchedulesResponse.payload || []);
@@ -44,21 +69,16 @@ const fetchScheduleData = async () => {
           
           const days = schedule.dayDetails.map(dayDetail => dayDetail.dayOfWeek.toUpperCase());
           
-          const mapSemesterToYear = (semester) => {
-              if (!semester || typeof semester !== 'string') return '';
-              const semesterNumber = parseInt(semester.replace(/[^0-9]/g, ''), 10);
-              if (isNaN(semesterNumber)) return '';
-              return Math.ceil(semesterNumber / 2);
-          };
-
-          const academicYear = mapSemesterToYear(schedule.semester);
+          // Use the new generation-based year calculation
+          const academicYear = mapGenerationToYear(schedule.year);
 
           days.forEach(dayString => {
               const formattedDay = dayString.charAt(0) + dayString.slice(1).toLowerCase();
               if (scheduleData[formattedDay]) {
                   scheduleData[formattedDay][timeSlotKey] = {
                       subject: schedule.className,
-                      year: `Year ${academicYear}`, 
+                      // Use the calculated academic year
+                      year: academicYear ? `Year ${academicYear}` : 'Year N/A', 
                       semester: schedule.semester,
                       timeDisplay: timeSlotKey,
                       room: schedule.roomName

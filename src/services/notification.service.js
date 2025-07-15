@@ -1,18 +1,19 @@
 import axios from 'axios';
 
-// Define the base URL for all API requests.
-const API_URL = "https://jaybird-new-previously.ngrok-free.app/api/v1";
-const LOCAL_API_URL = "/api"; // Proxy for client-side calls
+// Define the base URLs for server-side and client-side calls
+const SERVER_API_URL = "https://jaybird-new-previously.ngrok-free.app/api/v1";
+const LOCAL_API_URL = "/api"; // This points to the Next.js API proxy
 
 /**
  * Creates the authorization headers for an API request.
  * @param {string} token - The user's JWT token.
+ * @param {boolean} isServer - Flag to indicate if the call is from the server.
  * @returns {object} The headers object.
  */
-const getAuthHeaders = (token) => ({
+const getAuthHeaders = (token, isServer) => ({
     'Authorization': `Bearer ${token}`,
-    'ngrok-skip-browser-warning': 'true',
-    'Content-Type': 'application/json'
+    'Content-Type': 'application/json',
+    ...(isServer && { 'ngrok-skip-browser-warning': 'true' })
 });
 
 /**
@@ -35,8 +36,10 @@ const handleError = (context, error) => {
  * @returns {Promise<Array>} A promise that resolves to an array of notification objects.
  */
 const getNotifications = async (token) => {
+    const isServer = typeof window === 'undefined';
+    const url = isServer ? `${SERVER_API_URL}/notifications` : `${LOCAL_API_URL}/notifications`;
     try {
-        const response = await axios.get(`${API_URL}/notifications`, { headers: getAuthHeaders(token) });
+        const response = await axios.get(url, { headers: getAuthHeaders(token, isServer) });
         return response.data.payload || [];
     } catch (error) {
         handleError("Get notifications", error);
@@ -49,8 +52,10 @@ const getNotifications = async (token) => {
  * @returns {Promise<Array>} A promise that resolves to an array of change request objects.
  */
 const getChangeRequests = async (token) => {
+    const isServer = typeof window === 'undefined';
+    const url = isServer ? `${SERVER_API_URL}/change-requests` : `${LOCAL_API_URL}/change-requests`;
     try {
-        const response = await axios.get(`${API_URL}/change-requests`, { headers: getAuthHeaders(token) });
+        const response = await axios.get(url, { headers: getAuthHeaders(token, isServer) });
         return response.data.payload || [];
     } catch (error) {
         handleError("Get change requests", error);
@@ -58,39 +63,42 @@ const getChangeRequests = async (token) => {
 };
 
 /**
- * Submits a change request.
- * @param {object} requestData - The data for the change request.
+ * Submits a change request or a booking. This is a client-side only function.
+ * @param {object} requestData - The data for the request.
  * @param {string} token - The authorization token.
  * @returns {Promise<any>} The response from the API.
  */
 const submitChangeRequest = async (requestData, token) => {
+    const url = `${LOCAL_API_URL}/change-requests`;
+    
     try {
-        // Convert string IDs to numbers if needed
+        // Dynamically build the payload based on whether it's a booking or a change request.
         const payload = {
             instructorId: Number(requestData.instructorId),
-            scheduleId: Number(requestData.scheduleId),
             newRoomId: Number(requestData.newRoomId),
             effectiveDate: requestData.effectiveDate,
             description: requestData.description || ''
         };
 
-        console.log("Final payload being sent:", payload); // Debug log
+        // If eventName is present, it's a booking for a conference room.
+        if (requestData.eventName) {
+            payload.eventName = requestData.eventName;
+            payload.scheduleId = null; // Set scheduleId to null for bookings.
+        } else {
+            // Otherwise, it's a standard change request.
+            payload.scheduleId = Number(requestData.scheduleId);
+        }
 
         const response = await axios.post(
-            `${API_URL}/change-requests`, // Ensure this matches your backend
+            url,
             payload,
             {
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json',
-                    'ngrok-skip-browser-warning': 'true'
-                }
+                headers: getAuthHeaders(token, false) // isServer is always false for this function
             }
         );
         return response.data;
     } catch (error) {
-        console.error('Submit change request error:', error);
-        throw error;
+        handleError("Submit change request", error);
     }
 };
 
@@ -100,8 +108,10 @@ const submitChangeRequest = async (requestData, token) => {
  * @param {string} token - The authorization token.
  */
 const approveChangeRequest = async (changeRequestId, token) => {
+    const isServer = typeof window === 'undefined';
+    const url = isServer ? `${SERVER_API_URL}/change-requests/${changeRequestId}/approve` : `${LOCAL_API_URL}/change-requests/${changeRequestId}/approve`;
     try {
-        await axios.post(`${API_URL}/change-requests/${changeRequestId}/approve`, {}, { headers: getAuthHeaders(token) });
+        await axios.post(url, {}, { headers: getAuthHeaders(token, isServer) });
     } catch (error) {
         handleError("Approve change request", error);
     }
@@ -113,8 +123,10 @@ const approveChangeRequest = async (changeRequestId, token) => {
  * @param {string} token - The authorization token.
  */
 const denyChangeRequest = async (changeRequestId, token) => {
+    const isServer = typeof window === 'undefined';
+    const url = isServer ? `${SERVER_API_URL}/change-requests/${changeRequestId}/deny` : `${LOCAL_API_URL}/change-requests/${changeRequestId}/deny`;
     try {
-        await axios.post(`${API_URL}/change-requests/${changeRequestId}/deny`, {}, { headers: getAuthHeaders(token) });
+        await axios.post(url, {}, { headers: getAuthHeaders(token, isServer) });
     } catch (error) {
         handleError("Deny change request", error);
     }
@@ -126,8 +138,10 @@ const denyChangeRequest = async (changeRequestId, token) => {
  * @param {string} token - The authorization token.
  */
 const markNotificationAsRead = async (notificationId, token) => {
+    const isServer = typeof window === 'undefined';
+    const url = isServer ? `${SERVER_API_URL}/notifications/${notificationId}/read` : `${LOCAL_API_URL}/notifications/${notificationId}/read`;
     try {
-        await axios.post(`${API_URL}/notifications/${notificationId}/read`, {}, { headers: getAuthHeaders(token) });
+        await axios.post(url, {}, { headers: getAuthHeaders(token, isServer) });
     } catch (error) {
         handleError("Mark notification as read", error);
     }

@@ -66,13 +66,20 @@ async function fetchAllRoomsAndSchedules() {
             '07:00:00': 'Morning Shift', '10:30:00': 'Noon Shift', '14:00:00': 'Afternoon Shift',
             '17:30:00': 'Evening Shift', '07:30:00': 'Weekend Shift'
         };
+        const allTimeSlots = Object.values(shiftNameMap);
+
         const dayApiToFullName = {
              MONDAY: 'Monday', TUESDAY: 'Tuesday', WEDNESDAY: 'Wednesday', THURSDAY: 'Thursday',
              FRIDAY: 'Friday', SATURDAY: 'Saturday', SUNDAY: 'Sunday'
         };
         const scheduleMap = {};
         apiSchedules.forEach(schedule => {
-            if (schedule && schedule.dayDetails && Array.isArray(schedule.dayDetails) && schedule.shift) {
+            if (!schedule || !schedule.dayDetails || !Array.isArray(schedule.dayDetails) || !schedule.shift) {
+                return; // Skip malformed entries
+            }
+
+            if (schedule.shift.startTime) {
+                // --- Handle REGULAR class schedules ---
                 const timeSlot = shiftNameMap[schedule.shift.startTime];
                 schedule.dayDetails.forEach(dayDetail => {
                     const dayName = dayApiToFullName[dayDetail.dayOfWeek.toUpperCase()];
@@ -82,8 +89,24 @@ async function fetchAllRoomsAndSchedules() {
                         scheduleMap[dayName][timeSlot][schedule.roomId] = schedule.className;
                     }
                 });
+            } else if (schedule.shift.name === 'Booked') {
+                // --- Handle CONFERENCE room bookings ---
+                schedule.dayDetails.forEach(dayDetail => {
+                    const dayName = dayApiToFullName[dayDetail.dayOfWeek.toUpperCase()];
+                    if (dayName) {
+                        if (!scheduleMap[dayName]) scheduleMap[dayName] = {};
+                        // Since booking time is not specified, mark room as booked for all time slots on that day.
+                        allTimeSlots.forEach(timeSlot => {
+                            if (!scheduleMap[dayName][timeSlot]) {
+                                scheduleMap[dayName][timeSlot] = {};
+                            }
+                            scheduleMap[dayName][timeSlot][schedule.roomId] = schedule.className; // Use booking name
+                        });
+                    }
+                });
             }
         });
+
 
         // Format the classes specific to the instructor for the request form.
         const formattedClasses = apiInstructorSchedules.map(cls => ({
