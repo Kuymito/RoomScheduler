@@ -18,20 +18,17 @@ async function getRoomScheduleData(roomId) {
     }
 
     try {
-        // Fetch all rooms and all schedules in parallel
         const [allRooms, allSchedules] = await Promise.all([
             getAllRooms(token),
             scheduleService.getAllSchedules(token)
         ]);
 
-        // Find the specific room by its ID to get the name
         const room = allRooms.find(r => String(r.roomId) === String(roomId));
         if (!room) {
             return { roomName: null, scheduleData: {}, error: 'Room not found' };
         }
         const roomName = room.roomName;
 
-        // Helper function to map semester to academic year
         const mapSemesterToYear = (semester) => {
             if (!semester || typeof semester !== 'string') return '';
             const semesterNumber = parseInt(semester.replace(/[^0-9]/g, ''), 10);
@@ -39,7 +36,6 @@ async function getRoomScheduleData(roomId) {
             return Math.ceil(semesterNumber / 2);
         };
 
-        // Process schedules for the specific room
         const roomSchedules = {};
         allSchedules.forEach(schedule => {
             if (String(schedule.roomId) === String(roomId)) {
@@ -56,7 +52,6 @@ async function getRoomScheduleData(roomId) {
                             year: `Year ${academicYear}`,
                             semester: schedule.semester,
                             timeDisplay: timeSlotKey,
-                            // Pass along scheduleId for swap/move operations
                             scheduleId: schedule.scheduleId, 
                         };
                     });
@@ -83,12 +78,10 @@ const SchedulePageSkeleton = () => (
             <div className="h-7 w-1/3 bg-gray-300 dark:bg-gray-600 rounded-md mb-4"></div>
             <div className="overflow-x-auto">
                 <div className="grid grid-cols-[minmax(120px,1fr)_repeat(7,minmax(150px,1.5fr))] border-t border-l border-gray-300 dark:border-gray-600 min-w-[1024px]">
-                    {/* Header */}
                     <div className="h-12 bg-gray-200 dark:bg-gray-700/60 border-r border-b border-gray-300 dark:border-gray-600"></div>
                     {[...Array(7)].map((_, i) => (
                         <div key={i} className="h-12 bg-gray-200 dark:bg-gray-700/50 border-r border-b border-gray-300 dark:border-gray-600"></div>
                     ))}
-                    {/* Body */}
                     {[...Array(4)].map((_, rowIndex) => (
                         <React.Fragment key={rowIndex}>
                             <div className="h-36 bg-gray-200 dark:bg-gray-700/50 border-r border-b border-gray-300 dark:border-gray-600"></div>
@@ -127,7 +120,7 @@ export default async function AdminScheduleRoomDetailPage({ params }) {
 
     const breadcrumbs = [
         { label: "Schedule", href: "/admin/schedule" },
-        { label: roomName } // Use the fetched room name
+        { label: roomName }
     ];
 
     return (
@@ -136,7 +129,7 @@ export default async function AdminScheduleRoomDetailPage({ params }) {
                 <RoomScheduleClient
                     initialScheduleData={scheduleData}
                     roomId={roomId}
-                    roomName={roomName} // Pass roomName to the client
+                    roomName={roomName}
                 />
             </Suspense>
         </AdminLayout>
