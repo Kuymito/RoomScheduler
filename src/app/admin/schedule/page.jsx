@@ -11,6 +11,31 @@ import { scheduleService } from '@/services/schedule.service';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 
+/**
+ * Helper function to calculate the academic year from the generation number.
+ * @param {string | number} generation - The generation number of the class.
+ * @returns {number | null} The calculated academic year, or null if invalid.
+ */
+const mapGenerationToYear = (generation) => {
+    if (!generation) return null;
+    const genNumber = parseInt(generation, 10);
+    if (isNaN(genNumber)) return null;
+
+    // Define the base generation and year for calculation.
+    const BASE_GENERATION = 34; // This is the generation for the first year students in BASE_YEAR.
+    const BASE_YEAR = 2025; 
+
+    const currentYear = new Date().getFullYear();
+    
+    // Calculate what generation is currently in their first year.
+    const currentFirstYearGeneration = BASE_GENERATION + (currentYear - BASE_YEAR);
+
+    // Calculate the academic year for the given generation.
+    const academicYear = currentFirstYearGeneration - genNumber + 1;
+    
+    return academicYear > 0 ? academicYear : null;
+};
+
 // This function now transforms the data to have a consistent structure.
 const fetchSchedulePageData = async () => {
     const session = await getServerSession(authOptions);
@@ -79,12 +104,16 @@ const fetchSchedulePageData = async () => {
                             if (!scheduleMap[dayAbbr]) scheduleMap[dayAbbr] = {};
                             if (!scheduleMap[dayAbbr][timeSlotName]) scheduleMap[dayAbbr][timeSlotName] = {};
                             
+                            // UPDATED: Calculate academic year from generation
+                            const academicYear = mapGenerationToYear(schedule.year); // Using schedule.year
+
                             scheduleMap[dayAbbr][timeSlotName][schedule.roomId] = {
                                 classId: schedule.classId,
                                 scheduleId: schedule.scheduleId,
                                 className: schedule.className,
                                 majorName: schedule.majorName,
-                                year: schedule.generation
+                                // UPDATED: Store the formatted year string
+                                year: academicYear ? `Year ${academicYear}` : 'Year N/A'
                             };
                         }
                     });
@@ -101,9 +130,6 @@ const fetchSchedulePageData = async () => {
         });
 
         return {
-            // FIX: Pass the complete list of transformed classes. The client component
-            // will handle filtering for its "unassigned" list, but it needs the
-            // full list to look up data for already-scheduled classes.
             initialClasses: transformedClasses,
             initialRooms: rooms,
             initialSchedules: scheduleMap,
