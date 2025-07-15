@@ -150,54 +150,80 @@ const ScheduleClientView = ({
 
     // --- Memoized Calculations ---
 
-    const allFilteredClasses = useMemo(() => {
+    const allFilteredAndSortedClasses = useMemo(() => {
         const assignedClassIds = new Set();
         const selectedDayFull = Object.entries(dayApiToAbbrMap).find(([_, abbr]) => abbr === selectedDay)?.[0] || '';
         
-        if (schedules[selectedDay] && schedules[selectedDay][selectedTime]) {
-            Object.values(schedules[selectedDay][selectedTime]).forEach(scheduleInfo => {
-                if (scheduleInfo?.classId) assignedClassIds.add(scheduleInfo.classId);
+        // Correctly populate assignedClassIds by checking all time slots for the selected day
+        if (schedules[selectedDay]) {
+            Object.values(schedules[selectedDay]).forEach(timeSlotSchedule => {
+                Object.values(timeSlotSchedule).forEach(scheduleInfo => {
+                    if (scheduleInfo?.classId) assignedClassIds.add(scheduleInfo.classId);
+                });
             });
         }
 
-        return initialClasses.filter(classItem => {
-            // **UPDATED LOGIC**: Do not show archived classes in the list of available classes to schedule.
+        const filtered = initialClasses.filter(classItem => {
             if (classItem.archived) return false;
 
-            const isAssignedInCurrentView = assignedClassIds.has(classItem.classId);
-            if (isAssignedInCurrentView) return false;
+            // This check now correctly excludes any class already scheduled on this day
+            const isAssignedOnThisDay = assignedClassIds.has(classItem.classId);
+            if (isAssignedOnThisDay) return false;
 
             const occursOnSelectedDay = classItem.dayDetails?.some(day => day.dayOfWeek === selectedDayFull && !day.online);
-            const shiftForClass = classItem.shift?.name;
-            const shiftMatch = selectedTime === 'All' || shiftForClass === selectedTime;
             const degreeMatch = selectedDegree === 'All' || classItem.degreeName === selectedDegree;
             const generationMatch = selectedGeneration === 'All' || classItem.generation === selectedGeneration;
             const searchTermMatch = searchTerm === '' || classItem.className.toLowerCase().includes(searchTerm.toLowerCase()) || (classItem.majorName && classItem.majorName.toLowerCase().includes(searchTerm.toLowerCase()));
 
-            return occursOnSelectedDay && shiftMatch && degreeMatch && generationMatch && searchTermMatch;
+            return occursOnSelectedDay && degreeMatch && generationMatch && searchTermMatch;
         });
-    }, [schedules, selectedDay, selectedTime, selectedDegree, selectedGeneration, searchTerm, initialClasses]);
+
+        // Sort the filtered list. Classes matching the selected time come first.
+        return filtered.sort((a, b) => {
+            const shiftA = a.shift?.name;
+            const shiftB = b.shift?.name;
+
+            if (selectedTime !== 'All') {
+                const aMatches = shiftA === selectedTime;
+                const bMatches = shiftB === selectedTime;
+
+                if (aMatches && !bMatches) return -1;
+                if (!aMatches && bMatches) return 1;
+            }
+            
+            const indexA = timeSlots.indexOf(shiftA);
+            const indexB = timeSlots.indexOf(shiftB);
+
+            if(indexA !== indexB) return indexA - indexB;
+
+            return a.className.localeCompare(b.className);
+        });
+    }, [schedules, selectedDay, selectedTime, selectedDegree, selectedGeneration, searchTerm, initialClasses, timeSlots, dayApiToAbbrMap]);
 
     const groupedClassesByShift = useMemo(() => {
+        // Group all the (now sorted and filtered) classes by their shift time.
         const groups = {};
-        const relevantTimeSlots = selectedTime === 'All' ? timeSlots : [selectedTime];
-        relevantTimeSlots.forEach(slot => {
-            groups[slot] = allFilteredClasses.filter(classItem => classItem.shift?.name === slot);
+        allFilteredAndSortedClasses.forEach(classItem => {
+            const shiftName = classItem.shift?.name || 'Unassigned';
+            if (!groups[shiftName]) {
+                groups[shiftName] = [];
+            }
+            groups[shiftName].push(classItem);
         });
         return groups;
-    }, [allFilteredClasses, selectedTime, timeSlots]);
-
-    const getClassForRoom = (roomId) => {
-        const scheduleInfo = schedules[selectedDay]?.[selectedTime]?.[roomId];
-        if (!scheduleInfo) return null;
-        return initialClasses.find(c => c.classId === scheduleInfo.classId) || { ...scheduleInfo, generation: scheduleInfo.year };
-    };
+    }, [allFilteredAndSortedClasses]);
 
     const orderedTimeSlots = useMemo(() => {
         if (selectedTime === 'All') return timeSlots;
         const otherTimes = timeSlots.filter(slot => slot !== selectedTime);
         return [selectedTime, ...otherTimes];
     }, [selectedTime, timeSlots]);
+
+    const getClassForRoom = (roomId) => {
+        const scheduleInfo = schedules[selectedDay]?.[selectedTime]?.[roomId];
+        if (!scheduleInfo) return null;
+        return initialClasses.find(c => c.classId === scheduleInfo.classId) || { ...scheduleInfo, generation: scheduleInfo.year };
+    };
 
     const currentGrid = useMemo(() => buildingLayout[selectedBuilding] ?? {}, [buildingLayout, selectedBuilding]);
     
@@ -475,10 +501,10 @@ const ScheduleClientView = ({
         printElement.style.color = document.documentElement.classList.contains('dark') ? '#d1d5db' : '#1f2937';
         printElement.style.fontFamily = 'sans-serif';
 
-        const floors = buildingLayout[selectedBuilding];
         let floorsHtml = '';
-        if (floors && Object.keys(floors).length > 0) {
-            Object.entries(floors).sort(([floorA], [floorB]) => Number(floorB) - Number(floorA)).forEach(([floor, rooms]) => {
+        const floors = Object.entries(currentGrid).sort(([floorA], [floorB]) => Number(floorB) - Number(floorA));
+        if (floors && floors.length > 0) {
+            floors.forEach(([floor, rooms]) => {
                 floorsHtml += `
                     <div style="margin-bottom: 20px;">
                         <h4 style="font-size: 16px; font-weight: 600; margin-bottom: 12px; border-bottom: 1px solid #4b5563; padding-bottom: 4px;">Floor ${floor}</h4>
@@ -513,8 +539,8 @@ const ScheduleClientView = ({
                         >
                             <div style="font-weight: bold; font-size: 14px; margin-bottom: 4px; color: ${roomNameColor};">${room.roomName}</div>
                             ${isOccupied ? `
-                                <div style="font-weight: 500; font-size: 13px; color: ${classTextColor};">${classData.className}</div>
-                                <div style="font-size: 11px; opacity: 0.8; color: ${majorTextColor};">${classData.majorName}</div>
+                                <div style="font-weight: 500; font-size: 13px;">${classData.className}</div>
+                                <div style="font-size: 11px; opacity: 0.8;">${classData.majorName}</div>
                             ` : `
                                 <div style="font-style: italic; opacity: 0.9;">${isUnavailable ? 'Unavailable' : 'Available'}</div>
                             `}
@@ -523,7 +549,6 @@ const ScheduleClientView = ({
                 });
                 floorsHtml += `</div></div>`;
             });
-            floorsHtml += `</div>`;
         } else {
              floorsHtml += `<p style="text-align: center; font-style: italic; color: ${document.documentElement.classList.contains('dark') ? '#9ca3af' : '#6b7280'};">No layout data found for ${selectedBuilding}.</p>`;
         }

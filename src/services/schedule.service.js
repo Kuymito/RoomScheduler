@@ -65,9 +65,20 @@ export const getAllSchedules = async (token) => {
         if (Array.isArray(payload)) {
             const uniqueSchedules = new Map();
             payload.forEach(schedule => {
-                if (schedule && schedule.scheduleId) {
-                    if (!uniqueSchedules.has(schedule.scheduleId)) {
-                        uniqueSchedules.set(schedule.scheduleId, schedule);
+                if (schedule) {
+                    if (schedule.scheduleId) { // Handle regular class schedules with an ID
+                        if (!uniqueSchedules.has(schedule.scheduleId)) {
+                            uniqueSchedules.set(schedule.scheduleId, schedule);
+                        }
+                    } else { // Handle bookings which have scheduleId: null
+                        // Create a unique key for bookings to prevent duplicates
+                        const day = schedule.dayDetails?.[0]?.dayOfWeek;
+                        if (schedule.roomId && day) {
+                            const bookingKey = `booking-${schedule.roomId}-${day}-${schedule.className}`;
+                            if (!uniqueSchedules.has(bookingKey)) {
+                                uniqueSchedules.set(bookingKey, schedule);
+                            }
+                        }
                     }
                 }
             });
@@ -95,9 +106,19 @@ export const getMySchedule = async (token) => {
         if (Array.isArray(payload)) {
             const uniqueSchedules = new Map();
             payload.forEach(schedule => {
-                if (schedule && schedule.scheduleId) {
-                    if (!uniqueSchedules.has(schedule.scheduleId)) {
-                        uniqueSchedules.set(schedule.scheduleId, schedule);
+                 if (schedule) {
+                    if (schedule.scheduleId) { // Handle regular class schedules with an ID
+                        if (!uniqueSchedules.has(schedule.scheduleId)) {
+                            uniqueSchedules.set(schedule.scheduleId, schedule);
+                        }
+                    } else { // Handle bookings which have scheduleId: null
+                        const day = schedule.dayDetails?.[0]?.dayOfWeek;
+                        if (schedule.roomId && day) {
+                            const bookingKey = `booking-${schedule.roomId}-${day}-${schedule.className}`;
+                            if (!uniqueSchedules.has(bookingKey)) {
+                                uniqueSchedules.set(bookingKey, schedule);
+                            }
+                        }
                     }
                 }
             });

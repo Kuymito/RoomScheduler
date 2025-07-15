@@ -54,12 +54,13 @@ const fetchSchedulePageData = async () => {
         ]);
         
         // --- Constants and Mappings ---
+        const timeSlotsList = ['Morning Shift', 'Noon Shift', 'Afternoon Shift', 'Evening Shift', 'Weekend Shift'];
         const constants = {
             degrees: [...new Set(classes.map(c => c.degreeName))].filter(Boolean),
             generations: [...new Set(classes.map(c => c.generation))].filter(Boolean),
             buildings: [...new Set(rooms.map(r => r.buildingName))].filter(Boolean),
             weekdays: ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'],
-            timeSlots: ['Morning Shift', 'Noon Shift', 'Afternoon Shift', 'Evening Shift', 'Weekend Shift']
+            timeSlots: timeSlotsList
         };
 
         const shiftNameMap = {
@@ -91,11 +92,12 @@ const fetchSchedulePageData = async () => {
         // Process schedules
         const scheduleMap = {};
         schedules.forEach(schedule => {
-            if (!schedule.roomId || schedule.roomName === "Unassigned") {
-                return;
+            if (!schedule.roomId || schedule.roomName === "Unassigned" || !schedule.dayDetails || !Array.isArray(schedule.dayDetails) || !schedule.shift) {
+                return; // Skip malformed entries
             }
 
-            if (schedule.dayDetails && Array.isArray(schedule.dayDetails) && schedule.shift) {
+            if (schedule.shift.startTime) {
+                // --- Handle REGULAR class schedules ---
                 const timeSlotName = shiftNameMap[schedule.shift.startTime];
                 if (timeSlotName) {
                     schedule.dayDetails.forEach(dayDetail => {
@@ -104,20 +106,38 @@ const fetchSchedulePageData = async () => {
                             if (!scheduleMap[dayAbbr]) scheduleMap[dayAbbr] = {};
                             if (!scheduleMap[dayAbbr][timeSlotName]) scheduleMap[dayAbbr][timeSlotName] = {};
                             
-                            // UPDATED: Calculate academic year from generation
-                            const academicYear = mapGenerationToYear(schedule.year); // Using schedule.year
-
+                            const academicYear = mapGenerationToYear(schedule.year);
                             scheduleMap[dayAbbr][timeSlotName][schedule.roomId] = {
                                 classId: schedule.classId,
                                 scheduleId: schedule.scheduleId,
                                 className: schedule.className,
                                 majorName: schedule.majorName,
-                                // UPDATED: Store the formatted year string
                                 year: academicYear ? `Year ${academicYear}` : 'Year N/A'
                             };
                         }
                     });
                 }
+            } else if (schedule.shift.name === 'Booked') {
+                // --- Handle CONFERENCE room bookings ---
+                schedule.dayDetails.forEach(dayDetail => {
+                    const dayAbbr = dayApiToAbbrMap[dayDetail.dayOfWeek.toUpperCase()];
+                    if (dayAbbr) {
+                        if (!scheduleMap[dayAbbr]) scheduleMap[dayAbbr] = {};
+                        // Mark room as booked for ALL time slots on that day
+                        timeSlotsList.forEach(timeSlot => {
+                            if (!scheduleMap[dayAbbr][timeSlot]) {
+                                scheduleMap[dayAbbr][timeSlot] = {};
+                            }
+                            scheduleMap[dayAbbr][timeSlot][schedule.roomId] = {
+                                classId: null,
+                                scheduleId: null,
+                                className: schedule.className, // "Booked by John Doe"
+                                majorName: "Booking",
+                                year: "N/A"
+                            };
+                        });
+                    }
+                });
             }
         });
 

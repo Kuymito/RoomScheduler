@@ -125,8 +125,12 @@ const RequestChangeForm = ({ isOpen, onClose, onSave, roomDetails, instructorCla
     maxDate.setDate(today.getDate() + 30);
     maxDate.setHours(23, 59, 59, 999);
 
+    const conferenceRoomIds = [10, 34];
+    const isConferenceRoom = roomDetails && conferenceRoomIds.includes(roomDetails.id);
+
     const getInitialState = () => ({
-        scheduleId: instructorClasses && instructorClasses.length > 0 ? instructorClasses[0].id : '',
+        scheduleId: isConferenceRoom ? null : (instructorClasses && instructorClasses.length > 0 ? instructorClasses[0].id : ''),
+        eventName: '',
         date: getNextDateForDay(selectedDay),
         description: '',
     });
@@ -146,7 +150,7 @@ const RequestChangeForm = ({ isOpen, onClose, onSave, roomDetails, instructorCla
             setIsSubmitting(false);
             setToast({ show: false, message: '', type: 'info' });
         }
-    }, [isOpen, instructorClasses, selectedDay]);
+    }, [isOpen, instructorClasses, selectedDay, roomDetails]);
 
     const handleDateChange = (newDate) => {
         setRequestData(prev => ({ ...prev, date: newDate }));
@@ -161,26 +165,37 @@ const RequestChangeForm = ({ isOpen, onClose, onSave, roomDetails, instructorCla
     const handleSubmit = async (e) => {
         e.preventDefault();
         
-        if (!requestData.scheduleId || !requestData.date || !roomDetails?.id) {
-            setToast({ show: true, message: 'Please select a class and valid date.', type: 'error' });
+        if (isConferenceRoom) {
+            if (!requestData.eventName.trim()) {
+                setToast({ show: true, message: 'Please enter an event name.', type: 'error' });
+                return;
+            }
+        } else {
+            if (!requestData.scheduleId) {
+                setToast({ show: true, message: 'Please select a class.', type: 'error' });
+                return;
+            }
+        }
+
+        if (!requestData.date || !roomDetails?.id) {
+            setToast({ show: true, message: 'A valid date and room are required.', type: 'error' });
             return;
         }
     
         setIsSubmitting(true);
         try {
             const payload = {
-                scheduleId: Number(requestData.scheduleId),
+                scheduleId: isConferenceRoom ? null : Number(requestData.scheduleId),
                 newRoomId: Number(roomDetails.id),
                 effectiveDate: requestData.date.toISOString().split('T')[0],
                 description: requestData.description || '',
+                eventName: isConferenceRoom ? requestData.eventName : undefined,
             };
     
-            // The `onSave` prop (handleSaveRequest in the parent) will now handle the API call.
             await onSave(payload);
             
         } catch (error) {
             console.error('Submission failed:', error);
-            // The parent component will show the toast on failure.
         } finally {
             setIsSubmitting(false);
         }
@@ -218,14 +233,16 @@ const RequestChangeForm = ({ isOpen, onClose, onSave, roomDetails, instructorCla
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60">
             {toast.show && <Toast message={toast.message} type={toast.type} onClose={() => setToast({ ...toast, show: false })} />}
             <div ref={popupRef} className="relative p-5 bg-white rounded-lg shadow-lg max-w-lg w-full dark:bg-gray-800 dark:text-white">
-                <h2 className="text-xl font-bold mb-4">Confirm Room Change Request</h2>
+                <h2 className="text-xl font-bold mb-4">
+                    {isConferenceRoom ? 'Confirm Room Booking' : 'Confirm Room Change Request'}
+                </h2>
                 <hr className="border-t border-gray-200 mt-4 mb-4" />
                 <form onSubmit={handleSubmit}>
                     <div className="space-y-4 mb-6">
                         <div>
                             <label className="block mb-2 text-xs font-medium text-gray-900 dark:text-white">Room</label>
                             <div className="bg-gray-100 border border-gray-300 text-gray-600 text-sm rounded-lg block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-                                {roomDetails?.building} - {roomDetails?.name}
+                                {roomDetails?.building} - {roomDetails?.name} ({isConferenceRoom ? 'Conference' : roomDetails?.type})
                             </div>
                         </div>
 
@@ -236,31 +253,49 @@ const RequestChangeForm = ({ isOpen, onClose, onSave, roomDetails, instructorCla
                             </div>
                         </div>
 
-                        <div>
-                            <label htmlFor="scheduleId" className="block mb-2 text-xs font-medium text-gray-900 dark:text-white">Assign to Class</label>
-                            <select
-                                id="scheduleId"
-                                name="scheduleId"
-                                value={requestData.scheduleId}
-                                onChange={handleInputChange}
-                                className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                                required
-                            >
-                                <option value="" disabled>Select a class</option>
-                                {instructorClasses.length > 0 ? (
-                                    instructorClasses.map((cls) => (
-                                        <option key={cls.id} value={cls.id}>
-                                            {cls.name} - {formatShift(cls.shift)}
-                                        </option>
-                                    ))
-                                ) : (
-                                    <option value="" disabled>No classes available</option>
-                                )}
-                            </select>
-                        </div>
+                        {isConferenceRoom ? (
+                            <div>
+                                <label htmlFor="eventName" className="block mb-2 text-xs font-medium text-gray-900 dark:text-white">Event Name</label>
+                                <input
+                                    type="text"
+                                    id="eventName"
+                                    name="eventName"
+                                    value={requestData.eventName}
+                                    onChange={handleInputChange}
+                                    className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                                    placeholder="e.g., Department Meeting"
+                                    required
+                                />
+                            </div>
+                        ) : (
+                            <div>
+                                <label htmlFor="scheduleId" className="block mb-2 text-xs font-medium text-gray-900 dark:text-white">Assign to Class</label>
+                                <select
+                                    id="scheduleId"
+                                    name="scheduleId"
+                                    value={requestData.scheduleId}
+                                    onChange={handleInputChange}
+                                    className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                                    required
+                                >
+                                    <option value="" disabled>Select a class</option>
+                                    {instructorClasses.length > 0 ? (
+                                        instructorClasses.map((cls) => (
+                                            <option key={cls.id} value={cls.id}>
+                                                {cls.name} - {formatShift(cls.shift)}
+                                            </option>
+                                        ))
+                                    ) : (
+                                        <option value="" disabled>No classes available</option>
+                                    )}
+                                </select>
+                            </div>
+                        )}
 
                         <div className="relative">
-                            <label htmlFor="date" className="block mb-2 text-xs font-medium text-gray-900 dark:text-white">Date of Change</label>
+                            <label htmlFor="date" className="block mb-2 text-xs font-medium text-gray-900 dark:text-white">
+                                {isConferenceRoom ? 'Date of Event' : 'Date of Change'}
+                            </label>
                             <button
                                 type="button"
                                 onClick={() => setIsCalendarOpen(!isCalendarOpen)}
@@ -308,7 +343,7 @@ const RequestChangeForm = ({ isOpen, onClose, onSave, roomDetails, instructorCla
                             disabled={isSubmitting}
                             className="px-4 py-2 text-xs font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed"
                         >
-                            {isSubmitting ? 'Submitting...' : 'Submit Request'}
+                            {isSubmitting ? 'Submitting...' : (isConferenceRoom ? 'Submit Booking' : 'Submit Request')}
                         </button>
                     </div>
                 </form>
