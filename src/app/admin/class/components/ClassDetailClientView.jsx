@@ -80,7 +80,7 @@ const ScheduledInstructorCard = ({ instructorData, classDetails, day, onDragStar
     );
 };
 
-export default function ClassDetailClientView({ initialClassDetails, allInstructors, allDepartments, initialSchedule }) {
+export default function ClassDetailClientView({ initialClassDetails, allInstructors, allDepartments, initialSchedule, allClasses }) {
     const router = useRouter();
     const { data: session } = useSession();
     
@@ -108,15 +108,35 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
     const [dragOverDay, setDragOverDay] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [isSaving, setIsSaving] = useState(false);
-    const [saveStatus, setSaveStatus] = useState('');
-    const [saveMessage, setSaveMessage] = useState('');
-    const saveStatusRef = useRef(saveStatus);
     const [selectedDegree, setSelectedDegree] = useState('All');
     
   
     const [isPreparingPdf, setIsPreparingPdf] = useState(false);
 
-    const generationOptions = ['29','30', '31', '32', '33'];
+    const generationOptions = useMemo(() => {
+        // 1. Dynamically generate future years
+        const BASE_YEAR = 2025;
+        const BASE_GENERATION = 34;
+        const currentYear = new Date().getFullYear();
+        const currentGeneration = BASE_GENERATION + (currentYear - BASE_YEAR);
+        const futureGenerations = [];
+        for (let i = 0; i < 4; i++) {
+            futureGenerations.push(String(currentGeneration + i));
+        }
+
+        // 2. Get all existing unique generations
+        let existingGenerations = [];
+        if (allClasses && Array.isArray(allClasses)) {
+            existingGenerations = allClasses.map(cls => String(cls.generation));
+        }
+
+        // 3. Combine, get unique values, and sort
+        const combined = [...new Set([...futureGenerations, ...existingGenerations])];
+        combined.sort((a, b) => Number(b) - Number(a)); // Sort descending
+
+        return combined;
+    }, [allClasses]);
+
     const degreesOptions = ['Bachelor', 'Master', 'PhD', 'Doctor'];
     const shiftOptions = Object.keys(shiftMap);
     const departmentOptions = useMemo(() => allDepartments || [], [allDepartments]);
@@ -148,8 +168,6 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
         setClassData(prev => ({ ...prev, name: `NUM${prev.generation}-${prev.group}` }));
     }, [isEditing, isNameManuallySet, classData?.generation, classData?.group]);
     
-    useEffect(() => { saveStatusRef.current = saveStatus; }, [saveStatus]);
-
     useEffect(() => {
         setInitialScheduleForCheck(JSON.parse(JSON.stringify(schedule)));
     }, []);
@@ -185,6 +203,27 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
     const handleSaveDetails = async () => {
         setLoading(true);
         setToast({ show: false, message: '', type: 'info' });
+
+        // --- DUPLICATE CHECK ---
+        if (allClasses && Array.isArray(allClasses)) {
+            const isDuplicate = allClasses.some(
+                (cls) =>
+                    cls.classId !== classData.id &&
+                    String(cls.generation) === String(classData.generation) &&
+                    cls.groupName === classData.group
+            );
+
+            if (isDuplicate) {
+                setToast({
+                    show: true,
+                    message: `A class with Generation ${classData.generation} and Group ${classData.group} already exists.`,
+                    type: 'error'
+                });
+                setLoading(false);
+                return; // Stop the submission
+            }
+        }
+        // --- END DUPLICATE CHECK ---
 
         if (!session?.accessToken) {
             setToast({ show: true, message: "You are not authenticated.", type: 'error' });
@@ -338,9 +377,7 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
             return;
         }
         setIsSaving(true);
-        setSaveStatus('saving');
-        setSaveMessage('Saving schedule...');
-        setToast({ show: false, message: '', type: 'info' }); // Reset toast
+        setToast({ show: false, message: '', type: 'info' }); 
 
         const promises = [];
         const originalSchedule = JSON.parse(JSON.stringify(initialScheduleForCheck));
@@ -370,24 +407,14 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
 
         try {
             await Promise.all(promises);
-            setSaveStatus('success');
-            setSaveMessage('Schedule saved successfully!');
+            setToast({ show: true, message: 'Schedule saved successfully!', type: 'success' });
             setInitialScheduleForCheck(JSON.parse(JSON.stringify(schedule)));
         } catch (error) {
             console.error('Failed to save schedule:', error);
-            setSaveStatus('error');
-            setSaveMessage(error.message || 'An error occurred while saving.');
             setToast({ show: true, message: error.message || 'An error occurred while saving.', type: 'error' });
-            
             setSchedule(originalSchedule);
         } finally {
             setIsSaving(false);
-            setTimeout(() => {
-                if (saveStatusRef.current !== 'saving') {
-                    setSaveMessage('');
-                    setSaveStatus('');
-                }
-            }, 5000);
         }
     };
     

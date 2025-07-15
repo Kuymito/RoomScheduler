@@ -35,7 +35,7 @@ const mapApiDayToClientDay = (apiDay) => {
 
 /**
  * Server-side data fetching function.
- * It fetches class details, all instructors, and all departments.
+ * It fetches class details, all instructors, all departments, and all classes.
  */
 const fetchClassPageData = async (classId) => {
     const session = await getServerSession(authOptions);
@@ -43,14 +43,15 @@ const fetchClassPageData = async (classId) => {
 
     if (!token) {
         console.error("Authentication token not found.");
-        return { classDetails: null, instructors: [], departments: [], initialSchedule: {} };
+        return { classDetails: null, instructors: [], departments: [], initialSchedule: {}, allClasses: [] };
     }
     
     try {
-        const [classDetailsResponse, instructorsResponse, departmentsResponse] = await Promise.all([
+        const [classDetailsResponse, instructorsResponse, departmentsResponse, allClassesResponse] = await Promise.all([
             classService.getClassById(classId, token),
             instructorService.getAllInstructors(token),
-            departmentService.getAllDepartments(token)
+            departmentService.getAllDepartments(token),
+            classService.getAllClasses(token)
         ]);
 
         const formattedClassDetails = {
@@ -99,12 +100,13 @@ const fetchClassPageData = async (classId) => {
             classDetails: formattedClassDetails, 
             instructors: formattedInstructors, 
             departments: formattedDepartments,
-            initialSchedule: initialSchedule // Pass the processed schedule
+            initialSchedule: initialSchedule,
+            allClasses: allClassesResponse 
         };
 
     } catch (error) {
         console.error(`Failed to fetch data for class ${classId}:`, error);
-        return { classDetails: null, instructors: [], departments: [], initialSchedule: {} };
+        return { classDetails: null, instructors: [], departments: [], initialSchedule: {}, allClasses: [] };
     }
 };
 
@@ -113,7 +115,7 @@ const fetchClassPageData = async (classId) => {
  */
 export default async function ClassDetailsPage({ params }) {
     const classId = params.classId;
-    const { classDetails, instructors, departments, initialSchedule } = await fetchClassPageData(classId);
+    const { classDetails, instructors, departments, initialSchedule, allClasses } = await fetchClassPageData(classId);
 
     if (!classDetails) {
         notFound();
@@ -132,6 +134,7 @@ export default async function ClassDetailsPage({ params }) {
                     allInstructors={instructors}
                     allDepartments={departments}
                     initialSchedule={initialSchedule}
+                    allClasses={allClasses}
                 />
             </Suspense>
         </AdminLayout>

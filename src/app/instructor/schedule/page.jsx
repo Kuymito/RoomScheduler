@@ -69,19 +69,19 @@ const fetchScheduleData = async () => {
           
           const days = schedule.dayDetails.map(dayDetail => dayDetail.dayOfWeek.toUpperCase());
           
-          // Use the new generation-based year calculation
           const academicYear = mapGenerationToYear(schedule.year);
 
           days.forEach(dayString => {
               const formattedDay = dayString.charAt(0) + dayString.slice(1).toLowerCase();
+              const dayDetail = schedule.dayDetails.find(d => d.dayOfWeek.toUpperCase() === dayString);
               if (scheduleData[formattedDay]) {
                   scheduleData[formattedDay][timeSlotKey] = {
                       subject: schedule.className,
-                      // Use the calculated academic year
                       year: academicYear ? `Year ${academicYear}` : 'Year N/A', 
                       semester: schedule.semester,
                       timeDisplay: timeSlotKey,
-                      room: schedule.roomName
+                      room: schedule.roomName,
+                      isOnline: dayDetail ? dayDetail.online : false
                   };
               }
           });

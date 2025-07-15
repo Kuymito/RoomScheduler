@@ -20,14 +20,23 @@ const DAY_HEADER_COLORS = {
 const SCHEDULE_ITEM_BG_COLOR = 'bg-green-50 dark:bg-green-900/40';
 
 const ScheduleItemCard = ({ item }) => (
-  <div className={`${SCHEDULE_ITEM_BG_COLOR} p-2 h-full w-full flex flex-col text-xs rounded-md shadow-sm border border-green-200 dark:border-green-800/60`}>
-    <div className="flex justify-between items-start mb-1">
-      <span className="font-semibold text-[13px] text-gray-800 dark:text-gray-200">{item.subject}</span>
+    <div className={`${SCHEDULE_ITEM_BG_COLOR} p-2 h-full w-full flex flex-col text-xs rounded-md shadow-sm border border-green-200 dark:border-green-800/60`}>
+        <div className="flex justify-between items-start mb-1">
+            <span className="font-semibold text-[13px] text-gray-800 dark:text-gray-200">{item.subject}</span>
+        </div>
+        <div className="text-gray-700 dark:text-gray-300 text-[11px]">{item.year}</div>
+        <div className="text-gray-600 dark:text-gray-400 text-[11px] mt-1">
+            {item.isOnline ? (
+                <span className="font-medium text-orange-600 dark:text-orange-400">Online</span>
+            ) : (
+                <>
+                    <span className="font-medium text-green-600 dark:text-green-400">In Class:</span> {item.room || 'N/A'}
+                </>
+            )}
+        </div>
+        <div className="mt-auto text-right text-gray-500 dark:text-gray-400 text-[10px]">{item.timeDisplay}</div>
+        <div className="mt-1 text-right text-gray-500 dark:text-gray-400 text-[11px]">{item.semester}</div>
     </div>
-    <div className="text-gray-700 dark:text-gray-300 text-[11px]">{item.year}</div>
-    <div className="mt-10 text-right text-gray-500 dark:text-gray-400 text-[10px]">{item.timeDisplay}</div>
-    <div className="mt-auto text-right text-gray-500 dark:text-gray-400 text-[11px]">{item.semester}</div>
-  </div>
 );
 export default function InstructorScheduleClientView({ initialScheduleData, instructorDetails, allShifts }) {
     const [scheduleData] = useState(initialScheduleData);
