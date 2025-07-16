@@ -333,7 +333,15 @@ export default function InstructorClientView({ initialInstructors, initialDepart
                                                     <button onClick={(e) => { e.stopPropagation(); toggleInstructorStatus(data.id); }} className={`p-1 ${data.status === 'active' ? 'text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300' : 'text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300'}`} title={data.status === 'active' ? 'Archive Instructor' : 'Activate Instructor'}><ArchiveIcon className="size-4" /></button>
                                                 </div>
                                             </td>
-                                            <td className="px-6 py-2"><div className="flex items-center gap-2">{data.profileImage ? <img src={data.profileImage} alt={data.name} className="w-8 h-8 rounded-full object-cover border border-gray-200 dark:border-gray-600"/> : <DefaultAvatarIcon className="size-8 rounded-full text-gray-400 bg-gray-100 dark:bg-gray-700 dark:text-gray-500 truncate" />} {data.name}</div></td>
+                                            <td className="px-6 py-2">
+                                                <div className="flex items-center gap-2">
+                                                    {data.profileImage ? 
+                                                        <img src={data.profileImage} alt={data.name} className="w-8 h-8 rounded-full object-cover border border-gray-200 dark:border-gray-600 flex-shrink-0"/> 
+                                                        : <DefaultAvatarIcon className="size-8 rounded-full text-gray-400 bg-gray-100 dark:bg-gray-700 dark:text-gray-500 flex-shrink-0" />
+                                                    } 
+                                                    <span className="truncate" title={data.name}>{data.name}</span>
+                                                </div>
+                                            </td>
                                             <td className="px-6 py-2 sm:table-cell hidden truncate"> {data.email} </td>
                                             <td className="px-6 py-2 lg:table-cell hidden truncate"> {formatPhoneNumber(data.phone)} </td>
                                             <td className="px-6 py-2 truncate"> {data.majorStudied} </td>

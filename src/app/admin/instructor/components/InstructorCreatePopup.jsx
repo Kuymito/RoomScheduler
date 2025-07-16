@@ -65,6 +65,11 @@ const InstructorCreatePopup = ({ isOpen, onClose, onSave, departments, departmen
             if (/^\d*$/.test(value) && value.length <= 15) {
                 setNewInstructor(prev => ({ ...prev, [name]: value }));
             }
+        } else if (name === 'major') {
+            // Allow only letters and spaces for the major
+            if (/^[A-Za-z\s]*$/.test(value)) {
+                setNewInstructor(prev => ({ ...prev, [name]: value }));
+            }
         }
         else {
             setNewInstructor(prev => ({ ...prev, [name]: value }));
