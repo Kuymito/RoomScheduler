@@ -5,11 +5,11 @@ import { useRouter } from 'next/navigation';
 import useSWR from 'swr';
 import { useSession } from 'next-auth/react';
 import { classService } from '@/services/class.service';
+import { departmentService } from '@/services/department.service';
+import { majorService } from '@/services/major.service';
 import ClassPageSkeleton from './ClassPageSkeleton';
 import Toast from '@/components/Toast';
 
-// Dynamically import the ClassCreatePopup component.
-// This creates a separate JavaScript chunk for the popup, which is loaded only when needed.
 const ClassCreatePopup = lazy(() => import('./ClassCreatePopup'));
 
 // --- Reusable Icon and Spinner Components ---
@@ -17,8 +17,11 @@ const Spinner = () => ( <svg className="animate-spin h-5 w-5 text-gray-500 dark:
 const EditIcon = ({ className = "w-[14px] h-[14px]" }) => ( <svg className={className} width="14" height="14" viewBox="0 0 17 17" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M8.06671 2.125H4.95837C3.00254 2.125 2.12504 3.0025 2.12504 4.95833V12.0417C2.12504 13.9975 3.00254 14.875 4.95837 14.875H12.0417C13.9975 14.875 14.875 13.9975 14.875 12.0417V8.93333" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/><path d="M10.6579 3.2658L6.28042 7.64327C6.10542 7.81827 5.93042 8.15055 5.89125 8.3928L5.64958 10.112C5.56625 10.7037 6.01958 11.157 6.61125 11.0737L8.33042 10.832C8.57292 10.7928 8.90542 10.6178 9.08042 10.4428L13.4579 6.0653C14.2662 5.25705 14.5796 4.26827 13.4579 3.14662C12.3362 2.03205 11.3479 2.45705 10.6579 3.2658Z" stroke="currentColor" strokeWidth="1.2" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round"/><path d="M9.8999 4.02502C10.2716 5.66752 11.0583 6.45419 12.7008 6.82585" stroke="currentColor" strokeWidth="1.2" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round"/></svg> );
 const ArchiveIcon = ({ className = "w-[14px] h-[14px]" }) => ( <svg className={className} width="14" height="14" viewBox="0 0 17 17" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M14.1667 5.66667V12.0417C14.1667 13.9975 13.2892 14.875 11.3334 14.875H5.66671C3.71087 14.875 2.83337 13.9975 2.83337 12.0417V5.66667" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/><path d="M14.875 2.125H2.125L2.12504 5.66667H14.875V2.125Z" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/><path d="M7.79163 8.5H9.20829" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/></svg> );
 
-// Define fetcher for SWR
-const classFetcher = ([key, token]) => classService.getAllClasses(token);
+// Define fetchers for SWR
+const classFetcher = ([, token]) => classService.getAllClasses(token);
+const departmentFetcher = ([, token]) => departmentService.getAllDepartments(token);
+const majorFetcher = ([, token]) => majorService.getAllMajors(token);
+
 
 // Mapping from shiftId to the full descriptive name used in the UI.
 const shiftIdToFullNameMap = {
@@ -29,7 +32,7 @@ const shiftIdToFullNameMap = {
     5: 'Weekend Shift'
 };
 
-export default function ClassClientView({ initialClasses, initialDepartments }) {
+export default function ClassClientView({ initialClasses, initialDepartments, initialMajors }) {
     const router = useRouter();
     const { data: session } = useSession();
     const [isLoading, setIsLoading] = useState(true);
@@ -46,8 +49,17 @@ export default function ClassClientView({ initialClasses, initialDepartments }) 
         }
     );
 
-    const departments = initialDepartments;
-    const departmentsError = !initialDepartments;
+    const { data: departments, error: departmentsError } = useSWR(
+        session?.accessToken ? ['/api/v1/department', session.accessToken] : null,
+        departmentFetcher,
+        { fallbackData: initialDepartments }
+    );
+
+    const { data: majors, error: majorsError } = useSWR(
+        session?.accessToken ? ['/api/v1/major', session.accessToken] : null,
+        majorFetcher,
+        { fallbackData: initialMajors }
+    );
 
     const [classData, setClassData] = useState([]);
     const [isPending, startTransition] = useTransition();
@@ -57,7 +69,6 @@ export default function ClassClientView({ initialClasses, initialDepartments }) 
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPageOptions = [5, 10, 20, 50];
     
-    // State for items per page, initialized from localStorage or default
     const [itemsPerPage, setItemsPerPage] = useState(() => {
         if (typeof window !== 'undefined') {
             const savedSize = localStorage.getItem('classItemsPerPage');
@@ -67,7 +78,6 @@ export default function ClassClientView({ initialClasses, initialDepartments }) 
         return itemsPerPageOptions[0];
     });
     
-    // --- Filter States ---
     const [isFilterMenuOpen, setIsFilterMenuOpen] = useState(false);
     const [statusFilter, setStatusFilter] = useState('active');
     const [onlineClassFilter, setOnlineClassFilter] = useState(false);
@@ -78,7 +88,6 @@ export default function ClassClientView({ initialClasses, initialDepartments }) 
     const [sortDirection, setSortDirection] = useState('asc');
     const [searchTexts, setSearchTexts] = useState({ name: '', generation: '', group: '', major: '', degrees: '', faculty: '', semester: '', shift: '' });
 
-    // Effect to save itemsPerPage to localStorage whenever it changes
     useEffect(() => {
         if (typeof window !== 'undefined') {
             localStorage.setItem('classItemsPerPage', itemsPerPage);
@@ -93,7 +102,6 @@ export default function ClassClientView({ initialClasses, initialDepartments }) 
             expiryThreshold.setMonth(expiryThreshold.getMonth() - 2);
 
             const formattedData = classes.map(item => {
-                // Determine if the class is online
                 let isOnline = false;
                 if (item.dailySchedule && typeof item.dailySchedule === 'object') {
                     for (const day in item.dailySchedule) {
@@ -104,7 +112,6 @@ export default function ClassClientView({ initialClasses, initialDepartments }) 
                     }
                 }
 
-                // Determine if the class is unassigned
                 const isUnassigned = !item.dailySchedule || typeof item.dailySchedule !== 'object' || Object.keys(item.dailySchedule).length === 0;
 
                 return {
@@ -178,7 +185,6 @@ export default function ClassClientView({ initialClasses, initialDepartments }) 
         const classToUpdate = classData.find(item => item.id === id);
         if (!classToUpdate) return;
 
-        // Optimistic UI update
         const originalData = [...classData];
         const updatedData = classData.map(item =>
             item.id === id ? { ...item, status: item.status === 'active' ? 'archived' : 'active' } : item
@@ -189,13 +195,10 @@ export default function ClassClientView({ initialClasses, initialDepartments }) 
 
         try {
             await classService.patchClass(id, { isArchived }, session.accessToken);
-            // Re-fetch the data to ensure consistency with the server
             mutateClasses();
         } catch (error) {
             console.error("Failed to update class status:", error);
-            // Revert the UI change if the API call fails
             setClassData(originalData);
-            // Optionally, show an error message to the user
         }
     };
 
@@ -435,9 +438,6 @@ export default function ClassClientView({ initialClasses, initialDepartments }) 
                 </ul>
             </nav>
             
-            {/* Wrap the ClassCreatePopup in a Suspense boundary.
-              This shows a fallback UI while the popup's code is being loaded.
-            */}
             {showCreatePopup && (
                 <Suspense fallback={
                     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60">
@@ -451,7 +451,9 @@ export default function ClassClientView({ initialClasses, initialDepartments }) 
                         onClose={() => setShowCreatePopup(false)} 
                         onSave={handleSaveNewClass}
                         departments={departments || []}
-                        departmentsError={departmentsError}
+                        departmentsError={!!departmentsError}
+                        majors={majors || []}
+                        majorsError={!!majorsError}
                         existingClasses={classData}
                     />
                 </Suspense>

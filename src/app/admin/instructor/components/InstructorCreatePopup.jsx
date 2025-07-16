@@ -55,7 +55,15 @@ const InstructorCreatePopup = ({ isOpen, onClose, onSave, departments, departmen
     // Handles changes to form input and select fields.
     const handleInputChange = (e) => {
         const { name, value } = e.target;
-        setNewInstructor(prev => ({ ...prev, [name]: value }));
+        if (name === 'firstName' || name === 'lastName') {
+            // Allow only letters and spaces
+            if (/^[A-Za-z\s]*$/.test(value)) {
+                setNewInstructor(prev => ({ ...prev, [name]: value }));
+            }
+        } else {
+            setNewInstructor(prev => ({ ...prev, [name]: value }));
+        }
+
         if (formError.fields.includes(name)) {
             setFormError({ fields: [], message: '' });
         }
@@ -226,7 +234,7 @@ const InstructorCreatePopup = ({ isOpen, onClose, onSave, departments, departmen
                     <div className="grid grid-cols-2 gap-3 mb-4 max-h-[60vh] overflow-y-auto pr-2">
                         <div>
                             <label htmlFor="firstName" className="block mb-2 text-xs font-medium text-gray-900 dark:text-white">First Name</label>
-                            <input type="text" id="firstName" name="firstName" value={newInstructor.firstName} onChange={handleInputChange} className="bg-gray-50 border border-gray-300 text-gray-900 text-xs rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600" placeholder="John" required maxLength="20" />
+                            <input type="text" id="firstName" name="firstName" value={newInstructor.firstName} onChange={handleInputChange} className="bg-gray-50 border border-gray-300 text-gray-900 text-xs rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600" placeholder="John" required maxLength="30" />
                         </div>
                         <div>
                             <label htmlFor="lastName" className="block mb-2 text-xs font-medium text-gray-900 dark:text-white">Last Name</label>
@@ -242,7 +250,7 @@ const InstructorCreatePopup = ({ isOpen, onClose, onSave, departments, departmen
                         </div>
                         <div>
                             <label htmlFor="phone" className="block mb-2 text-xs font-medium text-gray-700 dark:text-gray-300">Phone Number</label>
-                            <input type="text" id="phone" name="phone" value={newInstructor.phone} onChange={handleInputChange} className="bg-gray-50 border border-gray-300 text-gray-900 text-xs rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600" placeholder="+855 12 345 678" required maxLength="15" />
+                            <input type="number" id="phone" name="phone" value={newInstructor.phone} onChange={handleInputChange} className="bg-gray-50 border border-gray-300 text-gray-900 text-xs rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600" placeholder="+855 12 345 678" required maxLength="15" />
                         </div>
                         <div>
                             <label htmlFor="degree" className="block mb-2 text-xs font-medium text-gray-700 dark:text-gray-300">Degree</label>
@@ -274,7 +282,7 @@ const InstructorCreatePopup = ({ isOpen, onClose, onSave, departments, departmen
                         </div>
                         <div className="col-span-2">
                             <label htmlFor="address" className="block mb-2 text-xs font-medium text-gray-700 dark:text-gray-300">Address</label>
-                            <input id="address" name="address" value={newInstructor.address} onChange={handleInputChange} className="bg-gray-50 border border-gray-300 text-gray-900 text-xs rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600" placeholder="123 Main Street, City, Country" required />
+                            <input id="address" name="address" value={newInstructor.address} onChange={handleInputChange} className="bg-gray-50 border border-gray-300 text-gray-900 text-xs rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600" placeholder="123 Main Street, City, Country" required maxLength="100" />
                         </div>
                     </div>
                     {formError.message && (
