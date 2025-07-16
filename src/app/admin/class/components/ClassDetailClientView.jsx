@@ -80,7 +80,7 @@ const ScheduledInstructorCard = ({ instructorData, classDetails, day, onDragStar
     );
 };
 
-export default function ClassDetailClientView({ initialClassDetails, allInstructors, allDepartments, initialSchedule, allClasses }) {
+export default function ClassDetailClientView({ initialClassDetails, allInstructors, allDepartments, allMajors, initialSchedule, allClasses }) {
     const router = useRouter();
     const { data: session } = useSession();
     
@@ -129,7 +129,7 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
     const degreesOptions = ['Bachelor', 'Master', 'PhD', 'Doctor'];
     const shiftOptions = Object.keys(shiftMap);
     const departmentOptions = useMemo(() => allDepartments || [], [allDepartments]);
-    const majorOptions = useMemo(() => departmentOptions, [departmentOptions]);
+    const majorOptions = useMemo(() => allMajors || [], [allMajors]);
     const semesterOptions = ['Semester 1', 'Semester 2', 'Semester 3', 'Semester 4', 'Semester 5', 'Semester 6', 'Semester 7', 'Semester 8'];
     const statusOptions = ['Active', 'Archived'];
 
@@ -220,7 +220,7 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
 
         const selectedDepartment = allDepartments.find(dep => dep.name === classData.faculty);
         if (!selectedDepartment) {
-            setToast({ show: true, message: "Invalid department selected.", type: 'error' });
+            setToast({ show: true, message: "Invalid faculty selected.", type: 'error' });
             setLoading(false);
             return;
         }
@@ -530,9 +530,9 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
                             {renderSelectField("Generation", "generation", classData.generation, generationOptions)}
                         </div>
                         <div className="form-row flex gap-3 mb-2 flex-wrap">
-                            {renderSelectField("Faculty", "faculty", classData.faculty, departmentOptions, 'departmentId', 'name', 'name')}
+                            {renderSelectField("Faculty", "faculty", classData.faculty, allDepartments, 'departmentId', 'name', 'name')}
                             {renderSelectField("Degree", "degrees", classData.degrees, degreesOptions)}
-                            {renderSelectField("Major", "major", classData.major, majorOptions, 'departmentId', 'name', 'name')}
+                            {renderSelectField("Major", "major", classData.major, allMajors, 'major_id', 'majorName', 'majorName')}
                         </div>
                         <div className="form-row flex gap-3 mb-2 flex-wrap">
                             {renderSelectField("Semester", "semester", classData.semester, semesterOptions)}
@@ -582,7 +582,7 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-7 gap-1">
                             {daysOfWeek.map((day) => {
                                 const isDayWeekend = day === 'Sat' || day === 'Sun';
-                                const isValidDropTarget = (isWeekendShift && isDayWeekend) || (!isWeekendShift && !isDayWeekend);
+                                const isValidDropTarget = (isWeekendShift && isDayWeekend) || (!isWeekendShift && !isWeekendShift);
 
                                 return (
                                     <div 

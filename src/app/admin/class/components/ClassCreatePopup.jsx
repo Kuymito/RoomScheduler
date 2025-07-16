@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import axios from 'axios'; // Import axios for the upload request
 
 // Shift mapping to convert display names to IDs
 const shiftMap = {
@@ -12,54 +11,40 @@ const shiftMap = {
     'Weekend Shift': 5
 };
 
-const ClassCreatePopup = ({ isOpen, onClose, onSave, departments, departmentsError, existingClasses }) => {
+const ClassCreatePopup = ({ isOpen, onClose, onSave, departments, departmentsError, majors, majorsError, existingClasses }) => {
     // --- State and Options ---
     
-    // --- UPDATED: Dynamic Generation Logic ---
     const generationOptions = useMemo(() => {
-        // Base year and generation for first-year students
         const BASE_YEAR = 2025;
         const BASE_GENERATION = 34;
-        
-        // Get the current year
         const currentYear = new Date().getFullYear();
-        
-        // Calculate the current first-year generation
         const yearDifference = currentYear - BASE_YEAR;
         const currentFirstYearGeneration = BASE_GENERATION + yearDifference;
-        
-        // Create an array for the current first-year generation and the previous 4 generations
         const options = [];
         for (let i = 0; i < 4; i++) {
             options.push(String(currentFirstYearGeneration - i));
         }
-        
-        // Sort them in ascending order
         return options.sort((a, b) => Number(a) - Number(b));
-    }, []); // Empty dependency array ensures this runs only once on component mount
+    }, []);
 
     const degreesOptions = ['Bachelor', 'Master', 'PhD', 'Doctor'];
     const semesterOptions = ['Semester 1', 'Semester 2', 'Semester 3', 'Semester 4', 'Semester 5', 'Semester 6', 'Semester 7', 'Semester 8'];
     const shiftOptions = Object.keys(shiftMap);
     const popupRef = useRef(null);
 
-    // Use the fetched department names for the Major dropdown options
-    const majorOptions = useMemo(() => {
-        if (!departments) return [];
-        return departments.map(dep => dep.name);
-    }, [departments]);
+    const departmentOptions = useMemo(() => departments || [], [departments]);
+    const majorOptions = useMemo(() => majors || [], [majors]);
 
     // Function to get the initial state for the form
     const getInitialState = () => ({
         className: '',
-        generation: generationOptions[generationOptions.length - 1], // Default to the latest generation
+        generation: generationOptions[generationOptions.length - 1],
         groupName: '',
-        major: majorOptions[0] || '', // Default to the first major/department name
+        major: majorOptions[0]?.majorName || '',
         degree: degreesOptions[0],
         semester: semesterOptions[0],
-        departmentId: departments?.[0]?.departmentId || '', // Default to the first department ID
+        departmentId: departmentOptions[0]?.departmentId || '',
         shiftId: shiftMap[shiftOptions[0]] || 1,
-        // Default values as per API requirements
         year: 1,
         day: 'Monday',
     });
@@ -67,19 +52,18 @@ const ClassCreatePopup = ({ isOpen, onClose, onSave, departments, departmentsErr
     const [newClass, setNewClass] = useState(getInitialState());
     const [formError, setFormError] = useState({ fields: [], message: '' });
 
-    // Effect to reset form state when departments load or when the popup opens
+    // Effect to reset form state when data loads or when the popup opens
     useEffect(() => {
         if (isOpen) {
             setNewClass(getInitialState());
-            setFormError({ fields: [], message: '' }); // Reset errors when popup opens
+            setFormError({ fields: [], message: '' });
         }
-    }, [isOpen, departments, generationOptions]); // Add generationOptions to dependencies
+    }, [isOpen, departments, majors, generationOptions]);
 
     // --- Handlers ---
     const handleInputChange = (e) => {
         const { name, value } = e.target;
         setNewClass(prev => ({ ...prev, [name]: value }));
-        // Clear errors for the field being edited
         if (formError.fields.includes(name)) {
             setFormError({ fields: [], message: '' });
         }
@@ -87,9 +71,8 @@ const ClassCreatePopup = ({ isOpen, onClose, onSave, departments, departmentsErr
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        setFormError({ fields: [], message: '' }); // Clear previous errors
+        setFormError({ fields: [], message: '' });
 
-        // --- DUPLICATE CHECK ---
         const isDuplicate = existingClasses.some(
             (cls) => cls.generation === newClass.generation && cls.group === newClass.groupName
         );
@@ -99,11 +82,11 @@ const ClassCreatePopup = ({ isOpen, onClose, onSave, departments, departmentsErr
                 fields: ['generation', 'groupName'],
                 message: `A class with Generation ${newClass.generation} and Group ${newClass.groupName} already exists.`
             });
-            return; // Stop the submission
+            return;
         }
-        // --- END DUPLICATE CHECK ---
 
-        // Construct the payload for the API from the current state
+        const selectedMajor = majorOptions.find(m => m.majorName === newClass.major);
+
         const payload = {
             className: newClass.className || `NUM${newClass.generation}-${newClass.groupName}`,
             generation: newClass.generation,
@@ -116,14 +99,21 @@ const ClassCreatePopup = ({ isOpen, onClose, onSave, departments, departmentsErr
             departmentId: Number(newClass.departmentId),
             shiftId: Number(newClass.shiftId),
         };
+        
+        // The API might expect majorId to be sent as departmentId in some cases.
+        // If the API for creating a class needs a major_id, adjust here.
+        // For now, assuming departmentId is for faculty and major is a string field.
 
-        // Basic validation
         if (!payload.groupName) {
             setFormError({ fields: ['groupName'], message: 'Please provide a Group name.' });
             return;
         }
         if (!payload.departmentId) {
-            setFormError({ fields: ['departmentId'], message: 'Please select a department.' });
+            setFormError({ fields: ['departmentId'], message: 'Please select a faculty.' });
+            return;
+        }
+        if (!payload.major) {
+            setFormError({ fields: ['major'], message: 'Please select a major.' });
             return;
         }
         if (!payload.shiftId) {
@@ -131,11 +121,10 @@ const ClassCreatePopup = ({ isOpen, onClose, onSave, departments, departmentsErr
             return;
         }
 
-        onSave(payload); // onSave is the function passed from ClassClientView
-        onClose(); // Close the popup after saving
+        onSave(payload);
+        onClose();
     };
 
-    // Effect to handle clicks outside the popup to close it
     useEffect(() => {
         const handleClickOutside = (event) => {
             if (isOpen && popupRef.current && !popupRef.current.contains(event.target)) {
@@ -200,25 +189,25 @@ const ClassCreatePopup = ({ isOpen, onClose, onSave, departments, departmentsErr
                             </select>
                         </div>
                         <div>
-                            <label htmlFor="major" className="block text-xs font-medium text-gray-700 dark:text-gray-300">Major</label>
-                            <select id="major" name="major" value={newClass.major} onChange={handleInputChange} className="mt-1 block w-full p-2 text-xs border border-gray-300 rounded-md shadow-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white" required>
-                                {departmentsError && <option value="">Error loading majors</option>}
+                            <label htmlFor="departmentId" className="block text-xs font-medium text-gray-700 dark:text-gray-300">Faculty</label>
+                            <select id="departmentId" name="departmentId" value={newClass.departmentId} onChange={handleInputChange} className={`mt-1 block w-full p-2 text-xs border rounded-md shadow-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white ${getErrorClass('departmentId')}`} required>
+                                {departmentsError && <option value="">Error loading faculties</option>}
                                 {!departments && !departmentsError && <option value="">Loading...</option>}
-                                {majorOptions.map(option => (<option key={option} value={option}>{option}</option>))}
+                                {departmentOptions.map(dep => (<option key={dep.departmentId} value={dep.departmentId}>{dep.name}</option>))}
+                            </select>
+                        </div>
+                        <div className="col-span-2">
+                            <label htmlFor="major" className="block text-xs font-medium text-gray-700 dark:text-gray-300">Major</label>
+                            <select id="major" name="major" value={newClass.major} onChange={handleInputChange} className={`mt-1 block w-full p-2 text-xs border rounded-md shadow-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white ${getErrorClass('major')}`} required>
+                                {majorsError && <option value="">Error loading majors</option>}
+                                {!majors && !majorsError && <option value="">Loading...</option>}
+                                {majorOptions.map(major => (<option key={major.major_id} value={major.majorName}>{major.majorName}</option>))}
                             </select>
                         </div>
                         <div className="col-span-2">
                             <label htmlFor="semester" className="block text-xs font-medium text-gray-700 dark:text-gray-300">Semester</label>
                             <select id="semester" name="semester" value={newClass.semester} onChange={handleInputChange} className="mt-1 block w-full p-2 text-xs border border-gray-300 rounded-md shadow-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white" required>
                                 {semesterOptions.map(option => (<option key={option} value={option}>{option}</option>))}
-                            </select>
-                        </div>
-                        <div className="col-span-2">
-                            <label htmlFor="departmentId" className="block text-xs font-medium text-gray-700 dark:text-gray-300">Department / Faculty</label>
-                            <select id="departmentId" name="departmentId" value={newClass.departmentId} onChange={handleInputChange} className={`mt-1 block w-full p-2 text-xs border rounded-md shadow-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white ${getErrorClass('departmentId')}`} required>
-                                {departmentsError && <option value="">Error loading departments</option>}
-                                {!departments && !departmentsError && <option value="">Loading...</option>}
-                                {departments && departments.map(dep => (<option key={dep.departmentId} value={dep.departmentId}>{dep.name}</option>))}
                             </select>
                         </div>
                         <div className="col-span-2">

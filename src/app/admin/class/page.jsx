@@ -6,9 +6,10 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import { classService } from '@/services/class.service';
 import { departmentService } from '@/services/department.service';
+import { majorService } from '@/services/major.service';
 
 /**
- * An async Server Component to fetch the raw data for classes and departments.
+ * An async Server Component to fetch the raw data for classes, departments, and majors.
  * The client component will handle all formatting and display logic.
  */
 async function ClassData() {
@@ -18,22 +19,27 @@ async function ClassData() {
     if (!token) {
         console.error("No access token found in session. User is not authenticated.");
         // Pass empty arrays to the client component if not authenticated
-        return <ClassClientView initialClasses={[]} initialDepartments={[]} />; 
+        return <ClassClientView initialClasses={[]} initialDepartments={[]} initialMajors={[]} />; 
     }
 
     try {
-        // Fetch both classes and departments data in parallel
-        const [apiClasses, apiDepartments] = await Promise.all([
+        // Fetch classes, departments, and majors data in parallel
+        const [apiClasses, apiDepartments, apiMajors] = await Promise.all([
             classService.getAllClasses(token),
-            departmentService.getAllDepartments(token)
+            departmentService.getAllDepartments(token),
+            majorService.getAllMajors(token)
         ]);
         
         // Pass the raw API data directly to the client component
-        return <ClassClientView initialClasses={apiClasses} initialDepartments={apiDepartments} />;
+        return <ClassClientView 
+            initialClasses={apiClasses} 
+            initialDepartments={apiDepartments} 
+            initialMajors={apiMajors} 
+        />;
     } catch (error) {
-        console.error("Failed to fetch class or department data in page.jsx:", error.message);
+        console.error("Failed to fetch page data in page.jsx:", error.message);
         // Pass empty arrays on error to prevent crashing the client
-        return <ClassClientView initialClasses={[]} initialDepartments={[]} />; 
+        return <ClassClientView initialClasses={[]} initialDepartments={[]} initialMajors={[]} />; 
     }
 }
 
