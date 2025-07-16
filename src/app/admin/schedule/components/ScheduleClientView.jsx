@@ -702,7 +702,7 @@ const ScheduleClientView = ({
                             </div>
                         ))}
                     </div>
-                    <div className="mt-auto pt-4 border-t border-gray-200 dark:border-gray-700 flex flex-wrap justify-between items-center gap-3 no-print">
+                    <div className="mt-auto pt-4 flex flex-wrap justify-between items-center gap-3 no-print">
                         <div className="text-xs text-gray-600 dark:text-gray-400 space-y-0.5">
                             <p><span className="inline-block w-2.5 h-2.5 bg-green-500 rounded-full mr-1.5 align-middle"></span> Available Rooms: {availableRoomsCount}</p>
                             <p><span className="inline-block w-2.5 h-2.5 bg-red-500 rounded-full mr-1.5 align-middle"></span> Unavailable Rooms: {unavailableRoomsCount}</p>
