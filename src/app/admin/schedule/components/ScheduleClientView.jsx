@@ -117,9 +117,34 @@ const ScheduleClientView = ({
     const [schedules, setSchedules] = useState(initialSchedules);
     const [availableClasses, setAvailableClasses] = useState([]);
     const [isAssigning, setIsAssigning] = useState(false);
-    const [selectedDay, setSelectedDay] = useState(weekdays[0]);
-    const [selectedTime, setSelectedTime] = useState(timeSlots[0]);
-    const [selectedBuilding, setSelectedBuilding] = useState(buildings[0]);
+    
+    // Initialize state from localStorage or default to current day/first slot
+    const [selectedDay, setSelectedDay] = useState(() => {
+        if (typeof window !== 'undefined') {
+            const savedDay = localStorage.getItem('adminSchedule_selectedDay');
+            const dayAbbreviationMap = { 0: 'Su', 1: 'Mo', 2: 'Tu', 3: 'We', 4: 'Th', 5: 'Fr', 6: 'Sa' };
+            const currentDayAbbr = dayAbbreviationMap[new Date().getDay()];
+            return savedDay && weekdays.includes(savedDay) ? savedDay : (weekdays.includes(currentDayAbbr) ? currentDayAbbr : weekdays[0]);
+        }
+        return weekdays[0];
+    });
+
+    const [selectedTime, setSelectedTime] = useState(() => {
+        if (typeof window !== 'undefined') {
+            const savedTime = localStorage.getItem('adminSchedule_selectedTime');
+            return savedTime && timeSlots.includes(savedTime) ? savedTime : timeSlots[0];
+        }
+        return timeSlots[0];
+    });
+    
+    const [selectedBuilding, setSelectedBuilding] = useState(() => {
+        if (typeof window !== 'undefined') {
+            const savedBuilding = localStorage.getItem('adminSchedule_selectedBuilding');
+            return savedBuilding && buildings.includes(savedBuilding) ? savedBuilding : buildings[0];
+        }
+        return buildings[0];
+    });
+    
     const [draggedItem, setDraggedItem] = useState(null);
     const [dragOverCell, setDragOverCell] = useState(null);
     const [warningCellId, setWarningCellId] = useState(null);
@@ -143,6 +168,25 @@ const ScheduleClientView = ({
     useEffect(() => {
         router.refresh();
     }, []);
+    
+    // Effect to save selections to localStorage
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            localStorage.setItem('adminSchedule_selectedDay', selectedDay);
+        }
+    }, [selectedDay]);
+
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            localStorage.setItem('adminSchedule_selectedTime', selectedTime);
+        }
+    }, [selectedTime]);
+    
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            localStorage.setItem('adminSchedule_selectedBuilding', selectedBuilding);
+        }
+    }, [selectedBuilding]);
 
     useEffect(() => {
         setSchedules(initialSchedules);
@@ -356,7 +400,7 @@ const ScheduleClientView = ({
         if (draggedType === 'scheduled' && !targetScheduleInformation) {
             setIsAssigning(true);
             try {
-                const response = await scheduleService.moveSchedule(dragOrigin.scheduleId, targetRoomId, token);
+                const response = await scheduleService.moveScheduleToRoom(dragOrigin.scheduleId, targetRoomId, token);
                 setSchedules(previousState => {
                     const newSchedules = JSON.parse(JSON.stringify(previousState));
                     const classInformation = newSchedules[dragOrigin.day]?.[dragOrigin.time]?.[dragOrigin.roomId];
@@ -702,7 +746,7 @@ const ScheduleClientView = ({
                             </div>
                         ))}
                     </div>
-                    <div className="mt-auto pt-4 flex flex-wrap justify-between items-center gap-3 no-print">
+                    <div className="mt-auto pt-4 border-t border-gray-200 dark:border-gray-700 flex flex-wrap justify-between items-center gap-3 no-print">
                         <div className="text-xs text-gray-600 dark:text-gray-400 space-y-0.5">
                             <p><span className="inline-block w-2.5 h-2.5 bg-green-500 rounded-full mr-1.5 align-middle"></span> Available Rooms: {availableRoomsCount}</p>
                             <p><span className="inline-block w-2.5 h-2.5 bg-red-500 rounded-full mr-1.5 align-middle"></span> Unavailable Rooms: {unavailableRoomsCount}</p>
