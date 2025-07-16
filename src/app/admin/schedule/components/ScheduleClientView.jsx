@@ -19,11 +19,6 @@ const SpinnerIcon = ({ className }) => (
     </svg>
 );
 
-
-const RoomCardSkeleton = () => (
-    <div className="h-28 sm:h-32 bg-gray-200 dark:bg-gray-800 rounded-lg animate-pulse"></div>
-);
-
 const ScheduledClassCard = ({ classData, onDragStart, onDragEnd }) => (
     <div
         draggable
@@ -39,6 +34,7 @@ const ScheduledClassCard = ({ classData, onDragStart, onDragEnd }) => (
 const RoomCard = React.memo(({ room, classData, isDragOver, isWarning, dragHandlers, className, isNavigating, onHeaderClick }) => {
     const isOccupied = !!classData;
     const isUnavailable = room.status === "unavailable";
+    const hasTemporaryRoom = isOccupied && classData.temporaryRoomId;
 
     const getBorderColor = () => {
         if (isWarning) return 'border-red-500 dark:border-red-400 shadow-lg scale-105';
@@ -71,20 +67,27 @@ const RoomCard = React.memo(({ room, classData, isDragOver, isWarning, dragHandl
                 )}
             </div>
             <div
-                onDragOver={!isUnavailable ? dragHandlers.onDragOver : null}
-                onDragEnter={!isUnavailable ? dragHandlers.onDragEnter : null}
-                onDragLeave={!isUnavailable ? dragHandlers.onDragLeave : null}
-                onDrop={!isUnavailable ? dragHandlers.onDrop : null}
-                className={`flex-grow p-2 flex justify-center items-center text-center transition-colors min-h-[112px] room-card-drop-zone
+                onDragOver={dragHandlers.onDragOver}
+                onDragEnter={dragHandlers.onDragEnter}
+                onDragLeave={dragHandlers.onDragLeave}
+                onDrop={dragHandlers.onDrop}
+                className={`flex-grow p-2 flex flex-col justify-center items-center text-center transition-colors min-h-[112px] room-card-drop-zone
                 ${isDragOver ? 'bg-emerald-100 dark:bg-emerald-800/50' : (isUnavailable ? 'bg-slate-50 dark:bg-slate-800/50' : 'bg-white dark:bg-gray-900')}
                 `}
             >
                 {isOccupied ? (
-                    <ScheduledClassCard
-                        classData={classData}
-                        onDragStart={dragHandlers.onDragStart}
-                        onDragEnd={dragHandlers.onDragEnd}
-                    />
+                    <>
+                        <ScheduledClassCard
+                            classData={classData}
+                            onDragStart={dragHandlers.onDragStart}
+                            onDragEnd={dragHandlers.onDragEnd}
+                        />
+                        {hasTemporaryRoom && (
+                            <div className="mt-1 text-xs text-orange-600 dark:text-orange-400 font-semibold">
+                                Temp: {classData.temporaryRoomName}
+                            </div>
+                        )}
+                    </>
                 ) : (
                     <span className={`text-xs italic select-none pointer-events-none ${isUnavailable ? 'text-red-600 dark:text-red-400' : 'text-gray-400 dark:text-gray-600'}`}>
                         {isUnavailable ? 'Unavailable' : `${room.roomName}`}
@@ -94,7 +97,6 @@ const RoomCard = React.memo(({ room, classData, isDragOver, isWarning, dragHandl
         </div>
     );
 });
-
 RoomCard.displayName = 'RoomCard';
 
 
@@ -113,6 +115,7 @@ const ScheduleClientView = ({
     const router = useRouter();
 
     const [schedules, setSchedules] = useState(initialSchedules);
+    const [availableClasses, setAvailableClasses] = useState([]);
     const [isAssigning, setIsAssigning] = useState(false);
     const [selectedDay, setSelectedDay] = useState(weekdays[0]);
     const [selectedTime, setSelectedTime] = useState(timeSlots[0]);
@@ -125,50 +128,58 @@ const ScheduleClientView = ({
     const [selectedGeneration, setSelectedGeneration] = useState('All');
     const [searchTerm, setSearchTerm] = useState('');
     const [navigatingToRoomId, setNavigatingToRoomId] = useState(null);
-    
-    const [swapConfirmation, setSwapConfirmation] = useState({
-        isOpen: false,
-        details: null
-    });
-
+    const [swapConfirmation, setSwapConfirmation] = useState({ isOpen: false, details: null });
     const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
-    const schedulePageRef = useRef(null);
+    const schedulePageReference = useRef(null);
     const unassignmentProcessed = useRef(false);
 
-    const generationColorMap = {
-        '29': 'bg-sky-500', '30': 'bg-emerald-500', '31': 'bg-amber-500',
-        '32': 'bg-indigo-500', '33': 'bg-violet-500',
-    };
-    const dayApiToAbbrMap = {
-        MONDAY: 'Mo', TUESDAY: 'Tu', WEDNESDAY: 'We', THURSDAY: 'Th',
-        FRIDAY: 'Fr', SATURDAY: 'Sa', SUNDAY: 'Su'
-    };
+    const dayApiToAbbreviationMap = { MONDAY: 'Mo', TUESDAY: 'Tu', WEDNESDAY: 'We', THURSDAY: 'Th', FRIDAY: 'Fr', SATURDAY: 'Sa', SUNDAY: 'Su' };
+    const generationColorMap = { '29': 'bg-sky-500', '30': 'bg-emerald-500', '31': 'bg-amber-500', '32': 'bg-indigo-500', '33': 'bg-violet-500' };
 
-    const showToast = (message, type = 'info') => {
-        setToast({ show: true, message, type });
-    };
+    const showToast = (message, type = 'info') => setToast({ show: true, message, type });
+
+    // --- Effects ---
+
+    useEffect(() => {
+        router.refresh();
+    }, []);
+
+    useEffect(() => {
+        setSchedules(initialSchedules);
+        
+        const currentAssignedIds = new Set();
+        Object.values(initialSchedules).forEach(day => {
+            Object.values(day).forEach(time => {
+                Object.values(time).forEach(schedule => {
+                    if (schedule.classId) {
+                        currentAssignedIds.add(schedule.classId);
+                    }
+                });
+            });
+        });
+
+        const unassigned = initialClasses.filter(cls => !currentAssignedIds.has(cls.classId));
+        setAvailableClasses(unassigned);
+
+    }, [initialSchedules, initialClasses]);
+
+    useEffect(() => {
+        const preventDefault = (event) => event.preventDefault();
+        window.addEventListener('dragover', preventDefault, { passive: false });
+        window.addEventListener('drop', preventDefault);
+        return () => {
+            window.removeEventListener('dragover', preventDefault);
+            window.removeEventListener('drop', preventDefault);
+        };
+    }, []);
 
     // --- Memoized Calculations ---
 
     const allFilteredAndSortedClasses = useMemo(() => {
-        const assignedClassIds = new Set();
-        const selectedDayFull = Object.entries(dayApiToAbbrMap).find(([_, abbr]) => abbr === selectedDay)?.[0] || '';
-        
-        // Correctly populate assignedClassIds by checking all time slots for the selected day
-        if (schedules[selectedDay]) {
-            Object.values(schedules[selectedDay]).forEach(timeSlotSchedule => {
-                Object.values(timeSlotSchedule).forEach(scheduleInfo => {
-                    if (scheduleInfo?.classId) assignedClassIds.add(scheduleInfo.classId);
-                });
-            });
-        }
+        const selectedDayFull = Object.keys(dayApiToAbbreviationMap).find(key => dayApiToAbbreviationMap[key] === selectedDay) || '';
 
-        const filtered = initialClasses.filter(classItem => {
+        const filtered = availableClasses.filter(classItem => {
             if (classItem.archived) return false;
-
-            // This check now correctly excludes any class already scheduled on this day
-            const isAssignedOnThisDay = assignedClassIds.has(classItem.classId);
-            if (isAssignedOnThisDay) return false;
 
             const occursOnSelectedDay = classItem.dayDetails?.some(day => day.dayOfWeek === selectedDayFull && !day.online);
             const degreeMatch = selectedDegree === 'All' || classItem.degreeName === selectedDegree;
@@ -178,36 +189,27 @@ const ScheduleClientView = ({
             return occursOnSelectedDay && degreeMatch && generationMatch && searchTermMatch;
         });
 
-        // Sort the filtered list. Classes matching the selected time come first.
-        return filtered.sort((a, b) => {
-            const shiftA = a.shift?.name;
-            const shiftB = b.shift?.name;
-
+        return filtered.sort((classA, classB) => {
+            const shiftA = classA.shift?.name;
+            const shiftB = classB.shift?.name;
             if (selectedTime !== 'All') {
                 const aMatches = shiftA === selectedTime;
                 const bMatches = shiftB === selectedTime;
-
                 if (aMatches && !bMatches) return -1;
                 if (!aMatches && bMatches) return 1;
             }
-            
             const indexA = timeSlots.indexOf(shiftA);
             const indexB = timeSlots.indexOf(shiftB);
-
-            if(indexA !== indexB) return indexA - indexB;
-
-            return a.className.localeCompare(b.className);
+            if (indexA !== indexB) return indexA - indexB;
+            return classA.className.localeCompare(classB.className);
         });
-    }, [schedules, selectedDay, selectedTime, selectedDegree, selectedGeneration, searchTerm, initialClasses, timeSlots, dayApiToAbbrMap]);
+    }, [availableClasses, selectedDay, selectedTime, selectedDegree, selectedGeneration, searchTerm, timeSlots, dayApiToAbbreviationMap]);
 
     const groupedClassesByShift = useMemo(() => {
-        // Group all the (now sorted and filtered) classes by their shift time.
         const groups = {};
         allFilteredAndSortedClasses.forEach(classItem => {
             const shiftName = classItem.shift?.name || 'Unassigned';
-            if (!groups[shiftName]) {
-                groups[shiftName] = [];
-            }
+            if (!groups[shiftName]) groups[shiftName] = [];
             groups[shiftName].push(classItem);
         });
         return groups;
@@ -220,9 +222,7 @@ const ScheduleClientView = ({
     }, [selectedTime, timeSlots]);
 
     const getClassForRoom = (roomId) => {
-        const scheduleInfo = schedules[selectedDay]?.[selectedTime]?.[roomId];
-        if (!scheduleInfo) return null;
-        return initialClasses.find(c => c.classId === scheduleInfo.classId) || { ...scheduleInfo, generation: scheduleInfo.year };
+        return schedules[selectedDay]?.[selectedTime]?.[roomId] || null;
     };
 
     const currentGrid = useMemo(() => buildingLayout[selectedBuilding] ?? {}, [buildingLayout, selectedBuilding]);
@@ -233,22 +233,10 @@ const ScheduleClientView = ({
         const totalRoomsInBuilding = roomsInBuilding.length;
         const timeSchedule = schedules[selectedDay]?.[selectedTime] || {};
         const occupiedRoomIds = new Set(Object.keys(timeSchedule).map(Number));
-        const unavailableRoomIds = new Set(roomsInBuilding.filter(r => r.status === 'unavailable').map(r => r.roomId));
+        const unavailableRoomIds = new Set(roomsInBuilding.filter(room => room.status === 'unavailable').map(room => room.roomId));
         const totalUnavailable = new Set([...occupiedRoomIds, ...unavailableRoomIds]).size;
         return { availableRoomsCount: totalRoomsInBuilding - totalUnavailable, unavailableRoomsCount: totalUnavailable };
     }, [selectedBuilding, selectedDay, selectedTime, schedules, buildingLayout]);
-
-    // --- Effects ---
-
-    useEffect(() => {
-        const preventDefault = (e) => e.preventDefault();
-        window.addEventListener('dragover', preventDefault, { passive: false });
-        window.addEventListener('drop', preventDefault);
-        return () => {
-            window.removeEventListener('dragover', preventDefault);
-            window.removeEventListener('drop', preventDefault);
-        };
-    }, []);
 
     // --- Handlers ---
 
@@ -257,7 +245,8 @@ const ScheduleClientView = ({
         router.push(`/admin/schedule/${roomId}`);
     };
 
-    const handleUnassign = async (origin) => {
+    const handleUnassign = async (draggedItemPayload) => {
+        const { item: scheduledClassInfo, origin } = draggedItemPayload;
         if (!origin || !origin.scheduleId) {
             showToast("Cannot unassign: Schedule ID is missing.", 'error');
             return;
@@ -267,13 +256,20 @@ const ScheduleClientView = ({
         setIsAssigning(true);
         try {
             await scheduleService.unassignRoomFromClass(origin.scheduleId, token);
-            setSchedules(prevSchedules => {
-                const newSchedules = JSON.parse(JSON.stringify(prevSchedules));
+            
+            setSchedules(previousSchedules => {
+                const newSchedules = JSON.parse(JSON.stringify(previousSchedules));
                 if (newSchedules[origin.day]?.[origin.time]?.[origin.roomId]) {
                     delete newSchedules[origin.day][origin.time][origin.roomId];
                 }
                 return newSchedules;
             });
+
+            const fullClassDetails = initialClasses.find(c => c.classId === scheduledClassInfo.classId);
+            if (fullClassDetails) {
+                setAvailableClasses(prev => [...prev, fullClassDetails]);
+            }
+
             showToast("Class unassigned successfully.", 'success');
         } catch (error) {
             showToast(`Failed to unassign class: ${error.message}`, 'error');
@@ -291,7 +287,7 @@ const ScheduleClientView = ({
         const dropTarget = document.elementFromPoint(event.clientX, event.clientY);
         const droppedOutsideGrid = !dropTarget?.closest('.room-card-drop-zone');
         if (draggedItem?.type === 'scheduled' && droppedOutsideGrid) {
-            await handleUnassign(draggedItem.origin);
+            await handleUnassign(draggedItem);
         }
         setDraggedItem(null);
         setDragOverCell(null);
@@ -305,7 +301,7 @@ const ScheduleClientView = ({
 
     const handleGridCellDragEnter = (event, roomId) => {
         event.preventDefault();
-        const room = initialRooms.find(r => r.roomId === roomId);
+        const room = initialRooms.find(roomObject => roomObject.roomId === roomId);
         if (room.status === "unavailable") {
             setWarningCellId(roomId);
         } else {
@@ -326,7 +322,7 @@ const ScheduleClientView = ({
     const handleDropOnClassList = async (event) => {
         event.preventDefault();
         if (draggedItem?.type === 'scheduled') {
-            await handleUnassign(draggedItem.origin);
+            await handleUnassign(draggedItem);
         }
     };
 
@@ -338,49 +334,40 @@ const ScheduleClientView = ({
         if (!draggedItem) return;
 
         const { item: draggedClass, type: draggedType, origin: dragOrigin } = draggedItem;
-        const targetScheduleInfo = schedules[selectedDay]?.[selectedTime]?.[targetRoomId];
+        const targetScheduleInformation = getClassForRoom(targetRoomId);
 
-        if (draggedType === 'scheduled' && targetScheduleInfo) {
+        if (draggedType === 'scheduled' && targetScheduleInformation) {
             if (dragOrigin.roomId === targetRoomId) return; 
 
-            const sourceClassData = draggedClass;
+            const sourceClassData = getClassForRoom(dragOrigin.roomId);
             const targetClassData = getClassForRoom(targetRoomId);
 
             setSwapConfirmation({
                 isOpen: true,
                 details: {
-                    from: {
-                        day: selectedDay,
-                        time: selectedTime,
-                        roomId: dragOrigin.roomId,
-                        scheduleId: dragOrigin.scheduleId,
-                        classData: sourceClassData,
-                    },
-                    to: {
-                        day: selectedDay,
-                        time: selectedTime,
-                        roomId: targetRoomId,
-                        scheduleId: targetScheduleInfo.scheduleId,
-                        classData: targetClassData,
-                    },
+                    from: { ...dragOrigin, classData: sourceClassData },
+                    to: { ...targetScheduleInformation, day: selectedDay, time: selectedTime, roomId: targetRoomId, classData: targetClassData },
                 },
             });
             setDraggedItem(null); 
             return;
         }
 
-        if (draggedType === 'scheduled' && !targetScheduleInfo) {
+        if (draggedType === 'scheduled' && !targetScheduleInformation) {
             setIsAssigning(true);
             try {
-                await scheduleService.moveScheduleToRoom(dragOrigin.scheduleId, targetRoomId, token);
-                setSchedules(prev => {
-                    const newSchedules = JSON.parse(JSON.stringify(prev));
-                    const classInfo = newSchedules[dragOrigin.day]?.[dragOrigin.time]?.[dragOrigin.roomId];
-                    if (classInfo) {
+                const response = await scheduleService.moveSchedule(dragOrigin.scheduleId, targetRoomId, token);
+                setSchedules(previousState => {
+                    const newSchedules = JSON.parse(JSON.stringify(previousState));
+                    const classInformation = newSchedules[dragOrigin.day]?.[dragOrigin.time]?.[dragOrigin.roomId];
+                    if (classInformation) {
                         delete newSchedules[dragOrigin.day][dragOrigin.time][dragOrigin.roomId];
                         if (!newSchedules[selectedDay]) newSchedules[selectedDay] = {};
                         if (!newSchedules[selectedDay][selectedTime]) newSchedules[selectedDay][selectedTime] = {};
-                        newSchedules[selectedDay][selectedTime][targetRoomId] = classInfo;
+                        newSchedules[selectedDay][selectedTime][targetRoomId] = {
+                            ...classInformation,
+                            ...response.payload, 
+                        };
                     }
                     return newSchedules;
                 });
@@ -394,36 +381,34 @@ const ScheduleClientView = ({
             return;
         }
 
-        if (draggedType === 'new' && !targetScheduleInfo) {
-            const shiftId = draggedClass.shift?.shiftId;
-            const dayOfWeekForAPI = Object.keys(dayApiToAbbrMap).find(key => dayApiToAbbrMap[key] === selectedDay);
-            if (!shiftId || !dayOfWeekForAPI) {
-                showToast("Cannot schedule: Class is missing shift or day information.", 'error');
-                return;
-            }
-            const payload = { classId: draggedClass.classId, roomId: targetRoomId, dayOfWeek: dayOfWeekForAPI, shiftId, isOnline: false };
+        if (draggedType === 'new' && !targetScheduleInformation) {
+            setIsAssigning(true);
             try {
+                const payload = { classId: draggedClass.classId, roomId: targetRoomId };
                 const response = await scheduleService.assignRoomToClass(payload, token);
-                setSchedules(prev => {
-                    const newSchedules = JSON.parse(JSON.stringify(prev));
+                setSchedules(previousState => {
+                    const newSchedules = JSON.parse(JSON.stringify(previousState));
                     if (!newSchedules[selectedDay]) newSchedules[selectedDay] = {};
                     if (!newSchedules[selectedDay][selectedTime]) newSchedules[selectedDay][selectedTime] = {};
                     newSchedules[selectedDay][selectedTime][targetRoomId] = {
-                        classId: draggedClass.classId, scheduleId: response.payload.scheduleId,
-                        className: draggedClass.className, majorName: draggedClass.majorName, year: draggedClass.generation
+                        ...response.payload,
+                        className: draggedClass.className,
+                        majorName: draggedClass.majorName,
                     };
                     return newSchedules;
                 });
+                setAvailableClasses(prev => prev.filter(cls => cls.classId !== draggedClass.classId));
                 showToast(response.message || "Class scheduled successfully!", 'success');
             } catch (error) {
                 showToast(error.message || "Failed to schedule class.", 'error');
             } finally {
+                setIsAssigning(false);
                 setDraggedItem(null);
             }
             return;
         }
 
-        if (draggedType === 'new' && targetScheduleInfo) {
+        if (draggedType === 'new' && targetScheduleInformation) {
             showToast("This room is already occupied.", 'error');
         }
     };
@@ -443,17 +428,17 @@ const ScheduleClientView = ({
             const payload = { scheduleId1: from.scheduleId, scheduleId2: to.scheduleId };
             await scheduleService.swapSchedules(payload, token);
             
-            setSchedules(prev => {
-                const newSchedules = JSON.parse(JSON.stringify(prev));
+            setSchedules(previousState => {
+                const newSchedules = JSON.parse(JSON.stringify(previousState));
                 const day = selectedDay;
                 const time = selectedTime;
                 
-                const sourceInfo = newSchedules[day]?.[time]?.[from.roomId];
-                const targetInfo = newSchedules[day]?.[time]?.[to.roomId];
+                const sourceInformation = newSchedules[day]?.[time]?.[from.roomId];
+                const targetInformation = newSchedules[day]?.[time]?.[to.roomId];
 
-                if (sourceInfo && targetInfo) {
-                    newSchedules[day][time][from.roomId] = targetInfo;
-                    newSchedules[day][time][to.roomId] = sourceInfo;
+                if (sourceInformation && targetInformation) {
+                    newSchedules[day][time][from.roomId] = targetInformation;
+                    newSchedules[day][time][to.roomId] = sourceInformation;
                 }
                 return newSchedules;
             });
@@ -479,7 +464,7 @@ const ScheduleClientView = ({
         }
     };
 
-    const getRoomColSpan = (room) => {
+    const getRoomColumnSpan = (room) => {
         if (!room) return "";
         const id = room.roomId;
         const building = room.buildingName;
@@ -515,7 +500,7 @@ const ScheduleClientView = ({
                     const isOccupied = !!classData;
                     const isUnavailable = room.status === 'unavailable';
                     const borderColor = isUnavailable || isOccupied ? '#ef4444' : '#22c55e';
-                    const bgColor = isUnavailable || isOccupied ? '#fee2e2' : '#f0fdf4';
+                    const backgroundColor = isUnavailable || isOccupied ? '#fee2e2' : '#f0fdf4';
                     const textColor = isUnavailable || isOccupied ? '#7f1d1d' : '#14532d';
                     const roomNameColor = document.documentElement.classList.contains('dark') ? '#e5e7eb' : '#1f2937';
 
@@ -525,7 +510,7 @@ const ScheduleClientView = ({
                                 border: 1px solid ${borderColor};
                                 border-radius: 8px;
                                 padding: 10px;
-                                background-color: ${bgColor};
+                                background-color: ${backgroundColor};
                                 color: ${textColor};
                                 text-align: center;
                                 font-size: 12px;
@@ -588,19 +573,19 @@ const ScheduleClientView = ({
 
         try {
             const canvas = await html2canvas(printElement, options);
-            const imgData = canvas.toDataURL('image/png');
-            const pdf = new jsPDF({
+            const imageData = canvas.toDataURL('image/png');
+            const pdfDocument = new jsPDF({
                 orientation: 'landscape',
                 unit: 'px',
                 format: [canvas.width, canvas.height],
             });
 
-            pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
+            pdfDocument.addImage(imageData, 'PNG', 0, 0, canvas.width, canvas.height);
 
             const date = new Date().toISOString().slice(0, 10);
-            pdf.save(`Schedule_${selectedBuilding}_${selectedDay}_${selectedTime}_${date}.pdf`);
-        } catch (err) {
-            console.error("PDF generation error:", err);
+            pdfDocument.save(`Schedule_${selectedBuilding}_${selectedDay}_${selectedTime}_${date}.pdf`);
+        } catch (error) {
+            console.error("PDF generation error:", error);
             showToast("An error occurred while generating the PDF.", 'error');
         } finally {
             document.body.removeChild(printElement);
@@ -671,7 +656,7 @@ const ScheduleClientView = ({
                         {Object.values(groupedClassesByShift).every(array => array.length === 0) && (<div className="text-center text-gray-400 dark:text-gray-600 mt-4">No classes available for the selected filters.</div>)}
                     </div>
                 </div>
-                <div ref={schedulePageRef} className='flex-1 p-4 sm:p-6 bg-white dark:bg-gray-900 border dark:border-gray-700 shadow-xl rounded-xl flex flex-col overflow-y-auto'>
+                <div ref={schedulePageReference} className='flex-1 p-4 sm:p-6 bg-white dark:bg-gray-900 border dark:border-gray-700 shadow-xl rounded-xl flex flex-col overflow-y-auto'>
                     <div className="flex flex-row items-center justify-between mb-4 border-b dark:border-gray-600 pb-3 no-print">
                         <div className="flex rounded-lg border border-gray-300 dark:border-gray-600 overflow-hidden">
                             {weekdays.map(day => (<button key={day} onClick={() => setSelectedDay(day)} className={`px-3.5 py-1.5 text-sm font-medium transition-colors ${selectedDay === day ? 'bg-blue-600 dark:bg-blue-600 hover:bg-blue-700 dark:hover:bg-blue-700 text-white shadow' : 'border-r hover:bg-gray-50 dark:hover:bg-gray-800 dark:border-r-gray-500 last:border-r-0'}`}>{day}</button>))}
@@ -694,7 +679,7 @@ const ScheduleClientView = ({
                                 <div className={`grid gap-3 ${getGridColumnClasses(selectedBuilding, parseInt(floor))}`}>
                                     {rooms.map((room) => {
                                         const classData = getClassForRoom(room.roomId);
-                                        const scheduleInfo = schedules[selectedDay]?.[selectedTime]?.[room.roomId];
+                                        const scheduleInformation = schedules[selectedDay]?.[selectedTime]?.[room.roomId];
                                         return (
                                             <RoomCard key={room.roomId} room={room} classData={classData} 
                                                 isDragOver={dragOverCell?.roomId === room.roomId} 
@@ -706,10 +691,10 @@ const ScheduleClientView = ({
                                                     onDragEnter: (event) => handleGridCellDragEnter(event, room.roomId),
                                                     onDragLeave: handleGridCellDragLeave,
                                                     onDrop: (event) => handleGridCellDrop(event, room.roomId),
-                                                    onDragStart: (event) => { if (classData && scheduleInfo) { handleDragStart(event, classData, 'scheduled', { day: selectedDay, time: selectedTime, roomId: room.roomId, scheduleId: scheduleInfo.scheduleId }); } },
+                                                    onDragStart: (event) => { if (classData && scheduleInformation) { handleDragStart(event, classData, 'scheduled', { day: selectedDay, time: selectedTime, roomId: room.roomId, scheduleId: scheduleInformation.scheduleId }); } },
                                                     onDragEnd: handleDragEnd,
                                                 }}
-                                                className={getRoomColSpan(room)}
+                                                className={getRoomColumnSpan(room)}
                                             />
                                         );
                                     })}
