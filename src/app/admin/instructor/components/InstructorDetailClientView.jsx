@@ -73,6 +73,12 @@ export default function InstructorDetailClientView({ initialInstructor, allDepar
             return;
         }
 
+        if (editableInstructorDetails.phone.length < 8 || editableInstructorDetails.phone.length > 15) {
+            setToast({ show: true, message: "Phone number must be between 8 and 15 digits.", type: 'error' });
+            setLoading(false);
+            return;
+        }
+
         const payload = {
             firstName: editableInstructorDetails.firstName,
             lastName: editableInstructorDetails.lastName,
@@ -226,6 +232,11 @@ export default function InstructorDetailClientView({ initialInstructor, allDepar
             if (/^[A-Za-z\s]*$/.test(value)) {
                  setEditableInstructorDetails(prev => ({ ...prev, [name]: value }));
             }
+        } else if (name === 'phone') {
+            // Allow only numbers and enforce max length of 9
+            if (/^\d*$/.test(value) && value.length <= 15) {
+                setEditableInstructorDetails(prev => ({ ...prev, [name]: value }));
+            }
         } else {
             setEditableInstructorDetails(prev => ({ ...prev, [name]: value }));
         }
@@ -270,6 +281,7 @@ export default function InstructorDetailClientView({ initialInstructor, allDepar
                 onChange={handleInputChange} 
                 readOnly={!isEditing} 
                 disabled={loading} 
+                minLength={opts.minLength}
                 maxLength={opts.maxLength}
                 className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs text-num-dark-text dark:text-white ${!isEditing ? 'bg-gray-100 dark:bg-gray-800 border-num-gray-light dark:border-gray-700 text-gray-500 dark:text-gray-400' : 'bg-num-content-bg dark:bg-gray-700 border-num-gray-light dark:border-gray-600'}`}
             />
@@ -326,8 +338,8 @@ export default function InstructorDetailClientView({ initialInstructor, allDepar
                             {renderTextField("Last Name", "lastName", currentData.lastName, isEditingGeneral, { maxLength: 30 })}
                         </div>
                         <div className="form-row flex gap-3 mb-2 flex-wrap">
-                            {renderTextField("Email", "email", currentData.email, isEditingGeneral, { type: 'email', maxLength: 30 })}
-                            {renderTextField("Phone Number", "phone", currentData.phone, isEditingGeneral, { type: 'tel', maxLength: 15 })}
+                            {renderTextField("Email", "email", currentData.email, isEditingGeneral, { type: 'email', maxLength: 254 })}
+                            {renderTextField("Phone Number", "phone", currentData.phone, isEditingGeneral, { type: 'tel', minLength: 8, maxLength: 15 })}
                         </div>
                         <div className="form-row flex gap-3 mb-2 flex-wrap">
                             {renderTextField("Major", "major", currentData.major, isEditingGeneral, { maxLength: 50 })}

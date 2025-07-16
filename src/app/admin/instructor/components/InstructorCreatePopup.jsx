@@ -60,7 +60,13 @@ const InstructorCreatePopup = ({ isOpen, onClose, onSave, departments, departmen
             if (/^[A-Za-z\s]*$/.test(value)) {
                 setNewInstructor(prev => ({ ...prev, [name]: value }));
             }
-        } else {
+        } else if (name === 'phone') {
+            // Allow only numbers and enforce max length of 9
+            if (/^\d*$/.test(value) && value.length <= 15) {
+                setNewInstructor(prev => ({ ...prev, [name]: value }));
+            }
+        }
+        else {
             setNewInstructor(prev => ({ ...prev, [name]: value }));
         }
 
@@ -111,6 +117,16 @@ const InstructorCreatePopup = ({ isOpen, onClose, onSave, departments, departmen
             setFormError({
                 fields: ['email'],
                 message: `An instructor with the email "${newInstructor.email}" already exists.`
+            });
+            setIsSubmitting(false);
+            return;
+        }
+
+        // --- PHONE NUMBER VALIDATION ---
+        if (newInstructor.phone.length < 8 || newInstructor.phone.length > 9) {
+            setFormError({
+                fields: ['phone'],
+                message: 'Phone number must be between 8 and 15 digits.'
             });
             setIsSubmitting(false);
             return;
@@ -242,15 +258,15 @@ const InstructorCreatePopup = ({ isOpen, onClose, onSave, departments, departmen
                         </div>
                         <div className="col-span-2">
                             <label htmlFor="email" className="block mb-2 text-xs font-medium text-gray-700 dark:text-gray-300">Email</label>
-                            <input type="email" id="email" name="email" value={newInstructor.email} onChange={handleInputChange} className={`bg-gray-50 border text-gray-900 text-xs rounded-lg block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 ${getErrorClass('email')}`} placeholder="john.doe@example.com" required maxLength="30" />
+                            <input type="email" id="email" name="email" value={newInstructor.email} onChange={handleInputChange} className={`bg-gray-50 border text-gray-900 text-xs rounded-lg block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 ${getErrorClass('email')}`} placeholder="john.doe@example.com" required maxLength="254" />
                         </div>
                         <div className="col-span-2">
                             <label htmlFor="password" className="block mb-2 text-xs font-medium text-gray-700 dark:text-gray-300">Password</label>
-                            <input type="password" id="password" name="password" value={newInstructor.password} onChange={handleInputChange} className="bg-gray-50 border border-gray-300 text-gray-900 text-xs rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600" placeholder="••••••••" required maxLength="64" />
+                            <input type="password" id="password" name="password" value={newInstructor.password} onChange={handleInputChange} className="bg-gray-50 border border-gray-300 text-gray-900 text-xs rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600" placeholder="••••••••" required minLength={8} maxLength="64" />
                         </div>
                         <div>
                             <label htmlFor="phone" className="block mb-2 text-xs font-medium text-gray-700 dark:text-gray-300">Phone Number</label>
-                            <input type="number" id="phone" name="phone" value={newInstructor.phone} onChange={handleInputChange} className="bg-gray-50 border border-gray-300 text-gray-900 text-xs rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600" placeholder="+855 12 345 678" required maxLength="15" />
+                            <input type="text" id="phone" name="phone" value={newInstructor.phone} onChange={handleInputChange} className={`bg-gray-50 border border-gray-300 text-gray-900 text-xs rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 ${getErrorClass('phone')}`} placeholder="012345678" required minLength="8" maxLength="15" />
                         </div>
                         <div>
                             <label htmlFor="degree" className="block mb-2 text-xs font-medium text-gray-700 dark:text-gray-300">Degree</label>
@@ -282,7 +298,7 @@ const InstructorCreatePopup = ({ isOpen, onClose, onSave, departments, departmen
                         </div>
                         <div className="col-span-2">
                             <label htmlFor="address" className="block mb-2 text-xs font-medium text-gray-700 dark:text-gray-300">Address</label>
-                            <input id="address" name="address" value={newInstructor.address} onChange={handleInputChange} className="bg-gray-50 border border-gray-300 text-gray-900 text-xs rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600" placeholder="123 Main Street, City, Country" required maxLength="100" />
+                            <input id="address" name="address" value={newInstructor.address} onChange={handleInputChange} className="bg-gray-50 border border-gray-300 text-gray-900 text-xs rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600" placeholder="123 Main Street, City, Country" required minLength={20} maxLength={100} />
                         </div>
                     </div>
                     {formError.message && (
