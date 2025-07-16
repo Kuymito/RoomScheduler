@@ -222,7 +222,13 @@ export default function InstructorDetailClientView({ initialInstructor, allDepar
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
-        setEditableInstructorDetails(prev => ({ ...prev, [name]: value }));
+        if (name === 'firstName' || name === 'lastName') {
+            if (/^[A-Za-z\s]*$/.test(value)) {
+                 setEditableInstructorDetails(prev => ({ ...prev, [name]: value }));
+            }
+        } else {
+            setEditableInstructorDetails(prev => ({ ...prev, [name]: value }));
+        }
     };
 
     const handleNewPasswordChange = (e) => {

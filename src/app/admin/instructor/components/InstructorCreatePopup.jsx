@@ -55,7 +55,15 @@ const InstructorCreatePopup = ({ isOpen, onClose, onSave, departments, departmen
     // Handles changes to form input and select fields.
     const handleInputChange = (e) => {
         const { name, value } = e.target;
-        setNewInstructor(prev => ({ ...prev, [name]: value }));
+        if (name === 'firstName' || name === 'lastName') {
+            // Allow only letters and spaces
+            if (/^[A-Za-z\s]*$/.test(value)) {
+                setNewInstructor(prev => ({ ...prev, [name]: value }));
+            }
+        } else {
+            setNewInstructor(prev => ({ ...prev, [name]: value }));
+        }
+
         if (formError.fields.includes(name)) {
             setFormError({ fields: [], message: '' });
         }
