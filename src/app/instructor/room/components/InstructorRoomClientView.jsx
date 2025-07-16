@@ -36,12 +36,13 @@ export default function InstructorRoomClientView({ initialAllRoomsData, building
     const handleTimeChange = (event) => { setSelectedTimeSlot(event.target.value); resetSelection(); };
     const handleBuildingChange = (event) => { setSelectedBuilding(event.target.value); resetSelection(); };
 
+    /**
+     * Handles a click on any room card.
+     * It will now display details for any room, regardless of its status.
+     * @param {number} roomId - The ID of the clicked room.
+     */
     const handleRoomClick = async (roomId) => {
         const room = allRoomsData[roomId];
-        const isOccupied = scheduleMap[selectedDay]?.[selectedTimeSlot]?.[roomId];
-        const isUnavailable = room?.status === 'unavailable';
-
-        if (isOccupied || isUnavailable) return;
 
         setSelectedRoomId(roomId);
         setLoading(true);
@@ -59,7 +60,10 @@ export default function InstructorRoomClientView({ initialAllRoomsData, building
 
     const handleRequest = () => { if (roomDetails) setIsFormOpen(true); };
     
-    // This function now handles the API call and shows a toast on success/failure.
+    /**
+     * Handles the submission of a room change/booking request.
+     * @param {object} requestData - The data for the request from the form.
+     */
     const handleSaveRequest = async (requestData) => {
         if (!session?.accessToken) {
             setToast({ show: true, message: 'Authentication session expired.', type: 'error' });
@@ -116,6 +120,9 @@ export default function InstructorRoomClientView({ initialAllRoomsData, building
         </div>
     );
 
+    // Determine if the request button should be disabled.
+    const isRequestDisabled = loading || !roomDetails || roomDetails.status === 'unavailable' || !!scheduleMap[selectedDay]?.[selectedTimeSlot]?.[roomDetails.id];
+
     return (
     <>
       {toast.show && <Toast message={toast.message} type={toast.type} onClose={() => setToast({ show: false, message: '', type: 'info' })} />}
@@ -164,8 +171,8 @@ export default function InstructorRoomClientView({ initialAllRoomsData, building
                                     return (
                                         <div 
                                             key={room.id} 
-                                            className={`h-[90px] sm:h-[100px] border rounded-md flex flex-col transition-all duration-150 shadow-sm ${getRoomColSpan(room)} ${isDisabled ? 'cursor-not-allowed bg-slate-50 dark:bg-slate-800/50 opacity-70' : 'cursor-pointer hover:shadow-md bg-white dark:bg-slate-800'} ${isSelected ? "border-blue-500 ring-2 ring-blue-500 dark:border-blue-500" : isDisabled ? "border-slate-200 dark:border-slate-700" : "border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600"}`}
-                                            onClick={() => !isDisabled && handleRoomClick(room.id)}>
+                                            className={`h-[90px] sm:h-[100px] border rounded-md flex flex-col transition-all duration-150 shadow-sm cursor-pointer hover:shadow-md ${getRoomColSpan(room)} ${isDisabled ? 'bg-slate-50 dark:bg-slate-800/50 opacity-70' : 'bg-white dark:bg-slate-800'} ${isSelected ? "border-blue-500 ring-2 ring-blue-500 dark:border-blue-500" : isDisabled ? "border-slate-200 dark:border-slate-700" : "border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600"}`}
+                                            onClick={() => handleRoomClick(room.id)}>
                                             <div className={`h-[30px] rounded-t-md flex items-center justify-center px-2 relative border-b ${isSelected ? 'border-b-transparent' : 'border-slate-200 dark:border-slate-600'} ${isDisabled ? 'bg-slate-100 dark:bg-slate-700/60' : 'bg-slate-50 dark:bg-slate-700'}`}>
                                                 <div className={`absolute left-2 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full ${isSelected ? 'bg-blue-500' : isUnavailable ? 'bg-gray-400' : isOccupied ? 'bg-red-500' : 'bg-green-500'}`}></div>
                                                 <span className={`ml-3 text-xs sm:text-sm font-medium ${isSelected ? 'text-blue-700 dark:text-blue-300' : isDisabled ? 'text-slate-500 dark:text-slate-400' : 'text-slate-700 dark:text-slate-300'}`}>{room.name}</span>
@@ -197,9 +204,9 @@ export default function InstructorRoomClientView({ initialAllRoomsData, building
                                     <div className="flex flex-row items-start self-stretch w-full min-h-[92px]"><div className="flex flex-col justify-center items-start p-3 sm:p-4 w-[120px] pt-5"><span className={textLabelDefault}>Equipment</span></div><div className="flex flex-col justify-center items-start px-2 sm:px-3 flex-1 py-2 pt-3"><span className={`${textValueDefaultDisplay} pt-1`}>{Array.isArray(roomDetails.equipment) ? roomDetails.equipment.join(", ") : ''}</span></div></div>
                                 </div>
                             </div>
-                            <button className="flex flex-row justify-center items-center pyx-3 px-5 sm:px-6 gap-2 w-full h-[48px] sm:h-[50px] bg-green-600 hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600 shadow-md hover:shadow-lg rounded-md text-white font-semibold text-sm sm:text-base self-stretch disabled:opacity-60 transition-all duration-150" onClick={handleRequest} disabled={loading}>{loading ? "Loading..." : "Request"}</button>
+                            <button className="flex flex-row justify-center items-center pyx-3 px-5 sm:px-6 gap-2 w-full h-[48px] sm:h-[50px] bg-green-600 hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600 shadow-md hover:shadow-lg rounded-md text-white font-semibold text-sm sm:text-base self-stretch disabled:opacity-60 disabled:bg-gray-400 disabled:dark:bg-gray-600 disabled:cursor-not-allowed transition-all duration-150" onClick={handleRequest} disabled={isRequestDisabled}>{loading ? "Loading..." : "Request"}</button>
                         </>
-                    ) : ( <div className="text-center text-slate-500 dark:text-slate-400 w-full flex-grow flex items-center justify-center">Select an available room to view details.</div> )}
+                    ) : ( <div className="text-center text-slate-500 dark:text-slate-400 w-full flex-grow flex items-center justify-center">Select a room to view details.</div> )}
                 </div>
             </div>
         </div>
