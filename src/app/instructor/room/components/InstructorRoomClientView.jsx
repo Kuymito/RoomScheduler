@@ -37,15 +37,17 @@ export default function InstructorRoomClientView({ initialAllRoomsData, building
     const handleBuildingChange = (event) => { setSelectedBuilding(event.target.value); resetSelection(); };
 
     const handleRoomClick = async (roomId) => {
+        const room = allRoomsData[roomId];
         const isOccupied = scheduleMap[selectedDay]?.[selectedTimeSlot]?.[roomId];
-        if (isOccupied) return;
+        const isUnavailable = room?.status === 'unavailable';
+
+        if (isOccupied || isUnavailable) return;
 
         setSelectedRoomId(roomId);
         setLoading(true);
         setRoomDetails(null);
         setError('');
         try {
-            const room = allRoomsData[roomId];
             if (!room) throw new Error("Room not found");
             setRoomDetails(room);
         } catch (err) {
@@ -156,15 +158,20 @@ export default function InstructorRoomClientView({ initialAllRoomsData, building
                                     const isSelected = selectedRoomId === room.id;
                                     const scheduledClass = scheduleMap[selectedDay]?.[selectedTimeSlot]?.[room.id];
                                     const isOccupied = !!scheduledClass;
+                                    const isUnavailable = room.status === 'unavailable';
+                                    const isDisabled = isOccupied || isUnavailable;
+
                                     return (
-                                        <div key={room.id} className={`h-[90px] sm:h-[100px] border rounded-md flex flex-col transition-all duration-150 shadow-sm ${getRoomColSpan(room)} ${isOccupied ? 'cursor-not-allowed bg-slate-50 dark:bg-slate-800/50 opacity-70' : 'cursor-pointer hover:shadow-md bg-white dark:bg-slate-800'} ${isSelected ? "border-blue-500 ring-2 ring-blue-500 dark:border-blue-500" : isOccupied ? "border-slate-200 dark:border-slate-700" : "border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600"}`}
-                                            onClick={() => !isOccupied && handleRoomClick(room.id)}>
-                                            <div className={`h-[30px] rounded-t-md flex items-center justify-center px-2 relative border-b ${isSelected ? 'border-b-transparent' : 'border-slate-200 dark:border-slate-600'} ${isOccupied ? 'bg-slate-100 dark:bg-slate-700/60' : 'bg-slate-50 dark:bg-slate-700'}`}>
-                                                <div className={`absolute left-2 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full ${isSelected ? 'bg-blue-500' : isOccupied ? 'bg-red-500' : 'bg-green-500'}`}></div>
-                                                <span className={`ml-3 text-xs sm:text-sm font-medium ${isSelected ? 'text-blue-700 dark:text-blue-300' : isOccupied ? 'text-slate-500 dark:text-slate-400' : 'text-slate-700 dark:text-slate-300'}`}>{room.name}</span>
+                                        <div 
+                                            key={room.id} 
+                                            className={`h-[90px] sm:h-[100px] border rounded-md flex flex-col transition-all duration-150 shadow-sm ${getRoomColSpan(room)} ${isDisabled ? 'cursor-not-allowed bg-slate-50 dark:bg-slate-800/50 opacity-70' : 'cursor-pointer hover:shadow-md bg-white dark:bg-slate-800'} ${isSelected ? "border-blue-500 ring-2 ring-blue-500 dark:border-blue-500" : isDisabled ? "border-slate-200 dark:border-slate-700" : "border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600"}`}
+                                            onClick={() => !isDisabled && handleRoomClick(room.id)}>
+                                            <div className={`h-[30px] rounded-t-md flex items-center justify-center px-2 relative border-b ${isSelected ? 'border-b-transparent' : 'border-slate-200 dark:border-slate-600'} ${isDisabled ? 'bg-slate-100 dark:bg-slate-700/60' : 'bg-slate-50 dark:bg-slate-700'}`}>
+                                                <div className={`absolute left-2 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full ${isSelected ? 'bg-blue-500' : isUnavailable ? 'bg-gray-400' : isOccupied ? 'bg-red-500' : 'bg-green-500'}`}></div>
+                                                <span className={`ml-3 text-xs sm:text-sm font-medium ${isSelected ? 'text-blue-700 dark:text-blue-300' : isDisabled ? 'text-slate-500 dark:text-slate-400' : 'text-slate-700 dark:text-slate-300'}`}>{room.name}</span>
                                             </div>
-                                            <div className={`flex-1 rounded-b-md p-2 flex flex-col justify-center items-center ${isOccupied ? 'bg-slate-50 dark:bg-slate-800/50' : 'bg-white dark:bg-slate-800'}`}>
-                                                <span className={`text-xs ${isOccupied ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}`}>{isOccupied ? scheduledClass : 'Available'}</span>
+                                            <div className={`flex-1 rounded-b-md p-2 flex flex-col justify-center items-center ${isDisabled ? 'bg-slate-50 dark:bg-slate-800/50' : 'bg-white dark:bg-slate-800'}`}>
+                                                <span className={`text-xs ${isUnavailable ? 'text-gray-500 dark:text-gray-400' : isOccupied ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}`}>{isUnavailable ? 'Unavailable' : isOccupied ? scheduledClass : 'Available'}</span>
                                                 <span className={`text-xs text-slate-500 dark:text-slate-400 ${isSelected ? "text-slate-600 dark:text-slate-300" : ""} mt-1`}>Capacity: {room.capacity}</span>
                                             </div>
                                         </div>

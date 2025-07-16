@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect, useMemo } from 'react';
+import axios from 'axios'; // Import axios for the upload request
 
 // Shift mapping to convert display names to IDs
 const shiftMap = {
@@ -16,23 +17,25 @@ const ClassCreatePopup = ({ isOpen, onClose, onSave, departments, departmentsErr
     
     // --- UPDATED: Dynamic Generation Logic ---
     const generationOptions = useMemo(() => {
-        // Base year and generation as per user's requirement
+        // Base year and generation for first-year students
         const BASE_YEAR = 2025;
         const BASE_GENERATION = 34;
         
         // Get the current year
         const currentYear = new Date().getFullYear();
         
-        // Calculate the current generation based on the difference from the base year
-        const currentGeneration = BASE_GENERATION + (currentYear - BASE_YEAR);
+        // Calculate the current first-year generation
+        const yearDifference = currentYear - BASE_YEAR;
+        const currentFirstYearGeneration = BASE_GENERATION + yearDifference;
         
-        // Create an array for the current generation and the next 3 years (total of 4 years)
+        // Create an array for the current first-year generation and the previous 4 generations
         const options = [];
         for (let i = 0; i < 4; i++) {
-            options.push(String(currentGeneration + i));
+            options.push(String(currentFirstYearGeneration - i));
         }
         
-        return options;
+        // Sort them in ascending order
+        return options.sort((a, b) => Number(a) - Number(b));
     }, []); // Empty dependency array ensures this runs only once on component mount
 
     const degreesOptions = ['Bachelor', 'Master', 'PhD', 'Doctor'];
@@ -49,7 +52,7 @@ const ClassCreatePopup = ({ isOpen, onClose, onSave, departments, departmentsErr
     // Function to get the initial state for the form
     const getInitialState = () => ({
         className: '',
-        generation: generationOptions[0],
+        generation: generationOptions[generationOptions.length - 1], // Default to the latest generation
         groupName: '',
         major: majorOptions[0] || '', // Default to the first major/department name
         degree: degreesOptions[0],

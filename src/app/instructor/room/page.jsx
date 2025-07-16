@@ -7,6 +7,9 @@ import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import { getAllRooms } from '@/services/room.service';
 import { scheduleService } from '@/services/schedule.service';
 
+// Define the unavailable room IDs
+const UNAVAILABLE_ROOM_IDS = new Set([1, 2, 3, 28, 29, 30, 31, 32, 35, 36, 37, 38, 47, 48, 49, 50, 51, 53, 54, 55]);
+
 /**
  * Fetches all necessary data for the instructor room page on the server.
  * This includes all rooms, the complete schedule, and the schedules taught by the current instructor.
@@ -55,6 +58,8 @@ async function fetchAllRoomsAndSchedules() {
                 id: roomId, name: roomName, building: buildingName, floor: floor,
                 capacity: capacity, type: type,
                 equipment: typeof equipment === 'string' ? equipment.split(',').map(e => e.trim()).filter(Boolean) : [],
+                // Add status based on UNAVAILABLE_ROOM_IDS
+                status: UNAVAILABLE_ROOM_IDS.has(roomId) ? 'unavailable' : 'available',
             };
         });
         for (const building in populatedLayout) {

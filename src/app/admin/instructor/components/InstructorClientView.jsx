@@ -333,11 +333,11 @@ export default function InstructorClientView({ initialInstructors, initialDepart
                                                     <button onClick={(e) => { e.stopPropagation(); toggleInstructorStatus(data.id); }} className={`p-1 ${data.status === 'active' ? 'text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300' : 'text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300'}`} title={data.status === 'active' ? 'Archive Instructor' : 'Activate Instructor'}><ArchiveIcon className="size-4" /></button>
                                                 </div>
                                             </td>
-                                            <td className="px-6 py-2"><div className="flex items-center gap-2">{data.profileImage ? <img src={data.profileImage} alt={data.name} className="w-8 h-8 rounded-full object-cover border border-gray-200 dark:border-gray-600"/> : <DefaultAvatarIcon className="size-8 rounded-full text-gray-400 bg-gray-100 dark:bg-gray-700 dark:text-gray-500" />} {data.name}</div></td>
-                                            <td className="px-6 py-2 sm:table-cell hidden"> {data.email} </td>
-                                            <td className="px-6 py-2 lg:table-cell hidden"> {formatPhoneNumber(data.phone)} </td>
-                                            <td className="px-6 py-2"> {data.majorStudied} </td>
-                                            <td className="px-6 py-2 sm:table-cell hidden"> {data.qualifications} </td>
+                                            <td className="px-6 py-2"><div className="flex items-center gap-2">{data.profileImage ? <img src={data.profileImage} alt={data.name} className="w-8 h-8 rounded-full object-cover border border-gray-200 dark:border-gray-600"/> : <DefaultAvatarIcon className="size-8 rounded-full text-gray-400 bg-gray-100 dark:bg-gray-700 dark:text-gray-500 truncate" />} {data.name}</div></td>
+                                            <td className="px-6 py-2 sm:table-cell hidden truncate"> {data.email} </td>
+                                            <td className="px-6 py-2 lg:table-cell hidden truncate"> {formatPhoneNumber(data.phone)} </td>
+                                            <td className="px-6 py-2 truncate"> {data.majorStudied} </td>
+                                            <td className="px-6 py-2 sm:table-cell hidden truncate"> {data.qualifications} </td>
                                             <td className="px-6 py-2 capitalize"><span className={`px-2 py-0.5 rounded-full text-xs font-medium ${ data.status === 'active' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200' }`}>{data.status}</span></td>
                                         </>
                                     )}

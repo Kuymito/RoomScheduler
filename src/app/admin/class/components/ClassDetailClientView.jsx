@@ -114,28 +114,17 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
     const [isPreparingPdf, setIsPreparingPdf] = useState(false);
 
     const generationOptions = useMemo(() => {
-        // 1. Dynamically generate future years
         const BASE_YEAR = 2025;
         const BASE_GENERATION = 34;
         const currentYear = new Date().getFullYear();
-        const currentGeneration = BASE_GENERATION + (currentYear - BASE_YEAR);
-        const futureGenerations = [];
+        const yearDifference = currentYear - BASE_YEAR;
+        const currentFirstYearGeneration = BASE_GENERATION + yearDifference;
+        const options = [];
         for (let i = 0; i < 4; i++) {
-            futureGenerations.push(String(currentGeneration + i));
+            options.push(String(currentFirstYearGeneration - i));
         }
-
-        // 2. Get all existing unique generations
-        let existingGenerations = [];
-        if (allClasses && Array.isArray(allClasses)) {
-            existingGenerations = allClasses.map(cls => String(cls.generation));
-        }
-
-        // 3. Combine, get unique values, and sort
-        const combined = [...new Set([...futureGenerations, ...existingGenerations])];
-        combined.sort((a, b) => Number(b) - Number(a)); // Sort descending
-
-        return combined;
-    }, [allClasses]);
+        return options.sort((a, b) => Number(a) - Number(b));
+    }, []);
 
     const degreesOptions = ['Bachelor', 'Master', 'PhD', 'Doctor'];
     const shiftOptions = Object.keys(shiftMap);
@@ -204,7 +193,6 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
         setLoading(true);
         setToast({ show: false, message: '', type: 'info' });
 
-        // --- DUPLICATE CHECK ---
         if (allClasses && Array.isArray(allClasses)) {
             const isDuplicate = allClasses.some(
                 (cls) =>
@@ -220,10 +208,9 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
                     type: 'error'
                 });
                 setLoading(false);
-                return; // Stop the submission
+                return;
             }
         }
-        // --- END DUPLICATE CHECK ---
 
         if (!session?.accessToken) {
             setToast({ show: true, message: "You are not authenticated.", type: 'error' });
@@ -538,7 +525,10 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
                     <div className="info-card p-3 sm:p-4 bg-white border border-num-gray-light dark:bg-gray-800 dark:border-gray-700 shadow-custom-light rounded-lg">
                         <div className="section-title font-semibold text-md text-num-dark-text dark:text-white mb-3">General Information</div>
                         <div className="form-row flex gap-3 mb-2 flex-wrap">{renderTextField("Class Name", "name", classData.name, { maxLength: 30 })}</div>
-                        <div className="form-row flex gap-3 mb-2 flex-wrap">{renderTextField("Group", "group", classData.group, { maxLength: 2 })}{renderSelectField("Generation", "generation", classData.generation, generationOptions)}</div>
+                        <div className="form-row flex gap-3 mb-2 flex-wrap">
+                            {renderTextField("Group", "group", classData.group, { maxLength: 2 })}
+                            {renderSelectField("Generation", "generation", classData.generation, generationOptions)}
+                        </div>
                         <div className="form-row flex gap-3 mb-2 flex-wrap">
                             {renderSelectField("Faculty", "faculty", classData.faculty, departmentOptions, 'departmentId', 'name', 'name')}
                             {renderSelectField("Degree", "degrees", classData.degrees, degreesOptions)}

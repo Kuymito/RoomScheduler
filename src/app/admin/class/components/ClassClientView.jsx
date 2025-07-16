@@ -368,14 +368,14 @@ export default function ClassClientView({ initialClasses, initialDepartments }) 
                                                 <button onClick={(e) => { e.stopPropagation(); toggleClassStatus(data.id); }} className={`p-1 ${data.status.toLowerCase() === 'active' ? 'text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300' : 'text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300'}`} title={data.status.toLowerCase() === 'active' ? 'Archive Classroom' : 'Activate Classroom'}><ArchiveIcon className="size-4" /></button>
                                             </div>
                                         </td>
-                                        <td className="px-6 py-2"> {data.name} </td>
-                                        <td className="px-6 py-2 lg:table-cell hidden"> {data.generation} </td>
-                                        <td className="px-6 py-2 lg:table-cell hidden"> {data.group} </td>
-                                        <td className="px-6 py-2"> {data.major} </td>
-                                        <td className="px-6 py-2"> {data.degrees} </td>
-                                        <td className="px-6 py-2 2xl:table-cell hidden"> {data.faculty} </td>
-                                        <td className="px-6 py-2 2xl:table-cell hidden"> {data.semester} </td>
-                                        <td className="px-6 py-2 sm:table-cell hidden"> {data.shift} </td>
+                                        <td className="px-6 py-2 truncate"> {data.name} </td>
+                                        <td className="px-6 py-2 lg:table-cell hidden truncate"> {data.generation} </td>
+                                        <td className="px-6 py-2 lg:table-cell hidden truncate"> {data.group} </td>
+                                        <td className="px-6 py-2 truncate"> {data.major} </td>
+                                        <td className="px-6 py-2 truncate"> {data.degrees} </td>
+                                        <td className="px-6 py-2 2xl:table-cell hidden truncate"> {data.faculty} </td>
+                                        <td className="px-6 py-2 2xl:table-cell hidden truncate"> {data.semester} </td>
+                                        <td className="px-6 py-2 sm:table-cell hidden truncate"> {data.shift} </td>
                                         <td className="px-6 py-2 capitalize"><span className={`px-2 py-0.5 rounded-full text-xs font-medium ${data.status.toLowerCase() === 'active' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'}`}>{data.status}</span></td>
                                     </>
                                 )}

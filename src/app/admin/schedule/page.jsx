@@ -11,6 +11,9 @@ import { scheduleService } from '@/services/schedule.service';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 
+// Define the unavailable room IDs
+const UNAVAILABLE_ROOM_IDS = new Set([1, 2, 3, 28, 29, 30, 31, 32, 35, 36, 37, 38, 47, 48, 49, 50, 51, 53, 54, 55]);
+
 /**
  * Helper function to calculate the academic year from the generation number.
  * @param {string | number} generation - The generation number of the class.
@@ -144,9 +147,15 @@ const fetchSchedulePageData = async () => {
         // Building layout
         const buildingLayout = {};
         rooms.forEach(room => {
+            // Add status to each room
+            const roomWithStatus = {
+                ...room,
+                status: UNAVAILABLE_ROOM_IDS.has(room.roomId) ? 'unavailable' : 'available'
+            };
+
             if (!buildingLayout[room.buildingName]) buildingLayout[room.buildingName] = {};
             if (!buildingLayout[room.buildingName][room.floor]) buildingLayout[room.buildingName][room.floor] = [];
-            buildingLayout[room.buildingName][room.floor].push(room);
+            buildingLayout[room.buildingName][room.floor].push(roomWithStatus);
         });
 
         return {
