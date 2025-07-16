@@ -115,7 +115,10 @@ const fetchSchedulePageData = async () => {
                                 scheduleId: schedule.scheduleId,
                                 className: schedule.className,
                                 majorName: schedule.majorName,
-                                year: academicYear ? `Year ${academicYear}` : 'Year N/A'
+                                year: academicYear ? `Year ${academicYear}` : 'Year N/A',
+                                // Add temporary room details if they exist
+                                temporaryRoomId: schedule.temporaryRoomId,
+                                temporaryRoomName: schedule.temporaryRoomName
                             };
                         }
                     });

@@ -36,17 +36,16 @@ const getAuthHeaders = async (token) => {
 const handleResponse = (response) => {
     // Check for a successful status code (2xx)
     if (response.status >= 200 && response.status < 300) {
-        // The API wraps the data in a 'payload' object
+        // If the API returns a payload, return it. This is common for GET requests.
         if (response.data && response.data.payload) {
             return response.data.payload;
         }
-        // Handle successful but empty responses, like a 204 No Content
-        if (response.status === 204) {
-            return null;
-        }
-        // If the payload is missing in a successful response, it's an unexpected structure
-        throw new Error('Response payload is missing or invalid.');
+        
+        // For successful requests without a payload (e.g., PATCH, DELETE, or 204 No Content),
+        // return null or a generic success indicator. This prevents the error.
+        return null; 
     }
+
     // For non-2xx responses, create an error with the API's message
     const errorData = response.data || { message: 'An unknown error occurred' };
     throw new Error(errorData.message || `HTTP Error: ${response.status}`);
