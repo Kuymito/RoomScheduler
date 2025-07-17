@@ -6,7 +6,14 @@ import html2canvas from 'html2canvas';
 
 // --- Constants ---
 const DAYS_OF_WEEK = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-const TIME_SLOTS = ['07:00 - 10:00', '10:30 - 13:30', '14:00 - 17:00', '17:30 - 20:30'];
+// FIX: Added the "Weekend Shift" time slot to ensure weekend classes are rendered.
+const TIME_SLOTS = [
+    '07:00 - 10:00', // Morning Shift
+    '10:30 - 13:30', // Noon Shift
+    '14:00 - 17:00', // Afternoon Shift
+    '17:30 - 20:30', // Evening Shift
+    '07:30 - 17:00'  // Weekend Shift
+];
 
 const DAY_HEADER_COLORS = {
     Monday: 'bg-yellow-50 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-200',

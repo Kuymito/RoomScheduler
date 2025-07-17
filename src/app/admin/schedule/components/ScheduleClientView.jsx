@@ -51,7 +51,7 @@ const RoomCard = React.memo(({ room, classData, isDragOver, isWarning, dragHandl
         >
             <div
                 onClick={() => !isNavigating && onHeaderClick(room.roomId)}
-                className={`px-2 py-1 flex justify-between items-center border-b-2 transition-colors ${isNavigating ? 'cursor-not-allowed' : 'cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700'}
+                className={`px-2 py-1 flex justify-between items-center border-b-2 transition-colors ${isNavigating ? 'cursor-wait' : 'cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700'}
                 ${isWarning ? 'bg-red-100 dark:bg-red-800/50' : (isUnavailable ? 'bg-slate-100 dark:bg-slate-700/60' : 'bg-gray-50 dark:bg-gray-800')}
                 `}
             >
@@ -304,9 +304,20 @@ const ScheduleClientView = ({
         const room = initialRooms.find(roomObject => roomObject.roomId === roomId);
         if (room.status === "unavailable") {
             setWarningCellId(roomId);
-        } else {
-            setDragOverCell({ roomId });
-            if (draggedItem?.type === 'new' && schedules[selectedDay]?.[selectedTime]?.[roomId]) {
+            return;
+        }
+        
+        setDragOverCell({ roomId });
+
+        if (draggedItem?.type === 'new') {
+            const classShiftName = draggedItem.item.shift?.name;
+            const isOccupied = !!getClassForRoom(roomId);
+            
+            if (classShiftName !== selectedTime || isOccupied) {
+                setWarningCellId(roomId);
+            }
+        } else if (draggedItem?.type === 'scheduled') {
+            if (getClassForRoom(roomId)) {
                 setWarningCellId(roomId);
             }
         }
@@ -382,6 +393,13 @@ const ScheduleClientView = ({
         }
 
         if (draggedType === 'new' && !targetScheduleInformation) {
+            const classShiftName = draggedClass.shift?.name;
+            if (classShiftName !== selectedTime) {
+                showToast(`Shift mismatch: A "${classShiftName}" class cannot be assigned to a "${selectedTime}" slot.`, 'error');
+                setDraggedItem(null);
+                return;
+            }
+
             setIsAssigning(true);
             try {
                 const payload = { classId: draggedClass.classId, roomId: targetRoomId };
