@@ -1,3 +1,4 @@
+// src/app/admin/class/components/ClassCreatePopup.jsx
 'use client';
 
 import React, { useState, useRef, useEffect, useMemo } from 'react';
@@ -68,9 +69,8 @@ const ClassCreatePopup = ({ isOpen, onClose, onSave, departments, departmentsErr
             const hyphenCount = (value.match(/-/g) || []).length;
             const numberCount = (value.match(/\d/g) || []).length;
 
-            // Allow only letters, numbers, and a single hyphen.
-            // Also, ensure no more than 3 numbers and 1 hyphen.
-            if (/^[A-Za-z0-9-]*$/.test(value) && hyphenCount <= 1 && numberCount <= 5) {
+            // UPDATED: Allow spaces in the regex
+            if (/^[A-Za-z0-9-\s]*$/.test(value) && hyphenCount <= 1 && numberCount <= 5) {
                 setNewClass(prev => ({ ...prev, [name]: value }));
             }
         } else if (name === 'groupName') {
@@ -91,6 +91,15 @@ const ClassCreatePopup = ({ isOpen, onClose, onSave, departments, departmentsErr
         e.preventDefault();
         setFormError({ fields: [], message: '' });
 
+        // NEW: Validate for whitespace-only class name
+        if (newClass.className && !newClass.className.trim()) {
+            setFormError({
+                fields: ['className'],
+                message: 'Class Name cannot contain only spaces.'
+            });
+            return;
+        }
+
         const isDuplicate = existingClasses.some(
             (cls) => cls.generation === newClass.generation && cls.group === newClass.groupName
         );
@@ -106,7 +115,7 @@ const ClassCreatePopup = ({ isOpen, onClose, onSave, departments, departmentsErr
         const selectedMajor = majorOptions.find(m => m.majorName === newClass.major);
 
         const payload = {
-            className: newClass.className || `NUM${newClass.generation}-${newClass.groupName}`,
+            className: newClass.className.trim() || `NUM${newClass.generation}-${newClass.groupName}`,
             generation: newClass.generation,
             groupName: newClass.groupName,
             major: newClass.major,
@@ -118,10 +127,6 @@ const ClassCreatePopup = ({ isOpen, onClose, onSave, departments, departmentsErr
             shiftId: Number(newClass.shiftId),
         };
         
-        // The API might expect majorId to be sent as departmentId in some cases.
-        // If the API for creating a class needs a major_id, adjust here.
-        // For now, assuming departmentId is for faculty and major is a string field.
-
         if (!payload.groupName) {
             setFormError({ fields: ['groupName'], message: 'Please provide a Group name.' });
             return;
@@ -184,7 +189,7 @@ const ClassCreatePopup = ({ isOpen, onClose, onSave, departments, departmentsErr
                                 name="className"
                                 value={newClass.className}
                                 onChange={handleInputChange}
-                                className="bg-gray-50 border border-gray-300 text-gray-900 text-xs rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white"
+                                className={`bg-gray-50 border text-gray-900 text-xs rounded-lg block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white ${getErrorClass('className')}`}
                                 placeholder="Auto-generates if empty (e.g., NUM30-01)"
                                 maxLength="100"
                             />

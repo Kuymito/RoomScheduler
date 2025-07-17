@@ -1,3 +1,4 @@
+// src/app/admin/class/components/ClassDetailClientView.jsx
 'use client';
 
 import { useRouter } from 'next/navigation';
@@ -190,7 +191,8 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
             const hyphenCount = (value.match(/-/g) || []).length;
             const numberCount = (value.match(/\d/g) || []).length;
             
-            if (/^[A-Za-z0-9-]*$/.test(value) && hyphenCount <= 1 && numberCount <= 3) {
+            // UPDATED: Allow spaces in the regex
+            if (/^[A-Za-z0-9-\s]*$/.test(value) && hyphenCount <= 1 && numberCount <= 3) {
                 setIsNameManuallySet(value !== '');
                 setClassData(prev => ({ ...prev, [name]: value }));
             }
@@ -206,6 +208,17 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
     const handleSaveDetails = async () => {
         setLoading(true);
         setToast({ show: false, message: '', type: 'info' });
+
+        // NEW: Validate for whitespace-only class name
+        if (classData.name && !classData.name.trim()) {
+            setToast({
+                show: true,
+                message: 'Class Name cannot contain only spaces.',
+                type: 'error'
+            });
+            setLoading(false);
+            return;
+        }
 
         if (allClasses && Array.isArray(allClasses)) {
             const isDuplicate = allClasses.some(
@@ -269,7 +282,6 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
             setToast({ show: true, message: "Class details have been updated successfully.", type: 'success' });
             setIsEditing(false);
             setBackupData(null);
-            // After saving, update the local state to reflect the final name
             setClassData(prev => ({ ...prev, name: finalClassName }));
         } catch (err) {
             setToast({ show: true, message: err.message || "Failed to update class.", type: 'error' });
@@ -600,7 +612,7 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-7 gap-1">
                             {daysOfWeek.map((day) => {
                                 const isDayWeekend = day === 'Sat' || day === 'Sun';
-                                const isValidDropTarget = (isWeekendShift && isDayWeekend) || (!isWeekendShift && !isWeekendShift);
+                                const isValidDropTarget = (isWeekendShift && isDayWeekend) || (!isWeekendShift && !isDayWeekend);
 
                                 return (
                                     <div 

@@ -1,3 +1,4 @@
+// src/app/admin/instructor/components/InstructorDetailClientView.jsx
 'use client';
 
 import { useRouter } from 'next/navigation';
@@ -43,6 +44,28 @@ export default function InstructorDetailClientView({ initialInstructor, allDepar
     const saveGeneralInfo = async () => {
         setLoading(true);
         setToast({ show: false, message: '', type: 'info' });
+
+        // --- NEW: Detailed Field Validation ---
+        const fieldsToValidate = {
+            firstName: 'First Name',
+            lastName: 'Last Name',
+            email: 'Email',
+            phone: 'Phone Number',
+            major: 'Major',
+            address: 'Address'
+        };
+
+        for (const [field, name] of Object.entries(fieldsToValidate)) {
+            if (!editableInstructorDetails[field] || !editableInstructorDetails[field].trim()) {
+                setToast({
+                    show: true,
+                    message: `${name} cannot be empty or contain only spaces.`,
+                    type: 'error'
+                });
+                setLoading(false);
+                return;
+            }
+        }
 
         let finalImageUrl = instructorDetails.profileImage;
 
