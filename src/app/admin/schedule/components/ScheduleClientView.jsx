@@ -26,7 +26,7 @@ const ScheduledClassCard = ({ classData, onDragStart, onDragEnd }) => (
         onDragEnd={onDragEnd}
         className="w-full h-24 p-2 bg-blue-100 dark:bg-blue-800 border-2 border-blue-400 dark:border-blue-600 rounded-lg shadow-md flex flex-col justify-center items-center text-center cursor-grab active:cursor-grabbing transition-all duration-150"
     >
-        <p className="max-w-[100px] text-xs font-semibold text-blue-800 dark:text-blue-100 break-words truncate">{classData.className}</p>
+        <p className="max-w-[100px] text-xs font-semibold text-blue-800 dark:text-blue-100 break-words truncate" title={classData.className}>{classData.className}</p>
         <p className="text-xs text-blue-600 dark:text-blue-300 opacity-80">{classData.majorName}</p>
     </div>
 );
@@ -51,11 +51,11 @@ const RoomCard = React.memo(({ room, classData, isDragOver, isWarning, dragHandl
         >
             <div
                 onClick={() => !isNavigating && onHeaderClick(room.roomId)}
-                className={`px-2 py-1 flex justify-between items-center border-b-2 transition-colors ${isNavigating ? 'cursor-not-allowed' : 'cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700'}
+                className={`px-2 py-1 flex justify-between items-center border-b-2 dark:border-gray-700 transition-colors ${isNavigating ? 'cursor-not-allowed' : 'cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700'}
                 ${isWarning ? 'bg-red-100 dark:bg-red-800/50' : (isUnavailable ? 'bg-slate-100 dark:bg-slate-700/60' : 'bg-gray-50 dark:bg-gray-800')}
                 `}
             >
-                <div className={`w-2 h-2 rounded-full ring-1 ring-white/50
+                <div className={`w-2 h-2 rounded-full ring-1 ring-white/50 dark:ring-white/10
                     ${isOccupied || isUnavailable ? 'bg-red-500' : 'bg-green-500'}
                     `}
                     title={isOccupied || isUnavailable ? 'Occupied/Unavailable' : 'Available'}
@@ -764,7 +764,7 @@ const ScheduleClientView = ({
                             </div>
                         ))}
                     </div>
-                    <div className="mt-auto pt-4 border-t border-gray-200 dark:border-gray-700 flex flex-wrap justify-between items-center gap-3 no-print">
+                    <div className="mt-auto pt-4 flex flex-wrap justify-between items-center gap-3 no-print">
                         <div className="text-xs text-gray-600 dark:text-gray-400 space-y-0.5">
                             <p><span className="inline-block w-2.5 h-2.5 bg-green-500 rounded-full mr-1.5 align-middle"></span> Available Rooms: {availableRoomsCount}</p>
                             <p><span className="inline-block w-2.5 h-2.5 bg-red-500 rounded-full mr-1.5 align-middle"></span> Unavailable Rooms: {unavailableRoomsCount}</p>

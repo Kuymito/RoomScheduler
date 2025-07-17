@@ -481,13 +481,13 @@ function ProfileContent() {
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 dark:text-gray-300">
                             {renderTextField("First Name", "firstName", displayedProfileData.firstName, isEditingGeneralInformation, { maxLength: 30 })}
-                            {renderTextField("Last Name", "lastName", displayedProfileData.lastName, isEditingGeneralInformation, { maxLength: 30 })}
+                            {renderTextField("Last Name", "lastName", displayedProfileData.lastName, isEditingGeneralInformation, { maxLength: 26 })}
                             {renderTextField("Email", "email", displayedProfileData.email, false, { type: 'email', maxLength: 254 })}
                             {renderTextField("Phone Number", "phoneNumber", displayedProfileData.phoneNumber, isEditingGeneralInformation)}
                             {renderSelectField("Degree", "degree", displayedProfileData.degree, degreeOptions, isEditingGeneralInformation)}
                             {renderTextField("Major", "major", displayedProfileData.major, isEditingGeneralInformation, { maxLength: 50 })}
                             {renderSelectField("Department", "department", displayedProfileData.department, allDepartments, isEditingGeneralInformation)}
-                            {renderTextField("Address", "address", displayedProfileData.address, isEditingGeneralInformation, { maxLength: 65 })}
+                            {renderTextField("Address", "address", displayedProfileData.address, isEditingGeneralInformation, { maxLength: 60 })}
                         </div>
                         <div className="form-actions flex justify-end items-center gap-3 mt-4">
                             {isEditingGeneralInformation ? (

@@ -191,7 +191,7 @@ const ClassCreatePopup = ({ isOpen, onClose, onSave, departments, departmentsErr
                                 onChange={handleInputChange}
                                 className={`bg-gray-50 border text-gray-900 text-xs rounded-lg block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white ${getErrorClass('className')}`}
                                 placeholder="Auto-generates if empty (e.g., NUM30-01)"
-                                maxLength="100"
+                                maxLength="60"
                             />
                         </div>
 

@@ -8,7 +8,7 @@ import { getAllRooms } from '@/services/room.service';
 import { scheduleService } from '@/services/schedule.service';
 
 // Define the unavailable room IDs
-const UNAVAILABLE_ROOM_IDS = new Set([1, 2, 3, 28, 29, 30, 31, 32, 35, 36, 37, 38, 47, 48, 49, 50, 51, 53, 54, 55]);
+const UNAVAILABLE_ROOM_IDS = new Set([1, 2, 3, 35, 36, 37, 38, 47, 48, 49, 50, 51, 53, 54, 55]);
 
 /**
  * Fetches all necessary data for the instructor room page on the server.
