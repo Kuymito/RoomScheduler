@@ -283,6 +283,18 @@ function ProfileContent() {
                 setPasswordMismatchError(true);
                 return;
             }
+
+            // Regex for password complexity
+            const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+            if (!passwordRegex.test(newPasswordValue)) {
+                setToast({
+                    show: true,
+                    message: "Password must be 8+ characters with uppercase, lowercase, number, and special character.",
+                    type: 'error'
+                });
+                return;
+            }
+
             setIsConfirmationModalOpen(true);
         }
     };

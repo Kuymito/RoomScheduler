@@ -291,7 +291,7 @@ const InstructorCreatePopup = ({ isOpen, onClose, onSave, departments, departmen
                         </div>
                         <div className="col-span-2">
                             <label htmlFor="password" className="block mb-2 text-xs font-medium text-gray-700 dark:text-gray-300">Password</label>
-                            <input type="password" id="password" name="password" value={newInstructor.password} onChange={handleInputChange} className={`bg-gray-50 border text-gray-900 dark:text-white text-xs rounded-lg block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 ${getErrorClass('password')}`} placeholder="••••••••" required minLength={8} maxLength="64" />
+                            <input type="password" id="password" name="password" value={newInstructor.password} onChange={handleInputChange} className={`bg-gray-50 border text-gray-900 dark:text-white text-xs rounded-lg block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 ${getErrorClass('password')}`} placeholder="••••••••" required minLength={8} maxLength="65" />
                         </div>
                         <div>
                             <label htmlFor="phone" className="block mb-2 text-xs font-medium text-gray-700 dark:text-gray-300">Phone Number</label>
