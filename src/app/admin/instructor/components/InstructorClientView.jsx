@@ -59,6 +59,7 @@ export default function InstructorClientView({ initialInstructors, initialDepart
     const [sortColumn, setSortColumn] = useState(null);
     const [sortDirection, setSortDirection] = useState('asc');
     const [searchTexts, setSearchTexts] = useState({ name: '', email: '', phone: '', majorStudied: '', qualifications: '' });
+    const [globalSearchTerm, setGlobalSearchTerm] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPageOptions = [5, 10, 20, 50];
     
@@ -189,6 +190,17 @@ export default function InstructorClientView({ initialInstructors, initialDepart
         if (statusFilter !== 'all') {
             data = data.filter(item => item.status === statusFilter);
         }
+
+        // Apply global search term
+        if (globalSearchTerm.trim()) {
+            const lowercasedTerm = globalSearchTerm.toLowerCase().trim();
+            data = data.filter(item => {
+                return Object.values(item).some(value =>
+                    String(value).toLowerCase().includes(lowercasedTerm)
+                );
+            });
+        }
+        
         Object.entries(searchTexts).forEach(([column, searchTerm]) => {
             if (searchTerm) {
                 data = data.filter(item => String(item[column] || '').toLowerCase().includes(String(searchTerm).toLowerCase().trim()));
@@ -204,7 +216,7 @@ export default function InstructorClientView({ initialInstructors, initialDepart
             });
         }
         return data;
-    }, [instructorData, statusFilter, searchTexts, sortColumn, sortDirection]);
+    }, [instructorData, statusFilter, globalSearchTerm, searchTexts, sortColumn, sortDirection]);
 
     const totalPages = Math.ceil(filteredInstructorData.length / itemsPerPage);
     const currentTableData = useMemo(() => {
@@ -264,9 +276,9 @@ export default function InstructorClientView({ initialInstructors, initialDepart
                 <div className="flex items-center gap-2">
                     <input
                         type="text"
-                        placeholder="Search by name..."
-                        value={searchTexts.name}
-                        onChange={(e) => handleSearchChange('name', e.target.value)}
+                        placeholder="Search all columns..."
+                        value={globalSearchTerm}
+                        onChange={(e) => {setGlobalSearchTerm(e.target.value); setCurrentPage(1);}}
                         className="block md:w-72 sm:w-52 w-32 p-2 text-xs font-medium text-gray-900 bg-white border border-gray-200 rounded-lg hover:bg-gray-100 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:hover:text-white dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-600 dark:focus:ring-offset-gray-800"
                     />
                      <div ref={filterMenuRef} className="relative inline-block text-left">

@@ -87,6 +87,7 @@ export default function ClassClientView({ initialClasses, initialDepartments, in
     const [sortColumn, setSortColumn] = useState(null);
     const [sortDirection, setSortDirection] = useState('asc');
     const [searchTexts, setSearchTexts] = useState({ name: '', generation: '', group: '', major: '', degrees: '', faculty: '', semester: '', shift: '' });
+    const [globalSearchTerm, setGlobalSearchTerm] = useState(''); // New state for the global search
 
     useEffect(() => {
         if (typeof window !== 'undefined') {
@@ -204,6 +205,8 @@ export default function ClassClientView({ initialClasses, initialDepartments, in
 
     const filteredAndSortedData = useMemo(() => {
         let dataToProcess = [...classData];
+        
+        // Apply status filters first
         if (statusFilter !== 'all') {
             dataToProcess = dataToProcess.filter(item => item.status.toLowerCase() === statusFilter);
         }
@@ -216,11 +219,25 @@ export default function ClassClientView({ initialClasses, initialDepartments, in
         if (unassignedClassFilter) {
             dataToProcess = dataToProcess.filter(item => item.unassigned);
         }
+
+        // Apply global search term
+        if (globalSearchTerm.trim()) {
+            const lowercasedTerm = globalSearchTerm.toLowerCase().trim();
+            dataToProcess = dataToProcess.filter(item => {
+                return Object.values(item).some(value =>
+                    String(value).toLowerCase().includes(lowercasedTerm)
+                );
+            });
+        }
+
+        // Apply per-column search terms from the footer
         Object.entries(searchTexts).forEach(([column, searchTerm]) => {
             if (searchTerm) {
                 dataToProcess = dataToProcess.filter(item => String(item[column] || '').toLowerCase().includes(String(searchTerm).toLowerCase().trim()));
             }
         });
+
+        // Apply sorting
         if (sortColumn) {
             dataToProcess.sort((a, b) => {
                 const aVal = a[sortColumn];
@@ -233,7 +250,7 @@ export default function ClassClientView({ initialClasses, initialDepartments, in
             });
         }
         return dataToProcess;
-    }, [classData, statusFilter, onlineClassFilter, expiredClassFilter, unassignedClassFilter, searchTexts, sortColumn, sortDirection]);
+    }, [classData, statusFilter, onlineClassFilter, expiredClassFilter, unassignedClassFilter, globalSearchTerm, searchTexts, sortColumn, sortDirection]);
 
     const totalPages = Math.ceil(filteredAndSortedData.length / itemsPerPage);
     const currentTableData = useMemo(() => {
@@ -292,7 +309,13 @@ export default function ClassClientView({ initialClasses, initialDepartments, in
             <hr className="border-t border-slate-300 dark:border-slate-700 mt-4 mb-4" />
             <div className="flex items-center justify-between mt-2 mb-4 gap-2">
                 <div className="flex items-center gap-2">
-                    <input type="text" placeholder="Search by name..." value={searchTexts.name} onChange={(e) => handleSearchChange('name', e.target.value)} className="block md:w-72 sm:w-52 w-32 p-2 text-xs font-medium text-gray-900 bg-white border border-gray-200 rounded-lg hover:bg-gray-100 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:hover:text-white dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-600 dark:focus:ring-offset-gray-800"/>
+                    <input 
+                        type="text" 
+                        placeholder="Search all columns..." 
+                        value={globalSearchTerm} 
+                        onChange={(e) => { setGlobalSearchTerm(e.target.value); setCurrentPage(1); }} 
+                        className="block md:w-72 sm:w-52 w-32 p-2 text-xs font-medium text-gray-900 bg-white border border-gray-200 rounded-lg hover:bg-gray-100 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:hover:text-white dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-600 dark:focus:ring-offset-gray-800"
+                    />
                     <div ref={filterMenuRef} className="relative inline-block text-left">
                         <div>
                             <button type="button" onClick={() => setIsFilterMenuOpen(!isFilterMenuOpen)} className="inline-flex justify-center w-full rounded-lg border border-gray-300 shadow-sm px-4 py-1.5 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-600 dark:bg-gray-700 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-600 dark:focus:ring-offset-gray-800" id="menu-button" aria-expanded="true" aria-haspopup="true">
