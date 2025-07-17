@@ -217,7 +217,7 @@ export default function InstructorClassClientView({ initialClasses }) {
                                     <>
                                         <td className="px-6 py-2.5 font-medium text-gray-900 dark:text-white">
                                             {/* UPDATED: Added max-width and truncate */}
-                                            <div className="max-w-[150px] truncate" title={data.name}>
+                                            <div className="max-w-[64px] truncate" title={data.name}>
                                                 {data.name}
                                             </div>
                                         </td>
@@ -225,14 +225,14 @@ export default function InstructorClassClientView({ initialClasses }) {
                                         <td className="px-6 py-2.5 lg:table-cell hidden">{data.group}</td>
                                         <td className="px-6 py-2.5">
                                             {/* UPDATED: Added max-width and truncate */}
-                                            <div className="max-w-[150px] truncate" title={data.major}>
+                                            <div className="max-w-[120px] truncate" title={data.major}>
                                                 {data.major}
                                             </div>
                                         </td>
                                         <td className="px-6 py-2.5">{data.degrees}</td>
                                         <td className="px-6 py-2.5 2xl:table-cell hidden">
                                             {/* UPDATED: Added max-width and truncate */}
-                                            <div className="max-w-[150px] truncate" title={data.faculty}>
+                                            <div className="max-w-[120px] truncate" title={data.faculty}>
                                                 {data.faculty}
                                             </div>
                                         </td>

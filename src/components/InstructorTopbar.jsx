@@ -26,11 +26,11 @@ const InstructorTopbar = ({ onToggleSidebar, isSidebarCollapsed, onUserIconClick
             {breadcrumbs.map((crumb, index) => (
               <React.Fragment key={index}>
                 {crumb.href ? (
-                  <Link href={crumb.href} className="hover:underline text-blue-600">
+                  <Link href={crumb.href} className="max-w-[100px] hover:underline text-blue-600 truncate">
                     {crumb.label}
                   </Link>
                 ) : (
-                  <span className="text-blue-700 dark:text-blue-400">{crumb.label}</span>
+                  <span className="max-w-[100px] text-blue-700 dark:text-blue-400 truncate" title={crumb.label}>{crumb.label}</span>
                 )}
                 {index < breadcrumbs.length - 1 && <span className="mx-2 text-blue-400">&gt;</span>}
               </React.Fragment>
