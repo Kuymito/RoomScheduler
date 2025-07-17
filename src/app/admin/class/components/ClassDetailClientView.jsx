@@ -23,6 +23,42 @@ const shiftMap = {
     'Weekend Shift': 5
 };
 
+// Data mapping for faculty, degree, and majors
+const facultyMajorMap = {
+    // Faculty of Management (ID: 1)
+    1: {
+        'Bachelor': ['Management', 'Marketing', 'Entrepreneurship'],
+        'Master': ['Business Administration', 'Public Administration', 'Marketing', 'Logistics & Supply Chain Management', 'Management of Technology', 'Bank Management', 'Family Business Management']
+    },
+    // Faculty of Information Technology (ID: 2)
+    2: {
+        'Bachelor': ['Information Technology', 'Business Information Technology', 'Robotics Engineering', 'Computer Science']
+    },
+    // Faculty of Tourism (ID: 3)
+    3: {
+        'Bachelor': ['Tourism Management', 'Hospitality Management']
+    },
+    // Faculty of Law (ID: 4)
+    4: {
+        'Bachelor': ['Law'],
+        'Master': ['Business Law']
+    },
+    // Faculty of Economics (ID: 5)
+    5: {
+        'Bachelor': ['Economics'],
+        'Master': ['Economics']
+    },
+    // Faculty of Finance & Accounting (ID: 6)
+    6: {
+        'Bachelor': ['Finance and Banking', 'Accounting', 'Accounting and Taxation', 'Accounting and Auditing'],
+        'Master': ['Finance']
+    },
+    // Faculty of Foreign Languages (ID: 7)
+    7: {
+        'Bachelor': ['Foreign Languages']
+    }
+};
+
 const clientDayToApiDay = {
     Mon: 'MONDAY',
     Tue: 'TUESDAY',
@@ -113,6 +149,7 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
     
   
     const [isPreparingPdf, setIsPreparingPdf] = useState(false);
+    const [filteredMajors, setFilteredMajors] = useState([]);
 
     const generationOptions = useMemo(() => {
         const BASE_YEAR = 2025;
@@ -127,10 +164,9 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
         return options.sort((a, b) => Number(a) - Number(b));
     }, []);
 
-    const degreesOptions = ['Master', 'PhD', 'Doctor'];
+    const degreesOptions = ['Bachelor', 'Master', 'PhD', 'Doctor'];
     const shiftOptions = Object.keys(shiftMap);
     const departmentOptions = useMemo(() => allDepartments || [], [allDepartments]);
-    const majorOptions = useMemo(() => allMajors || [], [allMajors]);
     const semesterOptions = ['Semester 1', 'Semester 2', 'Semester 3', 'Semester 4', 'Semester 5', 'Semester 6', 'Semester 7', 'Semester 8'];
     const statusOptions = ['Active', 'Archived'];
 
@@ -167,6 +203,25 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
         else setIsDirty(false);
     }, [schedule, initialScheduleForCheck]);
 
+    useEffect(() => {
+        if (allMajors && classData.faculty && classData.degrees) {
+            const selectedDepartment = allDepartments.find(d => d.name === classData.faculty);
+            if (!selectedDepartment) {
+                setFilteredMajors([]);
+                return;
+            }
+            const departmentId = selectedDepartment.departmentId;
+            const allowedMajorNames = facultyMajorMap[departmentId]?.[classData.degrees] || [];
+            const majorsForDepartmentAndDegree = allMajors.filter(major => 
+                allowedMajorNames.includes(major.majorName)
+            );
+            setFilteredMajors(majorsForDepartmentAndDegree);
+            if (isEditing && !majorsForDepartmentAndDegree.some(m => m.majorName === classData.major)) {
+                setClassData(prev => ({ ...prev, major: majorsForDepartmentAndDegree[0]?.majorName || '' }));
+            }
+        }
+    }, [classData.faculty, classData.degrees, allMajors, allDepartments, isEditing, classData.major]);
+
     const handleEditToggle = () => {
         if (!isEditing) {
             setBackupData(JSON.parse(JSON.stringify(classData)));
@@ -191,7 +246,6 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
             const hyphenCount = (value.match(/-/g) || []).length;
             const numberCount = (value.match(/\d/g) || []).length;
             
-            // UPDATED: Allow spaces in the regex
             if (/^[A-Za-z0-9-\s]*$/.test(value) && hyphenCount <= 1 && numberCount <= 3) {
                 setIsNameManuallySet(value !== '');
                 setClassData(prev => ({ ...prev, [name]: value }));
@@ -209,7 +263,6 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
         setLoading(true);
         setToast({ show: false, message: '', type: 'info' });
 
-        // NEW: Validate for whitespace-only class name
         if (classData.name && !classData.name.trim()) {
             setToast({
                 show: true,
@@ -305,6 +358,25 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
                 </select>
             ) : (
                 <input type="text" value={value} readOnly className="form-input w-full py-2 px-3 bg-gray-100 border border-num-gray-light dark:bg-gray-800 dark:border-gray-700 rounded-md font-medium text-xs text-gray-500 dark:text-gray-400"/>
+            )}
+        </div>
+    );
+
+    const renderMajorSelectField = () => (
+        <div className="form-group flex-1 min-w-[200px]">
+            <label className="form-label block font-semibold text-xs text-num-dark-text dark:text-white mb-1">Major</label>
+            {isEditing ? (
+                <select name="major" value={classData.major} onChange={handleInputChange} disabled={loading || filteredMajors.length === 0} className="form-input w-full py-2 px-3 bg-num-content-bg border border-num-gray-light dark:bg-gray-700 dark:border-gray-600 rounded-md font-medium text-xs text-num-dark-text dark:text-white">
+                    {filteredMajors.length > 0 ? (
+                        filteredMajors.map(major => (
+                            <option key={major.major_id} value={major.majorName}>{major.majorName}</option>
+                        ))
+                    ) : (
+                        <option value="" disabled>No majors available</option>
+                    )}
+                </select>
+            ) : (
+                <input type="text" value={classData.major} readOnly className="form-input w-full py-2 px-3 bg-gray-100 border border-num-gray-light dark:bg-gray-800 dark:border-gray-700 rounded-md font-medium text-xs text-gray-500 dark:text-gray-400"/>
             )}
         </div>
     );
@@ -562,7 +634,7 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
                         <div className="form-row flex gap-3 mb-2 flex-wrap">
                             {renderSelectField("Faculty", "faculty", classData.faculty, allDepartments, 'departmentId', 'name', 'name')}
                             {renderSelectField("Degree", "degrees", classData.degrees, degreesOptions)}
-                            {renderSelectField("Major", "major", classData.major, allMajors, 'major_id', 'majorName', 'majorName')}
+                            {renderMajorSelectField()}
                         </div>
                         <div className="form-row flex gap-3 mb-2 flex-wrap">
                             {renderSelectField("Semester", "semester", classData.semester, semesterOptions)}
