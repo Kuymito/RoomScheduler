@@ -151,9 +151,18 @@ const ClassCreatePopup = ({ isOpen, onClose, onSave, departments, departmentsErr
             return;
         }
 
+        // --- FIX: Normalize group numbers before checking for duplicates ---
+        // Convert the new group name to a number for comparison.
+        const newGroupNumber = parseInt(newClass.groupName, 10);
+
         const isDuplicate = existingClasses.some(
-            (cls) => cls.generation === newClass.generation && cls.group === newClass.groupName
+            (cls) =>
+                // Compare generation as strings (as they are in the dropdown)
+                cls.generation === newClass.generation &&
+                // Compare group names as numbers to treat "8" and "08" as the same.
+                parseInt(cls.group, 10) === newGroupNumber
         );
+
 
         if (isDuplicate) {
             setFormError({

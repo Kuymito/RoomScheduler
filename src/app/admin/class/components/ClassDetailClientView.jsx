@@ -274,11 +274,12 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
         }
 
         if (allClasses && Array.isArray(allClasses)) {
+            const newGroupNumber = parseInt(classData.group, 10);
             const isDuplicate = allClasses.some(
                 (cls) =>
                     cls.classId !== classData.id &&
                     String(cls.generation) === String(classData.generation) &&
-                    cls.groupName === classData.group
+                    parseInt(cls.groupName, 10) === newGroupNumber
             );
 
             if (isDuplicate) {
