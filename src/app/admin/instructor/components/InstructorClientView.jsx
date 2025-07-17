@@ -350,13 +350,26 @@ export default function InstructorClientView({ initialInstructors, initialDepart
                                                     {data.profileImage ? 
                                                         <img src={data.profileImage} alt={data.name} className="w-8 h-8 rounded-full object-cover border border-gray-200 dark:border-gray-600 flex-shrink-0"/> 
                                                         : <DefaultAvatarIcon className="size-8 rounded-full text-gray-400 bg-gray-100 dark:bg-gray-700 dark:text-gray-500 flex-shrink-0" />
-                                                    } 
-                                                    <span title={data.name}>{data.name}</span>
+                                                    }
+                                                    {/* UPDATED: Added max-width and truncate */}
+                                                    <div className="max-w-[150px]">
+                                                        <span className="truncate block" title={data.name}>{data.name}</span>
+                                                    </div>
                                                 </div>
                                             </td>
-                                            <td className="px-6 py-2 sm:table-cell hidden truncate"> {data.email} </td>
+                                            <td className="px-6 py-2 sm:table-cell hidden">
+                                                {/* UPDATED: Added max-width and truncate */}
+                                                <div className="max-w-[180px] truncate" title={data.email}>
+                                                    {data.email}
+                                                </div>
+                                            </td>
                                             <td className="px-6 py-2 lg:table-cell hidden truncate"> {formatPhoneNumber(data.phone)} </td>
-                                            <td className="px-6 py-2 truncate"> {data.majorStudied} </td>
+                                            <td className="px-6 py-2">
+                                                {/* UPDATED: Added max-width and truncate */}
+                                                <div className="max-w-[150px] truncate" title={data.majorStudied}>
+                                                    {data.majorStudied}
+                                                </div>
+                                            </td>
                                             <td className="px-6 py-2 sm:table-cell hidden truncate"> {data.qualifications} </td>
                                             <td className="px-6 py-2 capitalize"><span className={`px-2 py-0.5 rounded-full text-xs font-medium ${ data.status === 'active' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200' }`}>{data.status}</span></td>
                                         </>

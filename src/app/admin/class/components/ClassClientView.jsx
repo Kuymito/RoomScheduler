@@ -395,23 +395,28 @@ export default function ClassClientView({ initialClasses, initialDepartments, in
                                             </div>
                                         </td>
                                         <td className="px-6 py-2">
-                                            <span className="truncate block" title={data.name}>{data.name}</span>
+                                            {/* UPDATED: Added max-width and truncate */}
+                                            <div className="max-w-[150px] truncate" title={data.name}>
+                                                {data.name}
+                                            </div>
                                         </td>
                                         <td className="px-6 py-2 lg:table-cell hidden"> {data.generation} </td>
                                         <td className="px-6 py-2 lg:table-cell hidden"> {data.group} </td>
                                         <td className="px-6 py-2">
-                                            <span className="truncate block" title={data.major}>{data.major}</span>
+                                            {/* UPDATED: Added max-width and truncate */}
+                                            <div className="max-w-[150px] truncate" title={data.major}>
+                                                {data.major}
+                                            </div>
                                         </td>
-                                        <td className="px-6 py-2">
-                                            <span className="truncate block" title={data.degrees}>{data.degrees}</span>
-                                        </td>
+                                        <td className="px-6 py-2"> {data.degrees} </td>
                                         <td className="px-6 py-2 2xl:table-cell hidden">
-                                            <span className="truncate block" title={data.faculty}>{data.faculty}</span>
+                                            {/* UPDATED: Added max-width and truncate */}
+                                            <div className="max-w-[150px] truncate" title={data.faculty}>
+                                                {data.faculty}
+                                            </div>
                                         </td>
                                         <td className="px-6 py-2 2xl:table-cell hidden"> {data.semester} </td>
-                                        <td className="px-6 py-2 sm:table-cell hidden">
-                                            <span className="truncate block" title={data.shift}>{data.shift}</span>
-                                        </td>
+                                        <td className="px-6 py-2 sm:table-cell hidden"> {data.shift} </td>
                                         <td className="px-6 py-2 capitalize"><span className={`px-2 py-0.5 rounded-full text-xs font-medium ${data.status.toLowerCase() === 'active' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'}`}>{data.status}</span></td>
                                     </>
                                 )}
