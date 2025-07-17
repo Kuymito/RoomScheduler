@@ -64,7 +64,7 @@ const ClassCreatePopup = ({ isOpen, onClose, onSave, departments, departmentsErr
         return options.sort((a, b) => Number(a) - Number(b));
     }, []);
 
-    const degreesOptions = ['Bachelor', 'Master', 'PhD', 'Doctor'];
+    const degreesOptions = ['Bachelor', 'Master', 'PhD'];
     const semesterOptions = ['Semester 1', 'Semester 2', 'Semester 3', 'Semester 4', 'Semester 5', 'Semester 6', 'Semester 7', 'Semester 8'];
     const shiftOptions = Object.keys(shiftMap);
     const popupRef = useRef(null);
