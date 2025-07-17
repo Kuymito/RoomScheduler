@@ -233,13 +233,15 @@ export default function InstructorDetailClientView({ initialInstructor, allDepar
                  setEditableInstructorDetails(prev => ({ ...prev, [name]: value }));
             }
         } else if (name === 'phone') {
-            // Allow only numbers and enforce max length of 9
             if (/^\d*$/.test(value) && value.length <= 15) {
                 setEditableInstructorDetails(prev => ({ ...prev, [name]: value }));
             }
         } else if (name === 'major') {
-            // Allow only letters and spaces for the major
             if (/^[A-Za-z\s]*$/.test(value)) {
+                setEditableInstructorDetails(prev => ({ ...prev, [name]: value }));
+            }
+        } else if (name === 'address') {
+            if (/^[A-Za-z0-9\s,]*$/.test(value)) {
                 setEditableInstructorDetails(prev => ({ ...prev, [name]: value }));
             }
         } else {
@@ -350,7 +352,7 @@ export default function InstructorDetailClientView({ initialInstructor, allDepar
                             {renderTextField("Major", "major", currentData.major, isEditingGeneral, { maxLength: 50 })}
                             {renderSelectField("Degree", "degree", currentData.degree, degreeOptions, isEditingGeneral)}
                         </div>
-                        <div className="form-row flex gap-3 mb-2 flex-wrap">{renderSelectField("Department / Faculty", "department", currentData.department, allDepartments, isEditingGeneral, 'departmentId', 'name')}{renderTextField("Address", "address", currentData.address, isEditingGeneral)}</div>
+                        <div className="form-row flex gap-3 mb-2 flex-wrap">{renderSelectField("Department / Faculty", "department", currentData.department, allDepartments, isEditingGeneral, 'departmentId', 'name')}{renderTextField("Address", "address", currentData.address, isEditingGeneral, { maxLength: 65 })}</div>
                         <div className="form-actions flex justify-end items-center gap-3 mt-4">
                             {isEditingGeneral ? ( <> <button onClick={() => handleCancelClick('general')} className="back-button bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 shadow-custom-light rounded-md text-gray-800 dark:text-white border-none py-2 px-3 font-semibold text-xs cursor-pointer" disabled={loading}>Cancel</button><button onClick={() => handleSaveClick('general')} className="save-button bg-blue-600 hover:bg-blue-700 shadow-custom-light rounded-md text-white border-none py-2 px-3 font-semibold text-xs cursor-pointer" disabled={loading}>{loading ? "Saving..." : "Save Changes"}</button> </> ) : ( <> <button onClick={() => handleEditClick('general')} className="save-button bg-blue-600 hover:bg-blue-700 shadow-custom-light rounded-md text-white border-none py-2 px-3 font-semibold text-xs cursor-pointer" disabled={loading}>Edit Profile</button> </> )}
                         </div>

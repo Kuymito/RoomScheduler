@@ -70,6 +70,11 @@ const InstructorCreatePopup = ({ isOpen, onClose, onSave, departments, departmen
             if (/^[A-Za-z\s]*$/.test(value)) {
                 setNewInstructor(prev => ({ ...prev, [name]: value }));
             }
+        } else if (name === 'address') {
+            // Allow letters, numbers, spaces, and commas
+            if (/^[A-Za-z0-9\s,]*$/.test(value)) {
+                setNewInstructor(prev => ({ ...prev, [name]: value }));
+            }
         }
         else {
             setNewInstructor(prev => ({ ...prev, [name]: value }));
@@ -303,7 +308,7 @@ const InstructorCreatePopup = ({ isOpen, onClose, onSave, departments, departmen
                         </div>
                         <div className="col-span-2">
                             <label htmlFor="address" className="block mb-2 text-xs font-medium text-gray-700 dark:text-gray-300">Address</label>
-                            <input id="address" name="address" value={newInstructor.address} onChange={handleInputChange} className="bg-gray-50 border border-gray-300 text-gray-900 text-xs rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600" placeholder="123 Main Street, City, Country" required minLength={20} maxLength={100} />
+                            <input id="address" name="address" value={newInstructor.address} onChange={handleInputChange} className="bg-gray-50 border border-gray-300 text-gray-900 text-xs rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600" placeholder="123 Main Street, City, Country" required minLength={20} maxLength={60} />
                         </div>
                     </div>
                     {formError.message && (
