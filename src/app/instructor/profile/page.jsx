@@ -454,8 +454,8 @@ function ProfileContent() {
                                 <DefaultUserIcon className="h-34 w-34 text-gray-700 dark:text-gray-400"/>
                             </div>
                         )}
-                        <div className="avatar-info flex flex-col overflow-hidden">
-                            <div className="avatar-name font-semibold text-sm text-gray-800 dark:text-gray-200 mb-0.5 truncate" title={fullName}>
+                        <div className="avatar-info flex flex-col overflow-hidden min-w-0">
+                            <div className="max-w-[120px] avatar-name font-semibold text-sm text-gray-800 dark:text-gray-200 mb-0.5 truncate" title={fullName}>
                                 {fullName}
                             </div>
                             <div className="avatar-role font-semibold text-xs text-gray-500 dark:text-gray-400">
