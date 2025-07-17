@@ -72,12 +72,18 @@ export default function RoomClientView({ initialRooms }) {
 
     const [selectedBuilding, setSelectedBuilding] = useState(() => Object.keys(buildings)[0] || "");
     const [selectedRoomId, setSelectedRoomId] = useState(null);
-    const [roomDetails, setRoomDetails] = useState(null);
     const [loading, setLoading] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
     const [editableRoomDetails, setEditableRoomDetails] = useState(null);
     const [toast, setToast] = useState({ show: false, message: '', type: 'info' });
     const [formError, setFormError] = useState({ field: '', message: '' });
+
+    // FIX: Derive roomDetails directly from allRoomsData and selectedRoomId
+    // This ensures the details panel always shows the latest data from SWR.
+    const roomDetails = useMemo(() => {
+        if (!selectedRoomId || !allRoomsData) return null;
+        return allRoomsData[selectedRoomId];
+    }, [selectedRoomId, allRoomsData]);
 
     useEffect(() => {
         const buildingKeys = Object.keys(buildings);
@@ -86,21 +92,15 @@ export default function RoomClientView({ initialRooms }) {
         }
     }, [buildings, selectedBuilding]);
 
-    const resetSelection = () => { setSelectedRoomId(null); setRoomDetails(null); setIsEditing(false); };
+    const resetSelection = () => { setSelectedRoomId(null); setIsEditing(false); };
     const handleBuildingChange = (event) => { setSelectedBuilding(event.target.value); resetSelection(); };
 
+    // UPDATED: handleRoomClick now only needs to set the selected ID.
     const handleRoomClick = (roomId) => {
         setSelectedRoomId(roomId);
         setIsEditing(false);
         setToast({ show: false, message: '', type: 'info' });
         setFormError({ field: '', message: '' });
-        const data = allRoomsData[roomId];
-        if (!data) {
-            setToast({ show: true, message: 'Could not load room details.', type: 'error' });
-            setRoomDetails(null);
-        } else {
-            setRoomDetails(data);
-        }
     };
 
     const handleEdit = () => {
@@ -170,7 +170,7 @@ export default function RoomClientView({ initialRooms }) {
         };
         try {
             await updateRoom(selectedRoomId, roomUpdateDto);
-            mutateRooms(); 
+            mutateRooms(); // This triggers a re-fetch, which will update the UI.
             setIsEditing(false);
             setToast({ show: true, message: `Room '${roomUpdateDto.roomName}' updated successfully.`, type: 'success' });
         } catch (err) {
