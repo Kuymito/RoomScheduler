@@ -112,16 +112,45 @@ function ProfileContent() {
 
     const handleGeneralInputChange = (event) => {
         const { name, value } = event.target;
-        setEditableProfileState(previousState => {
-            const newState = { ...previousState, [name]: value };
-            if (name === 'department' && allDepartments) {
-                const selectedDept = allDepartments.find(d => d.name === value);
-                if (selectedDept) {
-                    newState.departmentId = selectedDept.departmentId;
+        
+        switch (name) {
+            case 'firstName':
+            case 'lastName':
+                if (/^[A-Za-z\s]*$/.test(value)) {
+                    setEditableProfileState(prev => ({ ...prev, [name]: value }));
                 }
-            }
-            return newState;
-        });
+                break;
+            case 'phoneNumber':
+                if (/^\d*$/.test(value) && value.length <= 15) {
+                    setEditableProfileState(prev => ({ ...prev, [name]: value }));
+                }
+                break;
+            case 'major':
+                if (/^[A-Za-z\s]*$/.test(value)) {
+                    setEditableProfileState(prev => ({ ...prev, [name]: value }));
+                }
+                break;
+            case 'address':
+                if (/^[A-Za-z0-9\s,]*$/.test(value)) {
+                    setEditableProfileState(prev => ({ ...prev, [name]: value }));
+                }
+                break;
+            case 'department':
+                setEditableProfileState(previousState => {
+                    const newState = { ...previousState, [name]: value };
+                    if (allDepartments) {
+                        const selectedDept = allDepartments.find(d => d.name === value);
+                        if (selectedDept) {
+                            newState.departmentId = selectedDept.departmentId;
+                        }
+                    }
+                    return newState;
+                });
+                break;
+            default:
+                setEditableProfileState(prev => ({ ...prev, [name]: value }));
+                break;
+        }
     };
 
     const handleFileChange = (event) => {
@@ -297,7 +326,7 @@ function ProfileContent() {
                 onChange={handleGeneralInputChange}
                 readOnly={!isEditing}
                 className={`form-input w-full py-2 px-3 border dark:border-gray-700 dark:text-gray-400 rounded-md font-medium text-xs ${
-                    !isEditing ? "bg-gray-100 dark:bg-gray-800" : "bg-white dark:bg-gray-600 "
+                    !isEditing ? "bg-gray-100 dark:bg-gray-800" : "dark:text-white bg-white dark:bg-gray-600 "
                 }`}
                 maxLength={opts.maxLength}
             />
@@ -339,7 +368,7 @@ function ProfileContent() {
                 <input
                     type={passwordVisibility[fieldName] ? "text" : "password"}
                     name={name}
-                    className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs ${isReadOnly ? 'bg-gray-100 dark:bg-gray-800 border-num-gray-light dark:border-gray-700 text-gray-500 dark:text-gray-400' : 'bg-white dark:bg-gray-800 border-num-gray-light dark:border-gray-600 text-num-dark-text dark:text-white'} ${hasError ? 'border-red-500 ring-1 ring-red-500' : ''}`}
+                    className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs ${isReadOnly ? 'bg-gray-100 dark:bg-gray-800 border-num-gray-light dark:border-gray-700 text-gray-500 dark:text-gray-400' : 'bg-white dark:bg-gray-600 border-num-gray-light dark:border-gray-600 text-num-dark-text dark:text-white'} ${hasError ? 'border-red-500 ring-1 ring-red-500' : ''}`}
                     placeholder={`Enter ${label.toLowerCase()}`}
                     value={value}
                     onChange={onChange}
@@ -435,9 +464,8 @@ function ProfileContent() {
                             {renderTextField("Phone Number", "phoneNumber", displayedProfileData.phoneNumber, isEditingGeneralInformation)}
                             {renderSelectField("Degree", "degree", displayedProfileData.degree, degreeOptions, isEditingGeneralInformation)}
                             {renderTextField("Major", "major", displayedProfileData.major, isEditingGeneralInformation)}
-                            <div className="form-group md:col-span-2">
-                                {renderSelectField("Department", "department", displayedProfileData.department, allDepartments, isEditingGeneralInformation)}
-                            </div>
+                            {renderSelectField("Department", "department", displayedProfileData.department, allDepartments, isEditingGeneralInformation)}
+                            {renderTextField("Address", "address", displayedProfileData.address, isEditingGeneralInformation)}
                         </div>
                         <div className="form-actions flex justify-end items-center gap-3 mt-4">
                             {isEditingGeneralInformation ? (
@@ -446,7 +474,7 @@ function ProfileContent() {
                                     <button onClick={() => handleSaveChanges('general')} className="save-button bg-blue-600 hover:bg-blue-700 shadow-custom-light rounded-md text-white text-xs py-2 px-3 font-semibold" disabled={isLoading || isUploadingImage}>{isLoading || isUploadingImage ? "Saving..." : "Save Changes"}</button>
                                 </>
                             ) : (
-                                <button onClick={() => handleEditClick('general')} className="save-button bg-blue-600 hover:bg-blue-700 shadow-custom-light rounded-md text-white py-2 px-3 font-semibold text-xs">Edit Profile</button>
+                                <button onClick={() => handleEditClick('general')} className="save-button bg-blue-600 hover:bg-blue-700 shadow-sm rounded-md text-white py-2 px-3 font-semibold text-xs">Edit Profile</button>
                             )}
                         </div>
                     </div>

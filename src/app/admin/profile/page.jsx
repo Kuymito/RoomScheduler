@@ -99,7 +99,28 @@ function ProfileContent() {
 
     const handleGeneralInputChange = (event) => {
         const { name, value } = event.target;
-        setEditableProfileState(previousState => ({ ...previousState, [name]: value }));
+        
+        switch (name) {
+            case 'firstName':
+            case 'lastName':
+                if (/^[A-Za-z\s]*$/.test(value)) {
+                    setEditableProfileState(prev => ({ ...prev, [name]: value }));
+                }
+                break;
+            case 'phoneNumber':
+                if (/^\d*$/.test(value) && value.length <= 15) {
+                    setEditableProfileState(prev => ({ ...prev, [name]: value }));
+                }
+                break;
+            case 'address':
+                if (/^[A-Za-z0-9\s,]*$/.test(value)) {
+                    setEditableProfileState(prev => ({ ...prev, [name]: value }));
+                }
+                break;
+            default:
+                setEditableProfileState(prev => ({ ...prev, [name]: value }));
+                break;
+        }
     };
 
     const handleFileChange = (event) => {
@@ -146,6 +167,12 @@ function ProfileContent() {
         if (section === 'general') {
             setIsLoading(true);
             
+            if (editableProfileState.phoneNumber && (editableProfileState.phoneNumber.length < 8 || editableProfileState.phoneNumber.length > 15)) {
+                setToast({ show: true, message: "Phone number must be between 8 and 15 digits.", type: 'error' });
+                setIsLoading(false);
+                return;
+            }
+
             let finalImageURL = editableProfileState.avatarUrl;
             
             if (selectedFile) {
@@ -282,7 +309,7 @@ function ProfileContent() {
                 <input
                     type={passwordVisibility[fieldName] ? "text" : "password"}
                     name={name}
-                    className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs ${isReadOnly ? 'bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400' : 'bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white'} ${hasError ? 'border-red-500 ring-1 ring-red-500' : ''}`}
+                    className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs ${isReadOnly ? 'bg-gray-100 dark:bg-gray-800 border-num-gray-light dark:border-gray-700 text-gray-500 dark:text-gray-400' : 'bg-white dark:bg-gray-600 border-num-gray-light dark:border-gray-600 text-num-dark-text dark:text-white'} ${hasError ? 'border-red-500 ring-1 ring-red-500' : ''}`}
                     placeholder={`Enter ${label.toLowerCase()}`}
                     value={value}
                     onChange={onChange}
@@ -373,23 +400,23 @@ function ProfileContent() {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="form-group">
                                 <label className="form-label block font-semibold text-xs text-gray-700 dark:text-gray-300 mb-1">First Name</label>
-                                <input type="text" name="firstName" value={displayedProfileData.firstName} onChange={handleGeneralInputChange} readOnly={!isEditingGeneralInformation} className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs ${!isEditingGeneralInformation ? 'bg-gray-100 dark:bg-gray-700' : 'bg-white dark:bg-gray-600'}`}/>
+                                <input type="text" name="firstName" value={displayedProfileData.firstName} onChange={handleGeneralInputChange} readOnly={!isEditingGeneralInformation} className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs dark:border-gray-700 dark:text-gray-400 ${!isEditingGeneralInformation ? 'bg-gray-100 dark:bg-gray-800' : 'dark:text-white bg-white dark:bg-gray-600'}`}/>
                             </div>
                             <div className="form-group">
                                 <label className="form-label block font-semibold text-xs text-gray-700 dark:text-gray-300 mb-1">Last Name</label>
-                                <input type="text" name="lastName" value={displayedProfileData.lastName} onChange={handleGeneralInputChange} readOnly={!isEditingGeneralInformation} className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs ${!isEditingGeneralInformation ? 'bg-gray-100 dark:bg-gray-700' : 'bg-white dark:bg-gray-600'}`}/>
+                                <input type="text" name="lastName" value={displayedProfileData.lastName} onChange={handleGeneralInputChange} readOnly={!isEditingGeneralInformation} className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs dark:border-gray-700 dark:text-gray-400 ${!isEditingGeneralInformation ? 'bg-gray-100 dark:bg-gray-800' : 'dark:text-white bg-white dark:bg-gray-600'}`}/>
                             </div>
                             <div className="form-group">
                                 <label className="form-label block font-semibold text-xs text-gray-700 dark:text-gray-300 mb-1">Email</label>
-                                <input type="email" name="email" value={displayedProfileData.email} onChange={handleGeneralInputChange} readOnly={!isEditingGeneralInformation} className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs ${!isEditingGeneralInformation ? 'bg-gray-100 dark:bg-gray-700' : 'bg-white dark:bg-gray-600'}`}/>
+                                <input type="email" name="email" value={displayedProfileData.email} onChange={handleGeneralInputChange} readOnly={!isEditingGeneralInformation} className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs dark:border-gray-700 dark:text-gray-400 ${!isEditingGeneralInformation ? 'bg-gray-100 dark:bg-gray-800' : 'dark:text-white bg-white dark:bg-gray-600'}`}/>
                             </div>
                             <div className="form-group">
                                 <label className="form-label block font-semibold text-xs text-gray-700 dark:text-gray-300 mb-1">Phone Number</label>
-                                <input type="tel" name="phoneNumber" value={displayedProfileData.phoneNumber} onChange={handleGeneralInputChange} readOnly={!isEditingGeneralInformation} className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs ${!isEditingGeneralInformation ? 'bg-gray-100 dark:bg-gray-700' : 'bg-white dark:bg-gray-600'}`}/>
+                                <input type="tel" name="phoneNumber" value={displayedProfileData.phoneNumber} onChange={handleGeneralInputChange} readOnly={!isEditingGeneralInformation} className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs dark:border-gray-700 dark:text-gray-400 ${!isEditingGeneralInformation ? 'bg-gray-100 dark:bg-gray-800' : 'dark:text-white bg-white dark:bg-gray-600'}`}/>
                             </div>
                             <div className="form-group md:col-span-2">
                                 <label className="form-label block font-semibold text-xs text-gray-700 dark:text-gray-300 mb-1">Address</label>
-                                <input type="text" name="address" value={displayedProfileData.address} onChange={handleGeneralInputChange} readOnly={!isEditingGeneralInformation} className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs ${!isEditingGeneralInformation ? 'bg-gray-100 dark:bg-gray-700' : 'bg-white dark:bg-gray-600'}`}/>
+                                <input type="text" name="address" value={displayedProfileData.address} onChange={handleGeneralInputChange} readOnly={!isEditingGeneralInformation} className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs dark:border-gray-700 dark:text-gray-400 ${!isEditingGeneralInformation ? 'bg-gray-100 dark:bg-gray-800' : 'dark:text-white bg-white dark:bg-gray-600'}`}/>
                             </div>
                         </div>
                         <div className="form-actions flex justify-end items-center gap-3 mt-4">
