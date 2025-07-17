@@ -25,7 +25,7 @@ const LogoutAlert = ({ show, onClose, onConfirmLogout }) => {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[1001]">
-        <div className={`logout-alert fixed w-[480px] max-w-[90%] bg-white shadow-custom-medium rounded-md p-[25px] flex flex-col items-center
+        <div className={`logout-alert fixed w-[480px] max-w-[90%] bg-white dark:bg-gray-800 shadow-custom-medium rounded-md p-[25px] flex flex-col items-center
             ${show && !isExiting ? 'animate-fade-in-scale' : ''}
             ${isExiting ? 'animate-fade-out-scale' : ''}
         `}>
@@ -36,10 +36,10 @@ const LogoutAlert = ({ show, onClose, onConfirmLogout }) => {
             <div className="alert-icon w-[70px] h-[70px] bg-num-red border-[5px] border-num-red-light rounded-full flex items-center justify-center mb-5 animate-pulse-red">
                 <div className="alert-icon-inner alert-icon-inner-svg w-8 h-8"></div>
             </div>
-            <div className="alert-title font-roboto font-semibold text-2xl leading-tight text-black mb-2.5 text-center">
+            <div className="alert-title font-roboto font-semibold text-2xl leading-tight text-black dark:text-white mb-2.5 text-center">
                 Confirm Logout
             </div>
-            <div className="alert-message font-sans font-normal text-sm leading-relaxed text-center text-[#333333] mb-6 max-w-alert-message">
+            <div className="alert-message font-sans font-normal text-sm leading-relaxed text-center text-[#333333] dark:text-gray-100 mb-6 max-w-alert-message">
                 Logging out will end your current session. You’ll need to sign in again to continue.
             </div>
             <div className="alert-buttons flex gap-4 w-full justify-center">
