@@ -70,7 +70,7 @@ const ClassCreatePopup = ({ isOpen, onClose, onSave, departments, departmentsErr
 
             // Allow only letters, numbers, and a single hyphen.
             // Also, ensure no more than 3 numbers and 1 hyphen.
-            if (/^[A-Za-z0-9-]*$/.test(value) && hyphenCount <= 1 && numberCount <= 3) {
+            if (/^[A-Za-z0-9-]*$/.test(value) && hyphenCount <= 1 && numberCount <= 5) {
                 setNewClass(prev => ({ ...prev, [name]: value }));
             }
         } else if (name === 'groupName') {

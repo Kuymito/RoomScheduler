@@ -61,7 +61,7 @@ const InstructorCreatePopup = ({ isOpen, onClose, onSave, departments, departmen
                 setNewInstructor(prev => ({ ...prev, [name]: value }));
             }
         } else if (name === 'phone') {
-            // Allow only numbers and enforce max length of 9
+            // Allow only numbers and enforce max length of 15
             if (/^\d*$/.test(value) && value.length <= 15) {
                 setNewInstructor(prev => ({ ...prev, [name]: value }));
             }
@@ -127,8 +127,8 @@ const InstructorCreatePopup = ({ isOpen, onClose, onSave, departments, departmen
             return;
         }
 
-        // --- PHONE NUMBER VALIDATION ---
-        if (newInstructor.phone.length < 8 || newInstructor.phone.length > 9) {
+        // --- PHONE NUMBER VALIDATION (FIXED) ---
+        if (newInstructor.phone.length < 8 || newInstructor.phone.length > 15) {
             setFormError({
                 fields: ['phone'],
                 message: 'Phone number must be between 8 and 15 digits.'

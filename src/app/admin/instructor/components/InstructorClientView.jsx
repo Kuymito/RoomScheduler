@@ -339,7 +339,7 @@ export default function InstructorClientView({ initialInstructors, initialDepart
                                                         <img src={data.profileImage} alt={data.name} className="w-8 h-8 rounded-full object-cover border border-gray-200 dark:border-gray-600 flex-shrink-0"/> 
                                                         : <DefaultAvatarIcon className="size-8 rounded-full text-gray-400 bg-gray-100 dark:bg-gray-700 dark:text-gray-500 flex-shrink-0" />
                                                     } 
-                                                    <span className="truncate" title={data.name}>{data.name}</span>
+                                                    <span title={data.name}>{data.name}</span>
                                                 </div>
                                             </td>
                                             <td className="px-6 py-2 sm:table-cell hidden truncate"> {data.email} </td>
@@ -381,7 +381,7 @@ export default function InstructorClientView({ initialInstructors, initialDepart
                 <ul className="inline-flex -space-x-px rtl:space-x-reverse text-xs h-8">
                     <li><button onClick={goToPreviousPage} disabled={currentPage === 1 || isPending} className="flex items-center justify-center px-3 h-8 ms-0 leading-tight text-gray-500 bg-white border border-gray-300 rounded-s-lg hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white disabled:opacity-50 disabled:cursor-not-allowed">Previous</button></li>
                     {getPageNumbers().map((pageNumber) => (
-                        <li key={pageNumber}><button onClick={() => goToPage(pageNumber)} disabled={isPending} className={`flex items-center justify-center px-3 h-8 leading-tight border border-gray-300 ${currentPage === pageNumber ? 'text-blue-600 bg-blue-50 hover:bg-blue-100 hover:text-blue-700 dark:bg-gray-700 dark:text-white' : 'text-gray-500 bg-white hover:bg-gray-100 dark:bg-gray-800 dark:hover:bg-gray-700'} disabled:opacity-50 disabled:cursor-not-allowed`}>{pageNumber}</button></li>
+                        <li key={pageNumber}><button onClick={() => goToPage(pageNumber)} disabled={isPending} className={`flex items-center justify-center px-3 h-8 leading-tight border border-gray-300 dark:border-gray-700 ${currentPage === pageNumber ? 'text-blue-600 bg-blue-50 hover:bg-blue-100 hover:text-blue-700 dark:bg-gray-700 dark:text-white' : 'text-gray-500 bg-white hover:bg-gray-100 dark:bg-gray-800 dark:hover:bg-gray-600'} disabled:opacity-50 disabled:cursor-not-allowed`}>{pageNumber}</button></li>
                     ))}
                     <li><button onClick={goToNextPage} disabled={currentPage === totalPages || isPending} className="flex items-center justify-center px-3 h-8 leading-tight text-gray-500 bg-white border border-gray-300 rounded-e-lg hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white disabled:opacity-50 disabled:cursor-not-allowed">Next</button></li>
                 </ul>
