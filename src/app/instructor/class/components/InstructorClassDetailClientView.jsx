@@ -1,6 +1,8 @@
 'use client';
 
 import { useState } from 'react';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 // --- HELPER COMPONENTS (from your original file) ---
 
@@ -51,12 +53,13 @@ const ScheduledInstructorCard = ({ instructor }) => {
 
  const StudyModeTag = ({ mode }) => {
     const isOnline = mode === 'Online';
+    const modeClass = isOnline ? 'study-mode-online' : 'study-mode-in-class';
     const style = isOnline 
         ? "bg-orange-100 text-orange-800 dark:bg-orange-900/60 dark:text-orange-300" 
         : "bg-green-100 text-green-800 dark:bg-green-900/60 dark:text-green-300";
 
     return (
-        <div className={`rounded-md px-3 py-1 text-xs font-semibold ${style}`}>
+        <div className={`rounded-md px-3 py-1 text-xs font-semibold study-mode-tag ${style} ${modeClass}`}>
             {mode}
         </div>
     );
@@ -77,18 +80,63 @@ const DAY_HEADER_COLORS = {
 /**
  * This is the Client Component for the Instructor Class Detail page.
  * It receives its data via props and is only responsible for rendering the UI.
- * It contains NO data-fetching logic or useEffect hooks.
  */
 export default function InstructorClassDetailClientView({ initialClassDetails, initialSchedule }) {
-    // State is now initialized directly from props
     const [classDetails] = useState(initialClassDetails);
     const [schedule] = useState(initialSchedule);
+    const [isPreparingPdf, setIsPreparingPdf] = useState(false);
 
-    const handleDownloadSchedule = () => {
-        // Your PDF generation logic remains the same
-        alert("Downloading schedule as PDF...");
-        console.log("Downloading schedule for:", classDetails);
-        console.log("Schedule data:", schedule);
+    const handleDownloadSchedule = async () => {
+        const schedulePanelElement = document.getElementById('weeklySchedulePanel');
+        if (!schedulePanelElement) return;
+
+        setIsPreparingPdf(true);
+        schedulePanelElement.classList.add('pdf-capture-mode');
+        
+        // Brief delay to allow the UI to update with the loading state
+        await new Promise(resolve => setTimeout(resolve, 50));
+
+        try {
+            const canvas = await html2canvas(schedulePanelElement, {
+                scale: 2,
+                useCORS: true,
+                logging: false,
+                backgroundColor: document.documentElement.classList.contains('dark') ? '#111827' : '#ffffff',
+            });
+
+            const imgData = canvas.toDataURL('image/png');
+            const pdf = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });
+            const pdfWidth = pdf.internal.pageSize.getWidth();
+            const pdfHeight = pdf.internal.pageSize.getHeight();
+            const imgProps = pdf.getImageProperties(imgData);
+            const ratio = imgProps.width / imgProps.height;
+
+            let newImgWidth = pdfWidth - 40;
+            let newImgHeight = newImgWidth / ratio;
+
+            if (newImgHeight > pdfHeight - 40) {
+                newImgHeight = pdfHeight - 40;
+                newImgWidth = newImgHeight * ratio;
+            }
+
+            const xOffset = (pdfWidth - newImgWidth) / 2;
+            const yOffset = (pdfHeight - newImgHeight) / 2;
+
+            pdf.addImage(imgData, 'PNG', xOffset, yOffset, newImgWidth, newImgHeight);
+            
+            const copyrightText = `© Copyright ${new Date().getFullYear()} NUM-FIT Digital Center. All rights reserved.`;
+            pdf.setFontSize(8);
+            pdf.setTextColor(100);
+            pdf.text(copyrightText, pdfWidth / 2, pdfHeight - 10, { align: 'center' });
+
+            pdf.save(`schedule_${classDetails.name.replace(/\s+/g, '_')}.pdf`);
+
+        } catch (error) {
+            console.error("Error generating PDF:", error);
+        } finally {
+            schedulePanelElement.classList.remove('pdf-capture-mode');
+            setIsPreparingPdf(false);
+        }
     };
 
     if (!classDetails) {
@@ -98,7 +146,30 @@ export default function InstructorClassDetailClientView({ initialClassDetails, i
     const daysOfWeek = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
     return (
-        <div className='p-6 dark:text-white'>
+        <div className='p-6 dark:text-white relative'>
+            <style>{`
+                .pdf-capture-mode .download-button-container {
+                    visibility: hidden !important;
+                }
+                .pdf-capture-mode .study-mode-tag {
+                    background-color: transparent !important;
+                    border: none !important;
+                }
+                .pdf-capture-mode .study-mode-in-class {
+                    color: #16a34a !important; /* Green text for PDF */
+                }
+                .pdf-capture-mode .study-mode-online {
+                    color: #ea580c !important; /* Orange text for PDF */
+                }
+            `}</style>
+             {isPreparingPdf && (
+                <div className="absolute inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center z-50 rounded-lg">
+                    <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-xl flex items-center gap-4">
+                        <svg className="animate-spin h-6 w-6 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                        <span className="text-lg font-medium text-gray-700 dark:text-gray-200">Preparing Download...</span>
+                    </div>
+                </div>
+            )}
             <div className="section-title font-semibold text-lg text-num-dark-text dark:text-white mb-4">Class Details</div>
              <hr className="border-t border-slate-300 dark:border-slate-700 mt-4 mb-8" />
             
@@ -125,7 +196,7 @@ export default function InstructorClassDetailClientView({ initialClassDetails, i
                 </div>
             </div>
 
-            <div className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700">
+            <div id="weeklySchedulePanel" className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700">
                 <h2 className="text-lg font-semibold text-gray-800 dark:text-white mb-6">
                     Schedule Class - {classDetails.name}
                 </h2>
@@ -137,7 +208,7 @@ export default function InstructorClassDetailClientView({ initialClassDetails, i
                         const dayHeaderStyle = DAY_HEADER_COLORS[day] || "bg-gray-200 dark:bg-slate-700";
                         
                         let dayBorderStyle = "border-gray-200 dark:border-slate-700";
-                        let studyModeComponent = <div className="rounded-md bg-gray-200 dark:bg-slate-700 px-3 py-1 text-xs font-semibold text-gray-500 dark:text-gray-400">No Class</div>;
+                        let studyModeComponent = <div className="rounded-md bg-gray-200 dark:bg-slate-700 px-3 py-1 text-xs font-semibold text-gray-500 dark:text-gray-400 study-mode-tag">No Class</div>;
 
                         if (scheduledItem) {
                             if (scheduledItem.studyMode === 'In-Class') {
@@ -156,7 +227,7 @@ export default function InstructorClassDetailClientView({ initialClassDetails, i
                                 <div className={`p-2 rounded-lg text-center ${dayHeaderStyle}`}>
                                     <h4 className="font-semibold text-gray-800 dark:text-gray-200 text-base">{day}</h4>
                                 </div>
-                                <div className={`rounded-xl p-3 min-h-[160px] w-full border ${dayBorderStyle} flex flex-col justify-center items-center`}>
+                                <div className={`rounded-xl p-3 h-[180px] w-full border ${dayBorderStyle} flex flex-col justify-center items-center`}>
                                     {isNoClass ? (
                                         studyModeComponent
                                     ) : (
@@ -179,12 +250,23 @@ export default function InstructorClassDetailClientView({ initialClassDetails, i
                             <li>Shift : <span className="font-semibold">{classDetails.shift}</span></li>
                         </ul>
                     </div>
-                    <div className="text-right">
+                    <div className="text-right download-button-container">
                         <button
                             onClick={handleDownloadSchedule}
-                            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-5 rounded-lg transition-colors shadow-sm"
+                            disabled={isPreparingPdf}
+                            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-5 rounded-lg transition-colors shadow-sm disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center min-w-[180px]"
                         >
-                            Download PDF file
+                            {isPreparingPdf ? (
+                                <>
+                                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                    Generating...
+                                </>
+                            ) : (
+                                'Download PDF file'
+                            )}
                         </button>
                         <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">
                             Public Date : {new Date().toISOString().split('T')[0]} {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}

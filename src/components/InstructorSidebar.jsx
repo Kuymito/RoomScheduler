@@ -87,13 +87,13 @@ const InstructorSidebar = ({ isCollapsed, activeItem, onNavItemClick, navigating
                     ) : (
                         <>
                             <div 
-                                className="profile-name w-full text-center font-semibold text-base text-black dark:text-white mb-1 whitespace-nowrap truncate"
+                                className="profile-name max-w-[200px] text-center font-semibold text-base text-black dark:text-white mb-1 whitespace-nowrap truncate"
                                 title={ user?.firstName ? `${user.firstName}` : 'Admin'}
                             >
                                 {user?.firstName} {user?.lastName}
                             </div>
                             <div 
-                                className="profile-email w-full text-center text-[10px] text-num-gray dark:text-gray-200 whitespace-nowrap truncate"
+                                className="profile-email text-center text-[10px] text-num-gray dark:text-gray-200 whitespace-nowrap truncate"
                                 title={user?.email}
                             >
                                 {user?.email}

@@ -6,7 +6,14 @@ import html2canvas from 'html2canvas';
 
 // --- Constants ---
 const DAYS_OF_WEEK = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-const TIME_SLOTS = ['07:00 - 10:00', '10:30 - 13:30', '14:00 - 17:00', '17:30 - 20:30'];
+// FIX: Added the "Weekend Shift" time slot to ensure weekend classes are rendered.
+const TIME_SLOTS = [
+    '07:00 - 10:00', // Morning Shift
+    '10:30 - 13:30', // Noon Shift
+    '14:00 - 17:00', // Afternoon Shift
+    '17:30 - 20:30', // Evening Shift
+    '07:30 - 17:00'  // Weekend Shift
+];
 
 const DAY_HEADER_COLORS = {
     Monday: 'bg-yellow-50 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-200',
@@ -53,7 +60,7 @@ const ScheduleItemCard = React.memo(({ item }) => (
         className={`p-2 h-full w-full flex flex-col text-xs rounded-md shadow-sm border border-green-200 dark:border-green-800/60 ${SCHEDULE_ITEM_BG_COLOR}`}
     >
         <div className="flex justify-between items-start mb-1">
-            <span className="font-semibold text-[13px] text-gray-800 dark:text-gray-200">{item.subject}</span>
+            <span className="max-w-[180px] font-semibold text-[13px] text-gray-800 dark:text-gray-200 truncate" title={item.subject}>{item.subject}</span>
         </div>
         <div className="text-gray-700 dark:text-gray-300 text-[11px]">{item.year}</div>
         <div className="mt-10 text-right text-gray-500 dark:text-gray-400 text-[10px]">{item.timeDisplay}</div>

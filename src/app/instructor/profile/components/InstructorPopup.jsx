@@ -14,9 +14,21 @@ const InstructorPopup = ({ show, onLogoutClick, instructorName, instructorEmail,
 
   return (
     <div className="instructor-popup absolute w-[299px] right-5 top-20 bg-white dark:bg-gray-700 shadow-custom-heavy rounded-[5px] z-[1000]">
-      <div className="instructor-popup-header w-full h-[84px] bg-blue-600 dark:bg-blue-800 rounded-t-[5px] flex flex-col items-center justify-center p-2.5">
-        <div className="instructor-popup-name font-poppins font-medium text-base leading-6 text-white">{instructorName}</div>
-        <div className="instructor-popup-email font-sans font-normal text-xs leading-4 text-blue-200">{instructorEmail}</div>
+      <div className="instructor-popup-header w-full h-[84px] bg-blue-600 dark:bg-blue-800 rounded-t-[5px] flex flex-col items-center justify-center p-2.5 overflow-hidden">
+        {/* UPDATED: Added truncate and title attribute for better UX on long names */}
+        <div 
+          className="max-w-[200px] instructor-popup-name font-poppins font-medium text-base leading-6 text-white truncate"
+          title={instructorName}
+        >
+          {instructorName}
+        </div>
+        {/* UPDATED: Added truncate and title attribute for better UX on long emails */}
+        <div 
+          className="max-w-[150px] instructor-popup-email font-sans font-normal text-xs leading-4 text-blue-200 truncate"
+          title={instructorEmail}
+        >
+          {instructorEmail}
+        </div>
       </div>
       <div className="instructor-popup-options p-2.5 flex flex-col">
         <div 

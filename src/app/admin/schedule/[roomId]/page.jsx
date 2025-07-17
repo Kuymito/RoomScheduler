@@ -4,6 +4,7 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import { scheduleService } from '@/services/schedule.service';
 import { getAllRooms } from '@/services/room.service';
+import { getAllShifts } from '@/services/shift.service'; // Import shift service
 import AdminLayout from '@/components/AdminLayout';
 import RoomScheduleClient from '../components/RoomScheduleClient';
 import React from 'react';
@@ -44,9 +45,10 @@ async function getRoomScheduleData(roomId) {
     }
 
     try {
-        const [allRooms, allSchedules] = await Promise.all([
+        const [allRooms, allSchedules, allShifts] = await Promise.all([
             getAllRooms(token),
-            scheduleService.getAllSchedules(token)
+            scheduleService.getAllSchedules(token),
+            getAllShifts(token) // Fetch all shifts
         ]);
 
         const room = allRooms.find(r => String(r.roomId) === String(roomId));
@@ -55,25 +57,48 @@ async function getRoomScheduleData(roomId) {
         }
         const roomName = room.roomName;
 
+        // Define the standard time slots from the fetched shifts, excluding the special weekend one.
+        const standardTimeSlots = allShifts
+            .filter(shift => shift.startTime !== '07:30:00')
+            .map(shift => `${shift.startTime.slice(0, 5)} - ${shift.endTime.slice(0, 5)}`);
+
         const roomSchedules = {};
         allSchedules.forEach(schedule => {
             if (String(schedule.roomId) === String(roomId)) {
-                const timeSlotKey = `${schedule.shift.startTime.slice(0, 5)} - ${schedule.shift.endTime.slice(0, 5)}`;
+                
+                const isWeekendShift = schedule.shift?.startTime === '07:30:00';
+                const academicYear = mapGenerationToYear(schedule.year);
+
+                const classInfo = {
+                    subject: schedule.className,
+                    year: academicYear ? `Year ${academicYear}` : 'Year N/A',
+                    semester: schedule.semester,
+                    scheduleId: schedule.scheduleId,
+                };
+
                 if (schedule.dayDetails && Array.isArray(schedule.dayDetails)) {
                     schedule.dayDetails.forEach(dayDetail => {
                         const dayName = dayDetail.dayOfWeek.charAt(0).toUpperCase() + dayDetail.dayOfWeek.slice(1).toLowerCase();
                         if (!roomSchedules[dayName]) {
                             roomSchedules[dayName] = {};
                         }
-                        // UPDATED: Use the new generation-based year calculation
-                        const academicYear = mapGenerationToYear(schedule.year);
-                        roomSchedules[dayName][timeSlotKey] = {
-                            subject: schedule.className,
-                            year: academicYear ? `Year ${academicYear}` : 'Year N/A', // Use the calculated year
-                            semester: schedule.semester,
-                            timeDisplay: timeSlotKey,
-                            scheduleId: schedule.scheduleId, 
-                        };
+
+                        if (isWeekendShift) {
+                            // If it's a weekend shift, populate all standard time slots for that day
+                            standardTimeSlots.forEach(slot => {
+                                roomSchedules[dayName][slot] = {
+                                    ...classInfo,
+                                    timeDisplay: slot,
+                                };
+                            });
+                        } else {
+                            // For regular shifts, use the specific time slot
+                            const timeSlotKey = `${schedule.shift.startTime.slice(0, 5)} - ${schedule.shift.endTime.slice(0, 5)}`;
+                            roomSchedules[dayName][timeSlotKey] = {
+                                ...classInfo,
+                                timeDisplay: timeSlotKey,
+                            };
+                        }
                     });
                 }
             }
