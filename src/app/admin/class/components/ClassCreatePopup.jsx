@@ -12,6 +12,42 @@ const shiftMap = {
     'Weekend Shift': 5
 };
 
+// Data mapping for faculty, degree, and majors
+const facultyMajorMap = {
+    // Faculty of Management (ID: 1)
+    1: {
+        'Bachelor': ['Management', 'Marketing', 'Entrepreneurship'],
+        'Master': ['Business Administration', 'Public Administration', 'Marketing', 'Logistics & Supply Chain Management', 'Management of Technology', 'Bank Management', 'Family Business Management']
+    },
+    // Faculty of Information Technology (ID: 2)
+    2: {
+        'Bachelor': ['Information Technology', 'Business Information Technology', 'Robotics Engineering', 'Computer Science']
+    },
+    // Faculty of Tourism (ID: 3)
+    3: {
+        'Bachelor': ['Tourism Management', 'Hospitality Management']
+    },
+    // Faculty of Law (ID: 4)
+    4: {
+        'Bachelor': ['Law'],
+        'Master': ['Business Law']
+    },
+    // Faculty of Economics (ID: 5)
+    5: {
+        'Bachelor': ['Economics'],
+        'Master': ['Economics']
+    },
+    // Faculty of Finance & Accounting (ID: 6)
+    6: {
+        'Bachelor': ['Finance and Banking', 'Accounting', 'Accounting and Taxation', 'Accounting and Auditing'],
+        'Master': ['Finance']
+    },
+    // Faculty of Foreign Languages (ID: 7)
+    7: {
+        'Bachelor': ['Foreign Languages']
+    }
+};
+
 const ClassCreatePopup = ({ isOpen, onClose, onSave, departments, departmentsError, majors, majorsError, existingClasses }) => {
     // --- State and Options ---
     
@@ -28,20 +64,19 @@ const ClassCreatePopup = ({ isOpen, onClose, onSave, departments, departmentsErr
         return options.sort((a, b) => Number(a) - Number(b));
     }, []);
 
-    const degreesOptions = ['Bachelor', 'Master', 'PhD', 'Doctor'];
+    const degreesOptions = ['Bachelor', 'Master', 'PhD'];
     const semesterOptions = ['Semester 1', 'Semester 2', 'Semester 3', 'Semester 4', 'Semester 5', 'Semester 6', 'Semester 7', 'Semester 8'];
     const shiftOptions = Object.keys(shiftMap);
     const popupRef = useRef(null);
 
     const departmentOptions = useMemo(() => departments || [], [departments]);
-    const majorOptions = useMemo(() => majors || [], [majors]);
-
+    
     // Function to get the initial state for the form
     const getInitialState = () => ({
         className: '',
         generation: generationOptions[generationOptions.length - 1],
         groupName: '',
-        major: majorOptions[0]?.majorName || '',
+        major: '',
         degree: degreesOptions[0],
         semester: semesterOptions[0],
         departmentId: departmentOptions[0]?.departmentId || '',
@@ -52,14 +87,33 @@ const ClassCreatePopup = ({ isOpen, onClose, onSave, departments, departmentsErr
 
     const [newClass, setNewClass] = useState(getInitialState());
     const [formError, setFormError] = useState({ fields: [], message: '' });
+    const [filteredMajors, setFilteredMajors] = useState([]);
 
     // Effect to reset form state when data loads or when the popup opens
     useEffect(() => {
         if (isOpen) {
-            setNewClass(getInitialState());
+            const initialState = getInitialState();
+            setNewClass(initialState);
             setFormError({ fields: [], message: '' });
         }
     }, [isOpen, departments, majors, generationOptions]);
+
+    useEffect(() => {
+        if (majors && newClass.departmentId && newClass.degree) {
+            const allowedMajorNames = facultyMajorMap[newClass.departmentId]?.[newClass.degree] || [];
+            const majorsForDepartmentAndDegree = majors.filter(major => 
+                allowedMajorNames.includes(major.majorName)
+            );
+            setFilteredMajors(majorsForDepartmentAndDegree);
+            if (majorsForDepartmentAndDegree.length > 0) {
+                if (!majorsForDepartmentAndDegree.some(m => m.majorName === newClass.major)) {
+                    setNewClass(prev => ({ ...prev, major: majorsForDepartmentAndDegree[0].majorName }));
+                }
+            } else {
+                setNewClass(prev => ({ ...prev, major: '' }));
+            }
+        }
+    }, [newClass.departmentId, newClass.degree, majors, newClass.major]);
 
     // --- Handlers ---
     const handleInputChange = (e) => {
@@ -69,12 +123,10 @@ const ClassCreatePopup = ({ isOpen, onClose, onSave, departments, departmentsErr
             const hyphenCount = (value.match(/-/g) || []).length;
             const numberCount = (value.match(/\d/g) || []).length;
 
-            // UPDATED: Allow spaces in the regex
             if (/^[A-Za-z0-9-\s]*$/.test(value) && hyphenCount <= 1 && numberCount <= 5) {
                 setNewClass(prev => ({ ...prev, [name]: value }));
             }
         } else if (name === 'groupName') {
-            // Restrict group name to 3 digits
             if (/^\d{0,3}$/.test(value)) {
                 setNewClass(prev => ({ ...prev, [name]: value }));
             }
@@ -91,7 +143,6 @@ const ClassCreatePopup = ({ isOpen, onClose, onSave, departments, departmentsErr
         e.preventDefault();
         setFormError({ fields: [], message: '' });
 
-        // NEW: Validate for whitespace-only class name
         if (newClass.className && !newClass.className.trim()) {
             setFormError({
                 fields: ['className'],
@@ -100,9 +151,18 @@ const ClassCreatePopup = ({ isOpen, onClose, onSave, departments, departmentsErr
             return;
         }
 
+        // --- FIX: Normalize group numbers before checking for duplicates ---
+        // Convert the new group name to a number for comparison.
+        const newGroupNumber = parseInt(newClass.groupName, 10);
+
         const isDuplicate = existingClasses.some(
-            (cls) => cls.generation === newClass.generation && cls.group === newClass.groupName
+            (cls) =>
+                // Compare generation as strings (as they are in the dropdown)
+                cls.generation === newClass.generation &&
+                // Compare group names as numbers to treat "8" and "08" as the same.
+                parseInt(cls.group, 10) === newGroupNumber
         );
+
 
         if (isDuplicate) {
             setFormError({
@@ -111,8 +171,6 @@ const ClassCreatePopup = ({ isOpen, onClose, onSave, departments, departmentsErr
             });
             return;
         }
-
-        const selectedMajor = majorOptions.find(m => m.majorName === newClass.major);
 
         const payload = {
             className: newClass.className.trim() || `NUM${newClass.generation}-${newClass.groupName}`,
@@ -191,7 +249,7 @@ const ClassCreatePopup = ({ isOpen, onClose, onSave, departments, departmentsErr
                                 onChange={handleInputChange}
                                 className={`bg-gray-50 border text-gray-900 text-xs rounded-lg block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white ${getErrorClass('className')}`}
                                 placeholder="Auto-generates if empty (e.g., NUM30-01)"
-                                maxLength="100"
+                                maxLength="60"
                             />
                         </div>
 
@@ -224,7 +282,11 @@ const ClassCreatePopup = ({ isOpen, onClose, onSave, departments, departmentsErr
                             <select id="major" name="major" value={newClass.major} onChange={handleInputChange} className={`mt-1 block w-full p-2 text-xs border rounded-md shadow-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white ${getErrorClass('major')}`} required>
                                 {majorsError && <option value="">Error loading majors</option>}
                                 {!majors && !majorsError && <option value="">Loading...</option>}
-                                {majorOptions.map(major => (<option key={major.major_id} value={major.majorName}>{major.majorName}</option>))}
+                                {filteredMajors.length > 0 ? (
+                                    filteredMajors.map(major => (<option key={major.major_id} value={major.majorName}>{major.majorName}</option>))
+                                ) : (
+                                    <option value="" disabled>No majors available for selected degree</option>
+                                )}
                             </select>
                         </div>
                         <div className="col-span-2">

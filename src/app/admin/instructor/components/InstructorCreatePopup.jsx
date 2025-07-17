@@ -12,7 +12,7 @@ const DefaultAvatarIcon = ({ className = "w-full h-full" }) => (
 
 const InstructorCreatePopup = ({ isOpen, onClose, onSave, departments, departmentsError, existingInstructors }) => {
     // Define options for select fields.
-    const qualificationOptions = ['Master', 'PhD', 'Doctor'];
+    const qualificationOptions = ['Master', 'PhD'];
     const majorOptions = useMemo(() => {
         if (!departments) return [];
         return departments.map(dep => dep.name);
@@ -279,11 +279,11 @@ const InstructorCreatePopup = ({ isOpen, onClose, onSave, departments, departmen
                     <div className="grid grid-cols-2 gap-3 mb-4 max-h-[60vh] overflow-y-auto pr-2">
                         <div>
                             <label htmlFor="firstName" className="block mb-2 text-xs font-medium text-gray-900 dark:text-white">First Name</label>
-                            <input type="text" id="firstName" name="firstName" value={newInstructor.firstName} onChange={handleInputChange} className={`bg-gray-50 border text-gray-900 dark:text-white text-xs rounded-lg block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 ${getErrorClass('firstName')}`} placeholder="John" required maxLength="30" />
+                            <input type="text" id="firstName" name="firstName" value={newInstructor.firstName} onChange={handleInputChange} className={`bg-gray-50 border text-gray-900 dark:text-white text-xs rounded-lg block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 ${getErrorClass('firstName')}`} placeholder="John" required maxLength="26" />
                         </div>
                         <div>
                             <label htmlFor="lastName" className="block mb-2 text-xs font-medium text-gray-900 dark:text-white">Last Name</label>
-                            <input type="text" id="lastName" name="lastName" value={newInstructor.lastName} onChange={handleInputChange} className={`bg-gray-50 border text-gray-900 dark:text-white text-xs rounded-lg block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 ${getErrorClass('lastName')}`} placeholder="Doe" required maxLength="30" />
+                            <input type="text" id="lastName" name="lastName" value={newInstructor.lastName} onChange={handleInputChange} className={`bg-gray-50 border text-gray-900 dark:text-white text-xs rounded-lg block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 ${getErrorClass('lastName')}`} placeholder="Doe" required maxLength="26" />
                         </div>
                         <div className="col-span-2">
                             <label htmlFor="email" className="block mb-2 text-xs font-medium text-gray-700 dark:text-gray-300">Email</label>
@@ -291,7 +291,7 @@ const InstructorCreatePopup = ({ isOpen, onClose, onSave, departments, departmen
                         </div>
                         <div className="col-span-2">
                             <label htmlFor="password" className="block mb-2 text-xs font-medium text-gray-700 dark:text-gray-300">Password</label>
-                            <input type="password" id="password" name="password" value={newInstructor.password} onChange={handleInputChange} className={`bg-gray-50 border text-gray-900 dark:text-white text-xs rounded-lg block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 ${getErrorClass('password')}`} placeholder="••••••••" required minLength={8} maxLength="64" />
+                            <input type="password" id="password" name="password" value={newInstructor.password} onChange={handleInputChange} className={`bg-gray-50 border text-gray-900 dark:text-white text-xs rounded-lg block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 ${getErrorClass('password')}`} placeholder="••••••••" required minLength={8} maxLength="65" />
                         </div>
                         <div>
                             <label htmlFor="phone" className="block mb-2 text-xs font-medium text-gray-700 dark:text-gray-300">Phone Number</label>

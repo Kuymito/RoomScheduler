@@ -16,6 +16,8 @@ const ClassCreatePopup = lazy(() => import('./ClassCreatePopup'));
 const Spinner = () => ( <svg className="animate-spin h-5 w-5 text-gray-500 dark:text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> );
 const EditIcon = ({ className = "w-[14px] h-[14px]" }) => ( <svg className={className} width="14" height="14" viewBox="0 0 17 17" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M8.06671 2.125H4.95837C3.00254 2.125 2.12504 3.0025 2.12504 4.95833V12.0417C2.12504 13.9975 3.00254 14.875 4.95837 14.875H12.0417C13.9975 14.875 14.875 13.9975 14.875 12.0417V8.93333" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/><path d="M10.6579 3.2658L6.28042 7.64327C6.10542 7.81827 5.93042 8.15055 5.89125 8.3928L5.64958 10.112C5.56625 10.7037 6.01958 11.157 6.61125 11.0737L8.33042 10.832C8.57292 10.7928 8.90542 10.6178 9.08042 10.4428L13.4579 6.0653C14.2662 5.25705 14.5796 4.26827 13.4579 3.14662C12.3362 2.03205 11.3479 2.45705 10.6579 3.2658Z" stroke="currentColor" strokeWidth="1.2" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round"/><path d="M9.8999 4.02502C10.2716 5.66752 11.0583 6.45419 12.7008 6.82585" stroke="currentColor" strokeWidth="1.2" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round"/></svg> );
 const ArchiveIcon = ({ className = "w-[14px] h-[14px]" }) => ( <svg className={className} width="14" height="14" viewBox="0 0 17 17" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M14.1667 5.66667V12.0417C14.1667 13.9975 13.2892 14.875 11.3334 14.875H5.66671C3.71087 14.875 2.83337 13.9975 2.83337 12.0417V5.66667" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/><path d="M14.875 2.125H2.125L2.12504 5.66667H14.875V2.125Z" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/><path d="M7.79163 8.5H9.20829" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/></svg> );
+const DefaultAvatarIcon = ({ className = "w-12 h-12" }) => ( <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1} stroke="currentColor" className={className}>
+<path strokeLinecap="round" strokeLinejoin="round" d="M17.982 18.725A7.488 7.488 0 0 0 12 15.75a7.488 7.488 0 0 0-5.982 2.975m11.963 0a9 9 0 1 0-11.963 0m11.963 0A8.966 8.966 0 0 1 12 21a8.966 8.966 0 0 1-5.982-2.275M15 9.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" /></svg> );
 
 // Define fetchers for SWR
 const classFetcher = ([, token]) => classService.getAllClasses(token);
@@ -66,34 +68,75 @@ export default function ClassClientView({ initialClasses, initialDepartments, in
     const [rowLoadingId, setRowLoadingId] = useState(null);
     const [showCreatePopup, setShowCreatePopup] = useState(false);
     const [toast, setToast] = useState({ show: false, message: '', type: 'info' });
+    
+    // --- State with localStorage Initialization ---
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPageOptions = [5, 10, 20, 50];
-    
+
     const [itemsPerPage, setItemsPerPage] = useState(() => {
         if (typeof window !== 'undefined') {
-            const savedSize = localStorage.getItem('classItemsPerPage');
-            const savedValue = savedSize ? parseInt(savedSize, 10) : itemsPerPageOptions[0];
-            return itemsPerPageOptions.includes(savedValue) ? savedValue : itemsPerPageOptions[0];
+            const savedSize = localStorage.getItem('adminClassPage_itemsPerPage');
+            return savedSize ? parseInt(savedSize, 10) : itemsPerPageOptions[0];
         }
         return itemsPerPageOptions[0];
     });
-    
-    const [isFilterMenuOpen, setIsFilterMenuOpen] = useState(false);
-    const [statusFilter, setStatusFilter] = useState('active');
-    const [onlineClassFilter, setOnlineClassFilter] = useState(false);
-    const [expiredClassFilter, setExpiredClassFilter] = useState(false);
-    const [unassignedClassFilter, setUnassignedClassFilter] = useState(false);
 
-    const [sortColumn, setSortColumn] = useState(null);
-    const [sortDirection, setSortDirection] = useState('asc');
-    const [searchTexts, setSearchTexts] = useState({ name: '', generation: '', group: '', major: '', degrees: '', faculty: '', semester: '', shift: '' });
-    const [globalSearchTerm, setGlobalSearchTerm] = useState(''); // New state for the global search
+    const [statusFilter, setStatusFilter] = useState(() => {
+        if (typeof window !== 'undefined') return localStorage.getItem('adminClassPage_statusFilter') || 'active';
+        return 'active';
+    });
 
-    useEffect(() => {
+    const [onlineClassFilter, setOnlineClassFilter] = useState(() => {
+        if (typeof window !== 'undefined') return localStorage.getItem('adminClassPage_onlineFilter') === 'true';
+        return false;
+    });
+
+    const [expiredClassFilter, setExpiredClassFilter] = useState(() => {
+        if (typeof window !== 'undefined') return localStorage.getItem('adminClassPage_expiredFilter') === 'true';
+        return false;
+    });
+
+    const [unassignedClassFilter, setUnassignedClassFilter] = useState(() => {
+        if (typeof window !== 'undefined') return localStorage.getItem('adminClassPage_unassignedFilter') === 'true';
+        return false;
+    });
+
+    const [sortColumn, setSortColumn] = useState(() => {
+        if (typeof window !== 'undefined') return localStorage.getItem('adminClassPage_sortColumn') || null;
+        return null;
+    });
+
+    const [sortDirection, setSortDirection] = useState(() => {
+        if (typeof window !== 'undefined') return localStorage.getItem('adminClassPage_sortDirection') || 'asc';
+        return 'asc';
+    });
+
+    const [searchTexts, setSearchTexts] = useState(() => {
         if (typeof window !== 'undefined') {
-            localStorage.setItem('classItemsPerPage', itemsPerPage);
+            const saved = localStorage.getItem('adminClassPage_searchTexts');
+            return saved ? JSON.parse(saved) : { name: '', generation: '', group: '', major: '', degrees: '', faculty: '', semester: '', shift: '' };
         }
-    }, [itemsPerPage]);
+        return { name: '', generation: '', group: '', major: '', degrees: '', faculty: '', semester: '', shift: '' };
+    });
+
+    const [globalSearchTerm, setGlobalSearchTerm] = useState(() => {
+        if (typeof window !== 'undefined') return localStorage.getItem('adminClassPage_globalSearch') || '';
+        return '';
+    });
+
+    const [isFilterMenuOpen, setIsFilterMenuOpen] = useState(false);
+    
+    // --- useEffect hooks to persist state changes ---
+    useEffect(() => { localStorage.setItem('adminClassPage_itemsPerPage', itemsPerPage); }, [itemsPerPage]);
+    useEffect(() => { localStorage.setItem('adminClassPage_statusFilter', statusFilter); }, [statusFilter]);
+    useEffect(() => { localStorage.setItem('adminClassPage_onlineFilter', onlineClassFilter); }, [onlineClassFilter]);
+    useEffect(() => { localStorage.setItem('adminClassPage_expiredFilter', expiredClassFilter); }, [expiredClassFilter]);
+    useEffect(() => { localStorage.setItem('adminClassPage_unassignedFilter', unassignedClassFilter); }, [unassignedClassFilter]);
+    useEffect(() => { if(sortColumn) localStorage.setItem('adminClassPage_sortColumn', sortColumn); else localStorage.removeItem('adminClassPage_sortColumn')}, [sortColumn]);
+    useEffect(() => { localStorage.setItem('adminClassPage_sortDirection', sortDirection); }, [sortDirection]);
+    useEffect(() => { localStorage.setItem('adminClassPage_searchTexts', JSON.stringify(searchTexts)); }, [searchTexts]);
+    useEffect(() => { localStorage.setItem('adminClassPage_globalSearch', globalSearchTerm); }, [globalSearchTerm]);
+
 
     useEffect(() => {
         if (classes) {
@@ -353,7 +396,7 @@ export default function ClassClientView({ initialClasses, initialDepartments, in
                         <tr>
                             <th scope="col" className="px-6 py-2.5 md:table-cell hidden">Action</th>
                             <th scope="col" className="px-6 py-2.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600" onClick={() => handleSort('name')}>
-                                <div className="flex items-center">Name {getSortIndicator('name')}</div>
+                                <div className="flex items-center">Name {getSortIndicator('name')}</div> 
                             </th>
                             <th scope="col" className="px-6 py-2.5 cursor-pointer lg:table-cell hidden hover:bg-gray-100 dark:hover:bg-gray-600" onClick={() => handleSort('generation')}>
                                 <div className="flex items-center">Gen {getSortIndicator('generation')}</div>
@@ -383,12 +426,12 @@ export default function ClassClientView({ initialClasses, initialDepartments, in
                     </thead>
                     <tbody className="text-xs font-normal text-gray-700 dark:text-gray-400">
                         {currentTableData.length > 0 ? currentTableData.map((data) => ( 
-                            <tr key={data.id} className={`bg-white border-b border-gray-200 dark:bg-gray-800 dark:border-gray-700 ${(isPending && rowLoadingId === data.id) ? 'cursor-wait bg-gray-100 dark:bg-gray-700' : 'hover:bg-gray-50 dark:hover:bg-gray-600 cursor-pointer'}`} onClick={() => handleRowClick(data.id)}>
-                                {isPending && rowLoadingId === data.id ? (
+                            <tr key={data.id} className={`bg-white border-b border-gray-200 dark:bg-gray-800 dark:border-gray-700 ${ (isPending && rowLoadingId === data.id) ? 'cursor-wait bg-gray-100 dark:bg-gray-700' : 'hover:bg-gray-50 dark:hover:bg-gray-600 cursor-pointer'}`} onClick={() => handleRowClick(data.id)}>
+                                {(isPending && rowLoadingId === data.id) ? (
                                     <td colSpan={10} className="px-6 py-2.5 text-center"><div className="flex justify-center items-center h-6"><Spinner /></div></td>
                                 ) : (
                                     <>
-                                        <td className="px-6 py-2.5 font-medium text-gray-900 whitespace-nowrap dark:text-white md:table-cell hidden">
+                                        <td scope="row" className="px-6 py-2.5 font-medium text-gray-900 whitespace-nowrap dark:text-white md:table-cell hidden">
                                             <div className="flex gap-2">
                                                 <button onClick={(e) => { e.stopPropagation(); handleRowClick(data.id); }} className={`p-1 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300`}><EditIcon className="size-4" /></button>
                                                 <button onClick={(e) => { e.stopPropagation(); toggleClassStatus(data.id); }} className={`p-1 ${data.status.toLowerCase() === 'active' ? 'text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300' : 'text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300'}`} title={data.status.toLowerCase() === 'active' ? 'Archive Classroom' : 'Activate Classroom'}><ArchiveIcon className="size-4" /></button>
@@ -396,7 +439,7 @@ export default function ClassClientView({ initialClasses, initialDepartments, in
                                         </td>
                                         <td className="px-6 py-2">
                                             {/* UPDATED: Added max-width and truncate */}
-                                            <div className="max-w-[150px] truncate" title={data.name}>
+                                            <div className="max-w-[70px] truncate" title={data.name}>
                                                 {data.name}
                                             </div>
                                         </td>
@@ -404,14 +447,14 @@ export default function ClassClientView({ initialClasses, initialDepartments, in
                                         <td className="px-6 py-2 lg:table-cell hidden"> {data.group} </td>
                                         <td className="px-6 py-2">
                                             {/* UPDATED: Added max-width and truncate */}
-                                            <div className="max-w-[150px] truncate" title={data.major}>
+                                            <div className="max-w-[120px] truncate" title={data.major}>
                                                 {data.major}
                                             </div>
                                         </td>
                                         <td className="px-6 py-2"> {data.degrees} </td>
                                         <td className="px-6 py-2 2xl:table-cell hidden">
                                             {/* UPDATED: Added max-width and truncate */}
-                                            <div className="max-w-[150px] truncate" title={data.faculty}>
+                                            <div className="max-w-[120px] truncate" title={data.faculty}>
                                                 {data.faculty}
                                             </div>
                                         </td>

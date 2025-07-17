@@ -1,3 +1,4 @@
+// src/app/api/auth/reset/components/RightResetPasswordSection.jsx
 "use client";
 
 import React, { useState } from 'react';
@@ -39,14 +40,27 @@ export default function RightResetPasswordSection() {
     const router = useRouter();
 
     const validatePassword = (value) => {
+        const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
         if (!value) {
             setPasswordError('Password is required.'); return false;
         }
-        if (value.length < 8) {
-            setPasswordError('Must be at least 8 characters.'); return false;
+        if (!passwordRegex.test(value)) {
+            setPasswordError('Password does not meet the requirements.'); return false;
         }
         setPasswordError(''); return true;
     };
+
+    const getPasswordValidationState = (password) => {
+        return {
+            length: password.length >= 8,
+            uppercase: /[A-Z]/.test(password),
+            lowercase: /[a-z]/.test(password),
+            number: /\d/.test(password),
+            special: /[@$!%*?&]/.test(password),
+        };
+    };
+    
+    const passwordValidationState = getPasswordValidationState(password);
 
     const validateConfirmPassword = (value, currentPassword) => {
         if (!value) {
@@ -155,7 +169,14 @@ export default function RightResetPasswordSection() {
                         <input type={showPassword ? 'text' : 'password'} id="password" value={password} onChange={handlePasswordChange} required className={`w-full p-3 pr-10 bg-white rounded-md text-gray-600 border ${passwordError || apiError ? 'border-red-500' : 'border-gray-300'} focus:border-blue-500 focus:outline-none focus:ring-1 ${passwordError || apiError ? 'focus:ring-red-500/50' : 'focus:ring-blue-500/50'}`} />
                         <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute inset-y-0 right-0 px-3 flex items-center">{showPassword ? <EyeOffIcon /> : <EyeIcon />}</button>
                     </div>
-                    {passwordError ? (<p className="mt-2 text-xs text-red-600">{passwordError}</p>) : (<p className="mt-2 text-xs text-gray-500">Must be at least 8 characters.</p>)}
+                    {passwordError && (<p className="mt-2 text-xs text-red-600">{passwordError}</p>)}
+                    <ul className="max-w-md mt-2 space-y-1 text-gray-500 list-disc list-inside dark:text-gray-400 text-[12px]">
+                        <li className={passwordValidationState.length ? 'text-green-600' : 'text-gray-500'}>At least 8 characters</li>
+                        <li className={passwordValidationState.uppercase ? 'text-green-600' : 'text-gray-500'}>At least one uppercase letter</li>
+                        <li className={passwordValidationState.lowercase ? 'text-green-600' : 'text-gray-500'}>At least one lowercase letter</li>
+                        <li className={passwordValidationState.number ? 'text-green-600' : 'text-gray-500'}>At least one number</li>
+                        <li className={passwordValidationState.special ? 'text-green-600' : 'text-gray-500'}>At least one special character (@$!%*?&)</li>
+                    </ul>
                 </div>
                 <div>
                     <label htmlFor="confirmPassword" className="block text-sm sm:text-base mb-1 font-base text-gray-900">Confirm Password</label>
