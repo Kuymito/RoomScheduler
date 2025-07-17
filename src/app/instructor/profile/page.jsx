@@ -1,3 +1,4 @@
+// src/app/instructor/profile/page.jsx
 'use client';
 
 import { useState, useEffect, useRef, lazy, Suspense } from 'react';
@@ -201,6 +202,27 @@ function ProfileContent() {
                 setToast({ show: true, message: "Authentication error or user ID not found. Please log in again.", type: 'error' });
                 setIsLoading(false);
                 return;
+            }
+
+            // --- NEW: Detailed Field Validation ---
+            const fieldsToValidate = {
+                firstName: 'First Name',
+                lastName: 'Last Name',
+                phoneNumber: 'Phone Number',
+                major: 'Major',
+                address: 'Address'
+            };
+
+            for (const [field, name] of Object.entries(fieldsToValidate)) {
+                if (!editableProfileState[field] || !editableProfileState[field].trim()) {
+                    setToast({
+                        show: true,
+                        message: `${name} cannot be empty or contain only spaces.`,
+                        type: 'error'
+                    });
+                    setIsLoading(false);
+                    return;
+                }
             }
 
             let finalImageUrl = profileState.avatarUrl;

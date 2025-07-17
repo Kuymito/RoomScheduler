@@ -6,18 +6,14 @@ import Toast from '@/components/Toast';
 import { getAllRooms, updateRoom } from '@/services/room.service';
 import { useSession } from 'next-auth/react';
 import useSWR from 'swr';
-import RoomPageSkeleton from './RoomPageSkeleton';
+import RoomPageSkeleton from './RoomPageSkeleton'; // Import the skeleton
 
 // SWR fetcher for rooms
 const roomsFetcher = ([, token]) => getAllRooms(token);
 
-// Create a Broadcast Channel. The name must be consistent across the application.
-// Check for `window` to ensure it only runs on the client-side.
-const updateChannel = typeof window !== 'undefined' ? new BroadcastChannel('data_update_channel') : null;
-
 /**
  * The main client view for the room management page.
- * It now broadcasts a message after successfully updating a room.
+ * It now receives initial data from the server to provide a faster first-load experience.
  */
 export default function RoomClientView({ initialRooms }) {
     // --- Style Constants ---
@@ -32,6 +28,7 @@ export default function RoomClientView({ initialRooms }) {
     
     const { data: session } = useSession();
 
+    // SWR will use `initialRooms` for the first render, then revalidate in the background.
     const { data: swrRooms, error: swrError, mutate: mutateRooms, isLoading: isSWRLoading } = useSWR(
         session?.accessToken ? ['/api/v1/room', session.accessToken] : null,
         roomsFetcher,
@@ -40,10 +37,13 @@ export default function RoomClientView({ initialRooms }) {
         }
     );
 
+    // Process the data directly from the SWR response.
     const { allRoomsData, buildings } = useMemo(() => {
         if (!swrRooms) return { allRoomsData: {}, buildings: {} };
+
         const newRoomsDataMap = {};
         const newPopulatedLayout = {};
+
         swrRooms.forEach(room => {
             const { roomId, roomName, buildingName, floor, capacity, type, equipment } = room;
             if (!newPopulatedLayout[buildingName]) {
@@ -63,9 +63,11 @@ export default function RoomClientView({ initialRooms }) {
                 equipment: typeof equipment === 'string' ? equipment.split(',').map(e => e.trim()).filter(Boolean) : [],
             };
         });
+
         for (const building in newPopulatedLayout) {
             newPopulatedLayout[building].sort((a, b) => b.floor - a.floor);
         }
+        
         return { allRoomsData: newRoomsDataMap, buildings: newPopulatedLayout };
     }, [swrRooms]);
 
@@ -116,23 +118,6 @@ export default function RoomClientView({ initialRooms }) {
         setToast({ show: false, message: '', type: 'info' });
     };
 
-    const validateRoomName = (newName) => {
-        const trimmedName = newName.trim();
-        if (!trimmedName) {
-            setFormError({ field: 'name', message: 'Room name cannot be empty.' });
-            return false;
-        }
-        const isDuplicate = Object.values(allRoomsData).some(
-            (room) => room.id !== selectedRoomId && room.name.toLowerCase() === trimmedName.toLowerCase()
-        );
-        if (isDuplicate) {
-            setFormError({ field: 'name', message: 'Name already exists.' });
-            return false;
-        }
-        setFormError({ field: '', message: '' });
-        return true;
-    };
-
     const handleInputChange = (event) => {
         const { name, value } = event.target;
         if (name === 'name' && formError.field === 'name') {
@@ -155,27 +140,39 @@ export default function RoomClientView({ initialRooms }) {
 
     const handleSaveChanges = async () => {
         if (!editableRoomDetails) return;
-        if (!validateRoomName(editableRoomDetails.name)) return;
+
+        // --- NEW: Whitespace validation ---
+        if (!editableRoomDetails.name || !editableRoomDetails.name.trim()) {
+            setToast({ show: true, message: "Room Name cannot be empty or contain only spaces.", type: 'error' });
+            return;
+        }
+        if (!editableRoomDetails.type || !editableRoomDetails.type.trim()) {
+            setToast({ show: true, message: "Room Type cannot be empty or contain only spaces.", type: 'error' });
+            return;
+        }
+
+        // --- Duplicate name validation ---
+        const trimmedName = editableRoomDetails.name.trim();
+        const isDuplicate = Object.values(allRoomsData).some(
+            (room) => room.id !== selectedRoomId && room.name.toLowerCase() === trimmedName.toLowerCase()
+        );
+        if (isDuplicate) {
+            setFormError({ field: 'name', message: 'Name already exists.' });
+            return;
+        }
+        // --- End of validation ---
+
         setLoading(true);
         setToast({ show: false, message: '', type: 'info' });
         const roomUpdateDto = {
-            roomName: editableRoomDetails.name,
+            roomName: editableRoomDetails.name.trim(),
             capacity: editableRoomDetails.capacity,
-            type: editableRoomDetails.type,
+            type: editableRoomDetails.type.trim(),
             equipment: editableRoomDetails.equipment,
         };
         try {
             await updateRoom(selectedRoomId, roomUpdateDto);
             mutateRooms();
-            
-            // NEW: Broadcast a message to other clients
-            if (updateChannel) {
-                updateChannel.postMessage({
-                    type: 'DATA_UPDATED',
-                    payload: { source: 'admin-room-update', roomId: selectedRoomId }
-                });
-            }
-
             setIsEditing(false);
             setToast({ show: true, message: `Room '${roomUpdateDto.roomName}' updated successfully.`, type: 'success' });
         } catch (err) {

@@ -1,3 +1,4 @@
+// src/app/admin/profile/page.jsx
 'use client';
 
 import { useState, useEffect, useRef, lazy, Suspense } from 'react';
@@ -166,6 +167,27 @@ function ProfileContent() {
 
         if (section === 'general') {
             setIsLoading(true);
+
+            // --- NEW: Detailed Field Validation ---
+            const fieldsToValidate = {
+                firstName: 'First Name',
+                lastName: 'Last Name',
+                phoneNumber: 'Phone Number',
+                email: 'Email',
+                address: 'Address'
+            };
+
+            for (const [field, name] of Object.entries(fieldsToValidate)) {
+                if (!editableProfileState[field] || !editableProfileState[field].trim()) {
+                    setToast({
+                        show: true,
+                        message: `${name} cannot be empty or contain only spaces.`,
+                        type: 'error'
+                    });
+                    setIsLoading(false);
+                    return;
+                }
+            }
             
             if (editableProfileState.phoneNumber && (editableProfileState.phoneNumber.length < 8 || editableProfileState.phoneNumber.length > 15)) {
                 setToast({ show: true, message: "Phone number must be between 8 and 15 digits.", type: 'error' });
@@ -245,7 +267,6 @@ function ProfileContent() {
                 setPasswordMismatchError(true);
                 return;
             }
-            // Open confirmation modal if validations pass
             setIsConfirmationModalOpen(true);
         }
     };
@@ -268,7 +289,6 @@ function ProfileContent() {
 
             setToast({ show: true, message: "Password changed successfully!", type: 'success' });
             setIsConfirmationModalOpen(false);
-            // Reset fields
             setNewPasswordValue('');
             setConfirmNewPasswordValue('');
             setIsEditingPassword(false);
