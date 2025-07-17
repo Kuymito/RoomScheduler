@@ -1,3 +1,4 @@
+// src/app/admin/room/components/RoomClientView.jsx
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -5,14 +6,18 @@ import Toast from '@/components/Toast';
 import { getAllRooms, updateRoom } from '@/services/room.service';
 import { useSession } from 'next-auth/react';
 import useSWR from 'swr';
-import RoomPageSkeleton from './RoomPageSkeleton'; // Import the skeleton
+import RoomPageSkeleton from './RoomPageSkeleton';
 
 // SWR fetcher for rooms
 const roomsFetcher = ([, token]) => getAllRooms(token);
 
+// Create a Broadcast Channel. The name must be consistent across the application.
+// Check for `window` to ensure it only runs on the client-side.
+const updateChannel = typeof window !== 'undefined' ? new BroadcastChannel('data_update_channel') : null;
+
 /**
  * The main client view for the room management page.
- * It now receives initial data from the server to provide a faster first-load experience.
+ * It now broadcasts a message after successfully updating a room.
  */
 export default function RoomClientView({ initialRooms }) {
     // --- Style Constants ---
@@ -27,7 +32,6 @@ export default function RoomClientView({ initialRooms }) {
     
     const { data: session } = useSession();
 
-    // SWR will use `initialRooms` for the first render, then revalidate in the background.
     const { data: swrRooms, error: swrError, mutate: mutateRooms, isLoading: isSWRLoading } = useSWR(
         session?.accessToken ? ['/api/v1/room', session.accessToken] : null,
         roomsFetcher,
@@ -36,13 +40,10 @@ export default function RoomClientView({ initialRooms }) {
         }
     );
 
-    // Process the data directly from the SWR response.
     const { allRoomsData, buildings } = useMemo(() => {
         if (!swrRooms) return { allRoomsData: {}, buildings: {} };
-
         const newRoomsDataMap = {};
         const newPopulatedLayout = {};
-
         swrRooms.forEach(room => {
             const { roomId, roomName, buildingName, floor, capacity, type, equipment } = room;
             if (!newPopulatedLayout[buildingName]) {
@@ -62,11 +63,9 @@ export default function RoomClientView({ initialRooms }) {
                 equipment: typeof equipment === 'string' ? equipment.split(',').map(e => e.trim()).filter(Boolean) : [],
             };
         });
-
         for (const building in newPopulatedLayout) {
             newPopulatedLayout[building].sort((a, b) => b.floor - a.floor);
         }
-        
         return { allRoomsData: newRoomsDataMap, buildings: newPopulatedLayout };
     }, [swrRooms]);
 
@@ -78,8 +77,6 @@ export default function RoomClientView({ initialRooms }) {
     const [toast, setToast] = useState({ show: false, message: '', type: 'info' });
     const [formError, setFormError] = useState({ field: '', message: '' });
 
-    // FIX: Derive roomDetails directly from allRoomsData and selectedRoomId
-    // This ensures the details panel always shows the latest data from SWR.
     const roomDetails = useMemo(() => {
         if (!selectedRoomId || !allRoomsData) return null;
         return allRoomsData[selectedRoomId];
@@ -95,7 +92,6 @@ export default function RoomClientView({ initialRooms }) {
     const resetSelection = () => { setSelectedRoomId(null); setIsEditing(false); };
     const handleBuildingChange = (event) => { setSelectedBuilding(event.target.value); resetSelection(); };
 
-    // UPDATED: handleRoomClick now only needs to set the selected ID.
     const handleRoomClick = (roomId) => {
         setSelectedRoomId(roomId);
         setIsEditing(false);
@@ -170,7 +166,16 @@ export default function RoomClientView({ initialRooms }) {
         };
         try {
             await updateRoom(selectedRoomId, roomUpdateDto);
-            mutateRooms(); // This triggers a re-fetch, which will update the UI.
+            mutateRooms();
+            
+            // NEW: Broadcast a message to other clients
+            if (updateChannel) {
+                updateChannel.postMessage({
+                    type: 'DATA_UPDATED',
+                    payload: { source: 'admin-room-update', roomId: selectedRoomId }
+                });
+            }
+
             setIsEditing(false);
             setToast({ show: true, message: `Room '${roomUpdateDto.roomName}' updated successfully.`, type: 'success' });
         } catch (err) {
@@ -202,7 +207,6 @@ export default function RoomClientView({ initialRooms }) {
 
     const floors = buildings[selectedBuilding] || [];
 
-    // Show skeleton only if there's no initial data and SWR is loading.
     if (isSWRLoading && initialRooms.length === 0) {
         return <RoomPageSkeleton />;
     }

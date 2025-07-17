@@ -8,12 +8,11 @@ import InstructorPopup from 'src/app/instructor/profile/components/InstructorPop
 import Footer from '@/components/Footer';
 import InstructorNotificationPopup from '@/app/instructor/notification/InstructorNotificationPopup';
 import { signOut, useSession } from 'next-auth/react';
-import useSWR from 'swr';
+import useSWR, { useSWRConfig } from 'swr'; // Import useSWRConfig
 import { authService } from '@/services/auth.service';
 import { notificationService } from '@/services/notification.service';
 import { moul } from './fonts';
 
-// Dynamically import the LogoutAlert component.
 const LogoutAlert = lazy(() => import('@/components/LogoutAlert'));
 
 const TOPBAR_HEIGHT = '90px';
@@ -28,10 +27,8 @@ const useMediaQuery = (query) => {
 
     useEffect(() => {
         if (typeof window === 'undefined') return;
-
         const media = window.matchMedia(query);
         const listener = () => setMatches(media.matches);
-
         media.addEventListener('change', listener);
         return () => media.removeEventListener('change', listener);
     }, [query]);
@@ -45,30 +42,12 @@ export default function InstructorLayout({ children, activeItem, pageTitle, brea
     const [showInstructorNotificationPopup, setShowInstructorNotificationPopup] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [isProfileNavigating, setIsProfileNavigating] = useState(false);
-    
     const isSmallScreen = useMediaQuery('(max-width: 1023px)');
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
-        if (typeof window === 'undefined') {
-            return false;
-        }
-        if (window.matchMedia('(max-width: 1023px)').matches) {
-            return true;
-        }
+        if (typeof window === 'undefined') return false;
+        if (window.matchMedia('(max-width: 1023px)').matches) return true;
         return localStorage.getItem('sidebarCollapsed') === 'true';
     });
-    
-    useEffect(() => {
-        if (isSmallScreen) {
-            setIsSidebarCollapsed(true);
-        }
-    }, [isSmallScreen]);
-    
-    useEffect(() => {
-        if (typeof window !== 'undefined' && !isSmallScreen) {
-            localStorage.setItem('sidebarCollapsed', isSidebarCollapsed);
-        }
-    }, [isSidebarCollapsed, isSmallScreen]);
-
     const notificationPopupRef = useRef(null);
     const notificationIconRef = useRef(null);
     const adminPopupRef = useRef(null);
@@ -79,23 +58,47 @@ export default function InstructorLayout({ children, activeItem, pageTitle, brea
     
     const { data: session } = useSession();
     const token = session?.accessToken;
+    const { mutate } = useSWRConfig(); // Get the global mutate function
 
-    const { data: profile } = useSWR(
-        token ? ['/api/profile', token] : null,
-        profileFetcher
-    );
+    // --- Broadcast Channel Listener for real-time updates ---
+    useEffect(() => {
+        if (typeof window === 'undefined' || !token) return;
 
+        const channel = new BroadcastChannel('data_update_channel');
+
+        const handleMessage = (event) => {
+            if (event.data && event.data.type === 'DATA_UPDATED') {
+                console.log('Data update event received. Revalidating instructor data...');
+                // Revalidate the keys used by the instructor's room page
+                mutate(['allRooms', token]);
+                mutate(['allSchedules', token]);
+            }
+        };
+
+        channel.addEventListener('message', handleMessage);
+
+        return () => {
+            channel.removeEventListener('message', handleMessage);
+            channel.close();
+        };
+    }, [mutate, token]);
+
+    useEffect(() => {
+        if (isSmallScreen) setIsSidebarCollapsed(true);
+    }, [isSmallScreen]);
+    
+    useEffect(() => {
+        if (typeof window !== 'undefined' && !isSmallScreen) localStorage.setItem('sidebarCollapsed', isSidebarCollapsed);
+    }, [isSidebarCollapsed, isSmallScreen]);
+
+    const { data: profile } = useSWR(token ? ['/api/profile', token] : null, profileFetcher);
     const { data: instructorNotifications, mutate: mutateInstructorNotifications } = useSWR(
         token ? ['/api/notifications', token] : null,
         notificationsFetcher,
         {
             refreshInterval: 5000,
             onSuccess: (data) => {
-                // Check for new, unread approval notifications.
-                const hasNewApprovals = data?.some(n => !n.read && n.message.toLowerCase().includes('approved'));
-                
-                // If there's a new approval and the user is on the room page, refresh the page's server-side data.
-                if (hasNewApprovals && pathname === '/instructor/room') {
+                if (data?.some(n => !n.read && n.message.toLowerCase().includes('approved')) && pathname === '/instructor/room') {
                     router.refresh();
                 }
             }
@@ -103,215 +106,64 @@ export default function InstructorLayout({ children, activeItem, pageTitle, brea
     );
 
     const finalBreadcrumbs = breadcrumbs || [{ label: pageTitle }];
-
-    const toggleSidebar = () => {
-        if (!isSmallScreen) {
-            setIsSidebarCollapsed(!isSidebarCollapsed);
-        }
-    };
-
-    const handleUserIconClick = (event) => { 
-        event.stopPropagation();
-        if (showInstructorNotificationPopup) {
-            setShowInstructorNotificationPopup(false);
-        }
-        setShowAdminPopup(prev => !prev); 
-    };
-    
-    const handleLogoutClick = () => {
-        setShowAdminPopup(false);
-        setShowLogoutAlert(true);
-    };
+    const toggleSidebar = () => { if (!isSmallScreen) setIsSidebarCollapsed(!isSidebarCollapsed); };
+    const handleUserIconClick = (event) => { event.stopPropagation(); if (showInstructorNotificationPopup) setShowInstructorNotificationPopup(false); setShowAdminPopup(prev => !prev); };
+    const handleLogoutClick = () => { setShowAdminPopup(false); setShowLogoutAlert(true); };
     const handleCloseLogoutAlert = () => setShowLogoutAlert(false);
-
-    const handleConfirmLogout = () => { 
-        setShowLogoutAlert(false);
-        setIsLoading(true);
-        signOut({ callbackUrl: '/api/auth/login' });
-    };
-
-    const handleNavItemClick = (item) => {
-        if (pathname !== item.href) {
-            setNavigatingTo(item.id);
-            router.push(item.href);
-        }
-    };
-
-    const handleToggleInstructorNotificationPopup = (event) => {
-        event.stopPropagation();
-        if (showAdminPopup) {
-            setShowAdminPopup(false);
-        }
-        setShowInstructorNotificationPopup(prev => !prev);
-    };
-    
-    const handleMarkInstructorNotificationAsRead = async (notificationId) => {
-        await notificationService.markNotificationAsRead(notificationId, token);
-        mutateInstructorNotifications(); // Revalidate notifications
-        // After marking as read, also refresh the room page data if the user is on it.
-        if (pathname === '/instructor/room') {
-            router.refresh();
-        }
-    };
-
-    const handleMarkAllInstructorNotificationsAsRead = async () => {
-        const unreadIds = instructorNotifications?.filter(n => !n.read).map(n => n.notificationId) || [];
-        if (unreadIds.length > 0) {
-            await Promise.all(unreadIds.map(id => notificationService.markNotificationAsRead(id, token)));
-            mutateInstructorNotifications();
-            if (pathname === '/instructor/room') {
-                router.refresh();
-            }
-        }
-    };
-
+    const handleConfirmLogout = () => { setShowLogoutAlert(false); setIsLoading(true); signOut({ callbackUrl: '/api/auth/login' }); };
+    const handleNavItemClick = (item) => { if (pathname !== item.href) { setNavigatingTo(item.id); router.push(item.href); } };
+    const handleToggleInstructorNotificationPopup = (event) => { event.stopPropagation(); if (showAdminPopup) setShowAdminPopup(false); setShowInstructorNotificationPopup(prev => !prev); };
+    const handleMarkInstructorNotificationAsRead = async (notificationId) => { await notificationService.markNotificationAsRead(notificationId, token); mutateInstructorNotifications(); if (pathname === '/instructor/room') router.refresh(); };
+    const handleMarkAllInstructorNotificationsAsRead = async () => { const unreadIds = instructorNotifications?.filter(n => !n.read).map(n => n.notificationId) || []; if (unreadIds.length > 0) { await Promise.all(unreadIds.map(id => notificationService.markNotificationAsRead(id, token))); mutateInstructorNotifications(); if (pathname === '/instructor/room') router.refresh(); } };
     const hasUnreadInstructorNotifications = instructorNotifications?.some(n => !n.read);
-
-    const handleProfileNav = (path) => {
-        if (isProfileNavigating) {
-            return;
-        }
-        if (pathname === path) {
-            setShowAdminPopup(false);
-            return;
-        }
-        setIsProfileNavigating(true);
-        router.push(path);
-    };
+    const handleProfileNav = (path) => { if (isProfileNavigating) return; if (pathname === path) { setShowAdminPopup(false); return; } setIsProfileNavigating(true); router.push(path); };
     
     const sidebarWidth = isSidebarCollapsed ? '80px' : '265px';
 
     useEffect(() => {
-        if (typeof window !== 'undefined') {
-            localStorage.setItem('sidebarCollapsed', isSidebarCollapsed);
-        }
-    }, [isSidebarCollapsed]);
-
-    useEffect(() => {
         const handleClickOutside = (event) => {
-            if (showAdminPopup && 
-                adminPopupRef.current && !adminPopupRef.current.contains(event.target) &&
-                userIconRef.current && !userIconRef.current.contains(event.target)) {
-                setShowAdminPopup(false);
-            }
-            if (showInstructorNotificationPopup &&
-                notificationPopupRef.current && !notificationPopupRef.current.contains(event.target) &&
-                notificationIconRef.current && !notificationIconRef.current.contains(event.target)) {
-                setShowInstructorNotificationPopup(false);
-            }
+            if (showAdminPopup && adminPopupRef.current && !adminPopupRef.current.contains(event.target) && userIconRef.current && !userIconRef.current.contains(event.target)) setShowAdminPopup(false);
+            if (showInstructorNotificationPopup && notificationPopupRef.current && !notificationPopupRef.current.contains(event.target) && notificationIconRef.current && !notificationIconRef.current.contains(event.target)) setShowInstructorNotificationPopup(false);
         };
         document.addEventListener('click', handleClickOutside);
         return () => document.removeEventListener('click', handleClickOutside);
     }, [showAdminPopup, showInstructorNotificationPopup]);
 
-    useEffect(() => {
-        if (isProfileNavigating) {
-            setIsProfileNavigating(false);
-        }
-        setNavigatingTo(null);
-    }, [pathname]);
+    useEffect(() => { if (isProfileNavigating) setIsProfileNavigating(false); setNavigatingTo(null); }, [pathname]);
     
     if (isLoading) {
         return (
             <div className="min-h-screen w-screen flex flex-col items-center justify-center bg-[#E0E4F3] text-center p-6">
-                <img 
-                src="https://numregister.com/assets/img/logo/num.png" 
-                alt="University Logo" 
-                className="mx-auto mb-6 w-24 sm:w-28 md:w-32" 
-                />
-                <h1 className={`${moul.className} text-2xl sm:text-3xl font-bold mb-3 text-blue-800`}>
-                សាកលវិទ្យាល័យជាតិគ្រប់គ្រង
-                </h1>
-                <h2 className="text-xl sm:text-2xl font-medium mb-8 text-blue-700">
-                National University of Management
-                </h2>
-                <p className="text-lg sm:text-xl text-gray-700 font-semibold mb-4">
-                Logging out, please wait...
-                </p>
-                <div 
-                className="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-blue-600"
-                role="status"
-                >
-                <span className="sr-only">Loading...</span>
-                </div>
+                <img src="https://numregister.com/assets/img/logo/num.png" alt="University Logo" className="mx-auto mb-6 w-24 sm:w-28 md:w-32" />
+                <h1 className={`${moul.className} text-2xl sm:text-3xl font-bold mb-3 text-blue-800`}>សាកលវិទ្យាល័យជាតិគ្រប់គ្រង</h1>
+                <h2 className="text-xl sm:text-2xl font-medium mb-8 text-blue-700">National University of Management</h2>
+                <p className="text-lg sm:text-xl text-gray-700 font-semibold mb-4">Logging out, please wait...</p>
+                <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-blue-600" role="status"><span className="sr-only">Loading...</span></div>
             </div>
         );
     }
 
     return (
         <div className="flex w-full min-h-screen bg-[#E2E1EF] dark:bg-gray-800">
-            <InstructorSidebar
-                isCollapsed={isSidebarCollapsed}
-                activeItem={activeItem}
-                onNavItemClick={handleNavItemClick}
-                navigatingTo={navigatingTo}
-            />
-            <div
-                className="flex flex-col flex-grow transition-all duration-300 ease-in-out"
-                style={{
-                    marginLeft: sidebarWidth, 
-                    width: `calc(100% - ${sidebarWidth})`,
-                    height: '100vh', 
-                    overflowY: 'auto',
-                }}
-            >
-                <div
-                    className="fixed top-0 bg-white dark:bg-gray-900 shadow-custom-medium p-5 flex justify-between items-center z-30 transition-all duration-300 ease-in-out"
-                    style={{
-                        left: sidebarWidth,
-                        width: `calc(100% - ${sidebarWidth})`,
-                        height: TOPBAR_HEIGHT,
-                    }}
-                >
-                    <InstructorTopbar
-                        onToggleSidebar={toggleSidebar}
-                        isSidebarCollapsed={isSidebarCollapsed}
-                        onUserIconClick={handleUserIconClick}
-                        breadcrumbs={finalBreadcrumbs}
-                        userIconRef={userIconRef}
-                        onNotificationIconClick={handleToggleInstructorNotificationPopup}
-                        notificationIconRef={notificationIconRef}
-                        hasUnreadNotifications={hasUnreadInstructorNotifications}
-                        showToggleButton={!isSmallScreen}
-                    />
+            <InstructorSidebar isCollapsed={isSidebarCollapsed} activeItem={activeItem} onNavItemClick={handleNavItemClick} navigatingTo={navigatingTo} />
+            <div className="flex flex-col flex-grow transition-all duration-300 ease-in-out" style={{ marginLeft: sidebarWidth, width: `calc(100% - ${sidebarWidth})`, height: '100vh', overflowY: 'auto' }}>
+                <div className="fixed top-0 bg-white dark:bg-gray-900 shadow-custom-medium p-5 flex justify-between items-center z-30 transition-all duration-300 ease-in-out" style={{ left: sidebarWidth, width: `calc(100% - ${sidebarWidth})`, height: TOPBAR_HEIGHT }}>
+                    <InstructorTopbar onToggleSidebar={toggleSidebar} isSidebarCollapsed={isSidebarCollapsed} onUserIconClick={handleUserIconClick} breadcrumbs={finalBreadcrumbs} userIconRef={userIconRef} onNotificationIconClick={handleToggleInstructorNotificationPopup} notificationIconRef={notificationIconRef} hasUnreadNotifications={hasUnreadInstructorNotifications} showToggleButton={!isSmallScreen} />
                 </div>
-
                 <div className="flex flex-col flex-grow" style={{ paddingTop: TOPBAR_HEIGHT }}>
-                    <main className="content-area flex-grow p-3 m-6 bg-white dark:bg-gray-900 rounded-lg shadow-md">
-                        {children}
-                    </main>
+                    <main className="content-area flex-grow p-3 m-6 bg-white dark:bg-gray-900 rounded-lg shadow-md">{children}</main>
                     <Footer />
                 </div>
             </div>
-
             <div ref={adminPopupRef}>
-                <InstructorPopup 
-                    show={showAdminPopup} 
-                    onLogoutClick={handleLogoutClick}
-                    isNavigating={isProfileNavigating}
-                    onNavigate={handleProfileNav}
-                    instructorName={profile ? `${profile.firstName} ${profile.lastName}` : 'Instructor'}
-                    instructorEmail={profile?.email || 'instructor@example.com'}
-                />
+                <InstructorPopup show={showAdminPopup} onLogoutClick={handleLogoutClick} isNavigating={isProfileNavigating} onNavigate={handleProfileNav} instructorName={profile ? `${profile.firstName} ${profile.lastName}` : 'Instructor'} instructorEmail={profile?.email || 'instructor@example.com'} />
             </div>
-
             <div ref={notificationPopupRef}>
-                <InstructorNotificationPopup
-                    show={showInstructorNotificationPopup}
-                    notifications={instructorNotifications}
-                    onMarkAllRead={handleMarkAllInstructorNotificationsAsRead}
-                    onMarkAsRead={handleMarkInstructorNotificationAsRead}
-                    anchorRef={notificationIconRef} 
-                />
+                <InstructorNotificationPopup show={showInstructorNotificationPopup} notifications={instructorNotifications} onMarkAllRead={handleMarkAllInstructorNotificationsAsRead} onMarkAsRead={handleMarkInstructorNotificationAsRead} anchorRef={notificationIconRef} />
             </div>
-            
             {showLogoutAlert && (
                 <Suspense fallback={<div className="fixed inset-0 bg-black bg-opacity-50 z-[1002] flex items-center justify-center"><div className="w-10 h-10 border-4 border-t-transparent border-white rounded-full animate-spin"></div></div>}>
-                    <LogoutAlert 
-                        show={showLogoutAlert} 
-                        onClose={handleCloseLogoutAlert} 
-                        onConfirmLogout={handleConfirmLogout} 
-                    />
+                    <LogoutAlert show={showLogoutAlert} onClose={handleCloseLogoutAlert} onConfirmLogout={handleConfirmLogout} />
                 </Suspense>
             )}
         </div>
