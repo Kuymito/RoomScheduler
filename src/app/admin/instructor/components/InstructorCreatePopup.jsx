@@ -12,7 +12,7 @@ const DefaultAvatarIcon = ({ className = "w-full h-full" }) => (
 
 const InstructorCreatePopup = ({ isOpen, onClose, onSave, departments, departmentsError, existingInstructors }) => {
     // Define options for select fields.
-    const qualificationOptions = ['Master', 'PhD', 'Doctor'];
+    const qualificationOptions = ['Master', 'PhD'];
     const majorOptions = useMemo(() => {
         if (!departments) return [];
         return departments.map(dep => dep.name);

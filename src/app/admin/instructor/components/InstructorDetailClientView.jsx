@@ -12,7 +12,7 @@ import axios from 'axios';
 
 
 // --- Options (can be passed as props or kept here) ---
-const degreeOptions = [ 'Master', 'PhD', 'Doctor'];
+const degreeOptions = [ 'Master', 'PhD'];
 
 
 // --- Icon Components ---
