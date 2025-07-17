@@ -51,7 +51,18 @@ export default function InstructorScheduleClientView({ initialScheduleData, inst
         if (!allShifts || allShifts.length === 0) {
             return { TIME_SLOTS: [], ROW_CONFIG: {} };
         }
-        const sortedShifts = [...allShifts].sort((a, b) => a.startTime.localeCompare(b.startTime));
+        // Sort shifts to ensure "Weekend Shift" (7:30) is last.
+        const sortedShifts = [...allShifts].sort((a, b) => {
+            const isAWeekend = a.startTime === '07:30:00';
+            const isBWeekend = b.startTime === '07:30:00';
+
+            if (isAWeekend && !isBWeekend) return 1; // a (weekend) comes after b
+            if (!isAWeekend && isBWeekend) return -1; // b (weekend) comes after a
+            
+            // For all other shifts, sort by start time
+            return a.startTime.localeCompare(b.startTime);
+        });
+
         const timeSlots = sortedShifts.map(shift => `${shift.startTime.slice(0, 5)} - ${shift.endTime.slice(0, 5)}`);
         
         const rowConfig = {};
