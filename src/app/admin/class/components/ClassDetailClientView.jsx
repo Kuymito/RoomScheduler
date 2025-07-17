@@ -164,7 +164,7 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
         return options.sort((a, b) => Number(a) - Number(b));
     }, []);
 
-    const degreesOptions = ['Bachelor', 'Master', 'PhD'];
+    const degreesOptions = ['Master', 'PhD'];
     const shiftOptions = Object.keys(shiftMap);
     const departmentOptions = useMemo(() => allDepartments || [], [allDepartments]);
     const semesterOptions = ['Semester 1', 'Semester 2', 'Semester 3', 'Semester 4', 'Semester 5', 'Semester 6', 'Semester 7', 'Semester 8'];
