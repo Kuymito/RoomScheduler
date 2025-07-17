@@ -73,6 +73,12 @@ export default function InstructorDetailClientView({ initialInstructor, allDepar
             return;
         }
 
+        if (editableInstructorDetails.phone.length < 8 || editableInstructorDetails.phone.length > 15) {
+            setToast({ show: true, message: "Phone number must be between 8 and 15 digits.", type: 'error' });
+            setLoading(false);
+            return;
+        }
+
         const payload = {
             firstName: editableInstructorDetails.firstName,
             lastName: editableInstructorDetails.lastName,
@@ -226,6 +232,18 @@ export default function InstructorDetailClientView({ initialInstructor, allDepar
             if (/^[A-Za-z\s]*$/.test(value)) {
                  setEditableInstructorDetails(prev => ({ ...prev, [name]: value }));
             }
+        } else if (name === 'phone') {
+            if (/^\d*$/.test(value) && value.length <= 15) {
+                setEditableInstructorDetails(prev => ({ ...prev, [name]: value }));
+            }
+        } else if (name === 'major') {
+            if (/^[A-Za-z\s]*$/.test(value)) {
+                setEditableInstructorDetails(prev => ({ ...prev, [name]: value }));
+            }
+        } else if (name === 'address') {
+            if (/^[A-Za-z0-9\s,]*$/.test(value)) {
+                setEditableInstructorDetails(prev => ({ ...prev, [name]: value }));
+            }
         } else {
             setEditableInstructorDetails(prev => ({ ...prev, [name]: value }));
         }
@@ -270,6 +288,7 @@ export default function InstructorDetailClientView({ initialInstructor, allDepar
                 onChange={handleInputChange} 
                 readOnly={!isEditing} 
                 disabled={loading} 
+                minLength={opts.minLength}
                 maxLength={opts.maxLength}
                 className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs text-num-dark-text dark:text-white ${!isEditing ? 'bg-gray-100 dark:bg-gray-800 border-num-gray-light dark:border-gray-700 text-gray-500 dark:text-gray-400' : 'bg-num-content-bg dark:bg-gray-700 border-num-gray-light dark:border-gray-600'}`}
             />
@@ -304,10 +323,10 @@ export default function InstructorDetailClientView({ initialInstructor, allDepar
                 <div className="avatar-card w-[220px] h-[110px] p-3 bg-white border border-num-gray-light dark:bg-gray-800 dark:border-gray-700 shadow-custom-light rounded-lg flex-shrink-0">
                     <div className="avatar-content flex relative">
                         {imagePreviewUrl ? ( <Image src={imagePreviewUrl} alt="Profile Preview" width={56} height={56} className="avatar-img w-14 h-14 rounded-full mr-3 object-cover" /> ) : ( <DefaultAvatarIcon className="avatar-img w-16 h-16 rounded-full mr-3" /> )}
-                        <span className={`avatar-img absolute left-[42px] bottom-[20px] block h-4 w-4 rounded-full border-2 border-white dark:border-gray-800 ${instructorDetails.status === 'active' ? 'bg-green-500' : 'bg-red-500'}`} title={`Status: ${instructorDetails.status}`}></span>
-                        <div className='avatar-info flex flex-col'>
+                        <span className={`avatar-img absolute left-[40px] bottom-[20px] block h-4 w-4 rounded-full border-2 border-white dark:border-gray-800 ${instructorDetails.status === 'active' ? 'bg-green-500' : 'bg-red-500'}`} title={`Status: ${instructorDetails.status}`}></span>
+                        <div className='avatar-info flex flex-col overflow-hidden'>
                             <div className='avatar-name font-semibold text-lg text-black dark:text-white mb-0.5'>
-                                <h2 className="text-sm font-semibold text-gray-900 dark:text-white">{currentData.name}</h2>
+                                <h2 className="text-sm font-semibold text-gray-900 dark:text-white truncate" title={currentData.name}>{currentData.name}</h2>
                                 <p className="text-xs text-gray-500 dark:text-gray-400">Instructor</p>
                             </div>
                             <button type="button" onClick={handleUploadButtonClick} disabled={isUploading || !isEditingGeneral} className="w-full rounded-md mt-2 px-3 py-2 text-xs font-semibold text-white shadow-sm ring-1 ring-inset bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed dark:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600">
@@ -326,14 +345,14 @@ export default function InstructorDetailClientView({ initialInstructor, allDepar
                             {renderTextField("Last Name", "lastName", currentData.lastName, isEditingGeneral, { maxLength: 30 })}
                         </div>
                         <div className="form-row flex gap-3 mb-2 flex-wrap">
-                            {renderTextField("Email", "email", currentData.email, isEditingGeneral, { type: 'email', maxLength: 30 })}
-                            {renderTextField("Phone Number", "phone", currentData.phone, isEditingGeneral, { type: 'tel', maxLength: 15 })}
+                            {renderTextField("Email", "email", currentData.email, isEditingGeneral, { type: 'email', maxLength: 254 })}
+                            {renderTextField("Phone Number", "phone", currentData.phone, isEditingGeneral, { type: 'tel', minLength: 8, maxLength: 15 })}
                         </div>
                         <div className="form-row flex gap-3 mb-2 flex-wrap">
                             {renderTextField("Major", "major", currentData.major, isEditingGeneral, { maxLength: 50 })}
                             {renderSelectField("Degree", "degree", currentData.degree, degreeOptions, isEditingGeneral)}
                         </div>
-                        <div className="form-row flex gap-3 mb-2 flex-wrap">{renderSelectField("Department / Faculty", "department", currentData.department, allDepartments, isEditingGeneral, 'departmentId', 'name')}{renderTextField("Address", "address", currentData.address, isEditingGeneral)}</div>
+                        <div className="form-row flex gap-3 mb-2 flex-wrap">{renderSelectField("Department / Faculty", "department", currentData.department, allDepartments, isEditingGeneral, 'departmentId', 'name')}{renderTextField("Address", "address", currentData.address, isEditingGeneral, { maxLength: 65 })}</div>
                         <div className="form-actions flex justify-end items-center gap-3 mt-4">
                             {isEditingGeneral ? ( <> <button onClick={() => handleCancelClick('general')} className="back-button bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 shadow-custom-light rounded-md text-gray-800 dark:text-white border-none py-2 px-3 font-semibold text-xs cursor-pointer" disabled={loading}>Cancel</button><button onClick={() => handleSaveClick('general')} className="save-button bg-blue-600 hover:bg-blue-700 shadow-custom-light rounded-md text-white border-none py-2 px-3 font-semibold text-xs cursor-pointer" disabled={loading}>{loading ? "Saving..." : "Save Changes"}</button> </> ) : ( <> <button onClick={() => handleEditClick('general')} className="save-button bg-blue-600 hover:bg-blue-700 shadow-custom-light rounded-md text-white border-none py-2 px-3 font-semibold text-xs cursor-pointer" disabled={loading}>Edit Profile</button> </> )}
                         </div>

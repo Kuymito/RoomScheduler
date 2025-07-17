@@ -170,7 +170,7 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
         if (!isEditing) {
             setBackupData(JSON.parse(JSON.stringify(classData)));
             const expectedName = `NUM${classData.generation}-${classData.group}`;
-            setIsNameManuallySet(classData.name !== expectedName);
+            setIsNameManuallySet(classData.name !== expectedName && classData.name !== '');
             setIsEditing(true);
             setToast({ show: false, message: '', type: 'info' });
         }
@@ -185,8 +185,22 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
-        if (name === 'name') setIsNameManuallySet(value !== `NUM${classData.generation}-${classData.group}`);
-        setClassData(prev => ({ ...prev, [name]: value }));
+
+        if (name === 'name') {
+            const hyphenCount = (value.match(/-/g) || []).length;
+            const numberCount = (value.match(/\d/g) || []).length;
+            
+            if (/^[A-Za-z0-9-]*$/.test(value) && hyphenCount <= 1 && numberCount <= 3) {
+                setIsNameManuallySet(value !== '');
+                setClassData(prev => ({ ...prev, [name]: value }));
+            }
+        } else if (name === 'group') {
+            if (/^\d{0,3}$/.test(value)) {
+                setClassData(prev => ({ ...prev, [name]: value }));
+            }
+        } else {
+            setClassData(prev => ({ ...prev, [name]: value }));
+        }
     };
 
     const handleSaveDetails = async () => {
@@ -233,8 +247,10 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
             return;
         }
 
+        const finalClassName = classData.name.trim() || `NUM${classData.generation}-${classData.group}`;
+
         const apiPayload = {
-            className: classData.name,
+            className: finalClassName,
             generation: classData.generation,
             groupName: classData.group,
             major: classData.major,
@@ -253,6 +269,8 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
             setToast({ show: true, message: "Class details have been updated successfully.", type: 'success' });
             setIsEditing(false);
             setBackupData(null);
+            // After saving, update the local state to reflect the final name
+            setClassData(prev => ({ ...prev, name: finalClassName }));
         } catch (err) {
             setToast({ show: true, message: err.message || "Failed to update class.", type: 'error' });
             if (backupData) setClassData(backupData);
@@ -526,7 +544,7 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
                         <div className="section-title font-semibold text-md text-num-dark-text dark:text-white mb-3">General Information</div>
                         <div className="form-row flex gap-3 mb-2 flex-wrap">{renderTextField("Class Name", "name", classData.name, { maxLength: 30 })}</div>
                         <div className="form-row flex gap-3 mb-2 flex-wrap">
-                            {renderTextField("Group", "group", classData.group, { maxLength: 2 })}
+                            {renderTextField("Group", "group", classData.group, { maxLength: 3 })}
                             {renderSelectField("Generation", "generation", classData.generation, generationOptions)}
                         </div>
                         <div className="form-row flex gap-3 mb-2 flex-wrap">

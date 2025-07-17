@@ -8,7 +8,7 @@ import InstructorPopup from 'src/app/instructor/profile/components/InstructorPop
 import Footer from '@/components/Footer';
 import InstructorNotificationPopup from '@/app/instructor/notification/InstructorNotificationPopup';
 import { signOut, useSession } from 'next-auth/react';
-import useSWR, { mutate } from 'swr';
+import useSWR from 'swr';
 import { authService } from '@/services/auth.service';
 import { notificationService } from '@/services/notification.service';
 import { moul } from './fonts';
@@ -90,6 +90,15 @@ export default function InstructorLayout({ children, activeItem, pageTitle, brea
         notificationsFetcher,
         {
             refreshInterval: 5000,
+            onSuccess: (data) => {
+                // Check for new, unread approval notifications.
+                const hasNewApprovals = data?.some(n => !n.read && n.message.toLowerCase().includes('approved'));
+                
+                // If there's a new approval and the user is on the room page, refresh the page's server-side data.
+                if (hasNewApprovals && pathname === '/instructor/room') {
+                    router.refresh();
+                }
+            }
         }
     );
 
@@ -138,8 +147,11 @@ export default function InstructorLayout({ children, activeItem, pageTitle, brea
     
     const handleMarkInstructorNotificationAsRead = async (notificationId) => {
         await notificationService.markNotificationAsRead(notificationId, token);
-        mutateInstructorNotifications();
-        mutate(['/api/v1/schedule', token]);
+        mutateInstructorNotifications(); // Revalidate notifications
+        // After marking as read, also refresh the room page data if the user is on it.
+        if (pathname === '/instructor/room') {
+            router.refresh();
+        }
     };
 
     const handleMarkAllInstructorNotificationsAsRead = async () => {
@@ -147,7 +159,9 @@ export default function InstructorLayout({ children, activeItem, pageTitle, brea
         if (unreadIds.length > 0) {
             await Promise.all(unreadIds.map(id => notificationService.markNotificationAsRead(id, token)));
             mutateInstructorNotifications();
-            mutate(['/api/v1/schedule', token]);
+            if (pathname === '/instructor/room') {
+                router.refresh();
+            }
         }
     };
 

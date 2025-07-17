@@ -117,9 +117,34 @@ const ScheduleClientView = ({
     const [schedules, setSchedules] = useState(initialSchedules);
     const [availableClasses, setAvailableClasses] = useState([]);
     const [isAssigning, setIsAssigning] = useState(false);
-    const [selectedDay, setSelectedDay] = useState(weekdays[0]);
-    const [selectedTime, setSelectedTime] = useState(timeSlots[0]);
-    const [selectedBuilding, setSelectedBuilding] = useState(buildings[0]);
+    
+    // Initialize state from localStorage or default to current day/first slot
+    const [selectedDay, setSelectedDay] = useState(() => {
+        if (typeof window !== 'undefined') {
+            const savedDay = localStorage.getItem('adminSchedule_selectedDay');
+            const dayAbbreviationMap = { 0: 'Su', 1: 'Mo', 2: 'Tu', 3: 'We', 4: 'Th', 5: 'Fr', 6: 'Sa' };
+            const currentDayAbbr = dayAbbreviationMap[new Date().getDay()];
+            return savedDay && weekdays.includes(savedDay) ? savedDay : (weekdays.includes(currentDayAbbr) ? currentDayAbbr : weekdays[0]);
+        }
+        return weekdays[0];
+    });
+
+    const [selectedTime, setSelectedTime] = useState(() => {
+        if (typeof window !== 'undefined') {
+            const savedTime = localStorage.getItem('adminSchedule_selectedTime');
+            return savedTime && timeSlots.includes(savedTime) ? savedTime : timeSlots[0];
+        }
+        return timeSlots[0];
+    });
+    
+    const [selectedBuilding, setSelectedBuilding] = useState(() => {
+        if (typeof window !== 'undefined') {
+            const savedBuilding = localStorage.getItem('adminSchedule_selectedBuilding');
+            return savedBuilding && buildings.includes(savedBuilding) ? savedBuilding : buildings[0];
+        }
+        return buildings[0];
+    });
+    
     const [draggedItem, setDraggedItem] = useState(null);
     const [dragOverCell, setDragOverCell] = useState(null);
     const [warningCellId, setWarningCellId] = useState(null);
@@ -143,6 +168,25 @@ const ScheduleClientView = ({
     useEffect(() => {
         router.refresh();
     }, []);
+    
+    // Effect to save selections to localStorage
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            localStorage.setItem('adminSchedule_selectedDay', selectedDay);
+        }
+    }, [selectedDay]);
+
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            localStorage.setItem('adminSchedule_selectedTime', selectedTime);
+        }
+    }, [selectedTime]);
+    
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            localStorage.setItem('adminSchedule_selectedBuilding', selectedBuilding);
+        }
+    }, [selectedBuilding]);
 
     useEffect(() => {
         setSchedules(initialSchedules);
@@ -367,7 +411,7 @@ const ScheduleClientView = ({
         if (draggedType === 'scheduled' && !targetScheduleInformation) {
             setIsAssigning(true);
             try {
-                const response = await scheduleService.moveSchedule(dragOrigin.scheduleId, targetRoomId, token);
+                const response = await scheduleService.moveScheduleToRoom(dragOrigin.scheduleId, targetRoomId, token);
                 setSchedules(previousState => {
                     const newSchedules = JSON.parse(JSON.stringify(previousState));
                     const classInformation = newSchedules[dragOrigin.day]?.[dragOrigin.time]?.[dragOrigin.roomId];

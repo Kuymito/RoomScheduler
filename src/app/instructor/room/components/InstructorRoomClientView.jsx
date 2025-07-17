@@ -1,19 +1,38 @@
 'use client';
 
-import { useState, useEffect, lazy, Suspense } from "react";
-import { notificationService } from '@/services/notification.service';
+import { useState, useEffect, useMemo, useRef, lazy, Suspense } from "react";
 import { useSession } from 'next-auth/react';
+import useSWR from 'swr';
+import { notificationService } from '@/services/notification.service';
+import { getAllRooms } from '@/services/room.service';
+import { scheduleService } from '@/services/schedule.service';
 import Toast from "@/components/Toast";
+import InstructorRoomPageSkeleton from "./InstructorRoomPageSkeleton";
 
-// Lazy load the modal component. It will now be in a separate JavaScript file.
 const RequestChangeForm = lazy(() => import("./RequestChangeForm"));
 
-// This component now receives all its data as props from the parent server component.
+const roomsFetcher = ([, token]) => getAllRooms(token);
+const schedulesFetcher = ([, token]) => scheduleService.getAllSchedules(token);
+
 export default function InstructorRoomClientView({ initialAllRoomsData, buildingLayout, initialScheduleMap, initialInstructorClasses }) {
-    // --- State Management ---
-    const [allRoomsData] = useState(initialAllRoomsData);
-    const [buildings] = useState(buildingLayout);
-    const [scheduleMap] = useState(initialScheduleMap);
+    const { data: session } = useSession();
+    const token = session?.accessToken;
+
+    const { data: swrRooms, error: roomsError, isLoading: roomsLoading } = useSWR(
+        token ? ['allRooms', token] : null,
+        roomsFetcher,
+        { fallbackData: initialAllRoomsData, revalidateOnFocus: true }
+    );
+
+    const { data: swrSchedules, error: schedulesError, isLoading: schedulesLoading } = useSWR(
+        token ? ['allSchedules', token] : null,
+        schedulesFetcher,
+        { fallbackData: initialScheduleMap, revalidateOnFocus: true }
+    );
+    
+    const [allRoomsData, setAllRoomsData] = useState(initialAllRoomsData);
+    const [buildings, setBuildings] = useState(buildingLayout);
+    const [scheduleMap, setScheduleMap] = useState(initialScheduleMap);
     const [instructorClasses] = useState(initialInstructorClasses);
     
     const [selectedDay, setSelectedDay] = useState(() => new Date().toLocaleDateString('en-US', { weekday: 'long' }));
@@ -23,43 +42,93 @@ export default function InstructorRoomClientView({ initialAllRoomsData, building
     const [selectedBuilding, setSelectedBuilding] = useState(Object.keys(buildingLayout)[0] || "");
     const [selectedRoomId, setSelectedRoomId] = useState(null);
     const [roomDetails, setRoomDetails] = useState(null);
-    const [loading, setLoading] = useState(false);
     const [isFormOpen, setIsFormOpen] = useState(false);
-    const [error, setError] = useState('');
     const [toast, setToast] = useState({ show: false, message: '', type: 'info' });
 
-    const { data: session } = useSession();
+    useEffect(() => {
+        // FIX: Ensure swrRooms is an array before iterating.
+        // The initial data from fallbackData might be an object, while SWR fetches an array.
+        if (Array.isArray(swrRooms)) {
+            const roomsDataMap = {};
+            const populatedLayout = {};
+            swrRooms.forEach(room => {
+                const { roomId, roomName, buildingName, floor, capacity, type, equipment } = room;
+                if (!populatedLayout[buildingName]) populatedLayout[buildingName] = [];
+                let floorObj = populatedLayout[buildingName].find(f => f.floor === floor);
+                if (!floorObj) {
+                    floorObj = { floor, rooms: [] };
+                    populatedLayout[buildingName].push(floorObj);
+                }
+                if (!floorObj.rooms.includes(roomId)) floorObj.rooms.push(roomId);
+                roomsDataMap[roomId] = {
+                    id: roomId, name: roomName, building: buildingName, floor, capacity, type,
+                    equipment: typeof equipment === 'string' ? equipment.split(',').map(e => e.trim()).filter(Boolean) : [],
+                    status: room.status || 'available',
+                };
+            });
+            for (const building in populatedLayout) {
+                populatedLayout[building].sort((a, b) => b.floor - a.floor);
+            }
+            setAllRoomsData(roomsDataMap);
+            setBuildings(populatedLayout);
+        }
+    }, [swrRooms]);
 
-    // --- Event Handlers ---
+    useEffect(() => {
+        // FIX: Ensure swrSchedules is an array before iterating.
+        if (Array.isArray(swrSchedules)) {
+            const shiftNameMap = {
+                '07:00:00': 'Morning Shift', '10:30:00': 'Noon Shift', '14:00:00': 'Afternoon Shift',
+                '17:30:00': 'Evening Shift', '07:30:00': 'Weekend Shift'
+            };
+            const allTimeSlots = Object.values(shiftNameMap);
+            const dayApiToFullName = {
+                 MONDAY: 'Monday', TUESDAY: 'Tuesday', WEDNESDAY: 'Wednesday', THURSDAY: 'Thursday',
+                 FRIDAY: 'Friday', SATURDAY: 'Saturday', SUNDAY: 'Sunday'
+            };
+            const newScheduleMap = {};
+            swrSchedules.forEach(schedule => {
+                if (!schedule || !schedule.dayDetails || !Array.isArray(schedule.dayDetails) || !schedule.shift) return;
+                if (schedule.shift.startTime) {
+                    const timeSlot = shiftNameMap[schedule.shift.startTime];
+                    schedule.dayDetails.forEach(dayDetail => {
+                        const dayName = dayApiToFullName[dayDetail.dayOfWeek.toUpperCase()];
+                        if (dayName && timeSlot) {
+                            if (!newScheduleMap[dayName]) newScheduleMap[dayName] = {};
+                            if (!newScheduleMap[dayName][timeSlot]) newScheduleMap[dayName][timeSlot] = {};
+                            newScheduleMap[dayName][timeSlot][schedule.roomId] = schedule.className;
+                        }
+                    });
+                } else if (schedule.shift.name === 'Booked') {
+                    schedule.dayDetails.forEach(dayDetail => {
+                        const dayName = dayApiToFullName[dayDetail.dayOfWeek.toUpperCase()];
+                        if (dayName) {
+                            if (!newScheduleMap[dayName]) newScheduleMap[dayName] = {};
+                            allTimeSlots.forEach(timeSlot => {
+                                if (!newScheduleMap[dayName][timeSlot]) newScheduleMap[dayName][timeSlot] = {};
+                                newScheduleMap[dayName][timeSlot][schedule.roomId] = schedule.className;
+                            });
+                        }
+                    });
+                }
+            });
+            setScheduleMap(newScheduleMap);
+        }
+    }, [swrSchedules]);
+
     const resetSelection = () => { setSelectedRoomId(null); setRoomDetails(null); };
     const handleDayChange = (day) => { setSelectedDay(day); resetSelection(); };
     const handleTimeChange = (event) => { setSelectedTimeSlot(event.target.value); resetSelection(); };
     const handleBuildingChange = (event) => { setSelectedBuilding(event.target.value); resetSelection(); };
 
-    const handleRoomClick = async (roomId) => {
+    const handleRoomClick = (roomId) => {
         const room = allRoomsData[roomId];
-        const isOccupied = scheduleMap[selectedDay]?.[selectedTimeSlot]?.[roomId];
-        const isUnavailable = room?.status === 'unavailable';
-
-        if (isOccupied || isUnavailable) return;
-
         setSelectedRoomId(roomId);
-        setLoading(true);
-        setRoomDetails(null);
-        setError('');
-        try {
-            if (!room) throw new Error("Room not found");
-            setRoomDetails(room);
-        } catch (err) {
-            setError("Error setting room details.");
-        } finally {
-            setLoading(false);
-        }
+        setRoomDetails(room || null);
     };
 
     const handleRequest = () => { if (roomDetails) setIsFormOpen(true); };
     
-    // This function now handles the API call and shows a toast on success/failure.
     const handleSaveRequest = async (requestData) => {
         if (!session?.accessToken) {
             setToast({ show: true, message: 'Authentication session expired.', type: 'error' });
@@ -67,19 +136,15 @@ export default function InstructorRoomClientView({ initialAllRoomsData, building
         }
         
         try {
-            const payload = {
-                ...requestData,
-                instructorId: session.user.id, // Add instructor ID from session
-            };
+            const payload = { ...requestData, instructorId: session.user.id };
             await notificationService.submitChangeRequest(payload, session.accessToken);
             setToast({ show: true, message: 'Request sent successfully!', type: 'success' });
-            setIsFormOpen(false); // Close the form on success
+            setIsFormOpen(false);
         } catch (err) {
             setToast({ show: true, message: `Request failed: ${err.message}`, type: 'error' });
         }
     };
 
-    // --- Derived Data and Constants ---
     const floors = buildings[selectedBuilding] || [];
     const WEEKDAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
     
@@ -115,6 +180,16 @@ export default function InstructorRoomClientView({ initialAllRoomsData, building
             <div className="w-10 h-10 border-4 border-t-transparent border-white rounded-full animate-spin"></div>
         </div>
     );
+
+    const isRequestDisabled = roomsLoading || schedulesLoading || !roomDetails || roomDetails.status === 'unavailable' || !!scheduleMap[selectedDay]?.[selectedTimeSlot]?.[roomDetails.id];
+    
+    if (roomsLoading || schedulesLoading) {
+        return <InstructorRoomPageSkeleton />;
+    }
+
+    if (roomsError || schedulesError) {
+        return <div className="p-6 text-center text-red-500">Error loading data. Please refresh the page.</div>;
+    }
 
     return (
     <>
@@ -164,8 +239,8 @@ export default function InstructorRoomClientView({ initialAllRoomsData, building
                                     return (
                                         <div 
                                             key={room.id} 
-                                            className={`h-[90px] sm:h-[100px] border rounded-md flex flex-col transition-all duration-150 shadow-sm ${getRoomColSpan(room)} ${isDisabled ? 'cursor-not-allowed bg-slate-50 dark:bg-slate-800/50 opacity-70' : 'cursor-pointer hover:shadow-md bg-white dark:bg-slate-800'} ${isSelected ? "border-blue-500 ring-2 ring-blue-500 dark:border-blue-500" : isDisabled ? "border-slate-200 dark:border-slate-700" : "border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600"}`}
-                                            onClick={() => !isDisabled && handleRoomClick(room.id)}>
+                                            className={`h-[90px] sm:h-[100px] border rounded-md flex flex-col transition-all duration-150 shadow-sm cursor-pointer hover:shadow-md ${getRoomColSpan(room)} ${isDisabled ? 'bg-slate-50 dark:bg-slate-800/50 opacity-70' : 'bg-white dark:bg-slate-800'} ${isSelected ? "border-blue-500 ring-2 ring-blue-500 dark:border-blue-500" : isDisabled ? "border-slate-200 dark:border-slate-700" : "border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600"}`}
+                                            onClick={() => handleRoomClick(room.id)}>
                                             <div className={`h-[30px] rounded-t-md flex items-center justify-center px-2 relative border-b ${isSelected ? 'border-b-transparent' : 'border-slate-200 dark:border-slate-600'} ${isDisabled ? 'bg-slate-100 dark:bg-slate-700/60' : 'bg-slate-50 dark:bg-slate-700'}`}>
                                                 <div className={`absolute left-2 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full ${isSelected ? 'bg-blue-500' : isUnavailable ? 'bg-gray-400' : isOccupied ? 'bg-red-500' : 'bg-green-500'}`}></div>
                                                 <span className={`ml-3 text-xs sm:text-sm font-medium ${isSelected ? 'text-blue-700 dark:text-blue-300' : isDisabled ? 'text-slate-500 dark:text-slate-400' : 'text-slate-700 dark:text-slate-300'}`}>{room.name}</span>
@@ -186,7 +261,7 @@ export default function InstructorRoomClientView({ initialAllRoomsData, building
             <div className="w-full lg:w-[320px] shrink-0">
                 <div className="flex items-center gap-2 mb-3 sm:mb-4"><h3 className="text-sm sm:text-base font-semibold text-slate-700 dark:text-slate-300">Details</h3><hr className="flex-1 border-t border-slate-300 dark:border-slate-700" /></div>
                 <div className="flex flex-col items-start gap-6 w-full min-h-[420px] bg-white dark:bg-slate-800 p-4 rounded-lg shadow-lg">
-                    {loading ? (<div className="text-center text-slate-500 dark:text-slate-400 w-full flex-grow flex items-center justify-center">Loading...</div>) : roomDetails ? (
+                    {roomDetails ? (
                         <>
                             <div className="flex flex-col items-start self-stretch w-full flex-grow overflow-y-auto scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-slate-600 scrollbar-track-slate-100 dark:scrollbar-track-slate-700 pr-1">
                                 <div className="w-full border border-slate-200 dark:border-slate-700 rounded-md bg-white dark:bg-slate-800">
@@ -197,9 +272,9 @@ export default function InstructorRoomClientView({ initialAllRoomsData, building
                                     <div className="flex flex-row items-start self-stretch w-full min-h-[92px]"><div className="flex flex-col justify-center items-start p-3 sm:p-4 w-[120px] pt-5"><span className={textLabelDefault}>Equipment</span></div><div className="flex flex-col justify-center items-start px-2 sm:px-3 flex-1 py-2 pt-3"><span className={`${textValueDefaultDisplay} pt-1`}>{Array.isArray(roomDetails.equipment) ? roomDetails.equipment.join(", ") : ''}</span></div></div>
                                 </div>
                             </div>
-                            <button className="flex flex-row justify-center items-center pyx-3 px-5 sm:px-6 gap-2 w-full h-[48px] sm:h-[50px] bg-green-600 hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600 shadow-md hover:shadow-lg rounded-md text-white font-semibold text-sm sm:text-base self-stretch disabled:opacity-60 transition-all duration-150" onClick={handleRequest} disabled={loading}>{loading ? "Loading..." : "Request"}</button>
+                            <button className="flex flex-row justify-center items-center pyx-3 px-5 sm:px-6 gap-2 w-full h-[48px] sm:h-[50px] bg-green-600 hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600 shadow-md hover:shadow-lg rounded-md text-white font-semibold text-sm sm:text-base self-stretch disabled:opacity-60 disabled:bg-gray-400 disabled:dark:bg-gray-600 disabled:cursor-not-allowed transition-all duration-150" onClick={handleRequest} disabled={isRequestDisabled}>Request</button>
                         </>
-                    ) : ( <div className="text-center text-slate-500 dark:text-slate-400 w-full flex-grow flex items-center justify-center">Select an available room to view details.</div> )}
+                    ) : ( <div className="text-center text-slate-500 dark:text-slate-400 w-full flex-grow flex items-center justify-center">Select a room to view details.</div> )}
                 </div>
             </div>
         </div>

@@ -59,6 +59,7 @@ export default function InstructorClientView({ initialInstructors, initialDepart
     const [sortColumn, setSortColumn] = useState(null);
     const [sortDirection, setSortDirection] = useState('asc');
     const [searchTexts, setSearchTexts] = useState({ name: '', email: '', phone: '', majorStudied: '', qualifications: '' });
+    const [globalSearchTerm, setGlobalSearchTerm] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPageOptions = [5, 10, 20, 50];
     
@@ -189,6 +190,17 @@ export default function InstructorClientView({ initialInstructors, initialDepart
         if (statusFilter !== 'all') {
             data = data.filter(item => item.status === statusFilter);
         }
+
+        // Apply global search term
+        if (globalSearchTerm.trim()) {
+            const lowercasedTerm = globalSearchTerm.toLowerCase().trim();
+            data = data.filter(item => {
+                return Object.values(item).some(value =>
+                    String(value).toLowerCase().includes(lowercasedTerm)
+                );
+            });
+        }
+        
         Object.entries(searchTexts).forEach(([column, searchTerm]) => {
             if (searchTerm) {
                 data = data.filter(item => String(item[column] || '').toLowerCase().includes(String(searchTerm).toLowerCase().trim()));
@@ -204,7 +216,7 @@ export default function InstructorClientView({ initialInstructors, initialDepart
             });
         }
         return data;
-    }, [instructorData, statusFilter, searchTexts, sortColumn, sortDirection]);
+    }, [instructorData, statusFilter, globalSearchTerm, searchTexts, sortColumn, sortDirection]);
 
     const totalPages = Math.ceil(filteredInstructorData.length / itemsPerPage);
     const currentTableData = useMemo(() => {
@@ -264,9 +276,9 @@ export default function InstructorClientView({ initialInstructors, initialDepart
                 <div className="flex items-center gap-2">
                     <input
                         type="text"
-                        placeholder="Search by name..."
-                        value={searchTexts.name}
-                        onChange={(e) => handleSearchChange('name', e.target.value)}
+                        placeholder="Search all columns..."
+                        value={globalSearchTerm}
+                        onChange={(e) => {setGlobalSearchTerm(e.target.value); setCurrentPage(1);}}
                         className="block md:w-72 sm:w-52 w-32 p-2 text-xs font-medium text-gray-900 bg-white border border-gray-200 rounded-lg hover:bg-gray-100 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:hover:text-white dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-600 dark:focus:ring-offset-gray-800"
                     />
                      <div ref={filterMenuRef} className="relative inline-block text-left">
@@ -333,7 +345,15 @@ export default function InstructorClientView({ initialInstructors, initialDepart
                                                     <button onClick={(e) => { e.stopPropagation(); toggleInstructorStatus(data.id); }} className={`p-1 ${data.status === 'active' ? 'text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300' : 'text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300'}`} title={data.status === 'active' ? 'Archive Instructor' : 'Activate Instructor'}><ArchiveIcon className="size-4" /></button>
                                                 </div>
                                             </td>
-                                            <td className="px-6 py-2"><div className="flex items-center gap-2">{data.profileImage ? <img src={data.profileImage} alt={data.name} className="w-8 h-8 rounded-full object-cover border border-gray-200 dark:border-gray-600"/> : <DefaultAvatarIcon className="size-8 rounded-full text-gray-400 bg-gray-100 dark:bg-gray-700 dark:text-gray-500 truncate" />} {data.name}</div></td>
+                                            <td className="px-6 py-2">
+                                                <div className="flex items-center gap-2">
+                                                    {data.profileImage ? 
+                                                        <img src={data.profileImage} alt={data.name} className="w-8 h-8 rounded-full object-cover border border-gray-200 dark:border-gray-600 flex-shrink-0"/> 
+                                                        : <DefaultAvatarIcon className="size-8 rounded-full text-gray-400 bg-gray-100 dark:bg-gray-700 dark:text-gray-500 flex-shrink-0" />
+                                                    } 
+                                                    <span title={data.name}>{data.name}</span>
+                                                </div>
+                                            </td>
                                             <td className="px-6 py-2 sm:table-cell hidden truncate"> {data.email} </td>
                                             <td className="px-6 py-2 lg:table-cell hidden truncate"> {formatPhoneNumber(data.phone)} </td>
                                             <td className="px-6 py-2 truncate"> {data.majorStudied} </td>
@@ -373,7 +393,7 @@ export default function InstructorClientView({ initialInstructors, initialDepart
                 <ul className="inline-flex -space-x-px rtl:space-x-reverse text-xs h-8">
                     <li><button onClick={goToPreviousPage} disabled={currentPage === 1 || isPending} className="flex items-center justify-center px-3 h-8 ms-0 leading-tight text-gray-500 bg-white border border-gray-300 rounded-s-lg hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white disabled:opacity-50 disabled:cursor-not-allowed">Previous</button></li>
                     {getPageNumbers().map((pageNumber) => (
-                        <li key={pageNumber}><button onClick={() => goToPage(pageNumber)} disabled={isPending} className={`flex items-center justify-center px-3 h-8 leading-tight border border-gray-300 ${currentPage === pageNumber ? 'text-blue-600 bg-blue-50 hover:bg-blue-100 hover:text-blue-700 dark:bg-gray-700 dark:text-white' : 'text-gray-500 bg-white hover:bg-gray-100 dark:bg-gray-800 dark:hover:bg-gray-700'} disabled:opacity-50 disabled:cursor-not-allowed`}>{pageNumber}</button></li>
+                        <li key={pageNumber}><button onClick={() => goToPage(pageNumber)} disabled={isPending} className={`flex items-center justify-center px-3 h-8 leading-tight border border-gray-300 dark:border-gray-700 ${currentPage === pageNumber ? 'text-blue-600 bg-blue-50 hover:bg-blue-100 hover:text-blue-700 dark:bg-gray-700 dark:text-white' : 'text-gray-500 bg-white hover:bg-gray-100 dark:bg-gray-800 dark:hover:bg-gray-600'} disabled:opacity-50 disabled:cursor-not-allowed`}>{pageNumber}</button></li>
                     ))}
                     <li><button onClick={goToNextPage} disabled={currentPage === totalPages || isPending} className="flex items-center justify-center px-3 h-8 leading-tight text-gray-500 bg-white border border-gray-300 rounded-e-lg hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white disabled:opacity-50 disabled:cursor-not-allowed">Next</button></li>
                 </ul>

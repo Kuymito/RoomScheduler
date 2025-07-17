@@ -63,7 +63,25 @@ const ClassCreatePopup = ({ isOpen, onClose, onSave, departments, departmentsErr
     // --- Handlers ---
     const handleInputChange = (e) => {
         const { name, value } = e.target;
-        setNewClass(prev => ({ ...prev, [name]: value }));
+
+        if (name === 'className') {
+            const hyphenCount = (value.match(/-/g) || []).length;
+            const numberCount = (value.match(/\d/g) || []).length;
+
+            // Allow only letters, numbers, and a single hyphen.
+            // Also, ensure no more than 3 numbers and 1 hyphen.
+            if (/^[A-Za-z0-9-]*$/.test(value) && hyphenCount <= 1 && numberCount <= 5) {
+                setNewClass(prev => ({ ...prev, [name]: value }));
+            }
+        } else if (name === 'groupName') {
+            // Restrict group name to 3 digits
+            if (/^\d{0,3}$/.test(value)) {
+                setNewClass(prev => ({ ...prev, [name]: value }));
+            }
+        } else {
+            setNewClass(prev => ({ ...prev, [name]: value }));
+        }
+
         if (formError.fields.includes(name)) {
             setFormError({ fields: [], message: '' });
         }
@@ -180,7 +198,7 @@ const ClassCreatePopup = ({ isOpen, onClose, onSave, departments, departmentsErr
                         </div>
                         <div>
                             <label htmlFor="groupName" className="block text-xs font-medium text-gray-700 dark:text-gray-300">Group</label>
-                            <input type="number" id="groupName" name="groupName" value={newClass.groupName} onChange={handleInputChange} className={`mt-1 block w-full p-2 text-xs border rounded-md shadow-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white ${getErrorClass('groupName')}`} placeholder="01" required maxLength="3" />
+                            <input type="text" id="groupName" name="groupName" value={newClass.groupName} onChange={handleInputChange} className={`mt-1 block w-full p-2 text-xs border rounded-md shadow-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white ${getErrorClass('groupName')}`} placeholder="01" required pattern="\d{1,3}" />
                         </div>
                         <div>
                             <label htmlFor="degree" className="block text-xs font-medium text-gray-700 dark:text-gray-300">Degree</label>

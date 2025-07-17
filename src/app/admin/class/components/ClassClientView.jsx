@@ -87,6 +87,7 @@ export default function ClassClientView({ initialClasses, initialDepartments, in
     const [sortColumn, setSortColumn] = useState(null);
     const [sortDirection, setSortDirection] = useState('asc');
     const [searchTexts, setSearchTexts] = useState({ name: '', generation: '', group: '', major: '', degrees: '', faculty: '', semester: '', shift: '' });
+    const [globalSearchTerm, setGlobalSearchTerm] = useState(''); // New state for the global search
 
     useEffect(() => {
         if (typeof window !== 'undefined') {
@@ -204,6 +205,8 @@ export default function ClassClientView({ initialClasses, initialDepartments, in
 
     const filteredAndSortedData = useMemo(() => {
         let dataToProcess = [...classData];
+        
+        // Apply status filters first
         if (statusFilter !== 'all') {
             dataToProcess = dataToProcess.filter(item => item.status.toLowerCase() === statusFilter);
         }
@@ -216,11 +219,25 @@ export default function ClassClientView({ initialClasses, initialDepartments, in
         if (unassignedClassFilter) {
             dataToProcess = dataToProcess.filter(item => item.unassigned);
         }
+
+        // Apply global search term
+        if (globalSearchTerm.trim()) {
+            const lowercasedTerm = globalSearchTerm.toLowerCase().trim();
+            dataToProcess = dataToProcess.filter(item => {
+                return Object.values(item).some(value =>
+                    String(value).toLowerCase().includes(lowercasedTerm)
+                );
+            });
+        }
+
+        // Apply per-column search terms from the footer
         Object.entries(searchTexts).forEach(([column, searchTerm]) => {
             if (searchTerm) {
                 dataToProcess = dataToProcess.filter(item => String(item[column] || '').toLowerCase().includes(String(searchTerm).toLowerCase().trim()));
             }
         });
+
+        // Apply sorting
         if (sortColumn) {
             dataToProcess.sort((a, b) => {
                 const aVal = a[sortColumn];
@@ -233,7 +250,7 @@ export default function ClassClientView({ initialClasses, initialDepartments, in
             });
         }
         return dataToProcess;
-    }, [classData, statusFilter, onlineClassFilter, expiredClassFilter, unassignedClassFilter, searchTexts, sortColumn, sortDirection]);
+    }, [classData, statusFilter, onlineClassFilter, expiredClassFilter, unassignedClassFilter, globalSearchTerm, searchTexts, sortColumn, sortDirection]);
 
     const totalPages = Math.ceil(filteredAndSortedData.length / itemsPerPage);
     const currentTableData = useMemo(() => {
@@ -292,7 +309,13 @@ export default function ClassClientView({ initialClasses, initialDepartments, in
             <hr className="border-t border-slate-300 dark:border-slate-700 mt-4 mb-4" />
             <div className="flex items-center justify-between mt-2 mb-4 gap-2">
                 <div className="flex items-center gap-2">
-                    <input type="text" placeholder="Search by name..." value={searchTexts.name} onChange={(e) => handleSearchChange('name', e.target.value)} className="block md:w-72 sm:w-52 w-32 p-2 text-xs font-medium text-gray-900 bg-white border border-gray-200 rounded-lg hover:bg-gray-100 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:hover:text-white dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-600 dark:focus:ring-offset-gray-800"/>
+                    <input 
+                        type="text" 
+                        placeholder="Search all columns..." 
+                        value={globalSearchTerm} 
+                        onChange={(e) => { setGlobalSearchTerm(e.target.value); setCurrentPage(1); }} 
+                        className="block md:w-72 sm:w-52 w-32 p-2 text-xs font-medium text-gray-900 bg-white border border-gray-200 rounded-lg hover:bg-gray-100 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:hover:text-white dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-600 dark:focus:ring-offset-gray-800"
+                    />
                     <div ref={filterMenuRef} className="relative inline-block text-left">
                         <div>
                             <button type="button" onClick={() => setIsFilterMenuOpen(!isFilterMenuOpen)} className="inline-flex justify-center w-full rounded-lg border border-gray-300 shadow-sm px-4 py-1.5 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-600 dark:bg-gray-700 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-600 dark:focus:ring-offset-gray-800" id="menu-button" aria-expanded="true" aria-haspopup="true">
@@ -362,7 +385,7 @@ export default function ClassClientView({ initialClasses, initialDepartments, in
                         {currentTableData.length > 0 ? currentTableData.map((data) => ( 
                             <tr key={data.id} className={`bg-white border-b border-gray-200 dark:bg-gray-800 dark:border-gray-700 ${(isPending && rowLoadingId === data.id) ? 'cursor-wait bg-gray-100 dark:bg-gray-700' : 'hover:bg-gray-50 dark:hover:bg-gray-600 cursor-pointer'}`} onClick={() => handleRowClick(data.id)}>
                                 {isPending && rowLoadingId === data.id ? (
-                                    <td colSpan={10} className="px-6 py-3 text-center"><div className="flex justify-center items-center h-6"><Spinner /></div></td>
+                                    <td colSpan={10} className="px-6 py-2.5 text-center"><div className="flex justify-center items-center h-6"><Spinner /></div></td>
                                 ) : (
                                     <>
                                         <td className="px-6 py-2.5 font-medium text-gray-900 whitespace-nowrap dark:text-white md:table-cell hidden">
@@ -371,14 +394,24 @@ export default function ClassClientView({ initialClasses, initialDepartments, in
                                                 <button onClick={(e) => { e.stopPropagation(); toggleClassStatus(data.id); }} className={`p-1 ${data.status.toLowerCase() === 'active' ? 'text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300' : 'text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300'}`} title={data.status.toLowerCase() === 'active' ? 'Archive Classroom' : 'Activate Classroom'}><ArchiveIcon className="size-4" /></button>
                                             </div>
                                         </td>
-                                        <td className="px-6 py-2 truncate"> {data.name} </td>
-                                        <td className="px-6 py-2 lg:table-cell hidden truncate"> {data.generation} </td>
-                                        <td className="px-6 py-2 lg:table-cell hidden truncate"> {data.group} </td>
-                                        <td className="px-6 py-2 truncate"> {data.major} </td>
-                                        <td className="px-6 py-2 truncate"> {data.degrees} </td>
-                                        <td className="px-6 py-2 2xl:table-cell hidden truncate"> {data.faculty} </td>
-                                        <td className="px-6 py-2 2xl:table-cell hidden truncate"> {data.semester} </td>
-                                        <td className="px-6 py-2 sm:table-cell hidden truncate"> {data.shift} </td>
+                                        <td className="px-6 py-2">
+                                            <span className="truncate block" title={data.name}>{data.name}</span>
+                                        </td>
+                                        <td className="px-6 py-2 lg:table-cell hidden"> {data.generation} </td>
+                                        <td className="px-6 py-2 lg:table-cell hidden"> {data.group} </td>
+                                        <td className="px-6 py-2">
+                                            <span className="truncate block" title={data.major}>{data.major}</span>
+                                        </td>
+                                        <td className="px-6 py-2">
+                                            <span className="truncate block" title={data.degrees}>{data.degrees}</span>
+                                        </td>
+                                        <td className="px-6 py-2 2xl:table-cell hidden">
+                                            <span className="truncate block" title={data.faculty}>{data.faculty}</span>
+                                        </td>
+                                        <td className="px-6 py-2 2xl:table-cell hidden"> {data.semester} </td>
+                                        <td className="px-6 py-2 sm:table-cell hidden">
+                                            <span className="truncate block" title={data.shift}>{data.shift}</span>
+                                        </td>
                                         <td className="px-6 py-2 capitalize"><span className={`px-2 py-0.5 rounded-full text-xs font-medium ${data.status.toLowerCase() === 'active' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'}`}>{data.status}</span></td>
                                     </>
                                 )}
@@ -432,7 +465,7 @@ export default function ClassClientView({ initialClasses, initialDepartments, in
                 <ul className="inline-flex -space-x-px rtl:space-x-reverse text-xs h-8">
                     <li><button onClick={goToPreviousPage} disabled={currentPage === 1 || isPending} className="flex items-center justify-center px-3 h-8 ms-0 leading-tight text-gray-500 bg-white border border-gray-300 rounded-s-lg hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white disabled:opacity-50 disabled:cursor-not-allowed">Previous</button></li>
                     {getPageNumbers().map((pageNumber) => (
-                        <li key={pageNumber}><button onClick={() => goToPage(pageNumber)} disabled={isPending} className={`flex items-center justify-center px-3 h-8 leading-tight border border-gray-300 ${currentPage === pageNumber ? 'text-blue-600 bg-blue-50 hover:bg-blue-100 hover:text-blue-700 dark:bg-gray-700 dark:text-white' : 'text-gray-500 bg-white hover:bg-gray-100 dark:bg-gray-800 dark:hover:bg-gray-700'} disabled:opacity-50 disabled:cursor-not-allowed`}>{pageNumber}</button></li>
+                        <li key={pageNumber}><button onClick={() => goToPage(pageNumber)} disabled={isPending} className={`flex items-center justify-center px-3 h-8 leading-tight border border-gray-300 dark:border-gray-700 ${currentPage === pageNumber ? 'text-blue-600 bg-blue-50 hover:bg-blue-100 hover:text-blue-700 dark:bg-gray-700 dark:text-white' : 'text-gray-500 bg-white hover:bg-gray-100 dark:bg-gray-800 dark:hover:bg-gray-600'} disabled:opacity-50 disabled:cursor-not-allowed`}>{pageNumber}</button></li>
                     ))}
                     <li><button onClick={goToNextPage} disabled={currentPage === totalPages || isPending} className="flex items-center justify-center px-3 h-8 leading-tight text-gray-500 bg-white border border-gray-300 rounded-e-lg hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white disabled:opacity-50 disabled:cursor-not-allowed">Next</button></li>
                 </ul>
@@ -451,9 +484,9 @@ export default function ClassClientView({ initialClasses, initialDepartments, in
                         onClose={() => setShowCreatePopup(false)} 
                         onSave={handleSaveNewClass}
                         departments={departments || []}
-                        departmentsError={!!departmentsError}
+                        departmentsError={departmentsError}
                         majors={majors || []}
-                        majorsError={!!majorsError}
+                        majorsError={majorsError}
                         existingClasses={classData}
                     />
                 </Suspense>

@@ -50,6 +50,12 @@ const fetchScheduleData = async () => {
           getAllShifts(token)
       ]);
 
+      // Filter out the long weekend shift so it doesn't create a row in the table.
+      const filteredShiftsForTable = allShifts.filter(shift => shift.startTime !== '07:30:00');
+      
+      // Define the standard time slots that a weekend class should occupy.
+      const WEEKDAY_TIME_SLOTS = filteredShiftsForTable.map(s => `${s.startTime.slice(0, 5)} - ${s.endTime.slice(0, 5)}`);
+
       const apiSchedules = Array.isArray(apiSchedulesResponse) ? apiSchedulesResponse : (apiSchedulesResponse.payload || []);
 
       const scheduleData = {};
@@ -64,25 +70,39 @@ const fetchScheduleData = async () => {
               console.warn('Skipping malformed schedule entry:', schedule);
               return;
           }
-
-          const timeSlotKey = `${schedule.shift.startTime.slice(0, 5)} - ${schedule.shift.endTime.slice(0, 5)}`;
           
-          const days = schedule.dayDetails.map(dayDetail => dayDetail.dayOfWeek.toUpperCase());
-          
+          // A weekend shift is identified by its specific start time.
+          const isWeekendShift = schedule.shift.startTime === '07:30:00';
           const academicYear = mapGenerationToYear(schedule.year);
 
-          days.forEach(dayString => {
-              const formattedDay = dayString.charAt(0) + dayString.slice(1).toLowerCase();
-              const dayDetail = schedule.dayDetails.find(d => d.dayOfWeek.toUpperCase() === dayString);
+          const classInfo = {
+              subject: schedule.className,
+              year: academicYear ? `Year ${academicYear}` : 'Year N/A',
+              semester: schedule.semester,
+              room: schedule.roomName,
+          };
+
+          schedule.dayDetails.forEach(dayDetail => {
+              const formattedDay = dayDetail.dayOfWeek.charAt(0) + dayDetail.dayOfWeek.slice(1).toLowerCase();
               if (scheduleData[formattedDay]) {
-                  scheduleData[formattedDay][timeSlotKey] = {
-                      subject: schedule.className,
-                      year: academicYear ? `Year ${academicYear}` : 'Year N/A', 
-                      semester: schedule.semester,
-                      timeDisplay: timeSlotKey,
-                      room: schedule.roomName,
-                      isOnline: dayDetail ? dayDetail.online : false
-                  };
+                  if (isWeekendShift) {
+                      // For weekend shifts, add the class to all standard time slots for that day.
+                      WEEKDAY_TIME_SLOTS.forEach(slot => {
+                          scheduleData[formattedDay][slot] = {
+                              ...classInfo,
+                              timeDisplay: slot, // Display the specific slot time
+                              isOnline: dayDetail.online,
+                          };
+                      });
+                  } else {
+                      // For regular shifts, add it to its specific time slot.
+                      const timeSlotKey = `${schedule.shift.startTime.slice(0, 5)} - ${schedule.shift.endTime.slice(0, 5)}`;
+                      scheduleData[formattedDay][timeSlotKey] = {
+                          ...classInfo,
+                          timeDisplay: timeSlotKey,
+                          isOnline: dayDetail.online,
+                      };
+                  }
               }
           });
       });
@@ -92,7 +112,8 @@ const fetchScheduleData = async () => {
           publicDate: new Date().toISOString().slice(0, 19).replace('T', ' ')
       };
 
-      return { scheduleData, instructorDetails, allShifts };
+      // Pass the filtered shifts to the client component to build the table rows.
+      return { scheduleData, instructorDetails, allShifts: filteredShiftsForTable };
 
   } catch (error) {
       console.error("Failed to fetch instructor schedule:", error.message);
