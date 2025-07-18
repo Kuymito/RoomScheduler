@@ -2,11 +2,16 @@
 
 import React, { useState, useMemo, useEffect, useRef, lazy, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
-import { scheduleService } from '@/services/schedule.service';
 import { useSession } from 'next-auth/react';
+import useSWR from 'swr';
+import { scheduleService } from '@/services/schedule.service';
+import { classService } from '@/services/class.service';
+import { getAllRooms } from '@/services/room.service';
 import Toast from '@/components/Toast';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import ClassListSkeleton from './ClassListSkeleton';
+import ScheduleGridSkeleton from './ScheduleGridSkeleton';
 
 const ConfirmationModal = lazy(() => import('./ConfirmationModal'));
 
@@ -99,50 +104,190 @@ const RoomCard = React.memo(({ room, classData, isDragOver, isWarning, dragHandl
 });
 RoomCard.displayName = 'RoomCard';
 
+// --- SWR Fetcher ---
+const schedulePageFetcher = async ([, token]) => {
+    const [classes, rooms, schedules] = await Promise.all([
+        classService.getAllClasses(token),
+        getAllRooms(token),
+        scheduleService.getAllSchedules(token)
+    ]);
+    return { classes, rooms, schedules };
+};
 
 // --- Main Component ---
-
-const ScheduleClientView = ({
-    initialClasses,
-    initialRooms,
-    initialSchedules,
-    buildingLayout,
-    constants
-}) => {
+const ScheduleClientView = () => {
     const { data: session } = useSession();
     const token = session?.accessToken;
-    const { degrees, generations, buildings, weekdays, timeSlots } = constants;
     const router = useRouter();
+
+    const { data, error, isLoading, mutate } = useSWR(
+        token ? ['schedulePageData', token] : null,
+        schedulePageFetcher
+    );
+
+    const { initialClasses, initialRooms, initialSchedules, buildingLayout, constants } = useMemo(() => {
+        if (!data) {
+            return { 
+                initialClasses: [], 
+                initialRooms: [], 
+                initialSchedules: {}, 
+                buildingLayout: {}, 
+                constants: {
+                    degrees: [],
+                    generations: [],
+                    buildings: [],
+                    weekdays: ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'],
+                    timeSlots: ['Morning Shift', 'Noon Shift', 'Afternoon Shift', 'Evening Shift', 'Weekend Shift']
+                } 
+            };
+        }
+        const { classes, rooms, schedules } = data;
+
+        const UNAVAILABLE_ROOM_IDS = new Set([1, 2, 3, 35, 36, 37, 38, 47, 48, 49, 50, 51, 53, 54, 55]);
+
+        const mapGenerationToYear = (generation) => {
+            if (!generation) return null;
+            const genNumber = parseInt(generation, 10);
+            if (isNaN(genNumber)) return null;
+            const BASE_GENERATION = 34;
+            const BASE_YEAR = 2025;
+            const currentYear = new Date().getFullYear();
+            const currentFirstYearGeneration = BASE_GENERATION + (currentYear - BASE_YEAR);
+            const academicYear = currentFirstYearGeneration - genNumber + 1;
+            return academicYear > 0 ? academicYear : null;
+        };
+
+        const timeSlotsList = ['Morning Shift', 'Noon Shift', 'Afternoon Shift', 'Evening Shift', 'Weekend Shift'];
+        const consts = {
+            degrees: [...new Set(classes.map(c => c.degreeName))].filter(Boolean),
+            generations: [...new Set(classes.map(c => c.generation))].filter(Boolean),
+            buildings: [...new Set(rooms.map(r => r.buildingName))].filter(Boolean),
+            weekdays: ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'],
+            timeSlots: timeSlotsList
+        };
+
+        const shiftNameMap = {
+            '07:00:00': 'Morning Shift', '10:30:00': 'Noon Shift', '14:00:00': 'Afternoon Shift',
+            '17:30:00': 'Evening Shift', '07:30:00': 'Weekend Shift'
+        };
+
+        const dayApiToAbbrMap = {
+            MONDAY: 'Mo', TUESDAY: 'Tu', WEDNESDAY: 'We', THURSDAY: 'Th',
+            FRIDAY: 'Fr', SATURDAY: 'Sa', SUNDAY: 'Su'
+        };
+
+        const transformedClasses = classes.map(cls => {
+            const newCls = { ...cls };
+            if (newCls.shift && newCls.shift.startTime) {
+                newCls.shift.name = shiftNameMap[newCls.shift.startTime] || 'Unknown Shift';
+            }
+            if (newCls.dailySchedule && !newCls.dayDetails) {
+                newCls.dayDetails = Object.entries(newCls.dailySchedule).map(([day, details]) => ({
+                    dayOfWeek: day,
+                    instructorName: `${details.instructor.firstName} ${details.instructor.lastName}`,
+                    online: details.online
+                }));
+            }
+            return newCls;
+        });
+
+        const scheduleMap = {};
+        schedules.forEach(schedule => {
+            if (!schedule.roomId || schedule.roomName === "Unassigned" || !schedule.dayDetails || !Array.isArray(schedule.dayDetails) || !schedule.shift) {
+                return;
+            }
+            if (schedule.shift.startTime) {
+                const timeSlotName = shiftNameMap[schedule.shift.startTime];
+                if (timeSlotName) {
+                    schedule.dayDetails.forEach(dayDetail => {
+                        const dayAbbr = dayApiToAbbrMap[dayDetail.dayOfWeek.toUpperCase()];
+                        if (dayAbbr) {
+                            if (!scheduleMap[dayAbbr]) scheduleMap[dayAbbr] = {};
+                            if (!scheduleMap[dayAbbr][timeSlotName]) scheduleMap[dayAbbr][timeSlotName] = {};
+                            const academicYear = mapGenerationToYear(schedule.year);
+                            scheduleMap[dayAbbr][timeSlotName][schedule.roomId] = {
+                                classId: schedule.classId,
+                                scheduleId: schedule.scheduleId,
+                                className: schedule.className,
+                                majorName: schedule.majorName,
+                                year: academicYear ? `Year ${academicYear}` : 'Year N/A',
+                                temporaryRoomId: schedule.temporaryRoomId,
+                                temporaryRoomName: schedule.temporaryRoomName
+                            };
+                        }
+                    });
+                }
+            } else if (schedule.shift.name === 'Booked') {
+                schedule.dayDetails.forEach(dayDetail => {
+                    const dayAbbr = dayApiToAbbrMap[dayDetail.dayOfWeek.toUpperCase()];
+                    if (dayAbbr) {
+                        if (!scheduleMap[dayAbbr]) scheduleMap[dayAbbr] = {};
+                        timeSlotsList.forEach(timeSlot => {
+                            if (!scheduleMap[dayAbbr][timeSlot]) {
+                                scheduleMap[dayAbbr][timeSlot] = {};
+                            }
+                            scheduleMap[dayAbbr][timeSlot][schedule.roomId] = {
+                                classId: null,
+                                scheduleId: null,
+                                className: schedule.className,
+                                majorName: "Booking",
+                                year: "N/A"
+                            };
+                        });
+                    }
+                });
+            }
+        });
+
+        const bLayout = {};
+        rooms.forEach(room => {
+            const roomWithStatus = {
+                ...room,
+                status: UNAVAILABLE_ROOM_IDS.has(room.roomId) ? 'unavailable' : 'available'
+            };
+            if (!bLayout[room.buildingName]) bLayout[room.buildingName] = {};
+            if (!bLayout[room.buildingName][room.floor]) bLayout[room.buildingName][room.floor] = [];
+            bLayout[room.buildingName][room.floor].push(roomWithStatus);
+        });
+
+        return {
+            initialClasses: transformedClasses,
+            initialRooms: rooms,
+            initialSchedules: scheduleMap,
+            buildingLayout: bLayout,
+            constants: consts
+        };
+    }, [data]);
 
     const [schedules, setSchedules] = useState(initialSchedules);
     const [availableClasses, setAvailableClasses] = useState([]);
     const [isAssigning, setIsAssigning] = useState(false);
     
-    // Initialize state from localStorage or default to current day/first slot
     const [selectedDay, setSelectedDay] = useState(() => {
         if (typeof window !== 'undefined') {
             const savedDay = localStorage.getItem('adminSchedule_selectedDay');
+            const weekdays = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
             const dayAbbreviationMap = { 0: 'Su', 1: 'Mo', 2: 'Tu', 3: 'We', 4: 'Th', 5: 'Fr', 6: 'Sa' };
             const currentDayAbbr = dayAbbreviationMap[new Date().getDay()];
             return savedDay && weekdays.includes(savedDay) ? savedDay : (weekdays.includes(currentDayAbbr) ? currentDayAbbr : weekdays[0]);
         }
-        return weekdays[0];
+        return 'Mo';
     });
 
     const [selectedTime, setSelectedTime] = useState(() => {
         if (typeof window !== 'undefined') {
+            const timeSlots = ['Morning Shift', 'Noon Shift', 'Afternoon Shift', 'Evening Shift', 'Weekend Shift'];
             const savedTime = localStorage.getItem('adminSchedule_selectedTime');
             return savedTime && timeSlots.includes(savedTime) ? savedTime : timeSlots[0];
         }
-        return timeSlots[0];
+        return 'Morning Shift';
     });
     
     const [selectedBuilding, setSelectedBuilding] = useState(() => {
         if (typeof window !== 'undefined') {
-            const savedBuilding = localStorage.getItem('adminSchedule_selectedBuilding');
-            return savedBuilding && buildings.includes(savedBuilding) ? savedBuilding : buildings[0];
+            return localStorage.getItem('adminSchedule_selectedBuilding') || "";
         }
-        return buildings[0];
+        return "";
     });
     
     const [draggedItem, setDraggedItem] = useState(null);
@@ -168,8 +313,35 @@ const ScheduleClientView = ({
     useEffect(() => {
         router.refresh();
     }, []);
+
+    useEffect(() => {
+        if (typeof window !== 'undefined' || !token) return;
+
+        const channel = new BroadcastChannel('data_update_channel');
+
+        const handleMessage = (event) => {
+            if (event.data && event.data.type === 'DATA_UPDATED') {
+                console.log('Data update event received. Revalidating schedule data...');
+                mutate();
+            }
+        };
+
+        channel.addEventListener('message', handleMessage);
+
+        return () => {
+            channel.removeEventListener('message', handleMessage);
+            channel.close();
+        };
+    }, [mutate, token]);
+
+    useEffect(() => {
+        if (constants && constants.buildings && constants.buildings.length > 0) {
+            if (!selectedBuilding || !constants.buildings.includes(selectedBuilding)) {
+                setSelectedBuilding(constants.buildings[0]);
+            }
+        }
+    }, [constants.buildings, selectedBuilding]);
     
-    // Effect to save selections to localStorage
     useEffect(() => {
         if (typeof window !== 'undefined') {
             localStorage.setItem('adminSchedule_selectedDay', selectedDay);
@@ -242,12 +414,12 @@ const ScheduleClientView = ({
                 if (aMatches && !bMatches) return -1;
                 if (!aMatches && bMatches) return 1;
             }
-            const indexA = timeSlots.indexOf(shiftA);
-            const indexB = timeSlots.indexOf(shiftB);
+            const indexA = constants.timeSlots.indexOf(shiftA);
+            const indexB = constants.timeSlots.indexOf(shiftB);
             if (indexA !== indexB) return indexA - indexB;
             return classA.className.localeCompare(classB.className);
         });
-    }, [availableClasses, selectedDay, selectedTime, selectedDegree, selectedGeneration, searchTerm, timeSlots, dayApiToAbbreviationMap]);
+    }, [availableClasses, selectedDay, selectedTime, selectedDegree, selectedGeneration, searchTerm, constants.timeSlots, dayApiToAbbreviationMap]);
 
     const groupedClassesByShift = useMemo(() => {
         const groups = {};
@@ -260,10 +432,10 @@ const ScheduleClientView = ({
     }, [allFilteredAndSortedClasses]);
 
     const orderedTimeSlots = useMemo(() => {
-        if (selectedTime === 'All') return timeSlots;
-        const otherTimes = timeSlots.filter(slot => slot !== selectedTime);
+        if (selectedTime === 'All') return constants.timeSlots;
+        const otherTimes = constants.timeSlots.filter(slot => slot !== selectedTime);
         return [selectedTime, ...otherTimes];
-    }, [selectedTime, timeSlots]);
+    }, [selectedTime, constants.timeSlots]);
 
     const getClassForRoom = (roomId) => {
         return schedules[selectedDay]?.[selectedTime]?.[roomId] || null;
@@ -290,7 +462,7 @@ const ScheduleClientView = ({
     };
 
     const handleUnassign = async (draggedItemPayload) => {
-        const { item: scheduledClassInfo, origin } = draggedItemPayload;
+        const { origin } = draggedItemPayload;
         if (!origin || !origin.scheduleId) {
             showToast("Cannot unassign: Schedule ID is missing.", 'error');
             return;
@@ -300,20 +472,12 @@ const ScheduleClientView = ({
         setIsAssigning(true);
         try {
             await scheduleService.unassignRoomFromClass(origin.scheduleId, token);
-            
-            setSchedules(previousSchedules => {
-                const newSchedules = JSON.parse(JSON.stringify(previousSchedules));
-                if (newSchedules[origin.day]?.[origin.time]?.[origin.roomId]) {
-                    delete newSchedules[origin.day][origin.time][origin.roomId];
-                }
-                return newSchedules;
-            });
-
-            const fullClassDetails = initialClasses.find(c => c.classId === scheduledClassInfo.classId);
-            if (fullClassDetails) {
-                setAvailableClasses(prev => [...prev, fullClassDetails]);
+            mutate();
+            if (typeof window !== 'undefined') {
+                const channel = new BroadcastChannel('data_update_channel');
+                channel.postMessage({ type: 'DATA_UPDATED' });
+                channel.close();
             }
-
             showToast("Class unassigned successfully.", 'success');
         } catch (error) {
             showToast(`Failed to unassign class: ${error.message}`, 'error');
@@ -411,21 +575,13 @@ const ScheduleClientView = ({
         if (draggedType === 'scheduled' && !targetScheduleInformation) {
             setIsAssigning(true);
             try {
-                const response = await scheduleService.moveScheduleToRoom(dragOrigin.scheduleId, targetRoomId, token);
-                setSchedules(previousState => {
-                    const newSchedules = JSON.parse(JSON.stringify(previousState));
-                    const classInformation = newSchedules[dragOrigin.day]?.[dragOrigin.time]?.[dragOrigin.roomId];
-                    if (classInformation) {
-                        delete newSchedules[dragOrigin.day][dragOrigin.time][dragOrigin.roomId];
-                        if (!newSchedules[selectedDay]) newSchedules[selectedDay] = {};
-                        if (!newSchedules[selectedDay][selectedTime]) newSchedules[selectedDay][selectedTime] = {};
-                        newSchedules[selectedDay][selectedTime][targetRoomId] = {
-                            ...classInformation,
-                            ...response.payload, 
-                        };
-                    }
-                    return newSchedules;
-                });
+                await scheduleService.moveScheduleToRoom(dragOrigin.scheduleId, targetRoomId, token);
+                mutate();
+                if (typeof window !== 'undefined') {
+                    const channel = new BroadcastChannel('data_update_channel');
+                    channel.postMessage({ type: 'DATA_UPDATED' });
+                    channel.close();
+                }
                 showToast("Class moved successfully!", 'success');
             } catch (error) {
                 showToast(`Move failed: ${error.message}`, 'error');
@@ -448,18 +604,12 @@ const ScheduleClientView = ({
             try {
                 const payload = { classId: draggedClass.classId, roomId: targetRoomId };
                 const response = await scheduleService.assignRoomToClass(payload, token);
-                setSchedules(previousState => {
-                    const newSchedules = JSON.parse(JSON.stringify(previousState));
-                    if (!newSchedules[selectedDay]) newSchedules[selectedDay] = {};
-                    if (!newSchedules[selectedDay][selectedTime]) newSchedules[selectedDay][selectedTime] = {};
-                    newSchedules[selectedDay][selectedTime][targetRoomId] = {
-                        ...response.payload,
-                        className: draggedClass.className,
-                        majorName: draggedClass.majorName,
-                    };
-                    return newSchedules;
-                });
-                setAvailableClasses(prev => prev.filter(cls => cls.classId !== draggedClass.classId));
+                mutate();
+                if (typeof window !== 'undefined') {
+                    const channel = new BroadcastChannel('data_update_channel');
+                    channel.postMessage({ type: 'DATA_UPDATED' });
+                    channel.close();
+                }
                 showToast(response.message || "Class scheduled successfully!", 'success');
             } catch (error) {
                 showToast(error.message || "Failed to schedule class.", 'error');
@@ -489,21 +639,12 @@ const ScheduleClientView = ({
         try {
             const payload = { scheduleId1: from.scheduleId, scheduleId2: to.scheduleId };
             await scheduleService.swapSchedules(payload, token);
-            
-            setSchedules(previousState => {
-                const newSchedules = JSON.parse(JSON.stringify(previousState));
-                const day = selectedDay;
-                const time = selectedTime;
-                
-                const sourceInformation = newSchedules[day]?.[time]?.[from.roomId];
-                const targetInformation = newSchedules[day]?.[time]?.[to.roomId];
-
-                if (sourceInformation && targetInformation) {
-                    newSchedules[day][time][from.roomId] = targetInformation;
-                    newSchedules[day][time][to.roomId] = sourceInformation;
-                }
-                return newSchedules;
-            });
+            mutate();
+            if (typeof window !== 'undefined') {
+                const channel = new BroadcastChannel('data_update_channel');
+                channel.postMessage({ type: 'DATA_UPDATED' });
+                channel.close();
+            }
             showToast("Classes swapped successfully!", 'success');
 
         } catch (error) {
@@ -655,6 +796,19 @@ const ScheduleClientView = ({
         }
     };
 
+    if (isLoading || !data) {
+        return (
+            <div className='p-6 flex flex-col lg:flex-row gap-6 h-[calc(100vh-100px)]'>
+                <ClassListSkeleton />
+                <ScheduleGridSkeleton />
+            </div>
+        );
+    }
+    
+    if (error) {
+        return <div className="p-6 text-red-500">Error loading schedule data. Please try again.</div>
+    }
+
     return (
         <>
             {toast.show && <Toast message={toast.message} type={toast.type} onClose={() => setToast({ ...toast, show: false })} />}
@@ -687,13 +841,13 @@ const ScheduleClientView = ({
                         <div className="w-1/2">
                             <select id="degree-select" value={selectedDegree} onChange={(event) => setSelectedDegree(event.target.value)} className="w-full mt-1 p-2 text-xs border border-gray-300 rounded-md dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200 focus:ring-sky-500 focus:border-sky-500">
                                 <option value="All">Degrees</option>
-                                {degrees.map(degree => (<option key={degree} value={degree}>{degree}</option>))}
+                                {constants.degrees.map(degree => (<option key={degree} value={degree}>{degree}</option>))}
                             </select>
                         </div>
                         <div className="w-1/2">
                             <select id="generation-select" value={selectedGeneration} onChange={(event) => setSelectedGeneration(event.target.value)} className="w-full mt-1 p-2 text-xs border border-gray-300 rounded-md dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200 focus:ring-sky-500 focus:border-sky-500">
                                 <option value="All">Generations</option>
-                                {generations.map(generation => (<option key={generation} value={generation}>{generation}</option>))}
+                                {constants.generations.map(generation => (<option key={generation} value={generation}>{generation}</option>))}
                             </select>
                         </div>
                     </div>
@@ -721,17 +875,17 @@ const ScheduleClientView = ({
                 <div ref={schedulePageReference} className='flex-1 p-4 sm:p-6 bg-white dark:bg-gray-900 border dark:border-gray-700 shadow-xl rounded-xl flex flex-col overflow-y-auto'>
                     <div className="flex flex-row items-center justify-between mb-4 border-b dark:border-gray-600 pb-3 no-print">
                         <div className="flex rounded-lg border border-gray-300 dark:border-gray-600 overflow-hidden">
-                            {weekdays.map(day => (<button key={day} onClick={() => setSelectedDay(day)} className={`px-3.5 py-1.5 text-sm font-medium transition-colors ${selectedDay === day ? 'bg-blue-600 dark:bg-blue-600 hover:bg-blue-700 dark:hover:bg-blue-700 text-white shadow' : 'border-r hover:bg-gray-50 dark:hover:bg-gray-800 dark:border-r-gray-500 last:border-r-0'}`}>{day}</button>))}
+                            {constants.weekdays.map(day => (<button key={day} onClick={() => setSelectedDay(day)} className={`px-3.5 py-1.5 text-sm font-medium transition-colors ${selectedDay === day ? 'bg-blue-600 dark:bg-blue-600 hover:bg-blue-700 dark:hover:bg-blue-700 text-white shadow' : 'border-r hover:bg-gray-50 dark:hover:bg-gray-800 dark:border-r-gray-500 last:border-r-0'}`}>{day}</button>))}
                         </div>
                         <div className="flex items-center gap-2">
                             <label htmlFor="time-select" className="text-sm font-medium dark:text-gray-300">Time:</label>
                             <select id="time-select" value={selectedTime} onChange={(event) => setSelectedTime(event.target.value)} className="p-2 text-sm border border-gray-300 rounded-md dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200 focus:ring-sky-500 focus:border-sky-500">
-                                {timeSlots.map(timeSlot => (<option key={timeSlot} value={timeSlot}>{timeSlot}</option>))}
+                                {constants.timeSlots.map(timeSlot => (<option key={timeSlot} value={timeSlot}>{timeSlot}</option>))}
                             </select>
                         </div>
                     </div>
                     <div className="flex flex-col sm:flex-row justify-between items-center gap-2 no-print">
-                        <div className="flex items-center"><select id="building-select" value={selectedBuilding} onChange={(event) => setSelectedBuilding(event.target.value)} className="block w-full p-2 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white">{buildings.map(building => (<option key={building} value={building}>{building}</option>))}</select></div>
+                        <div className="flex items-center"><select id="building-select" value={selectedBuilding} onChange={(event) => setSelectedBuilding(event.target.value)} className="block w-full p-2 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white">{constants.buildings.map(building => (<option key={building} value={building}>{building}</option>))}</select></div>
                         <hr className="flex-1 border-t border-slate-300 dark:border-slate-700" />
                     </div>
                     <div className="flex-grow flex flex-col gap-y-4 mt-4">
@@ -783,4 +937,4 @@ const ScheduleClientView = ({
     );
 };
 
-export default ScheduleClientView;
+export default ScheduleClientView;  
