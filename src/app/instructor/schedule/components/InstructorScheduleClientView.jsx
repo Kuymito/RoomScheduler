@@ -22,7 +22,7 @@ const SCHEDULE_ITEM_BG_COLOR = 'bg-green-50 dark:bg-green-900/40';
 const ScheduleItemCard = ({ item }) => (
     <div className={`${SCHEDULE_ITEM_BG_COLOR} p-2 h-full w-full flex flex-col text-xs rounded-md shadow-sm border border-green-200 dark:border-green-800/60`}>
         <div className="flex justify-between items-start mb-1">
-            <span className="font-semibold text-[13px] text-gray-800 dark:text-gray-200">{item.subject}</span>
+            <span className="max-w-[180px] font-semibold text-[13px] text-gray-800 dark:text-gray-200 truncate" title={item.subject}>{item.subject}</span>
         </div>
         <div className="text-gray-700 dark:text-gray-300 text-[11px]">{item.year}</div>
         <div className="text-gray-600 dark:text-gray-400 text-[11px] mt-1">
@@ -51,7 +51,18 @@ export default function InstructorScheduleClientView({ initialScheduleData, inst
         if (!allShifts || allShifts.length === 0) {
             return { TIME_SLOTS: [], ROW_CONFIG: {} };
         }
-        const sortedShifts = [...allShifts].sort((a, b) => a.startTime.localeCompare(b.startTime));
+        // Sort shifts to ensure "Weekend Shift" (7:30) is last.
+        const sortedShifts = [...allShifts].sort((a, b) => {
+            const isAWeekend = a.startTime === '07:30:00';
+            const isBWeekend = b.startTime === '07:30:00';
+
+            if (isAWeekend && !isBWeekend) return 1; // a (weekend) comes after b
+            if (!isAWeekend && isBWeekend) return -1; // b (weekend) comes after a
+            
+            // For all other shifts, sort by start time
+            return a.startTime.localeCompare(b.startTime);
+        });
+
         const timeSlots = sortedShifts.map(shift => `${shift.startTime.slice(0, 5)} - ${shift.endTime.slice(0, 5)}`);
         
         const rowConfig = {};

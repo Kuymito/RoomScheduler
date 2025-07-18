@@ -1,3 +1,4 @@
+// src/app/instructor/profile/page.jsx
 'use client';
 
 import { useState, useEffect, useRef, lazy, Suspense } from 'react';
@@ -112,16 +113,45 @@ function ProfileContent() {
 
     const handleGeneralInputChange = (event) => {
         const { name, value } = event.target;
-        setEditableProfileState(previousState => {
-            const newState = { ...previousState, [name]: value };
-            if (name === 'department' && allDepartments) {
-                const selectedDept = allDepartments.find(d => d.name === value);
-                if (selectedDept) {
-                    newState.departmentId = selectedDept.departmentId;
+        
+        switch (name) {
+            case 'firstName':
+            case 'lastName':
+                if (/^[A-Za-z\s]*$/.test(value)) {
+                    setEditableProfileState(prev => ({ ...prev, [name]: value }));
                 }
-            }
-            return newState;
-        });
+                break;
+            case 'phoneNumber':
+                if (/^\d*$/.test(value) && value.length <= 15) {
+                    setEditableProfileState(prev => ({ ...prev, [name]: value }));
+                }
+                break;
+            case 'major':
+                if (/^[A-Za-z\s]*$/.test(value)) {
+                    setEditableProfileState(prev => ({ ...prev, [name]: value }));
+                }
+                break;
+            case 'address':
+                if (/^[A-Za-z0-9\s,]*$/.test(value)) {
+                    setEditableProfileState(prev => ({ ...prev, [name]: value }));
+                }
+                break;
+            case 'department':
+                setEditableProfileState(previousState => {
+                    const newState = { ...previousState, [name]: value };
+                    if (allDepartments) {
+                        const selectedDept = allDepartments.find(d => d.name === value);
+                        if (selectedDept) {
+                            newState.departmentId = selectedDept.departmentId;
+                        }
+                    }
+                    return newState;
+                });
+                break;
+            default:
+                setEditableProfileState(prev => ({ ...prev, [name]: value }));
+                break;
+        }
     };
 
     const handleFileChange = (event) => {
@@ -172,6 +202,27 @@ function ProfileContent() {
                 setToast({ show: true, message: "Authentication error or user ID not found. Please log in again.", type: 'error' });
                 setIsLoading(false);
                 return;
+            }
+
+            // --- NEW: Detailed Field Validation ---
+            const fieldsToValidate = {
+                firstName: 'First Name',
+                lastName: 'Last Name',
+                phoneNumber: 'Phone Number',
+                major: 'Major',
+                address: 'Address'
+            };
+
+            for (const [field, name] of Object.entries(fieldsToValidate)) {
+                if (!editableProfileState[field] || !editableProfileState[field].trim()) {
+                    setToast({
+                        show: true,
+                        message: `${name} cannot be empty or contain only spaces.`,
+                        type: 'error'
+                    });
+                    setIsLoading(false);
+                    return;
+                }
             }
 
             let finalImageUrl = profileState.avatarUrl;
@@ -232,6 +283,18 @@ function ProfileContent() {
                 setPasswordMismatchError(true);
                 return;
             }
+
+            // Regex for password complexity
+            const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+            if (!passwordRegex.test(newPasswordValue)) {
+                setToast({
+                    show: true,
+                    message: "Password must be 8+ characters with uppercase, lowercase, number, and special character.",
+                    type: 'error'
+                });
+                return;
+            }
+
             setIsConfirmationModalOpen(true);
         }
     };
@@ -297,7 +360,7 @@ function ProfileContent() {
                 onChange={handleGeneralInputChange}
                 readOnly={!isEditing}
                 className={`form-input w-full py-2 px-3 border dark:border-gray-700 dark:text-gray-400 rounded-md font-medium text-xs ${
-                    !isEditing ? "bg-gray-100 dark:bg-gray-800" : "bg-white dark:bg-gray-600 "
+                    !isEditing ? "bg-gray-100 dark:bg-gray-800" : "dark:text-white bg-white dark:bg-gray-600 "
                 }`}
                 maxLength={opts.maxLength}
             />
@@ -339,7 +402,7 @@ function ProfileContent() {
                 <input
                     type={passwordVisibility[fieldName] ? "text" : "password"}
                     name={name}
-                    className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs ${isReadOnly ? 'bg-gray-100 dark:bg-gray-800 border-num-gray-light dark:border-gray-700 text-gray-500 dark:text-gray-400' : 'bg-white dark:bg-gray-800 border-num-gray-light dark:border-gray-600 text-num-dark-text dark:text-white'} ${hasError ? 'border-red-500 ring-1 ring-red-500' : ''}`}
+                    className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs ${isReadOnly ? 'bg-gray-100 dark:bg-gray-800 border-num-gray-light dark:border-gray-700 text-gray-500 dark:text-gray-400' : 'bg-white dark:bg-gray-600 border-num-gray-light dark:border-gray-600 text-num-dark-text dark:text-white'} ${hasError ? 'border-red-500 ring-1 ring-red-500' : ''}`}
                     placeholder={`Enter ${label.toLowerCase()}`}
                     value={value}
                     onChange={onChange}
@@ -403,8 +466,8 @@ function ProfileContent() {
                                 <DefaultUserIcon className="h-34 w-34 text-gray-700 dark:text-gray-400"/>
                             </div>
                         )}
-                        <div className="avatar-info flex flex-col overflow-hidden">
-                            <div className="avatar-name font-semibold text-sm text-gray-800 dark:text-gray-200 mb-0.5 truncate" title={fullName}>
+                        <div className="avatar-info flex flex-col overflow-hidden min-w-0">
+                            <div className="max-w-[120px] avatar-name font-semibold text-sm text-gray-800 dark:text-gray-200 mb-0.5 truncate" title={fullName}>
                                 {fullName}
                             </div>
                             <div className="avatar-role font-semibold text-xs text-gray-500 dark:text-gray-400">
@@ -429,15 +492,14 @@ function ProfileContent() {
                             General Information
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 dark:text-gray-300">
-                            {renderTextField("First Name", "firstName", displayedProfileData.firstName, isEditingGeneralInformation)}
-                            {renderTextField("Last Name", "lastName", displayedProfileData.lastName, isEditingGeneralInformation)}
-                            {renderTextField("Email", "email", displayedProfileData.email, false)}
+                            {renderTextField("First Name", "firstName", displayedProfileData.firstName, isEditingGeneralInformation, { maxLength: 30 })}
+                            {renderTextField("Last Name", "lastName", displayedProfileData.lastName, isEditingGeneralInformation, { maxLength: 26 })}
+                            {renderTextField("Email", "email", displayedProfileData.email, false, { type: 'email', maxLength: 254 })}
                             {renderTextField("Phone Number", "phoneNumber", displayedProfileData.phoneNumber, isEditingGeneralInformation)}
                             {renderSelectField("Degree", "degree", displayedProfileData.degree, degreeOptions, isEditingGeneralInformation)}
-                            {renderTextField("Major", "major", displayedProfileData.major, isEditingGeneralInformation)}
-                            <div className="form-group md:col-span-2">
-                                {renderSelectField("Department", "department", displayedProfileData.department, allDepartments, isEditingGeneralInformation)}
-                            </div>
+                            {renderTextField("Major", "major", displayedProfileData.major, isEditingGeneralInformation, { maxLength: 50 })}
+                            {renderSelectField("Department", "department", displayedProfileData.department, allDepartments, isEditingGeneralInformation)}
+                            {renderTextField("Address", "address", displayedProfileData.address, isEditingGeneralInformation, { maxLength: 60 })}
                         </div>
                         <div className="form-actions flex justify-end items-center gap-3 mt-4">
                             {isEditingGeneralInformation ? (
@@ -446,7 +508,7 @@ function ProfileContent() {
                                     <button onClick={() => handleSaveChanges('general')} className="save-button bg-blue-600 hover:bg-blue-700 shadow-custom-light rounded-md text-white text-xs py-2 px-3 font-semibold" disabled={isLoading || isUploadingImage}>{isLoading || isUploadingImage ? "Saving..." : "Save Changes"}</button>
                                 </>
                             ) : (
-                                <button onClick={() => handleEditClick('general')} className="save-button bg-blue-600 hover:bg-blue-700 shadow-custom-light rounded-md text-white py-2 px-3 font-semibold text-xs">Edit Profile</button>
+                                <button onClick={() => handleEditClick('general')} className="save-button bg-blue-600 hover:bg-blue-700 shadow-sm rounded-md text-white py-2 px-3 font-semibold text-xs">Edit Profile</button>
                             )}
                         </div>
                     </div>

@@ -19,7 +19,7 @@ const ArchiveIcon = ({ className = "w-[14px] h-[14px]" }) => ( <svg className={c
 const DefaultAvatarIcon = ({ className = "w-12 h-12" }) => ( <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1} stroke="currentColor" className={className}>
 <path strokeLinecap="round" strokeLinejoin="round" d="M17.982 18.725A7.488 7.488 0 0 0 12 15.75a7.488 7.488 0 0 0-5.982 2.975m11.963 0a9 9 0 1 0-11.963 0m11.963 0A8.966 8.966 0 0 1 12 21a8.966 8.966 0 0 1-5.982-2.275M15 9.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" /></svg> );
 
-const instructorFetcher = ([key, token]) => instructorService.getAllInstructors(token);
+const instructorFetcher = ([, token]) => instructorService.getAllInstructors(token);
 
 // Helper function to format phone numbers
 const formatPhoneNumber = (phone) => {
@@ -54,16 +54,11 @@ export default function InstructorClientView({ initialInstructors, initialDepart
     const [isPending, startTransition] = useTransition();
     const [rowLoadingId, setRowLoadingId] = useState(null);
     const [showCreateInstructorPopup, setShowCreateInstructorPopup] = useState(false);
-    const [statusFilter, setStatusFilter] = useState('active');
-    const [isFilterMenuOpen, setIsFilterMenuOpen] = useState(false);
-    const [sortColumn, setSortColumn] = useState(null);
-    const [sortDirection, setSortDirection] = useState('asc');
-    const [searchTexts, setSearchTexts] = useState({ name: '', email: '', phone: '', majorStudied: '', qualifications: '' });
-    const [globalSearchTerm, setGlobalSearchTerm] = useState('');
+    
+    // --- State with localStorage Initialization ---
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPageOptions = [5, 10, 20, 50];
     
-    // State for items per page, initialized from localStorage or default
     const [itemsPerPage, setItemsPerPage] = useState(() => {
         if (typeof window !== 'undefined') {
             const savedSize = localStorage.getItem('instructorItemsPerPage');
@@ -73,12 +68,44 @@ export default function InstructorClientView({ initialInstructors, initialDepart
         return itemsPerPageOptions[0];
     });
 
-    // Effect to save itemsPerPage to localStorage whenever it changes
-    useEffect(() => {
+    const [statusFilter, setStatusFilter] = useState(() => {
+        if (typeof window !== 'undefined') return localStorage.getItem('instructorPage_statusFilter') || 'active';
+        return 'active';
+    });
+
+    const [sortColumn, setSortColumn] = useState(() => {
+        if (typeof window !== 'undefined') return localStorage.getItem('instructorPage_sortColumn') || null;
+        return null;
+    });
+
+    const [sortDirection, setSortDirection] = useState(() => {
+        if (typeof window !== 'undefined') return localStorage.getItem('instructorPage_sortDirection') || 'asc';
+        return 'asc';
+    });
+
+    const [searchTexts, setSearchTexts] = useState(() => {
         if (typeof window !== 'undefined') {
-            localStorage.setItem('instructorItemsPerPage', itemsPerPage);
+            const saved = localStorage.getItem('instructorPage_searchTexts');
+            return saved ? JSON.parse(saved) : { name: '', email: '', phone: '', majorStudied: '', qualifications: '' };
         }
-    }, [itemsPerPage]);
+        return { name: '', email: '', phone: '', majorStudied: '', qualifications: '' };
+    });
+
+    const [globalSearchTerm, setGlobalSearchTerm] = useState(() => {
+        if (typeof window !== 'undefined') return localStorage.getItem('instructorPage_globalSearch') || '';
+        return '';
+    });
+
+    const [isFilterMenuOpen, setIsFilterMenuOpen] = useState(false);
+
+    // --- useEffect hooks to persist state changes ---
+    useEffect(() => { if (typeof window !== 'undefined') localStorage.setItem('instructorItemsPerPage', itemsPerPage); }, [itemsPerPage]);
+    useEffect(() => { if (typeof window !== 'undefined') localStorage.setItem('instructorPage_statusFilter', statusFilter); }, [statusFilter]);
+    useEffect(() => { if (typeof window !== 'undefined') { if (sortColumn) localStorage.setItem('instructorPage_sortColumn', sortColumn); else localStorage.removeItem('instructorPage_sortColumn'); } }, [sortColumn]);
+    useEffect(() => { if (typeof window !== 'undefined') localStorage.setItem('instructorPage_sortDirection', sortDirection); }, [sortDirection]);
+    useEffect(() => { if (typeof window !== 'undefined') localStorage.setItem('instructorPage_searchTexts', JSON.stringify(searchTexts)); }, [searchTexts]);
+    useEffect(() => { if (typeof window !== 'undefined') localStorage.setItem('instructorPage_globalSearch', globalSearchTerm); }, [globalSearchTerm]);
+
 
     useEffect(() => {
         if (instructors) {
@@ -350,13 +377,26 @@ export default function InstructorClientView({ initialInstructors, initialDepart
                                                     {data.profileImage ? 
                                                         <img src={data.profileImage} alt={data.name} className="w-8 h-8 rounded-full object-cover border border-gray-200 dark:border-gray-600 flex-shrink-0"/> 
                                                         : <DefaultAvatarIcon className="size-8 rounded-full text-gray-400 bg-gray-100 dark:bg-gray-700 dark:text-gray-500 flex-shrink-0" />
-                                                    } 
-                                                    <span title={data.name}>{data.name}</span>
+                                                    }
+                                                    {/* UPDATED: Added max-width and truncate */}
+                                                    <div className="max-w-[100px]">
+                                                        <span className="truncate block" title={data.name}>{data.name}</span>
+                                                    </div>
                                                 </div>
                                             </td>
-                                            <td className="px-6 py-2 sm:table-cell hidden truncate"> {data.email} </td>
+                                            <td className="px-6 py-2 sm:table-cell hidden">
+                                                {/* UPDATED: Added max-width and truncate */}
+                                                <div className="max-w-[120px] truncate" title={data.email}>
+                                                    {data.email}
+                                                </div>
+                                            </td>
                                             <td className="px-6 py-2 lg:table-cell hidden truncate"> {formatPhoneNumber(data.phone)} </td>
-                                            <td className="px-6 py-2 truncate"> {data.majorStudied} </td>
+                                            <td className="px-6 py-2">
+                                                {/* UPDATED: Added max-width and truncate */}
+                                                <div className="max-w-[120px] truncate" title={data.majorStudied}>
+                                                    {data.majorStudied}
+                                                </div>
+                                            </td>
                                             <td className="px-6 py-2 sm:table-cell hidden truncate"> {data.qualifications} </td>
                                             <td className="px-6 py-2 capitalize"><span className={`px-2 py-0.5 rounded-full text-xs font-medium ${ data.status === 'active' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200' }`}>{data.status}</span></td>
                                         </>

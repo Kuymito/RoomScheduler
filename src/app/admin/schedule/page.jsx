@@ -12,7 +12,7 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 
 // Define the unavailable room IDs
-const UNAVAILABLE_ROOM_IDS = new Set([1, 2, 3, 28, 29, 30, 31, 32, 35, 36, 37, 38, 47, 48, 49, 50, 51, 53, 54, 55]);
+const UNAVAILABLE_ROOM_IDS = new Set([1, 2, 3, 35, 36, 37, 38, 47, 48, 49, 50, 51, 53, 54, 55]);
 
 /**
  * Helper function to calculate the academic year from the generation number.

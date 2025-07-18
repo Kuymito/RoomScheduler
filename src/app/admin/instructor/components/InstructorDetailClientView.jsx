@@ -1,3 +1,4 @@
+// src/app/admin/instructor/components/InstructorDetailClientView.jsx
 'use client';
 
 import { useRouter } from 'next/navigation';
@@ -11,7 +12,7 @@ import axios from 'axios';
 
 
 // --- Options (can be passed as props or kept here) ---
-const degreeOptions = [ 'Master', 'PhD', 'Doctor'];
+const degreeOptions = [ 'Master', 'PhD'];
 
 
 // --- Icon Components ---
@@ -43,6 +44,28 @@ export default function InstructorDetailClientView({ initialInstructor, allDepar
     const saveGeneralInfo = async () => {
         setLoading(true);
         setToast({ show: false, message: '', type: 'info' });
+
+        // --- NEW: Detailed Field Validation ---
+        const fieldsToValidate = {
+            firstName: 'First Name',
+            lastName: 'Last Name',
+            email: 'Email',
+            phone: 'Phone Number',
+            major: 'Major',
+            address: 'Address'
+        };
+
+        for (const [field, name] of Object.entries(fieldsToValidate)) {
+            if (!editableInstructorDetails[field] || !editableInstructorDetails[field].trim()) {
+                setToast({
+                    show: true,
+                    message: `${name} cannot be empty or contain only spaces.`,
+                    type: 'error'
+                });
+                setLoading(false);
+                return;
+            }
+        }
 
         let finalImageUrl = instructorDetails.profileImage;
 
@@ -324,9 +347,9 @@ export default function InstructorDetailClientView({ initialInstructor, allDepar
                     <div className="avatar-content flex relative">
                         {imagePreviewUrl ? ( <Image src={imagePreviewUrl} alt="Profile Preview" width={56} height={56} className="avatar-img w-14 h-14 rounded-full mr-3 object-cover" /> ) : ( <DefaultAvatarIcon className="avatar-img w-16 h-16 rounded-full mr-3" /> )}
                         <span className={`avatar-img absolute left-[40px] bottom-[20px] block h-4 w-4 rounded-full border-2 border-white dark:border-gray-800 ${instructorDetails.status === 'active' ? 'bg-green-500' : 'bg-red-500'}`} title={`Status: ${instructorDetails.status}`}></span>
-                        <div className='avatar-info flex flex-col overflow-hidden'>
+                        <div className='avatar-info flex flex-col overflow-hidden min-w-0'>
                             <div className='avatar-name font-semibold text-lg text-black dark:text-white mb-0.5'>
-                                <h2 className="text-sm font-semibold text-gray-900 dark:text-white truncate" title={currentData.name}>{currentData.name}</h2>
+                                <h2 className="max-w-[120px] text-sm font-semibold text-gray-900 dark:text-white truncate" title={currentData.name}>{currentData.name}</h2>
                                 <p className="text-xs text-gray-500 dark:text-gray-400">Instructor</p>
                             </div>
                             <button type="button" onClick={handleUploadButtonClick} disabled={isUploading || !isEditingGeneral} className="w-full rounded-md mt-2 px-3 py-2 text-xs font-semibold text-white shadow-sm ring-1 ring-inset bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed dark:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600">

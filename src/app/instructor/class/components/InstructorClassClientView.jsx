@@ -215,12 +215,27 @@ export default function InstructorClassClientView({ initialClasses }) {
                                     </td>
                                 ) : (
                                     <>
-                                        <td className="px-6 py-2.5 font-medium text-gray-900 whitespace-nowrap dark:text-white">{data.name}</td>
+                                        <td className="px-6 py-2.5 font-medium text-gray-900 dark:text-white">
+                                            {/* UPDATED: Added max-width and truncate */}
+                                            <div className="max-w-[64px] truncate" title={data.name}>
+                                                {data.name}
+                                            </div>
+                                        </td>
                                         <td className="px-6 py-2.5 lg:table-cell hidden">{data.generation}</td>
                                         <td className="px-6 py-2.5 lg:table-cell hidden">{data.group}</td>
-                                        <td className="px-6 py-2.5">{data.major}</td>
+                                        <td className="px-6 py-2.5">
+                                            {/* UPDATED: Added max-width and truncate */}
+                                            <div className="max-w-[120px] truncate" title={data.major}>
+                                                {data.major}
+                                            </div>
+                                        </td>
                                         <td className="px-6 py-2.5">{data.degrees}</td>
-                                        <td className="px-6 py-2.5 2xl:table-cell hidden">{data.faculty}</td>
+                                        <td className="px-6 py-2.5 2xl:table-cell hidden">
+                                            {/* UPDATED: Added max-width and truncate */}
+                                            <div className="max-w-[120px] truncate" title={data.faculty}>
+                                                {data.faculty}
+                                            </div>
+                                        </td>
                                         <td className="px-6 py-2.5 sm:table-cell hidden">{data.shift}</td>
                                     </>
                                 )}

@@ -1,3 +1,4 @@
+// src/app/admin/class/components/ClassDetailClientView.jsx
 'use client';
 
 import { useRouter } from 'next/navigation';
@@ -20,6 +21,42 @@ const shiftMap = {
     'Afternoon Shift': 3,
     'Evening Shift': 4,
     'Weekend Shift': 5
+};
+
+// Data mapping for faculty, degree, and majors
+const facultyMajorMap = {
+    // Faculty of Management (ID: 1)
+    1: {
+        'Bachelor': ['Management', 'Marketing', 'Entrepreneurship'],
+        'Master': ['Business Administration', 'Public Administration', 'Marketing', 'Logistics & Supply Chain Management', 'Management of Technology', 'Bank Management', 'Family Business Management']
+    },
+    // Faculty of Information Technology (ID: 2)
+    2: {
+        'Bachelor': ['Information Technology', 'Business Information Technology', 'Robotics Engineering', 'Computer Science']
+    },
+    // Faculty of Tourism (ID: 3)
+    3: {
+        'Bachelor': ['Tourism Management', 'Hospitality Management']
+    },
+    // Faculty of Law (ID: 4)
+    4: {
+        'Bachelor': ['Law'],
+        'Master': ['Business Law']
+    },
+    // Faculty of Economics (ID: 5)
+    5: {
+        'Bachelor': ['Economics'],
+        'Master': ['Economics']
+    },
+    // Faculty of Finance & Accounting (ID: 6)
+    6: {
+        'Bachelor': ['Finance and Banking', 'Accounting', 'Accounting and Taxation', 'Accounting and Auditing'],
+        'Master': ['Finance']
+    },
+    // Faculty of Foreign Languages (ID: 7)
+    7: {
+        'Bachelor': ['Foreign Languages']
+    }
 };
 
 const clientDayToApiDay = {
@@ -112,6 +149,7 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
     
   
     const [isPreparingPdf, setIsPreparingPdf] = useState(false);
+    const [filteredMajors, setFilteredMajors] = useState([]);
 
     const generationOptions = useMemo(() => {
         const BASE_YEAR = 2025;
@@ -126,10 +164,9 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
         return options.sort((a, b) => Number(a) - Number(b));
     }, []);
 
-    const degreesOptions = ['Bachelor', 'Master', 'PhD', 'Doctor'];
+    const degreesOptions = ['Master', 'PhD'];
     const shiftOptions = Object.keys(shiftMap);
     const departmentOptions = useMemo(() => allDepartments || [], [allDepartments]);
-    const majorOptions = useMemo(() => allMajors || [], [allMajors]);
     const semesterOptions = ['Semester 1', 'Semester 2', 'Semester 3', 'Semester 4', 'Semester 5', 'Semester 6', 'Semester 7', 'Semester 8'];
     const statusOptions = ['Active', 'Archived'];
 
@@ -166,6 +203,25 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
         else setIsDirty(false);
     }, [schedule, initialScheduleForCheck]);
 
+    useEffect(() => {
+        if (allMajors && classData.faculty && classData.degrees) {
+            const selectedDepartment = allDepartments.find(d => d.name === classData.faculty);
+            if (!selectedDepartment) {
+                setFilteredMajors([]);
+                return;
+            }
+            const departmentId = selectedDepartment.departmentId;
+            const allowedMajorNames = facultyMajorMap[departmentId]?.[classData.degrees] || [];
+            const majorsForDepartmentAndDegree = allMajors.filter(major => 
+                allowedMajorNames.includes(major.majorName)
+            );
+            setFilteredMajors(majorsForDepartmentAndDegree);
+            if (isEditing && !majorsForDepartmentAndDegree.some(m => m.majorName === classData.major)) {
+                setClassData(prev => ({ ...prev, major: majorsForDepartmentAndDegree[0]?.majorName || '' }));
+            }
+        }
+    }, [classData.faculty, classData.degrees, allMajors, allDepartments, isEditing, classData.major]);
+
     const handleEditToggle = () => {
         if (!isEditing) {
             setBackupData(JSON.parse(JSON.stringify(classData)));
@@ -190,7 +246,7 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
             const hyphenCount = (value.match(/-/g) || []).length;
             const numberCount = (value.match(/\d/g) || []).length;
             
-            if (/^[A-Za-z0-9-]*$/.test(value) && hyphenCount <= 1 && numberCount <= 3) {
+            if (/^[A-Za-z0-9-\s]*$/.test(value) && hyphenCount <= 1 && numberCount <= 3) {
                 setIsNameManuallySet(value !== '');
                 setClassData(prev => ({ ...prev, [name]: value }));
             }
@@ -207,12 +263,23 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
         setLoading(true);
         setToast({ show: false, message: '', type: 'info' });
 
+        if (classData.name && !classData.name.trim()) {
+            setToast({
+                show: true,
+                message: 'Class Name cannot contain only spaces.',
+                type: 'error'
+            });
+            setLoading(false);
+            return;
+        }
+
         if (allClasses && Array.isArray(allClasses)) {
+            const newGroupNumber = parseInt(classData.group, 10);
             const isDuplicate = allClasses.some(
                 (cls) =>
                     cls.classId !== classData.id &&
                     String(cls.generation) === String(classData.generation) &&
-                    cls.groupName === classData.group
+                    parseInt(cls.groupName, 10) === newGroupNumber
             );
 
             if (isDuplicate) {
@@ -269,7 +336,6 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
             setToast({ show: true, message: "Class details have been updated successfully.", type: 'success' });
             setIsEditing(false);
             setBackupData(null);
-            // After saving, update the local state to reflect the final name
             setClassData(prev => ({ ...prev, name: finalClassName }));
         } catch (err) {
             setToast({ show: true, message: err.message || "Failed to update class.", type: 'error' });
@@ -293,6 +359,25 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
                 </select>
             ) : (
                 <input type="text" value={value} readOnly className="form-input w-full py-2 px-3 bg-gray-100 border border-num-gray-light dark:bg-gray-800 dark:border-gray-700 rounded-md font-medium text-xs text-gray-500 dark:text-gray-400"/>
+            )}
+        </div>
+    );
+
+    const renderMajorSelectField = () => (
+        <div className="form-group flex-1 min-w-[200px]">
+            <label className="form-label block font-semibold text-xs text-num-dark-text dark:text-white mb-1">Major</label>
+            {isEditing ? (
+                <select name="major" value={classData.major} onChange={handleInputChange} disabled={loading || filteredMajors.length === 0} className="form-input w-full py-2 px-3 bg-num-content-bg border border-num-gray-light dark:bg-gray-700 dark:border-gray-600 rounded-md font-medium text-xs text-num-dark-text dark:text-white">
+                    {filteredMajors.length > 0 ? (
+                        filteredMajors.map(major => (
+                            <option key={major.major_id} value={major.majorName}>{major.majorName}</option>
+                        ))
+                    ) : (
+                        <option value="" disabled>No majors available</option>
+                    )}
+                </select>
+            ) : (
+                <input type="text" value={classData.major} readOnly className="form-input w-full py-2 px-3 bg-gray-100 border border-num-gray-light dark:bg-gray-800 dark:border-gray-700 rounded-md font-medium text-xs text-gray-500 dark:text-gray-400"/>
             )}
         </div>
     );
@@ -550,7 +635,7 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
                         <div className="form-row flex gap-3 mb-2 flex-wrap">
                             {renderSelectField("Faculty", "faculty", classData.faculty, allDepartments, 'departmentId', 'name', 'name')}
                             {renderSelectField("Degree", "degrees", classData.degrees, degreesOptions)}
-                            {renderSelectField("Major", "major", classData.major, allMajors, 'major_id', 'majorName', 'majorName')}
+                            {renderMajorSelectField()}
                         </div>
                         <div className="form-row flex gap-3 mb-2 flex-wrap">
                             {renderSelectField("Semester", "semester", classData.semester, semesterOptions)}
@@ -588,7 +673,7 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
                                 <div key={instructor.id} draggable onDragStart={(e) => handleNewInstructorDragStart(e, instructor)} onDragEnd={handleNewInstructorDragEnd} className="p-2 bg-sky-50 dark:bg-sky-700 dark:hover:bg-sky-600 border border-sky-200 dark:border-sky-600 rounded-md shadow-sm hover:shadow-md cursor-grab active:cursor-grabbing transition-all flex items-center gap-3 group">
                                     {instructor.profileImage ? (<img src={instructor.profileImage} alt={instructor.name} className="w-10 h-10 rounded-full object-cover border border-gray-200 dark:border-gray-600 flex-shrink-0" onError={(e) => { e.currentTarget.style.display = 'none'; }}/>) : (<DefaultAvatarIcon className={`w-10 h-10 flex-shrink-0`} /> )}
                                     <div className="flex-grow min-w-0">
-                                        <p className="text-sm font-medium text-sky-800 dark:text-sky-100 group-hover:text-sky-900 dark:group-hover:text-white truncate">{instructor.name}</p>
+                                        <p className="text-sm font-medium text-sky-800 dark:text-sky-100 group-hover:text-sky-900 dark:group-hover:text-white truncate" title={instructor.name}>{instructor.name}</p>
                                         {instructor.degree && (<p className="text-xs text-gray-500 dark:text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300">{instructor.degree}</p>)}
                                     </div>
                                 </div>)) : 
@@ -596,11 +681,11 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
                         </div>
                     </div>
                     <div id="weeklySchedulePanel" className='flex-1 p-4 sm:p-6 bg-white border border-num-gray-light dark:bg-gray-800 dark:border-gray-700 shadow-custom-light rounded-lg flex flex-col'>
-                        <h3 className="text-base sm:text-lg font-semibold mb-6 text-num-dark-text dark:text-gray-100 border-b dark:border-gray-600 pb-2">Weekly Class Schedule - {classData.name}</h3>
+                        <h3 className="max-w-[350px] text-base sm:text-lg font-semibold mb-6 text-num-dark-text dark:text-gray-100 border-b dark:border-gray-600 pb-2 truncate" title={classData.name}>Weekly Class Schedule - {classData.name}</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-7 gap-1">
                             {daysOfWeek.map((day) => {
                                 const isDayWeekend = day === 'Sat' || day === 'Sun';
-                                const isValidDropTarget = (isWeekendShift && isDayWeekend) || (!isWeekendShift && !isWeekendShift);
+                                const isValidDropTarget = (isWeekendShift && isDayWeekend) || (!isWeekendShift && !isDayWeekend);
 
                                 return (
                                     <div 

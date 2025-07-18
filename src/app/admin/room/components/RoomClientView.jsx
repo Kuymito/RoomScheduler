@@ -1,3 +1,4 @@
+// src/app/admin/room/components/RoomClientView.jsx
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -78,8 +79,6 @@ export default function RoomClientView({ initialRooms }) {
     const [toast, setToast] = useState({ show: false, message: '', type: 'info' });
     const [formError, setFormError] = useState({ field: '', message: '' });
 
-    // FIX: Derive roomDetails directly from allRoomsData and selectedRoomId
-    // This ensures the details panel always shows the latest data from SWR.
     const roomDetails = useMemo(() => {
         if (!selectedRoomId || !allRoomsData) return null;
         return allRoomsData[selectedRoomId];
@@ -95,7 +94,6 @@ export default function RoomClientView({ initialRooms }) {
     const resetSelection = () => { setSelectedRoomId(null); setIsEditing(false); };
     const handleBuildingChange = (event) => { setSelectedBuilding(event.target.value); resetSelection(); };
 
-    // UPDATED: handleRoomClick now only needs to set the selected ID.
     const handleRoomClick = (roomId) => {
         setSelectedRoomId(roomId);
         setIsEditing(false);
@@ -120,23 +118,6 @@ export default function RoomClientView({ initialRooms }) {
         setToast({ show: false, message: '', type: 'info' });
     };
 
-    const validateRoomName = (newName) => {
-        const trimmedName = newName.trim();
-        if (!trimmedName) {
-            setFormError({ field: 'name', message: 'Room name cannot be empty.' });
-            return false;
-        }
-        const isDuplicate = Object.values(allRoomsData).some(
-            (room) => room.id !== selectedRoomId && room.name.toLowerCase() === trimmedName.toLowerCase()
-        );
-        if (isDuplicate) {
-            setFormError({ field: 'name', message: 'Name already exists.' });
-            return false;
-        }
-        setFormError({ field: '', message: '' });
-        return true;
-    };
-
     const handleInputChange = (event) => {
         const { name, value } = event.target;
         if (name === 'name' && formError.field === 'name') {
@@ -159,18 +140,39 @@ export default function RoomClientView({ initialRooms }) {
 
     const handleSaveChanges = async () => {
         if (!editableRoomDetails) return;
-        if (!validateRoomName(editableRoomDetails.name)) return;
+
+        // --- NEW: Whitespace validation ---
+        if (!editableRoomDetails.name || !editableRoomDetails.name.trim()) {
+            setToast({ show: true, message: "Room Name cannot be empty or contain only spaces.", type: 'error' });
+            return;
+        }
+        if (!editableRoomDetails.type || !editableRoomDetails.type.trim()) {
+            setToast({ show: true, message: "Room Type cannot be empty or contain only spaces.", type: 'error' });
+            return;
+        }
+
+        // --- Duplicate name validation ---
+        const trimmedName = editableRoomDetails.name.trim();
+        const isDuplicate = Object.values(allRoomsData).some(
+            (room) => room.id !== selectedRoomId && room.name.toLowerCase() === trimmedName.toLowerCase()
+        );
+        if (isDuplicate) {
+            setFormError({ field: 'name', message: 'Name already exists.' });
+            return;
+        }
+        // --- End of validation ---
+
         setLoading(true);
         setToast({ show: false, message: '', type: 'info' });
         const roomUpdateDto = {
-            roomName: editableRoomDetails.name,
+            roomName: editableRoomDetails.name.trim(),
             capacity: editableRoomDetails.capacity,
-            type: editableRoomDetails.type,
+            type: editableRoomDetails.type.trim(),
             equipment: editableRoomDetails.equipment,
         };
         try {
             await updateRoom(selectedRoomId, roomUpdateDto);
-            mutateRooms(); // This triggers a re-fetch, which will update the UI.
+            mutateRooms();
             setIsEditing(false);
             setToast({ show: true, message: `Room '${roomUpdateDto.roomName}' updated successfully.`, type: 'success' });
         } catch (err) {
@@ -202,7 +204,6 @@ export default function RoomClientView({ initialRooms }) {
 
     const floors = buildings[selectedBuilding] || [];
 
-    // Show skeleton only if there's no initial data and SWR is loading.
     if (isSWRLoading && initialRooms.length === 0) {
         return <RoomPageSkeleton />;
     }
@@ -237,7 +238,7 @@ export default function RoomClientView({ initialRooms }) {
                                                 <div key={room.id} className={`h-[90px] sm:h-[100px] border rounded-md flex flex-col transition-all duration-150 shadow-sm cursor-pointer hover:shadow-md bg-white dark:bg-slate-800 ${getRoomColSpan(room)} ${isSelected ? "border-blue-500 ring-2 ring-blue-500 dark:border-blue-500" : "border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600"}`}
                                                     onClick={() => handleRoomClick(room.id)}>
                                                     <div className={`h-[30px] rounded-t-md flex items-center justify-center px-2 relative border-b ${isSelected ? 'border-b-transparent' : 'border-slate-200 dark:border-slate-600'} bg-slate-50 dark:bg-slate-700`}>
-                                                        <span className={`text-xs sm:text-sm font-medium ${isSelected ? 'text-blue-700 dark:text-blue-300' : 'text-slate-700 dark:text-slate-300'}`}>{room.name}</span>
+                                                        <span className={`max-w-[100px] text-xs sm:text-sm font-medium truncate ${isSelected ? 'text-blue-700 dark:text-blue-300' : 'text-slate-700 dark:text-slate-300'}`} title={room.name}>{room.name}</span>
                                                     </div>
                                                     <div className="flex-1 rounded-b-md p-2 flex flex-col justify-center items-center bg-white dark:bg-slate-800">
                                                         <span className={`text-xs text-slate-500 dark:text-slate-400 ${isSelected ? "text-slate-600 dark:text-slate-300" : ""}`}>Capacity: {room.capacity}</span>
