@@ -1,6 +1,6 @@
 import RoomCardSkeleton from "./RoomCardSkeleton"; // Make sure to import this if you haven't
 
-const ScheduleGridSkeleton = ({ gridDimensions = { rows: 4, cols: 6 } }) => (
+const ScheduleGridSkeleton = ({ gridDimensions = { rows: 4, cols: 5 } }) => (
     <div className='flex-1 p-4 sm:p-6 bg-white dark:bg-gray-900 border dark:border-gray-700 shadow-xl rounded-xl flex flex-col overflow-y-auto'>
         {/* Header Skeleton */}
         <div className="flex flex-row items-center justify-between mb-4 border-b dark:border-gray-600 pb-3 animate-pulse">

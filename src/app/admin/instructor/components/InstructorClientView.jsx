@@ -25,7 +25,14 @@ const instructorFetcher = ([, token]) => instructorService.getAllInstructors(tok
 const formatPhoneNumber = (phone) => {
     if (!phone || typeof phone !== 'string') return phone;
     const cleaned = phone.replace(/\D/g, '');
-    if (cleaned.length <= 10) return cleaned.replace(/(\d{3})(\d{3})(\d{4})/, '$1-$2-$3');
+    if (cleaned.length <= 8) return cleaned.replace(/(\d{3})(\d{3})(\d{2})/, '$1 $2 $3');
+    if (cleaned.length <= 9) return cleaned.replace(/(\d{3})(\d{3})(\d{3})/, '$1 $2 $3');
+    if (cleaned.length <= 10) return cleaned.replace(/(\d{3})(\d{3})(\d{4})/, '$1 $2 $3');
+    if (cleaned.length <= 11) return cleaned.replace(/(\d{3})(\d{3})(\d{5})/, '$1 $2 $3');
+    if (cleaned.length <= 12) return cleaned.replace(/(\d{3})(\d{3})(\d{3})(\d{3})/, '$1 $2 $3 $4');
+    if (cleaned.length <= 13) return cleaned.replace(/(\d{3})(\d{3})(\d{3})(\d{4})/, '$1 $2 $3 $4');
+    if (cleaned.length <= 14) return cleaned.replace(/(\d{3})(\d{3})(\d{3})(\d{5})/, '$1 $2 $3 $4');
+    if (cleaned.length <= 15) return cleaned.replace(/(\d{3})(\d{3})(\d{3})(\d{3})(\d{3})/, '$1 $2 $3 $4 $5');
     return phone;
 };
 

@@ -120,7 +120,11 @@ export default function InstructorDetailClientView({ initialInstructor, allDepar
             }
             const response = await instructorService.updateInstructor(instructorDetails.id, payload, session.accessToken);
             
-            const updatedDataFromServer = response.payload;
+            // --- FIX START ---
+            // The `updateInstructor` service now returns the payload directly.
+            // We no longer need to access a `.payload` property on the response.
+            const updatedDataFromServer = response; 
+            // --- FIX END ---
 
             const formattedUpdatedDetails = {
                 id: updatedDataFromServer.instructorId,

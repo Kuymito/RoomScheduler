@@ -217,7 +217,7 @@ export default function InstructorClassClientView({ initialClasses }) {
                                     <>
                                         <td className="px-6 py-2.5 font-medium text-gray-900 dark:text-white">
                                             {/* UPDATED: Added max-width and truncate */}
-                                            <div className="max-w-[64px] truncate" title={data.name}>
+                                            <div className="max-w-[70px] truncate" title={data.name}>
                                                 {data.name}
                                             </div>
                                         </td>
