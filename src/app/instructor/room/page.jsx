@@ -10,13 +10,7 @@ import { scheduleService } from '@/services/schedule.service';
 // Define the unavailable room IDs
 const UNAVAILABLE_ROOM_IDS = new Set([1, 2, 3, 28, 29, 30, 31, 32, 35, 36, 37, 38, 47, 48, 49, 50, 51, 53, 54, 55]);
 
-/**
- * Fetches all necessary data for the instructor room page on the server.
- * This includes all rooms, the complete schedule, and the schedules taught by the current instructor.
- * By fetching everything here, we ensure the client component gets all data at once.
- * @returns {Promise<object>} An object containing all the data needed for the client component.
- */
-async function fetchAllRoomsAndSchedules() {
+async function fetchInitialPageData() {
     const session = await getServerSession(authOptions);
     const token = session?.accessToken;
 
@@ -25,16 +19,15 @@ async function fetchAllRoomsAndSchedules() {
         return { 
             initialAllRoomsData: {}, 
             buildingLayout: {}, 
-            initialScheduleMap: {}, 
             initialInstructorClasses: [] 
         };
     }
 
     try {
-        // Fetch all required data concurrently for better performance.
-        const [apiRooms, apiSchedules, apiInstructorSchedules] = await Promise.all([
+        // Fetch only rooms and the instructor's specific classes.
+        // The main schedule map will be fetched on the client.
+        const [apiRooms, apiInstructorSchedules] = await Promise.all([
             getAllRooms(token),
-            scheduleService.getAllSchedules(token),
             scheduleService.getMySchedule(token) 
         ]);
 
@@ -58,60 +51,12 @@ async function fetchAllRoomsAndSchedules() {
                 id: roomId, name: roomName, building: buildingName, floor: floor,
                 capacity: capacity, type: type,
                 equipment: typeof equipment === 'string' ? equipment.split(',').map(e => e.trim()).filter(Boolean) : [],
-                // Add status based on UNAVAILABLE_ROOM_IDS
                 status: UNAVAILABLE_ROOM_IDS.has(roomId) ? 'unavailable' : 'available',
             };
         });
         for (const building in populatedLayout) {
             populatedLayout[building].sort((a, b) => b.floor - a.floor);
         }
-
-        // Process the full schedule into a map for quick lookups on the client.
-        const shiftNameMap = {
-            '07:00:00': 'Morning Shift', '10:30:00': 'Noon Shift', '14:00:00': 'Afternoon Shift',
-            '17:30:00': 'Evening Shift', '07:30:00': 'Weekend Shift'
-        };
-        const allTimeSlots = Object.values(shiftNameMap);
-
-        const dayApiToFullName = {
-             MONDAY: 'Monday', TUESDAY: 'Tuesday', WEDNESDAY: 'Wednesday', THURSDAY: 'Thursday',
-             FRIDAY: 'Friday', SATURDAY: 'Saturday', SUNDAY: 'Sunday'
-        };
-        const scheduleMap = {};
-        apiSchedules.forEach(schedule => {
-            if (!schedule || !schedule.dayDetails || !Array.isArray(schedule.dayDetails) || !schedule.shift) {
-                return; // Skip malformed entries
-            }
-
-            if (schedule.shift.startTime) {
-                // --- Handle REGULAR class schedules ---
-                const timeSlot = shiftNameMap[schedule.shift.startTime];
-                schedule.dayDetails.forEach(dayDetail => {
-                    const dayName = dayApiToFullName[dayDetail.dayOfWeek.toUpperCase()];
-                    if (dayName && timeSlot) {
-                        if (!scheduleMap[dayName]) scheduleMap[dayName] = {};
-                        if (!scheduleMap[dayName][timeSlot]) scheduleMap[dayName][timeSlot] = {};
-                        scheduleMap[dayName][timeSlot][schedule.roomId] = schedule.className;
-                    }
-                });
-            } else if (schedule.shift.name === 'Booked') {
-                // --- Handle CONFERENCE room bookings ---
-                schedule.dayDetails.forEach(dayDetail => {
-                    const dayName = dayApiToFullName[dayDetail.dayOfWeek.toUpperCase()];
-                    if (dayName) {
-                        if (!scheduleMap[dayName]) scheduleMap[dayName] = {};
-                        // Since booking time is not specified, mark room as booked for all time slots on that day.
-                        allTimeSlots.forEach(timeSlot => {
-                            if (!scheduleMap[dayName][timeSlot]) {
-                                scheduleMap[dayName][timeSlot] = {};
-                            }
-                            scheduleMap[dayName][timeSlot][schedule.roomId] = schedule.className; // Use booking name
-                        });
-                    }
-                });
-            }
-        });
-
 
         // Format the classes specific to the instructor for the request form.
         const formattedClasses = apiInstructorSchedules.map(cls => ({
@@ -123,24 +68,18 @@ async function fetchAllRoomsAndSchedules() {
         return { 
             initialAllRoomsData: roomsDataMap, 
             buildingLayout: populatedLayout,
-            initialScheduleMap: scheduleMap,
             initialInstructorClasses: formattedClasses
         };
 
     } catch (error) {
-        console.error("Failed to fetch data for instructor room page:", error.message);
-        return { initialAllRoomsData: {}, buildingLayout: {}, initialScheduleMap: {}, initialInstructorClasses: [] };
+        console.error("Failed to fetch initial data for instructor room page:", error.message);
+        return { initialAllRoomsData: {}, buildingLayout: {}, initialInstructorClasses: [] };
     }
 }
 
-/**
- * Main Instructor Page Server Component. This component now fetches all data
- * and passes it down to the client component, wrapped in a Suspense boundary.
- */
+
 export default async function InstructorRoomPage() {
-    // The page will wait for this data fetching to complete before rendering.
-    // During this time, the loading.jsx or a parent Suspense boundary will be shown.
-    const { initialAllRoomsData, buildingLayout, initialScheduleMap, initialInstructorClasses } = await fetchAllRoomsAndSchedules();
+    const { initialAllRoomsData, buildingLayout, initialInstructorClasses } = await fetchInitialPageData();
 
     return (
         <InstructorLayout activeItem="room" pageTitle="Room">
@@ -148,7 +87,8 @@ export default async function InstructorRoomPage() {
                 <InstructorRoomClientView
                     initialAllRoomsData={initialAllRoomsData}
                     buildingLayout={buildingLayout}
-                    initialScheduleMap={initialScheduleMap}
+                    // The initial schedule map is no longer passed; the client will fetch it.
+                    initialScheduleMap={{}} 
                     initialInstructorClasses={initialInstructorClasses}
                 />
             </Suspense>

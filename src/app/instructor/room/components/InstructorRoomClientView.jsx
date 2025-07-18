@@ -1,20 +1,25 @@
 'use client';
 
-import { useState, useEffect, useMemo, useRef, lazy, Suspense } from "react";
+import { useState, useEffect, useMemo, lazy, Suspense } from "react";
 import { useSession } from 'next-auth/react';
 import useSWR from 'swr';
+import axios from 'axios';
 import { notificationService } from '@/services/notification.service';
 import { getAllRooms } from '@/services/room.service';
-import { scheduleService } from '@/services/schedule.service';
 import Toast from "@/components/Toast";
 import InstructorRoomPageSkeleton from "./InstructorRoomPageSkeleton";
 
 const RequestChangeForm = lazy(() => import("./RequestChangeForm"));
 
+// Fetchers for SWR
 const roomsFetcher = ([, token]) => getAllRooms(token);
-const schedulesFetcher = ([, token]) => scheduleService.getAllSchedules(token);
+// New fetcher for our combined weekly schedule view
+const weeklyScheduleFetcher = async (url) => {
+    const res = await axios.get(url);
+    return res.data;
+};
 
-export default function InstructorRoomClientView({ initialAllRoomsData, buildingLayout, initialScheduleMap, initialInstructorClasses }) {
+export default function InstructorRoomClientView({ initialAllRoomsData, buildingLayout, initialInstructorClasses }) {
     const { data: session } = useSession();
     const token = session?.accessToken;
 
@@ -23,16 +28,16 @@ export default function InstructorRoomClientView({ initialAllRoomsData, building
         roomsFetcher,
         { fallbackData: initialAllRoomsData, revalidateOnFocus: true }
     );
-
-    const { data: swrSchedules, error: schedulesError, isLoading: schedulesLoading } = useSWR(
-        token ? ['allSchedules', token] : null,
-        schedulesFetcher,
-        { fallbackData: initialScheduleMap, revalidateOnFocus: true }
+    
+    // SWR hook to fetch the processed schedule map from our new API endpoint
+    const { data: scheduleMap, error: schedulesError, isLoading: schedulesLoading } = useSWR(
+        token ? '/api/schedule/weekly-view' : null,
+        weeklyScheduleFetcher,
+        { revalidateOnFocus: true }
     );
     
     const [allRoomsData, setAllRoomsData] = useState(initialAllRoomsData);
     const [buildings, setBuildings] = useState(buildingLayout);
-    const [scheduleMap, setScheduleMap] = useState(initialScheduleMap);
     const [instructorClasses] = useState(initialInstructorClasses);
     
     const [selectedDay, setSelectedDay] = useState(() => new Date().toLocaleDateString('en-US', { weekday: 'long' }));
@@ -46,8 +51,6 @@ export default function InstructorRoomClientView({ initialAllRoomsData, building
     const [toast, setToast] = useState({ show: false, message: '', type: 'info' });
 
     useEffect(() => {
-        // FIX: Ensure swrRooms is an array before iterating.
-        // The initial data from fallbackData might be an object, while SWR fetches an array.
         if (Array.isArray(swrRooms)) {
             const roomsDataMap = {};
             const populatedLayout = {};
@@ -74,47 +77,7 @@ export default function InstructorRoomClientView({ initialAllRoomsData, building
         }
     }, [swrRooms]);
 
-    useEffect(() => {
-        // FIX: Ensure swrSchedules is an array before iterating.
-        if (Array.isArray(swrSchedules)) {
-            const shiftNameMap = {
-                '07:00:00': 'Morning Shift', '10:30:00': 'Noon Shift', '14:00:00': 'Afternoon Shift',
-                '17:30:00': 'Evening Shift', '07:30:00': 'Weekend Shift'
-            };
-            const allTimeSlots = Object.values(shiftNameMap);
-            const dayApiToFullName = {
-                 MONDAY: 'Monday', TUESDAY: 'Tuesday', WEDNESDAY: 'Wednesday', THURSDAY: 'Thursday',
-                 FRIDAY: 'Friday', SATURDAY: 'Saturday', SUNDAY: 'Sunday'
-            };
-            const newScheduleMap = {};
-            swrSchedules.forEach(schedule => {
-                if (!schedule || !schedule.dayDetails || !Array.isArray(schedule.dayDetails) || !schedule.shift) return;
-                if (schedule.shift.startTime) {
-                    const timeSlot = shiftNameMap[schedule.shift.startTime];
-                    schedule.dayDetails.forEach(dayDetail => {
-                        const dayName = dayApiToFullName[dayDetail.dayOfWeek.toUpperCase()];
-                        if (dayName && timeSlot) {
-                            if (!newScheduleMap[dayName]) newScheduleMap[dayName] = {};
-                            if (!newScheduleMap[dayName][timeSlot]) newScheduleMap[dayName][timeSlot] = {};
-                            newScheduleMap[dayName][timeSlot][schedule.roomId] = schedule.className;
-                        }
-                    });
-                } else if (schedule.shift.name === 'Booked') {
-                    schedule.dayDetails.forEach(dayDetail => {
-                        const dayName = dayApiToFullName[dayDetail.dayOfWeek.toUpperCase()];
-                        if (dayName) {
-                            if (!newScheduleMap[dayName]) newScheduleMap[dayName] = {};
-                            allTimeSlots.forEach(timeSlot => {
-                                if (!newScheduleMap[dayName][timeSlot]) newScheduleMap[dayName][timeSlot] = {};
-                                newScheduleMap[dayName][timeSlot][schedule.roomId] = schedule.className;
-                            });
-                        }
-                    });
-                }
-            });
-            setScheduleMap(newScheduleMap);
-        }
-    }, [swrSchedules]);
+    // The complex useEffect for merging schedules is now gone!
 
     const resetSelection = () => { setSelectedRoomId(null); setRoomDetails(null); };
     const handleDayChange = (day) => { setSelectedDay(day); resetSelection(); };
@@ -181,7 +144,7 @@ export default function InstructorRoomClientView({ initialAllRoomsData, building
         </div>
     );
 
-    const isRequestDisabled = roomsLoading || schedulesLoading || !roomDetails || roomDetails.status === 'unavailable' || !!scheduleMap[selectedDay]?.[selectedTimeSlot]?.[roomDetails.id];
+    const isRequestDisabled = roomsLoading || schedulesLoading || !roomDetails || roomDetails.status === 'unavailable' || !!scheduleMap?.[selectedDay]?.[selectedTimeSlot]?.[roomDetails.id];
     
     if (roomsLoading || schedulesLoading) {
         return <InstructorRoomPageSkeleton />;
@@ -231,7 +194,7 @@ export default function InstructorRoomClientView({ initialAllRoomsData, building
                                     const room = allRoomsData[roomId];
                                     if (!room) return null;
                                     const isSelected = selectedRoomId === room.id;
-                                    const scheduledClass = scheduleMap[selectedDay]?.[selectedTimeSlot]?.[room.id];
+                                    const scheduledClass = scheduleMap?.[selectedDay]?.[selectedTimeSlot]?.[room.id];
                                     const isOccupied = !!scheduledClass;
                                     const isUnavailable = room.status === 'unavailable';
                                     const isDisabled = isOccupied || isUnavailable;

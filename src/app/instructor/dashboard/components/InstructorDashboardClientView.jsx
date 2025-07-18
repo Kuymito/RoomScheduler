@@ -81,7 +81,8 @@ export default function InstructorDashboardClientView() {
         const processedForOnlineCount = new Set();
 
         scheduleResponse.forEach(item => {
-            if (item && item.dayDetails && Array.isArray(item.dayDetails)) {
+            // 💡 MODIFICATION: Check for item.scheduleId to filter out conference room bookings
+            if (item && item.scheduleId && item.dayDetails && Array.isArray(item.dayDetails)) {
                 
                 const isOnlineClass = item.dayDetails.some(d => d.online) || !item.roomName || item.roomName === "Unavailable";
                 if (isOnlineClass && !processedForOnlineCount.has(item.scheduleId)) {
@@ -115,7 +116,8 @@ export default function InstructorDashboardClientView() {
         });
 
         const dashboardStats = {
-            classAssign: scheduleResponse.length,
+            // 💡 MODIFICATION: Ensure only actual classes are counted
+            classAssign: scheduleResponse.filter(item => item.scheduleId).length,
             ClassToday: localClassTodayCount,
             onlineClass: localOnlineClassCount,
             currentDate: new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }),
