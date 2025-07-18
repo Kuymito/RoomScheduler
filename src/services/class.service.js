@@ -1,8 +1,7 @@
 import axios from 'axios';
 
 // Define the base URLs for server-side and client-side calls
-const SERVER_API_URL = "https://jaybird-new-previously.ngrok-free.app/api/v1";
-const LOCAL_API_URL = "/api"; // This points to the Next.js API proxy
+const SERVER_API_URL = "https://employees-depend-refuse-struct.trycloudflare.com/api/v1";
 
 /**
  * Fetches all classes from the API.
@@ -18,7 +17,7 @@ const getAllClasses = async (token) => {
 
   // Determine if the code is running on the server or the client.
   const isServer = typeof window === 'undefined';
-  const url = isServer ? `${SERVER_API_URL}/class` : `${LOCAL_API_URL}/class`;
+  const url = `${SERVER_API_URL}/class`;
 
   try {
     const response = await axios.get(url, {
@@ -54,7 +53,7 @@ const getClassById = async (classId, token) => {
     throw new Error("Authentication token is required.");
   }
   const isServer = typeof window === 'undefined';
-  const url = isServer ? `${SERVER_API_URL}/class/${classId}` : `${LOCAL_API_URL}/class/${classId}`;
+  const url = `${SERVER_API_URL}/class/${classId}`;
 
   try {
     const response = await axios.get(url, {
@@ -86,7 +85,7 @@ const getClassById = async (classId, token) => {
  */
 const patchClass = async (classId, classData, token) => {
   try {
-    const response = await axios.patch(`${LOCAL_API_URL}/class/${classId}`, classData, {
+    const response = await axios.patch(`${SERVER_API_URL}/class/${classId}`, classData, {
        headers: {
         'Authorization': `Bearer ${token}`,
       }
@@ -110,7 +109,7 @@ const patchClass = async (classId, classData, token) => {
  */
 const createClass = async (classData, token) => {
   try {
-    const response = await axios.post(`${LOCAL_API_URL}/class`, classData, {
+    const response = await axios.post(`${SERVER_API_URL}/class`, classData, {
        headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
@@ -135,7 +134,7 @@ const createClass = async (classData, token) => {
  */
 const assignInstructorToClass = async (assignmentData, token) => {
     try {
-        const response = await axios.post(`${LOCAL_API_URL}/class/assign-instructor`, assignmentData, {
+        const response = await axios.post(`${SERVER_API_URL}/class/assign-instructor`, assignmentData, {
             headers: {
                 'Authorization': `Bearer ${token}`,
                 'Content-Type': 'application/json',
@@ -159,7 +158,7 @@ const assignInstructorToClass = async (assignmentData, token) => {
  */
 const unassignInstructorFromClass = async (unassignmentData, token) => {
     try {
-        const response = await axios.post(`${LOCAL_API_URL}/class/unassign-instructor`, unassignmentData, {
+        const response = await axios.post(`${SERVER_API_URL}/class/unassign-instructor`, unassignmentData, {
             headers: {
                 'Authorization': `Bearer ${token}`,
                 'Content-Type': 'application/json',
@@ -186,7 +185,7 @@ const getAssignedClasses = async (token) => {
   }
 
   const isServer = typeof window === 'undefined';
-  const url = isServer ? `${SERVER_API_URL}/class/my-classes` : `${LOCAL_API_URL}/class/my-classes`;
+  const url = `${SERVER_API_URL}/class/my-classes`;
 
   try {
     const response = await axios.get(url, {

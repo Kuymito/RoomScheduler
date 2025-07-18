@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = 'https://jaybird-new-previously.ngrok-free.app/api/v1';
+const API_URL = 'https://employees-depend-refuse-struct.trycloudflare.com/api/v1';
 
 const getAuthHeaders = (token) => {
     if (!token) throw new Error('Authentication token not found');

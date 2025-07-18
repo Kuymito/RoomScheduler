@@ -3,7 +3,7 @@ import axios from 'axios';
 import { getSession } from 'next-auth/react';
 
 // The base URL for your backend API.
-const API_BASE_URL = 'https://jaybird-new-previously.ngrok-free.app/api/v1';
+const API_BASE_URL = 'https://employees-depend-refuse-struct.trycloudflare.com/api/v1';
 
 /**
  * A helper function to create authorization headers.

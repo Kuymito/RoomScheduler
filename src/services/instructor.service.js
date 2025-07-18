@@ -2,10 +2,7 @@
 
 import axios from 'axios';
 
-// Detect if the code is running on the server or the client.
-const isServer = typeof window === 'undefined';
-// Use the full external URL when on the server, and the relative proxy path when on the client.
-const API_URL = isServer ? "https://jaybird-new-previously.ngrok-free.app/api/v1" : "/api";
+const API_URL =  "https://employees-depend-refuse-struct.trycloudflare.com/api/v1";
 
 /**
  * Fetches all instructors from the API.
@@ -16,9 +13,7 @@ const getAllInstructors = async (token) => {
   try {
     const response = await axios.get(`${API_URL}/instructors`, {
       headers: {
-        'Authorization': `Bearer ${token}`,
-        // The ngrok header is only necessary for direct server-to-server requests
-        ...(isServer && { 'ngrok-skip-browser-warning': 'true' })
+        'Authorization': `Bearer ${token}`
       }
     });
     if (Array.isArray(response.data.payload)) {
@@ -45,8 +40,7 @@ const getInstructorById = async (instructorId, token) => {
   try {
     const response = await axios.get(`${API_URL}/instructors/${instructorId}`, {
        headers: {
-        'Authorization': `Bearer ${token}`,
-        ...(isServer && { 'ngrok-skip-browser-warning': 'true' })
+        'Authorization': `Bearer ${token}`
       }
     });
     if (response.data && response.data.payload) {
@@ -72,7 +66,7 @@ const getInstructorById = async (instructorId, token) => {
 const createInstructor = async (instructorData, token) => {
   try {
     // Client-side calls should always go to the local proxy.
-    const response = await axios.post(`/api/instructors`, instructorData, {
+    const response = await axios.post(`${API_URL}/api/instructors`, instructorData, {
        headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
@@ -99,7 +93,7 @@ const createInstructor = async (instructorData, token) => {
 const updateInstructor = async (instructorId, instructorData, token) => {
   try {
     // Use the local API proxy for client-side requests
-    const response = await axios.patch(`/api/instructors/${instructorId}`, instructorData, {
+    const response = await axios.patch(`${API_URL}/api/instructors/${instructorId}`, instructorData, {
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
@@ -126,7 +120,7 @@ const updateInstructor = async (instructorId, instructorData, token) => {
 const archiveInstructor = async (instructorId, isArchived, token) => {
   try {
     // This client-side call goes to our new local API route
-    const response = await axios.patch(`/api/instructors/${instructorId}/archive`, 
+    const response = await axios.patch(`${API_URL}/api/instructors/${instructorId}/archive`, 
     { is_archived: isArchived }, 
     {
       headers: {

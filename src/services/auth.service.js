@@ -3,8 +3,7 @@ import axios from 'axios';
 
 // The API_URL now points to the local API directory for client-side calls.
 // The server-side proxy will handle forwarding to the actual backend.
-const LOCAL_API_URL = "/api";
-const SERVER_API_URL = "https://jaybird-new-previously.ngrok-free.app/api/v1";
+const SERVER_API_URL = "https://employees-depend-refuse-struct.trycloudflare.com/api/v1";
 
 const login = async (email, password) => {
   try {
@@ -22,7 +21,7 @@ const login = async (email, password) => {
 const getProfile = async (token) => {
     const isServer = typeof window === 'undefined';
     // Use the correct URL based on the environment
-    const url = isServer ? `${SERVER_API_URL}/auth/profile` : `${LOCAL_API_URL}/profile`;
+    const url = `${SERVER_API_URL}/auth/profile`;
 
     try {
         const response = await axios.get(url, {

@@ -1,8 +1,7 @@
 import axios from 'axios';
 
 // Define the base URLs for server-side and client-side calls
-const SERVER_API_URL = "https://jaybird-new-previously.ngrok-free.app/api/v1";
-const LOCAL_API_URL = "/api"; // This points to the Next.js API proxy
+const SERVER_API_URL = "https://employees-depend-refuse-struct.trycloudflare.com/api/v1";
 
 /**
  * Fetches all majors from the API.
@@ -16,7 +15,7 @@ const getAllMajors = async (token) => {
   }
 
   const isServer = typeof window === 'undefined';
-  const url = isServer ? `${SERVER_API_URL}/major` : `${LOCAL_API_URL}/major`;
+  const url = `${SERVER_API_URL}/major`;
 
   try {
     const response = await axios.get(url, {

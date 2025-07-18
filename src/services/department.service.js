@@ -1,8 +1,7 @@
 import axios from 'axios';
 
 // Define the base URLs for server-side and client-side calls
-const SERVER_API_URL = "https://jaybird-new-previously.ngrok-free.app/api/v1";
-const LOCAL_API_URL = "/api"; // This points to the Next.js API proxy
+const SERVER_API_URL = "https://employees-depend-refuse-struct.trycloudflare.com/api/v1";
 
 /**
  * Fetches all departments from the API.
@@ -23,7 +22,7 @@ const getAllDepartments = async (token) => {
   const isServer = typeof window === 'undefined';
   
   // 3. Select the appropriate URL based on the environment.
-  const url = isServer ? `${SERVER_API_URL}/department` : `${LOCAL_API_URL}/department`;
+  const url = `${SERVER_API_URL}/department`;
   
   try {
     const response = await axios.get(url, {

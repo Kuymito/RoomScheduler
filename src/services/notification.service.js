@@ -1,8 +1,7 @@
 import axios from 'axios';
 
 // Define the base URLs for server-side and client-side calls
-const SERVER_API_URL = "https://jaybird-new-previously.ngrok-free.app/api/v1";
-const LOCAL_API_URL = "/api"; // This points to the Next.js API proxy
+const SERVER_API_URL = "https://employees-depend-refuse-struct.trycloudflare.com/api/v1";
 
 /**
  * Creates the authorization headers for an API request.
@@ -37,7 +36,7 @@ const handleError = (context, error) => {
  */
 const getNotifications = async (token) => {
     const isServer = typeof window === 'undefined';
-    const url = isServer ? `${SERVER_API_URL}/notifications` : `${LOCAL_API_URL}/notifications`;
+    const url = `${SERVER_API_URL}/notifications`;
     try {
         const response = await axios.get(url, { headers: getAuthHeaders(token, isServer) });
         return response.data.payload || [];
@@ -53,7 +52,7 @@ const getNotifications = async (token) => {
  */
 const getChangeRequests = async (token) => {
     const isServer = typeof window === 'undefined';
-    const url = isServer ? `${SERVER_API_URL}/change-requests` : `${LOCAL_API_URL}/change-requests`;
+    const url = `${SERVER_API_URL}/change-requests`;
     try {
         const response = await axios.get(url, { headers: getAuthHeaders(token, isServer) });
         return response.data.payload || [];
@@ -109,7 +108,7 @@ const submitChangeRequest = async (requestData, token) => {
  */
 const approveChangeRequest = async (changeRequestId, token) => {
     const isServer = typeof window === 'undefined';
-    const url = isServer ? `${SERVER_API_URL}/change-requests/${changeRequestId}/approve` : `${LOCAL_API_URL}/change-requests/${changeRequestId}/approve`;
+    const url = `${SERVER_API_URL}/change-requests/${changeRequestId}/approve`;
     try {
         await axios.post(url, {}, { headers: getAuthHeaders(token, isServer) });
     } catch (error) {
@@ -124,7 +123,7 @@ const approveChangeRequest = async (changeRequestId, token) => {
  */
 const denyChangeRequest = async (changeRequestId, token) => {
     const isServer = typeof window === 'undefined';
-    const url = isServer ? `${SERVER_API_URL}/change-requests/${changeRequestId}/deny` : `${LOCAL_API_URL}/change-requests/${changeRequestId}/deny`;
+    const url = `${SERVER_API_URL}/change-requests/${changeRequestId}/deny`;
     try {
         await axios.post(url, {}, { headers: getAuthHeaders(token, isServer) });
     } catch (error) {
@@ -139,7 +138,7 @@ const denyChangeRequest = async (changeRequestId, token) => {
  */
 const markNotificationAsRead = async (notificationId, token) => {
     const isServer = typeof window === 'undefined';
-    const url = isServer ? `${SERVER_API_URL}/notifications/${notificationId}/read` : `${LOCAL_API_URL}/notifications/${notificationId}/read`;
+    const url = `${SERVER_API_URL}/notifications/${notificationId}/read`;
     try {
         await axios.post(url, {}, { headers: getAuthHeaders(token, isServer) });
     } catch (error) {
