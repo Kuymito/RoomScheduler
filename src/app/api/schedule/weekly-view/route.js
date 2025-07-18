@@ -6,7 +6,6 @@ import { notificationService } from '@/services/notification.service';
 
 /**
  * Calculates the current week's start and end dates based on the Cambodian timezone.
- * This ensures date comparisons are accurate regardless of the server's location.
  * @returns {{start: Date, end: Date}}
  */
 const getCurrentWeekDateRange = () => {
@@ -26,6 +25,18 @@ const getCurrentWeekDateRange = () => {
 
     return { start: startOfWeek, end: endOfWeek };
 };
+
+/**
+ * **Robust Date Parser:** Manually parses a 'YYYY-MM-DD' string to avoid timezone bugs.
+ * @param {string} dateString - The date string in 'YYYY-MM-DD' format.
+ * @returns {Date} A Date object representing the start of that day in the local timezone.
+ */
+const parseDateAsLocal = (dateString) => {
+    const parts = dateString.split('-').map(part => parseInt(part, 10));
+    // new Date(year, monthIndex, day) - month is 0-indexed in JavaScript.
+    return new Date(parts[0], parts[1] - 1, parts[2]);
+};
+
 
 /**
  * Main API handler to get the definitive weekly schedule.
@@ -65,7 +76,6 @@ export async function GET(request) {
                 if (dayName && timeSlot) {
                     if (!scheduleMap[dayName]) scheduleMap[dayName] = {};
                     if (!scheduleMap[dayName][timeSlot]) scheduleMap[dayName][timeSlot] = {};
-                    // Initially, mark the permanent room as occupied.
                     scheduleMap[dayName][timeSlot][schedule.roomId] = schedule.className;
                 }
             });
@@ -75,25 +85,24 @@ export async function GET(request) {
 
         // 2. Find all approved change requests for the current week.
         const approvedChangesForThisWeek = allChangeRequests.filter(cr => {
-            const effectiveDate = new Date(`${cr.effectiveDate}T00:00:00`);
+            // Use the robust parser for comparison.
+            const effectiveDate = parseDateAsLocal(cr.effectiveDate);
             return cr.status === 'APPROVED' && effectiveDate >= start && effectiveDate <= end;
         });
 
         // 3. Apply the approved changes to the schedule map.
         approvedChangesForThisWeek.forEach(change => {
-            // Find the full schedule object that this change request corresponds to.
             const originalSchedule = allSchedules.find(s => s.scheduleId === change.scheduleId);
             
             if (originalSchedule && originalSchedule.shift.startTime) {
-                const effectiveDate = new Date(`${change.effectiveDate}T00:00:00`);
+                // Use the robust parser again to get the correct date for display.
+                const effectiveDate = parseDateAsLocal(change.effectiveDate);
                 const dayName = effectiveDate.toLocaleDateString('en-US', { weekday: 'long' });
                 const timeSlot = shiftNameMap[originalSchedule.shift.startTime];
-                
-                // Use the temporaryRoomId directly from the `originalSchedule` object.
                 const tempRoomId = originalSchedule.temporaryRoomId;
 
                 if (dayName && timeSlot && tempRoomId && scheduleMap[dayName]?.[timeSlot]) {
-                    // A. Make the original room available by deleting its entry.
+                    // A. Make the original room available.
                     if (scheduleMap[dayName][timeSlot][originalSchedule.roomId]) {
                          delete scheduleMap[dayName][timeSlot][originalSchedule.roomId];
                     }

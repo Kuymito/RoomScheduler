@@ -13,11 +13,35 @@ const RequestChangeForm = lazy(() => import("./RequestChangeForm"));
 
 // Fetchers for SWR
 const roomsFetcher = ([, token]) => getAllRooms(token);
-// New fetcher for our combined weekly schedule view
 const weeklyScheduleFetcher = async (url) => {
     const res = await axios.get(url);
     return res.data;
 };
+
+/**
+ * **CRUCIAL FIX:** Calculates the correct YYYY-MM-DD date for a given day name within the current week.
+ * @param {string} dayName - The full name of the day (e.g., "Friday").
+ * @returns {string} The formatted date string (e.g., "2025-07-18").
+ */
+const getCorrectDateForDay = (dayName) => {
+    const dayMap = { 'Sunday': 0, 'Monday': 1, 'Tuesday': 2, 'Wednesday': 3, 'Thursday': 4, 'Friday': 5, 'Saturday': 6 };
+    const targetDayIndex = dayMap[dayName];
+
+    const now = new Date(); // Use server's local time, which is fine for this calculation
+    const todayIndex = now.getDay();
+    
+    // Calculate the difference in days to get to the target day
+    const date = new Date(now);
+    date.setDate(now.getDate() - todayIndex + targetDayIndex);
+    
+    // Format the date to YYYY-MM-DD
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    
+    return `${year}-${month}-${day}`;
+};
+
 
 export default function InstructorRoomClientView({ initialAllRoomsData, buildingLayout, initialInstructorClasses }) {
     const { data: session } = useSession();
@@ -29,7 +53,6 @@ export default function InstructorRoomClientView({ initialAllRoomsData, building
         { fallbackData: initialAllRoomsData, revalidateOnFocus: true }
     );
     
-    // SWR hook to fetch the processed schedule map from our new API endpoint
     const { data: scheduleMap, error: schedulesError, isLoading: schedulesLoading } = useSWR(
         token ? '/api/schedule/weekly-view' : null,
         weeklyScheduleFetcher,
@@ -77,8 +100,6 @@ export default function InstructorRoomClientView({ initialAllRoomsData, building
         }
     }, [swrRooms]);
 
-    // The complex useEffect for merging schedules is now gone!
-
     const resetSelection = () => { setSelectedRoomId(null); setRoomDetails(null); };
     const handleDayChange = (day) => { setSelectedDay(day); resetSelection(); };
     const handleTimeChange = (event) => { setSelectedTimeSlot(event.target.value); resetSelection(); };
@@ -99,7 +120,14 @@ export default function InstructorRoomClientView({ initialAllRoomsData, building
         }
         
         try {
-            const payload = { ...requestData, instructorId: session.user.id };
+            // **CRUCIAL FIX:** Overwrite the incorrect date from the form with the correctly calculated date.
+            const correctDate = getCorrectDateForDay(selectedDay);
+            const payload = { 
+                ...requestData, 
+                effectiveDate: correctDate, // Use the correct date here
+                instructorId: session.user.id 
+            };
+            
             await notificationService.submitChangeRequest(payload, session.accessToken);
             setToast({ show: true, message: 'Request sent successfully!', type: 'success' });
             setIsFormOpen(false);
