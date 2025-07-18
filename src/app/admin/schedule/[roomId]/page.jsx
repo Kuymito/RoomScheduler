@@ -45,10 +45,9 @@ async function getRoomScheduleData(roomId) {
     }
 
     try {
-        const [allRooms, allSchedules, allShifts] = await Promise.all([
+        const [allRooms, allSchedules] = await Promise.all([
             getAllRooms(token),
             scheduleService.getAllSchedules(token),
-            getAllShifts(token) // Fetch all shifts
         ]);
 
         const room = allRooms.find(r => String(r.roomId) === String(roomId));
@@ -57,16 +56,10 @@ async function getRoomScheduleData(roomId) {
         }
         const roomName = room.roomName;
 
-        // Define the standard time slots from the fetched shifts, excluding the special weekend one.
-        const standardTimeSlots = allShifts
-            .filter(shift => shift.startTime !== '07:30:00')
-            .map(shift => `${shift.startTime.slice(0, 5)} - ${shift.endTime.slice(0, 5)}`);
-
         const roomSchedules = {};
         allSchedules.forEach(schedule => {
             if (String(schedule.roomId) === String(roomId)) {
                 
-                const isWeekendShift = schedule.shift?.startTime === '07:30:00';
                 const academicYear = mapGenerationToYear(schedule.year);
 
                 const classInfo = {
@@ -76,29 +69,20 @@ async function getRoomScheduleData(roomId) {
                     scheduleId: schedule.scheduleId,
                 };
 
-                if (schedule.dayDetails && Array.isArray(schedule.dayDetails)) {
+                if (schedule.dayDetails && Array.isArray(schedule.dayDetails) && schedule.shift) {
                     schedule.dayDetails.forEach(dayDetail => {
                         const dayName = dayDetail.dayOfWeek.charAt(0).toUpperCase() + dayDetail.dayOfWeek.slice(1).toLowerCase();
                         if (!roomSchedules[dayName]) {
                             roomSchedules[dayName] = {};
                         }
 
-                        if (isWeekendShift) {
-                            // If it's a weekend shift, populate all standard time slots for that day
-                            standardTimeSlots.forEach(slot => {
-                                roomSchedules[dayName][slot] = {
-                                    ...classInfo,
-                                    timeDisplay: slot,
-                                };
-                            });
-                        } else {
-                            // For regular shifts, use the specific time slot
-                            const timeSlotKey = `${schedule.shift.startTime.slice(0, 5)} - ${schedule.shift.endTime.slice(0, 5)}`;
-                            roomSchedules[dayName][timeSlotKey] = {
-                                ...classInfo,
-                                timeDisplay: timeSlotKey,
-                            };
-                        }
+                        // UPDATED: Simplified logic to handle all shifts, including weekend shifts, the same way.
+                        // This correctly creates a single entry for the specific time slot (e.g., "07:30 - 17:00").
+                        const timeSlotKey = `${schedule.shift.startTime.slice(0, 5)} - ${schedule.shift.endTime.slice(0, 5)}`;
+                        roomSchedules[dayName][timeSlotKey] = {
+                            ...classInfo,
+                            timeDisplay: timeSlotKey,
+                        };
                     });
                 }
             }
@@ -127,7 +111,7 @@ const SchedulePageSkeleton = () => (
                     {[...Array(7)].map((_, i) => (
                         <div key={i} className="h-12 bg-gray-200 dark:bg-gray-700/50 border-r border-b border-gray-300 dark:border-gray-600"></div>
                     ))}
-                    {[...Array(4)].map((_, rowIndex) => (
+                    {[...Array(5)].map((_, rowIndex) => ( // Updated to 5 rows to include weekend
                         <React.Fragment key={rowIndex}>
                             <div className="h-36 bg-gray-200 dark:bg-gray-700/50 border-r border-b border-gray-300 dark:border-gray-600"></div>
                             {[...Array(7)].map((_, colIndex) => (
