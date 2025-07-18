@@ -1,41 +1,21 @@
-import axios from 'axios';
+// src/services/shift.service.js
+import api, { getAuthHeaders, handleResponse, handleError } from './api';
 
-const API_URL = 'https://employees-depend-refuse-struct.trycloudflare.com/api/v1';
-
-const getAuthHeaders = (token) => {
-    if (!token) throw new Error('Authentication token not found');
-    return {
-        'Content-Type': 'application/json',
-        'accept': '*/*',
-        'Authorization': `Bearer ${token}`,
-        'ngrok-skip-browser-warning': 'true'
-    };
-};
-
-/**
- * Fetches all shifts from the API.
- * @param {string} token - The authorization token.
- * @returns {Promise<Array>} A promise that resolves to an array of shift objects.
- */
 export async function getAllShifts(token) {
     try {
-        const response = await axios.get(`${API_URL}/shifts`, {
-            headers: getAuthHeaders(token)
-        });
-
-        if (response.data && Array.isArray(response.data.payload)) {
-            return response.data.payload;
+        const headers = await getAuthHeaders(token);
+        const response = await api.get('/shifts', { headers });
+        const payload = handleResponse(response);
+        
+        if (Array.isArray(payload)) {
+            return payload;
         }
+        // Handle cases where the payload might be directly the array
         if (Array.isArray(response.data)) {
             return response.data;
         }
         return [];
     } catch (error) {
-        console.error(`Get all shifts service error:`, {
-            message: error.message,
-            code: error.code,
-            response: error.response ? error.response.data : 'No response data'
-        });
-        throw new Error(error.response?.data?.message || `Failed to fetch shifts.`);
+        handleError("fetching all shifts", error);
     }
-};
+}

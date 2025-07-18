@@ -71,7 +71,7 @@ const ScheduleTable = ({ scheduleItems, onSort, sortColumn, sortDirection }) => 
                   key={item.id}
                   className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors border-b border-gray-200 dark:border-gray-700 last:border-b-0"
                 >
-                  <td className="max-w-[70px] px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100 truncate" title={item.classNum}>
+                  <td className="max-w-[100px] px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100 truncate" title={item.classNum}>
                     {item.classNum}
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
