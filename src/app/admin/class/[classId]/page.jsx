@@ -70,11 +70,13 @@ const fetchClassPageData = async (classId) => {
             status: classDetailsResponse.archived ? 'Archived' : 'Active',
         };
 
+        // *** FIX: Added the 'archived' property to the instructor object ***
         const formattedInstructors = instructorsResponse.map(inst => ({
             id: inst.instructorId,
             name: `${inst.firstName} ${inst.lastName}`,
             profileImage: inst.profile || null,
             degree: inst.degree,
+            archived: inst.archived // This ensures the client can filter correctly
         }));
         
         // Process the dailySchedule object from the API

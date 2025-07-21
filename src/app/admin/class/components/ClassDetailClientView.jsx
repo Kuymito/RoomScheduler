@@ -178,7 +178,6 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
         if (!allInstructors || !Array.isArray(allInstructors)) return [];
         const assignedInstructorIds = new Set(Object.values(schedule).filter(day => day?.instructor).map(day => day.instructor.id));
         
-        // MODIFIED: Added a filter to exclude archived instructors
         let filtered = allInstructors.filter(instructor => 
             !assignedInstructorIds.has(instructor.id) && !instructor.archived
         );
@@ -506,6 +505,12 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
             await Promise.all(promises);
             setToast({ show: true, message: 'Schedule saved successfully!', type: 'success' });
             setInitialScheduleForCheck(JSON.parse(JSON.stringify(schedule)));
+            // After a successful save, notify other tabs/windows to refetch data
+            if (typeof window !== 'undefined') {
+                const channel = new BroadcastChannel('data_update_channel');
+                channel.postMessage({ type: 'DATA_UPDATED' });
+                channel.close();
+            }
         } catch (error) {
             console.error('Failed to save schedule:', error);
             setToast({ show: true, message: error.message || 'An error occurred while saving.', type: 'error' });
