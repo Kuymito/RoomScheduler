@@ -177,8 +177,15 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
     const availableInstructors = useMemo(() => {
         if (!allInstructors || !Array.isArray(allInstructors)) return [];
         const assignedInstructorIds = new Set(Object.values(schedule).filter(day => day?.instructor).map(day => day.instructor.id));
-        let filtered = allInstructors.filter(instructor => !assignedInstructorIds.has(instructor.id));
-        if (selectedDegree !== 'All') filtered = filtered.filter(instructor => instructor.degree === selectedDegree);
+        
+        // MODIFIED: Added a filter to exclude archived instructors
+        let filtered = allInstructors.filter(instructor => 
+            !assignedInstructorIds.has(instructor.id) && !instructor.archived
+        );
+
+        if (selectedDegree !== 'All') {
+            filtered = filtered.filter(instructor => instructor.degree === selectedDegree);
+        }
         if (searchTerm.trim()) {
             const lowerCaseSearchTerm = searchTerm.toLowerCase();
             filtered = filtered.filter(instructor =>
