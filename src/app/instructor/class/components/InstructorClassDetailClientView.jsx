@@ -43,7 +43,7 @@ const ScheduledInstructorCard = ({ instructor }) => {
                 <DefaultAvatarIcon className="w-12 h-12" />
             )}
             <div>
-                <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">{instructor.name}</p>
+                <p className="max-w-[100px] text-sm font-semibold text-gray-800 dark:text-gray-200 truncate" title={instructor.name}>{instructor.name}</p>
                 <p className="text-xs text-gray-500 dark:text-gray-400">{instructor.role}</p>
             </div>
         </div>
