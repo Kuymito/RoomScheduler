@@ -103,7 +103,7 @@ const fetchScheduleData = async () => {
       
       const instructorDetails = {
           instructorName: session.user.name,
-          publicDate: new Date().toISOString().slice(0, 19).replace('T', ' ')
+          publicDate: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
       };
 
       // Pass the FULL, unfiltered shifts array to the client component.

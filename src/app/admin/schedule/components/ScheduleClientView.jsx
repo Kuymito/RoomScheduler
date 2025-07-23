@@ -315,7 +315,7 @@ const ScheduleClientView = () => {
     }, []);
 
     useEffect(() => {
-        if (typeof window !== 'undefined' || !token) return;
+        if (typeof window === 'undefined' || !token) return;
 
         const channel = new BroadcastChannel('data_update_channel');
 
@@ -741,12 +741,13 @@ const ScheduleClientView = () => {
              floorsHtml += `<p style="text-align: center; font-style: italic; color: ${document.documentElement.classList.contains('dark') ? '#9ca3af' : '#6b7280'};">No layout data found for ${selectedBuilding}.</p>`;
         }
 
-
+        const currentDate = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
         const headerHtml = `
             <div style="text-align: center; margin-bottom: 24px;">
                 <h1 style="font-size: 24px; font-weight: bold;">Room Schedule</h1>
                 <h2 style="font-size: 18px; color: #4b5563;">${selectedBuilding}</h2>
                 <p style="font-size: 14px; color: #6b7280;">${selectedDay} | ${selectedTime}</p>
+                <p style="font-size: 12px; color: #6b7280;">Date: ${currentDate}</p>
             </div>
         `;
         

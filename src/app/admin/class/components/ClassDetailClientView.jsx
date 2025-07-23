@@ -73,7 +73,7 @@ const ScheduledInstructorCard = ({ instructorData, classDetails, day, onDragStar
     if (!instructorData || !instructorData.instructor) return null;
     const { instructor } = instructorData;
     const studyModes = [ { value: 'in-class', label: 'In Class' }, { value: 'online', label: 'Online' } ];
-    const baseCardClasses = "w-full p-2 rounded-md shadow text-center flex flex-col items-center cursor-grab active:cursor-grabbing group relative transition-all duration-150 hover:shadow-lg hover:scale-[1.02] border";
+    const baseCardClasses = "w-full p-2 rounded-md shadow text-center flex flex-col items-center cursor-grab active:cursor-grabbing group relative transition-all duration-150 hover:shadow-lg hover:scale-[1.02] border-2";
     let colorCardClasses = "";
     let cardTextColorClasses = "";
     const baseSelectClasses = "block w-full p-1.5 text-xs rounded-md shadow-sm transition-colors";
@@ -554,14 +554,29 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
             .pdf-capture-mode #downloadScheduleButton {
                 display: none !important;
             }
-            .pdf-capture-mode .scheduled-instructor-name {
+            .pdf-capture-mode .scheduled-instructor-name,
+            .pdf-capture-mode .schedule-title-for-pdf {
                 white-space: normal !important;
                 overflow-wrap: break-word !important;
                 word-break: break-word !important;
                 overflow: visible !important;
                 text-overflow: clip !important;
+                max-width: none !important;
             }
         `;
+
+        const titleElement = schedulePanelElement.querySelector('.schedule-title-for-pdf');
+        const originalTitleHTML = titleElement ? titleElement.innerHTML : '';
+        if (titleElement) {
+            const currentDate = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+            titleElement.innerHTML = `
+                <div style="line-height: 1.2;">
+                    Class Schedule: ${classData.name}
+                    <br>
+                    <span style="font-size: 0.8em; color: #6b7280; font-weight: normal; padding-top: 0.5em;">Date: ${currentDate}</span>
+                </div>`;
+        }
+
 
         try {
            
@@ -609,6 +624,9 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
         } catch (error) {
             console.error("Error generating PDF:", error);
         } finally {
+            if (titleElement) {
+                titleElement.innerHTML = originalTitleHTML;
+            }
             document.getElementById('pdf-capture-styles')?.remove();
             schedulePanelElement.classList.remove('pdf-capture-mode');
             setIsPreparingPdf(false); 
@@ -693,7 +711,7 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
                         </div>
                     </div>
                     <div id="weeklySchedulePanel" className='flex-1 p-4 sm:p-6 bg-white border border-num-gray-light dark:bg-gray-800 dark:border-gray-700 shadow-custom-light rounded-lg flex flex-col'>
-                        <h3 className="max-w-[350px] text-base sm:text-lg font-semibold mb-6 text-num-dark-text dark:text-gray-100 border-b dark:border-gray-600 pb-2 truncate" title={classData.name}>Weekly Class Schedule - {classData.name}</h3>
+                        <h3 className="schedule-title-for-pdf max-w-[350px] text-base sm:text-lg font-semibold mb-6 text-num-dark-text dark:text-gray-100 border-b dark:border-gray-600 pb-4 truncate" title={classData.name}>Weekly Class Schedule - {classData.name}</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-7 gap-1">
                             {daysOfWeek.map((day) => {
                                 const isDayWeekend = day === 'Sat' || day === 'Sun';

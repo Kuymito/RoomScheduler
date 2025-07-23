@@ -133,7 +133,7 @@ const ScheduleList = ({ scheduleData, loading }) => (
 const RoomScheduleClient = ({ initialScheduleData, roomId, roomName }) => {
     const [scheduleData] = useState(initialScheduleData);
     const [loading] = useState(false);
-    const publicDate = "2025-06-09 14:31:43";
+    const publicDate = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
     const scheduleRef = useRef(null);
     const [classAssignCount, setClassAssignCount] = useState(0);
     const [availableShiftCount, setAvailableShiftCount] = useState(0);
