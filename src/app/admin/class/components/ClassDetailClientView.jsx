@@ -109,7 +109,7 @@ const ScheduledInstructorCard = ({ instructorData, classDetails, day, onDragStar
             <div draggable onDragStart={(e) => onDragStart(e, instructor, day)} onDragEnd={onDragEnd} className={`${baseCardClasses} ${colorCardClasses} flex-grow`}>
                 {instructor.profileImage ? (<img src={instructor.profileImage} alt={instructor.name} className="w-10 h-10 rounded-full object-cover border-2 border-white dark:border-gray-400 mb-1" onError={(e) => { e.currentTarget.style.display = 'none'; const sibling = e.currentTarget.nextSibling; if(sibling) sibling.style.display = 'flex'; }}/>) : null}
                 {!instructor.profileImage && <DefaultAvatarIcon className={`w-10 h-10 flex-shrink-0 flex items-center justify-center mb-1`} /> }
-                <p className={`text-sm font-semibold truncate w-full scheduled-instructor-name ${cardTextColorClasses}`}>{instructor.name}</p>
+                <p className={`text-sm font-semibold truncate w-full scheduled-instructor-name ${cardTextColorClasses}`} title={instructor.name}>{instructor.name}</p>
                 {instructor.degree && (<p className={`text-xs mt-0.5 ${cardTextColorClasses} opacity-80`}>{instructor.degree}</p>)}
                 <button onClick={() => onRemove(day)} className="absolute top-1 right-1 text-xs text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity duration-150 p-1 bg-white/70 dark:bg-gray-900/70 rounded-full leading-none" title={`Remove ${instructor.name}`} aria-label={`Remove ${instructor.name}`}>✕</button>
             </div>
@@ -117,7 +117,7 @@ const ScheduledInstructorCard = ({ instructorData, classDetails, day, onDragStar
     );
 };
 
-export default function ClassDetailClientView({ initialClassDetails, allInstructors, allDepartments, allMajors, initialSchedule, allClasses }) {
+export default function ClassDetailClientView({ initialClassDetails, allInstructors, allDepartments, allMajors, initialSchedule, allClasses, allSchedules }) {
     const router = useRouter();
     const { data: session } = useSession();
     
@@ -194,6 +194,60 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
         }
         return filtered;
     }, [schedule, searchTerm, allInstructors, selectedDegree]);
+
+    const roomScheduleMap = useMemo(() => {
+        if (!allSchedules) return {};
+        const map = {};
+        const shiftNameMap = {
+            '07:00:00': 'Morning Shift', '10:30:00': 'Noon Shift', '14:00:00': 'Afternoon Shift',
+            '17:30:00': 'Evening Shift', '07:30:00': 'Weekend Shift'
+        };
+        const dayApiToClientMap = {
+            MONDAY: 'Mon', TUESDAY: 'Tue', WEDNESDAY: 'Wed', THURSDAY: 'Thur',
+            FRIDAY: 'Fri', SATURDAY: 'Sat', SUNDAY: 'Sun'
+        };
+
+        allSchedules.forEach(schedule => {
+            if (!schedule?.dayDetails || !schedule.shift?.startTime) return;
+
+            const timeSlot = shiftNameMap[schedule.shift.startTime];
+            if (!timeSlot) return;
+
+            schedule.dayDetails.forEach(dayDetail => {
+                const day = dayApiToClientMap[dayDetail.dayOfWeek.toUpperCase()];
+                if (day) {
+                    if (!map[day]) map[day] = {};
+                    if (!map[day][timeSlot]) map[day][timeSlot] = {};
+                    
+                    const roomId = schedule.temporaryRoomId || schedule.roomId;
+                    if (roomId && !dayDetail.online) {
+                        map[day][timeSlot][roomId] = {
+                            classId: schedule.classId,
+                            className: schedule.className
+                        };
+                    }
+                }
+            });
+        });
+        return map;
+    }, [allSchedules]);
+
+    const currentClassPermanentRoomId = useMemo(() => {
+        if (!allSchedules || !classData?.id) return null;
+        const permanentRoomCounts = {};
+        allSchedules.forEach(s => {
+            if (s.classId === classData.id && s.roomId && !s.temporaryRoomId) {
+                if (!permanentRoomCounts[s.roomId]) {
+                    permanentRoomCounts[s.roomId] = 0;
+                }
+                permanentRoomCounts[s.roomId]++;
+            }
+        });
+        const roomIds = Object.keys(permanentRoomCounts);
+        if (roomIds.length === 0) return null;
+        // Return the room ID with the highest count
+        return roomIds.reduce((a, b) => permanentRoomCounts[a] > permanentRoomCounts[b] ? a : b);
+    }, [allSchedules, classData.id]);
 
     useEffect(() => {
         if (!isEditing || !classData || isNameManuallySet) return;
@@ -433,6 +487,28 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
         if ((isWeekendShift && !isTargetWeekend) || (!isWeekendShift && isTargetWeekend)) {
             setDragOverDay(null);
             return;
+        }
+
+        const timeSlot = classData.shift;
+
+        // Conflict check for new assignments and moves to empty slots.
+        if (draggedItem.type === 'new' || (draggedItem.type === 'scheduled' && !schedule[targetDay])) {
+            const roomToCheck = currentClassPermanentRoomId;
+            if (roomToCheck) {
+                const conflictingClass = roomScheduleMap[targetDay]?.[timeSlot]?.[roomToCheck];
+                if (conflictingClass && conflictingClass.classId !== classData.id) {
+                    setToast({
+                        show: true,
+                        message: `Conflict: This class's room is occupied by "${conflictingClass.className}" on ${targetDay} during the ${timeSlot}.`,
+                        type: 'error'
+                    });
+                    setDragOverDay(null);
+                    setDraggedItem(null); // Clear dragged item to prevent further actions
+                    return;
+                }
+            } else {
+                console.warn(`Could not determine a permanent room for class ID ${classData.id} to check for conflicts.`);
+            }
         }
     
         const newSchedule = { ...schedule };
