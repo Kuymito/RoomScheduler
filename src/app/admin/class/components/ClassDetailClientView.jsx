@@ -73,7 +73,7 @@ const ScheduledInstructorCard = ({ instructorData, classDetails, day, onDragStar
     if (!instructorData || !instructorData.instructor) return null;
     const { instructor } = instructorData;
     const studyModes = [ { value: 'in-class', label: 'In Class' }, { value: 'online', label: 'Online' } ];
-    const baseCardClasses = "w-full p-2 rounded-md shadow text-center flex flex-col items-center cursor-grab active:cursor-grabbing group relative transition-all duration-150 hover:shadow-lg hover:scale-[1.02] border";
+    const baseCardClasses = "w-full p-2 rounded-md shadow text-center flex flex-col items-center cursor-grab active:cursor-grabbing group relative transition-all duration-150 hover:shadow-lg hover:scale-[1.02] border-2";
     let colorCardClasses = "";
     let cardTextColorClasses = "";
     const baseSelectClasses = "block w-full p-1.5 text-xs rounded-md shadow-sm transition-colors";
@@ -109,7 +109,7 @@ const ScheduledInstructorCard = ({ instructorData, classDetails, day, onDragStar
             <div draggable onDragStart={(e) => onDragStart(e, instructor, day)} onDragEnd={onDragEnd} className={`${baseCardClasses} ${colorCardClasses} flex-grow`}>
                 {instructor.profileImage ? (<img src={instructor.profileImage} alt={instructor.name} className="w-10 h-10 rounded-full object-cover border-2 border-white dark:border-gray-400 mb-1" onError={(e) => { e.currentTarget.style.display = 'none'; const sibling = e.currentTarget.nextSibling; if(sibling) sibling.style.display = 'flex'; }}/>) : null}
                 {!instructor.profileImage && <DefaultAvatarIcon className={`w-10 h-10 flex-shrink-0 flex items-center justify-center mb-1`} /> }
-                <p className={`text-sm font-semibold truncate w-full scheduled-instructor-name ${cardTextColorClasses}`}>{instructor.name}</p>
+                <p className={`text-sm font-semibold truncate w-full scheduled-instructor-name ${cardTextColorClasses}`} title={instructor.name}>{instructor.name}</p>
                 {instructor.degree && (<p className={`text-xs mt-0.5 ${cardTextColorClasses} opacity-80`}>{instructor.degree}</p>)}
                 <button onClick={() => onRemove(day)} className="absolute top-1 right-1 text-xs text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity duration-150 p-1 bg-white/70 dark:bg-gray-900/70 rounded-full leading-none" title={`Remove ${instructor.name}`} aria-label={`Remove ${instructor.name}`}>✕</button>
             </div>
@@ -117,7 +117,7 @@ const ScheduledInstructorCard = ({ instructorData, classDetails, day, onDragStar
     );
 };
 
-export default function ClassDetailClientView({ initialClassDetails, allInstructors, allDepartments, allMajors, initialSchedule, allClasses }) {
+export default function ClassDetailClientView({ initialClassDetails, allInstructors, allDepartments, allMajors, initialSchedule, allClasses, allSchedules }) {
     const router = useRouter();
     const { data: session } = useSession();
     
@@ -177,8 +177,14 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
     const availableInstructors = useMemo(() => {
         if (!allInstructors || !Array.isArray(allInstructors)) return [];
         const assignedInstructorIds = new Set(Object.values(schedule).filter(day => day?.instructor).map(day => day.instructor.id));
-        let filtered = allInstructors.filter(instructor => !assignedInstructorIds.has(instructor.id));
-        if (selectedDegree !== 'All') filtered = filtered.filter(instructor => instructor.degree === selectedDegree);
+        
+        let filtered = allInstructors.filter(instructor => 
+            !assignedInstructorIds.has(instructor.id) && !instructor.archived
+        );
+
+        if (selectedDegree !== 'All') {
+            filtered = filtered.filter(instructor => instructor.degree === selectedDegree);
+        }
         if (searchTerm.trim()) {
             const lowerCaseSearchTerm = searchTerm.toLowerCase();
             filtered = filtered.filter(instructor =>
@@ -188,6 +194,60 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
         }
         return filtered;
     }, [schedule, searchTerm, allInstructors, selectedDegree]);
+
+    const roomScheduleMap = useMemo(() => {
+        if (!allSchedules) return {};
+        const map = {};
+        const shiftNameMap = {
+            '07:00:00': 'Morning Shift', '10:30:00': 'Noon Shift', '14:00:00': 'Afternoon Shift',
+            '17:30:00': 'Evening Shift', '07:30:00': 'Weekend Shift'
+        };
+        const dayApiToClientMap = {
+            MONDAY: 'Mon', TUESDAY: 'Tue', WEDNESDAY: 'Wed', THURSDAY: 'Thur',
+            FRIDAY: 'Fri', SATURDAY: 'Sat', SUNDAY: 'Sun'
+        };
+
+        allSchedules.forEach(schedule => {
+            if (!schedule?.dayDetails || !schedule.shift?.startTime) return;
+
+            const timeSlot = shiftNameMap[schedule.shift.startTime];
+            if (!timeSlot) return;
+
+            schedule.dayDetails.forEach(dayDetail => {
+                const day = dayApiToClientMap[dayDetail.dayOfWeek.toUpperCase()];
+                if (day) {
+                    if (!map[day]) map[day] = {};
+                    if (!map[day][timeSlot]) map[day][timeSlot] = {};
+                    
+                    const roomId = schedule.temporaryRoomId || schedule.roomId;
+                    if (roomId && !dayDetail.online) {
+                        map[day][timeSlot][roomId] = {
+                            classId: schedule.classId,
+                            className: schedule.className
+                        };
+                    }
+                }
+            });
+        });
+        return map;
+    }, [allSchedules]);
+
+    const currentClassPermanentRoomId = useMemo(() => {
+        if (!allSchedules || !classData?.id) return null;
+        const permanentRoomCounts = {};
+        allSchedules.forEach(s => {
+            if (s.classId === classData.id && s.roomId && !s.temporaryRoomId) {
+                if (!permanentRoomCounts[s.roomId]) {
+                    permanentRoomCounts[s.roomId] = 0;
+                }
+                permanentRoomCounts[s.roomId]++;
+            }
+        });
+        const roomIds = Object.keys(permanentRoomCounts);
+        if (roomIds.length === 0) return null;
+        // Return the room ID with the highest count
+        return roomIds.reduce((a, b) => permanentRoomCounts[a] > permanentRoomCounts[b] ? a : b);
+    }, [allSchedules, classData.id]);
 
     useEffect(() => {
         if (!isEditing || !classData || isNameManuallySet) return;
@@ -428,6 +488,28 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
             setDragOverDay(null);
             return;
         }
+
+        const timeSlot = classData.shift;
+
+        // Conflict check for new assignments and moves to empty slots.
+        if (draggedItem.type === 'new' || (draggedItem.type === 'scheduled' && !schedule[targetDay])) {
+            const roomToCheck = currentClassPermanentRoomId;
+            if (roomToCheck) {
+                const conflictingClass = roomScheduleMap[targetDay]?.[timeSlot]?.[roomToCheck];
+                if (conflictingClass && conflictingClass.classId !== classData.id) {
+                    setToast({
+                        show: true,
+                        message: `Conflict: This class's room is occupied by "${conflictingClass.className}" on ${targetDay} during the ${timeSlot}.`,
+                        type: 'error'
+                    });
+                    setDragOverDay(null);
+                    setDraggedItem(null); // Clear dragged item to prevent further actions
+                    return;
+                }
+            } else {
+                console.warn(`Could not determine a permanent room for class ID ${classData.id} to check for conflicts.`);
+            }
+        }
     
         const newSchedule = { ...schedule };
         if (draggedItem.type === 'new') {
@@ -499,6 +581,12 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
             await Promise.all(promises);
             setToast({ show: true, message: 'Schedule saved successfully!', type: 'success' });
             setInitialScheduleForCheck(JSON.parse(JSON.stringify(schedule)));
+            // After a successful save, notify other tabs/windows to refetch data
+            if (typeof window !== 'undefined') {
+                const channel = new BroadcastChannel('data_update_channel');
+                channel.postMessage({ type: 'DATA_UPDATED' });
+                channel.close();
+            }
         } catch (error) {
             console.error('Failed to save schedule:', error);
             setToast({ show: true, message: error.message || 'An error occurred while saving.', type: 'error' });
@@ -542,14 +630,29 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
             .pdf-capture-mode #downloadScheduleButton {
                 display: none !important;
             }
-            .pdf-capture-mode .scheduled-instructor-name {
+            .pdf-capture-mode .scheduled-instructor-name,
+            .pdf-capture-mode .schedule-title-for-pdf {
                 white-space: normal !important;
                 overflow-wrap: break-word !important;
                 word-break: break-word !important;
                 overflow: visible !important;
                 text-overflow: clip !important;
+                max-width: none !important;
             }
         `;
+
+        const titleElement = schedulePanelElement.querySelector('.schedule-title-for-pdf');
+        const originalTitleHTML = titleElement ? titleElement.innerHTML : '';
+        if (titleElement) {
+            const currentDate = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+            titleElement.innerHTML = `
+                <div style="line-height: 1.2;">
+                    Class Schedule: ${classData.name}
+                    <br>
+                    <span style="font-size: 0.8em; color: #6b7280; font-weight: normal; padding-top: 0.5em;">Date: ${currentDate}</span>
+                </div>`;
+        }
+
 
         try {
            
@@ -597,6 +700,9 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
         } catch (error) {
             console.error("Error generating PDF:", error);
         } finally {
+            if (titleElement) {
+                titleElement.innerHTML = originalTitleHTML;
+            }
             document.getElementById('pdf-capture-styles')?.remove();
             schedulePanelElement.classList.remove('pdf-capture-mode');
             setIsPreparingPdf(false); 
@@ -681,7 +787,7 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
                         </div>
                     </div>
                     <div id="weeklySchedulePanel" className='flex-1 p-4 sm:p-6 bg-white border border-num-gray-light dark:bg-gray-800 dark:border-gray-700 shadow-custom-light rounded-lg flex flex-col'>
-                        <h3 className="max-w-[350px] text-base sm:text-lg font-semibold mb-6 text-num-dark-text dark:text-gray-100 border-b dark:border-gray-600 pb-2 truncate" title={classData.name}>Weekly Class Schedule - {classData.name}</h3>
+                        <h3 className="schedule-title-for-pdf max-w-[350px] text-base sm:text-lg font-semibold mb-6 text-num-dark-text dark:text-gray-100 border-b dark:border-gray-600 pb-4 truncate" title={classData.name}>Weekly Class Schedule - {classData.name}</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-7 gap-1">
                             {daysOfWeek.map((day) => {
                                 const isDayWeekend = day === 'Sat' || day === 'Sun';

@@ -9,6 +9,7 @@ import { classService } from '@/services/class.service';
 import { instructorService } from '@/services/instructor.service';
 import { departmentService } from '@/services/department.service';
 import { majorService } from '@/services/major.service';
+import { scheduleService } from '@/services/schedule.service';
 
 // Mapping from shiftId to the full descriptive name used in the UI dropdown.
 const shiftIdToFullNameMap = {
@@ -36,7 +37,7 @@ const mapApiDayToClientDay = (apiDay) => {
 
 /**
  * Server-side data fetching function.
- * It fetches class details, all instructors, all departments, all majors, and all classes.
+ * It fetches class details, all instructors, all departments, all majors, all classes, and all schedules.
  */
 const fetchClassPageData = async (classId) => {
     const session = await getServerSession(authOptions);
@@ -44,17 +45,18 @@ const fetchClassPageData = async (classId) => {
 
     if (!token) {
         console.error("Authentication token not found.");
-        return { classDetails: null, instructors: [], allDepartments: [], allMajors: [], initialSchedule: {}, allClasses: [] };
+        return { classDetails: null, instructors: [], allDepartments: [], allMajors: [], initialSchedule: {}, allClasses: [], allSchedules: [] };
     }
     
     try {
         // Fetch all necessary data in parallel
-        const [classDetailsResponse, instructorsResponse, departmentsResponse, majorsResponse, allClassesResponse] = await Promise.all([
+        const [classDetailsResponse, instructorsResponse, departmentsResponse, majorsResponse, allClassesResponse, allSchedulesResponse] = await Promise.all([
             classService.getClassById(classId, token),
             instructorService.getAllInstructors(token),
             departmentService.getAllDepartments(token),
             majorService.getAllMajors(token),
-            classService.getAllClasses(token)
+            classService.getAllClasses(token),
+            scheduleService.getAllSchedules(token)
         ]);
 
         const formattedClassDetails = {
@@ -75,9 +77,9 @@ const fetchClassPageData = async (classId) => {
             name: `${inst.firstName} ${inst.lastName}`,
             profileImage: inst.profile || null,
             degree: inst.degree,
+            archived: inst.archived 
         }));
         
-        // Process the dailySchedule object from the API
         const initialSchedule = {};
         if (classDetailsResponse.dailySchedule) {
             for (const apiDay in classDetailsResponse.dailySchedule) {
@@ -103,12 +105,13 @@ const fetchClassPageData = async (classId) => {
             allDepartments: departmentsResponse,
             allMajors: majorsResponse,
             initialSchedule: initialSchedule,
-            allClasses: allClassesResponse 
+            allClasses: allClassesResponse,
+            allSchedules: allSchedulesResponse
         };
 
     } catch (error) {
         console.error(`Failed to fetch data for class ${classId}:`, error);
-        return { classDetails: null, instructors: [], allDepartments: [], allMajors: [], initialSchedule: {}, allClasses: [] };
+        return { classDetails: null, instructors: [], allDepartments: [], allMajors: [], initialSchedule: {}, allClasses: [], allSchedules: [] };
     }
 };
 
@@ -117,7 +120,7 @@ const fetchClassPageData = async (classId) => {
  */
 export default async function ClassDetailsPage({ params }) {
     const classId = params.classId;
-    const { classDetails, instructors, allDepartments, allMajors, initialSchedule, allClasses } = await fetchClassPageData(classId);
+    const { classDetails, instructors, allDepartments, allMajors, initialSchedule, allClasses, allSchedules } = await fetchClassPageData(classId);
 
     if (!classDetails) {
         notFound();
@@ -138,6 +141,7 @@ export default async function ClassDetailsPage({ params }) {
                     allMajors={allMajors}
                     initialSchedule={initialSchedule}
                     allClasses={allClasses}
+                    allSchedules={allSchedules}
                 />
             </Suspense>
         </AdminLayout>

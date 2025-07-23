@@ -43,7 +43,7 @@ const ScheduledInstructorCard = ({ instructor }) => {
                 <DefaultAvatarIcon className="w-12 h-12" />
             )}
             <div>
-                <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">{instructor.name}</p>
+                <p className="max-w-[100px] text-sm font-semibold text-gray-800 dark:text-gray-200 truncate instructor-name-pdf" title={instructor.name}>{instructor.name}</p>
                 <p className="text-xs text-gray-500 dark:text-gray-400">{instructor.role}</p>
             </div>
         </div>
@@ -91,9 +91,46 @@ export default function InstructorClassDetailClientView({ initialClassDetails, i
         if (!schedulePanelElement) return;
 
         setIsPreparingPdf(true);
+        
+        // Add a temporary style tag for PDF generation
+        const style = document.createElement('style');
+        style.id = 'pdf-capture-styles';
+        style.innerHTML = `
+            .pdf-capture-mode .download-button-container {
+                visibility: hidden !important;
+            }
+            .pdf-capture-mode .study-mode-tag {
+                background-color: transparent !important;
+                border: none !important;
+            }
+            .pdf-capture-mode .study-mode-in-class {
+                color: #16a34a !important; /* Green text for PDF */
+            }
+            .pdf-capture-mode .study-mode-online {
+                color: #ea580c !important; /* Orange text for PDF */
+            }
+            .pdf-capture-mode .instructor-name-pdf {
+                max-width: none !important;
+                white-space: normal !important;
+                overflow: visible !important;
+                text-overflow: clip !important;
+                word-break: break-word !important;
+            }
+        `;
+        document.head.appendChild(style);
         schedulePanelElement.classList.add('pdf-capture-mode');
         
-        // Brief delay to allow the UI to update with the loading state
+        // Add a temporary header for the PDF
+        const header = document.createElement('div');
+        const currentDate = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+        header.className = 'mb-4 text-center p-4';
+        header.innerHTML = `
+            <h1 style="font-size: 20px; font-weight: bold; color: ${document.documentElement.classList.contains('dark') ? '#e5e7eb' : '#1f2937'};">Weekly Class Schedule</h1>
+            <p style="font-size: 16px; color: ${document.documentElement.classList.contains('dark') ? '#d1d5db' : '#374151'};">${classDetails.name}</p>
+            <p style="font-size: 12px; color: ${document.documentElement.classList.contains('dark') ? '#9ca3af' : '#6b7280'};">Date: ${currentDate}</p>
+        `;
+        schedulePanelElement.prepend(header);
+
         await new Promise(resolve => setTimeout(resolve, 50));
 
         try {
@@ -134,6 +171,8 @@ export default function InstructorClassDetailClientView({ initialClassDetails, i
         } catch (error) {
             console.error("Error generating PDF:", error);
         } finally {
+            schedulePanelElement.removeChild(header);
+            document.getElementById('pdf-capture-styles')?.remove();
             schedulePanelElement.classList.remove('pdf-capture-mode');
             setIsPreparingPdf(false);
         }
@@ -147,21 +186,6 @@ export default function InstructorClassDetailClientView({ initialClassDetails, i
 
     return (
         <div className='p-6 dark:text-white relative'>
-            <style>{`
-                .pdf-capture-mode .download-button-container {
-                    visibility: hidden !important;
-                }
-                .pdf-capture-mode .study-mode-tag {
-                    background-color: transparent !important;
-                    border: none !important;
-                }
-                .pdf-capture-mode .study-mode-in-class {
-                    color: #16a34a !important; /* Green text for PDF */
-                }
-                .pdf-capture-mode .study-mode-online {
-                    color: #ea580c !important; /* Orange text for PDF */
-                }
-            `}</style>
              {isPreparingPdf && (
                 <div className="absolute inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center z-50 rounded-lg">
                     <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-xl flex items-center gap-4">

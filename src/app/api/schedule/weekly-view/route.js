@@ -2,44 +2,11 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import { scheduleService } from '@/services/schedule.service';
-import { notificationService } from '@/services/notification.service';
-
-/**
- * Calculates the current week's start and end dates based on the Cambodian timezone.
- * @returns {{start: Date, end: Date}}
- */
-const getCurrentWeekDateRange = () => {
-    const nowInCambodiaStr = new Date().toLocaleString('en-US', { timeZone: 'Asia/Phnom_Penh' });
-    const now = new Date(nowInCambodiaStr);
-
-    const today = now.getDay();
-    const mondayOffset = (today === 0) ? -6 : 1 - today;
-    
-    const startOfWeek = new Date(now);
-    startOfWeek.setDate(now.getDate() + mondayOffset);
-    startOfWeek.setHours(0, 0, 0, 0);
-
-    const endOfWeek = new Date(startOfWeek);
-    endOfWeek.setDate(startOfWeek.getDate() + 6);
-    endOfWeek.setHours(23, 59, 59, 999);
-
-    return { start: startOfWeek, end: endOfWeek };
-};
-
-/**
- * **Robust Date Parser:** Manually parses a 'YYYY-MM-DD' string to avoid timezone bugs.
- * @param {string} dateString - The date string in 'YYYY-MM-DD' format.
- * @returns {Date} A Date object representing the start of that day in the local timezone.
- */
-const parseDateAsLocal = (dateString) => {
-    const parts = dateString.split('-').map(part => parseInt(part, 10));
-    // new Date(year, monthIndex, day) - month is 0-indexed in JavaScript.
-    return new Date(parts[0], parts[1] - 1, parts[2]);
-};
-
 
 /**
  * Main API handler to get the definitive weekly schedule.
+ * It now processes temporary room assignments directly from the schedule data,
+ * accounting for potential changes in shift times.
  */
 export async function GET(request) {
     const session = await getServerSession(authOptions);
@@ -50,10 +17,7 @@ export async function GET(request) {
     const token = session.accessToken;
 
     try {
-        const [allSchedules, allChangeRequests] = await Promise.all([
-            scheduleService.getAllSchedules(token),
-            notificationService.getChangeRequests(token)
-        ]);
+        const allSchedules = await scheduleService.getAllSchedules(token);
         
         const shiftNameMap = {
             '07:00:00': 'Morning Shift', '10:30:00': 'Noon Shift', '14:00:00': 'Afternoon Shift',
@@ -65,15 +29,24 @@ export async function GET(request) {
         };
 
         const scheduleMap = {};
+        const permanentSchedules = {}; // Helper to store original schedule info
 
-        // 1. Build the base schedule from all permanent class assignments.
+        // 1. First pass: Index all permanent schedules and add them to the map.
         allSchedules.forEach(schedule => {
-            if (!schedule || !schedule.dayDetails || !schedule.shift?.startTime) return;
+            if (!schedule || !schedule.dayDetails || !schedule.shift?.startTime || schedule.temporaryRoomId) return;
             
+            if (!permanentSchedules[schedule.classId]) {
+                permanentSchedules[schedule.classId] = {};
+            }
+
             const timeSlot = shiftNameMap[schedule.shift.startTime];
             schedule.dayDetails.forEach(dayDetail => {
                 const dayName = dayApiToFullName[dayDetail.dayOfWeek.toUpperCase()];
-                if (dayName && timeSlot) {
+                if (dayName && timeSlot && !dayDetail.online && schedule.roomId) {
+                    // Store the full permanent schedule object for later lookup
+                    permanentSchedules[schedule.classId][dayName] = schedule;
+                    
+                    // Add the permanent assignment to the final schedule map
                     if (!scheduleMap[dayName]) scheduleMap[dayName] = {};
                     if (!scheduleMap[dayName][timeSlot]) scheduleMap[dayName][timeSlot] = {};
                     scheduleMap[dayName][timeSlot][schedule.roomId] = schedule.className;
@@ -81,36 +54,33 @@ export async function GET(request) {
             });
         });
 
-        const { start, end } = getCurrentWeekDateRange();
+        // 2. Second pass: Process temporary schedules to override the permanent ones.
+        allSchedules.forEach(schedule => {
+            if (!schedule || !schedule.temporaryRoomId || !schedule.dayDetails || !schedule.shift?.startTime) return;
 
-        // 2. Find all approved change requests for the current week.
-        const approvedChangesForThisWeek = allChangeRequests.filter(cr => {
-            // Use the robust parser for comparison.
-            const effectiveDate = parseDateAsLocal(cr.effectiveDate);
-            return cr.status === 'APPROVED' && effectiveDate >= start && effectiveDate <= end;
-        });
+            const tempTimeSlot = shiftNameMap[schedule.shift.startTime]; // This is the NEW shift for the temp room
 
-        // 3. Apply the approved changes to the schedule map.
-        approvedChangesForThisWeek.forEach(change => {
-            const originalSchedule = allSchedules.find(s => s.scheduleId === change.scheduleId);
-            
-            if (originalSchedule && originalSchedule.shift.startTime) {
-                // Use the robust parser again to get the correct date for display.
-                const effectiveDate = parseDateAsLocal(change.effectiveDate);
-                const dayName = effectiveDate.toLocaleDateString('en-US', { weekday: 'long' });
-                const timeSlot = shiftNameMap[originalSchedule.shift.startTime];
-                const tempRoomId = originalSchedule.temporaryRoomId;
-
-                if (dayName && timeSlot && tempRoomId && scheduleMap[dayName]?.[timeSlot]) {
-                    // A. Make the original room available.
-                    if (scheduleMap[dayName][timeSlot][originalSchedule.roomId]) {
-                         delete scheduleMap[dayName][timeSlot][originalSchedule.roomId];
-                    }
+            schedule.dayDetails.forEach(dayDetail => {
+                const dayName = dayApiToFullName[dayDetail.dayOfWeek.toUpperCase()];
+                if (dayName && tempTimeSlot && !dayDetail.online) {
                     
-                    // B. Mark the new temporary room as unavailable.
-                    scheduleMap[dayName][timeSlot][tempRoomId] = originalSchedule.className;
+                    // Find the original schedule for this class on this day from our helper object
+                    const originalSchedule = permanentSchedules[schedule.classId]?.[dayName];
+
+                    // If an original schedule was found, free up its room at its original time slot
+                    if (originalSchedule) {
+                        const originalTimeSlot = shiftNameMap[originalSchedule.shift.startTime];
+                        if (originalTimeSlot && scheduleMap[dayName]?.[originalTimeSlot]?.[originalSchedule.roomId]) {
+                            delete scheduleMap[dayName][originalTimeSlot][originalSchedule.roomId];
+                        }
+                    }
+
+                    // Occupy the temporary room at the NEW shift time
+                    if (!scheduleMap[dayName]) scheduleMap[dayName] = {};
+                    if (!scheduleMap[dayName][tempTimeSlot]) scheduleMap[dayName][tempTimeSlot] = {};
+                    scheduleMap[dayName][tempTimeSlot][schedule.temporaryRoomId] = schedule.className;
                 }
-            }
+            });
         });
 
         return NextResponse.json(scheduleMap);

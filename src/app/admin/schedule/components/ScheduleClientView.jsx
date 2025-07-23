@@ -156,6 +156,13 @@ const ScheduleClientView = () => {
             const academicYear = currentFirstYearGeneration - genNumber + 1;
             return academicYear > 0 ? academicYear : null;
         };
+        
+        const yearColorMap = {
+            1: 'bg-orange-400',
+            2: 'bg-blue-400',
+            3: 'bg-violet-400',
+            4: 'bg-rose-400',
+        };
 
         const timeSlotsList = ['Morning Shift', 'Noon Shift', 'Afternoon Shift', 'Evening Shift', 'Weekend Shift'];
         const consts = {
@@ -188,6 +195,9 @@ const ScheduleClientView = () => {
                     online: details.online
                 }));
             }
+            const academicYear = mapGenerationToYear(newCls.generation);
+            newCls.academicYear = academicYear;
+            newCls.colorClass = yearColorMap[academicYear] || 'bg-slate-400';
             return newCls;
         });
 
@@ -304,7 +314,6 @@ const ScheduleClientView = () => {
     const unassignmentProcessed = useRef(false);
 
     const dayApiToAbbreviationMap = { MONDAY: 'Mo', TUESDAY: 'Tu', WEDNESDAY: 'We', THURSDAY: 'Th', FRIDAY: 'Fr', SATURDAY: 'Sa', SUNDAY: 'Su' };
-    const generationColorMap = { '29': 'bg-sky-500', '30': 'bg-emerald-500', '31': 'bg-amber-500', '32': 'bg-indigo-500', '33': 'bg-violet-500' };
 
     const showToast = (message, type = 'info') => setToast({ show: true, message, type });
 
@@ -315,7 +324,7 @@ const ScheduleClientView = () => {
     }, []);
 
     useEffect(() => {
-        if (typeof window !== 'undefined' || !token) return;
+        if (typeof window === 'undefined' || !token) return;
 
         const channel = new BroadcastChannel('data_update_channel');
 
@@ -549,18 +558,18 @@ const ScheduleClientView = () => {
         event.preventDefault();
         setDragOverCell(null);
         setWarningCellId(null);
-
+    
         if (!draggedItem) return;
-
+    
         const { item: draggedClass, type: draggedType, origin: dragOrigin } = draggedItem;
         const targetScheduleInformation = getClassForRoom(targetRoomId);
-
+    
         if (draggedType === 'scheduled' && targetScheduleInformation) {
             if (dragOrigin.roomId === targetRoomId) return; 
-
+    
             const sourceClassData = getClassForRoom(dragOrigin.roomId);
             const targetClassData = getClassForRoom(targetRoomId);
-
+    
             setSwapConfirmation({
                 isOpen: true,
                 details: {
@@ -571,7 +580,7 @@ const ScheduleClientView = () => {
             setDraggedItem(null); 
             return;
         }
-
+    
         if (draggedType === 'scheduled' && !targetScheduleInformation) {
             setIsAssigning(true);
             try {
@@ -591,15 +600,31 @@ const ScheduleClientView = () => {
             }
             return;
         }
-
+    
         if (draggedType === 'new' && !targetScheduleInformation) {
             const classShiftName = draggedClass.shift?.name;
-            if (classShiftName !== selectedTime) {
-                showToast(`Shift mismatch: A "${classShiftName}" class cannot be assigned to a "${selectedTime}" slot.`, 'error');
+            
+            const classScheduledDays = draggedClass.dayDetails?.map(d => dayApiToAbbreviationMap[d.dayOfWeek.toUpperCase()]).filter(Boolean) || [];
+            const conflicts = [];
+            if (classScheduledDays.length > 0) {
+                classScheduledDays.forEach(day => {
+                    const conflictingSchedule = schedules[day]?.[classShiftName]?.[targetRoomId];
+                    if (conflictingSchedule) {
+                        conflicts.push({
+                            day: day,
+                            className: conflictingSchedule.className
+                        });
+                    }
+                });
+            }
+    
+            if (conflicts.length > 0) {
+                const conflictMessages = conflicts.map(c => `${c.day} (with ${c.className})`).join(', ');
+                showToast(`Assignment failed. Room is already booked on: ${conflictMessages}.`, 'error');
                 setDraggedItem(null);
                 return;
             }
-
+    
             setIsAssigning(true);
             try {
                 const payload = { classId: draggedClass.classId, roomId: targetRoomId };
@@ -619,7 +644,7 @@ const ScheduleClientView = () => {
             }
             return;
         }
-
+    
         if (draggedType === 'new' && targetScheduleInformation) {
             showToast("This room is already occupied.", 'error');
         }
@@ -741,12 +766,13 @@ const ScheduleClientView = () => {
              floorsHtml += `<p style="text-align: center; font-style: italic; color: ${document.documentElement.classList.contains('dark') ? '#9ca3af' : '#6b7280'};">No layout data found for ${selectedBuilding}.</p>`;
         }
 
-
+        const currentDate = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
         const headerHtml = `
             <div style="text-align: center; margin-bottom: 24px;">
                 <h1 style="font-size: 24px; font-weight: bold;">Room Schedule</h1>
                 <h2 style="font-size: 18px; color: #4b5563;">${selectedBuilding}</h2>
                 <p style="font-size: 14px; color: #6b7280;">${selectedDay} | ${selectedTime}</p>
+                <p style="font-size: 12px; color: #6b7280;">Date: ${currentDate}</p>
             </div>
         `;
         
@@ -860,7 +886,7 @@ const ScheduleClientView = () => {
                                         <div className="flex items-center gap-2 mb-2"><h4 className="text-xs sm:text-sm font-medium text-slate-600 dark:text-slate-400 whitespace-nowrap">{shift}</h4><hr className="flex-1 border-t border-slate-300 dark:border-slate-700" /></div>
                                         {classesInShift.map((classItem) => (
                                             <div key={classItem.classId} draggable onDragStart={(event) => handleDragStart(event, classItem, 'new')} onDragEnd={handleDragEnd} className="p-2 bg-gray-50 dark:bg-gray-800 dark:hover:bg-gray-700 border dark:border-gray-700 rounded-lg shadow-sm hover:shadow-md cursor-grab active:cursor-grabbing transition-all flex group">
-                                                <div className={`w-1.5 h-auto rounded-lg ${generationColorMap[classItem.generation] || 'bg-slate-400'} mr-3`}></div>
+                                                <div className={`w-1.5 h-auto rounded-lg ${classItem.colorClass || 'bg-slate-400'} mr-3`}></div>
                                                 <div><p className="max-w-[180px] text-sm font-medium text-gray-800 dark:text-gray-200 truncate" title={classItem.className}>{classItem.className}</p><p className="text-xs text-gray-500 dark:text-gray-400">{classItem.majorName}</p></div>
                                             </div>
                                         ))}
@@ -937,4 +963,4 @@ const ScheduleClientView = () => {
     );
 };
 
-export default ScheduleClientView;  
+export default ScheduleClientView;
