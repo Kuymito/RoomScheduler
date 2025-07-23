@@ -73,28 +73,84 @@ export default function InstructorDashboardClientView() {
             return { dashboardStats: null, scheduleItems: [] };
         }
 
+        const overriddenSchedules = new Set(); // Stores 'classId-DAYOFWEEK' for temp schedules
         const localScheduleItems = [];
         let localOnlineClassCount = 0;
         let localClassTodayCount = 0;
         const today = new Date().toLocaleDateString('en-US', { weekday: 'long' }).toUpperCase();
         
         const processedForOnlineCount = new Set();
+        const processedForTodayCount = new Set(); // To avoid double counting classes today
 
+        // First pass: identify all temporary assignments to know which permanent slots are overridden
         scheduleResponse.forEach(item => {
-            // 💡 MODIFICATION: Check for item.scheduleId to filter out conference room bookings
-            if (item && item.scheduleId && item.dayDetails && Array.isArray(item.dayDetails)) {
-                
-                const isOnlineClass = item.dayDetails.some(d => d.online) || !item.roomName || item.roomName === "Unavailable";
-                if (isOnlineClass && !processedForOnlineCount.has(item.scheduleId)) {
+            if (item && item.scheduleId && item.temporaryRoomId && item.dayDetails) {
+                item.dayDetails.forEach(dayDetail => {
+                    overriddenSchedules.add(`${item.classId}-${dayDetail.dayOfWeek.toUpperCase()}`);
+                });
+            }
+        });
+
+        // Second pass: build the final schedule list
+        scheduleResponse.forEach(item => {
+            if (!item || !item.scheduleId || !item.dayDetails) return;
+
+            // This is a temporary schedule record, it always takes precedence
+            if (item.temporaryRoomId) {
+                const isOnlineClass = item.dayDetails.some(d => d.online) || !item.temporaryRoomName;
+                if (isOnlineClass && !processedForOnlineCount.has(item.classId)) {
                     localOnlineClassCount++;
-                    processedForOnlineCount.add(item.scheduleId);
+                    processedForOnlineCount.add(item.classId);
                 }
 
                 item.dayDetails.forEach(dayDetail => {
                     const dayOfWeek = dayDetail.dayOfWeek.toUpperCase();
                     
-                    if (dayOfWeek === today) {
+                    if (dayOfWeek === today && !processedForTodayCount.has(item.classId)) {
                         localClassTodayCount++;
+                        processedForTodayCount.add(item.classId);
+                    }
+
+                    const dayString = dayOfWeek.charAt(0) + dayOfWeek.slice(1).toLowerCase();
+                    const sessionType = dayDetail.online ? 'Online' : 'In Class';
+
+                    localScheduleItems.push({
+                        id: `${item.scheduleId}-${dayOfWeek}-temp`,
+                        classNum: item.className,
+                        major: item.majorName,
+                        date: dayString,
+                        session: sessionType,
+                        shift: (item.shift && item.shift.startTime && item.shift.endTime) 
+                               ? `${item.shift.startTime.substring(0, 5)} - ${item.shift.endTime.substring(0, 5)}` 
+                               : 'N/A',
+                        room: dayDetail.online ? 'Online' : item.temporaryRoomName || 'Unavailable',
+                    });
+                });
+            } 
+            // This is a permanent schedule record
+            else {
+                const isPotentiallyOnline = item.dayDetails.some(d => d.online) || !item.roomName || item.roomName === "Unavailable";
+                if (isPotentiallyOnline && !processedForOnlineCount.has(item.classId)) {
+                    const hasNonOverriddenOnlineDay = item.dayDetails.some(d => 
+                        !overriddenSchedules.has(`${item.classId}-${d.dayOfWeek.toUpperCase()}`) && (d.online || !item.roomName)
+                    );
+                    if(hasNonOverriddenOnlineDay) {
+                        localOnlineClassCount++;
+                        processedForOnlineCount.add(item.classId);
+                    }
+                }
+
+                item.dayDetails.forEach(dayDetail => {
+                    const dayOfWeek = dayDetail.dayOfWeek.toUpperCase();
+                    
+                    // Skip this day if it's been overridden by a temporary schedule
+                    if (overriddenSchedules.has(`${item.classId}-${dayOfWeek}`)) {
+                        return;
+                    }
+                    
+                    if (dayOfWeek === today && !processedForTodayCount.has(item.classId)) {
+                        localClassTodayCount++;
+                        processedForTodayCount.add(item.classId);
                     }
 
                     const dayString = dayOfWeek.charAt(0) + dayOfWeek.slice(1).toLowerCase();
@@ -115,9 +171,11 @@ export default function InstructorDashboardClientView() {
             }
         });
 
+        // The number of assigned classes should be the count of unique class IDs.
+        const uniqueClassIds = new Set(scheduleResponse.map(s => s.classId).filter(Boolean));
+
         const dashboardStats = {
-            // 💡 MODIFICATION: Ensure only actual classes are counted
-            classAssign: scheduleResponse.filter(item => item.scheduleId).length,
+            classAssign: uniqueClassIds.size,
             ClassToday: localClassTodayCount,
             onlineClass: localOnlineClassCount,
             currentDate: new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }),
@@ -150,6 +208,15 @@ export default function InstructorDashboardClientView() {
             if (aValue > bValue) {
                 return sortDirection === 'asc' ? 1 : -1;
             }
+            
+            // Secondary sort by shift if dates are the same
+            if (sortColumn === 'date') {
+                const shiftOrder = { 'Morning': 1, 'Noon': 2, 'Afternoon': 3, 'Evening': 4, 'Weekend': 5 };
+                const aShift = shiftOrder[a.shift?.split(' ')[0]] || 99;
+                const bShift = shiftOrder[b.shift?.split(' ')[0]] || 99;
+                return aShift - bShift;
+            }
+
             return 0;
         });
         return sorted;

@@ -6,7 +6,6 @@ import html2canvas from 'html2canvas';
 
 // --- Constants ---
 const DAYS_OF_WEEK = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-// FIX: Added the "Weekend Shift" time slot to ensure weekend classes are rendered.
 const TIME_SLOTS = [
     '07:00 - 10:00', // Morning Shift
     '10:30 - 13:30', // Noon Shift
@@ -24,8 +23,6 @@ const DAY_HEADER_COLORS = {
     Saturday: 'bg-indigo-50 text-indigo-800 dark:bg-indigo-900/50 dark:text-indigo-200',
     Sunday: 'bg-pink-50 text-pink-800 dark:bg-pink-900/50 dark:text-pink-200',
 };
-
-const SCHEDULE_ITEM_BG_COLOR = 'bg-green-50 dark:bg-green-900/40';
 
 // --- Responsive Hook ---
 const useMediaQuery = (query) => {
@@ -54,22 +51,42 @@ const SkeletonCard = () => (
     </div>
 );
 
-// Simplified ScheduleItemCard without drag-and-drop props
-const ScheduleItemCard = React.memo(({ item }) => (
-    <div
-        className={`p-2 h-full w-full flex flex-col text-xs rounded-md shadow-sm border border-green-200 dark:border-green-800/60 ${SCHEDULE_ITEM_BG_COLOR}`}
-    >
-        <div className="flex justify-between items-start mb-1">
-            <span className="max-w-[180px] font-semibold text-[13px] text-gray-800 dark:text-gray-200 truncate" title={item.subject}>{item.subject}</span>
+// UPDATED: ScheduleItemCard now displays a "Temporary" status when applicable.
+const ScheduleItemCard = React.memo(({ item }) => {
+    const isTemporary = item.status === 'temporary';
+    const cardBgColor = isTemporary 
+        ? 'bg-orange-50 dark:bg-orange-900/40' 
+        : 'bg-green-50 dark:bg-green-900/40';
+    const borderColor = isTemporary 
+        ? 'border-orange-200 dark:border-orange-800/60' 
+        : 'border-green-200 dark:border-green-800/60';
+
+    return (
+        <div
+            className={`p-2 h-full w-full flex flex-col text-xs rounded-md shadow-sm border ${borderColor} ${cardBgColor}`}
+        >
+            <div className="flex justify-between items-start mb-1">
+                {/* MODIFIED: Added 'pdf-subject-name' class to handle PDF text wrapping */}
+                <span className="pdf-subject-name max-w-[180px] font-semibold text-[13px] text-gray-800 dark:text-gray-200 truncate" title={item.subject}>{item.subject}</span>
+            </div>
+            <div className="text-gray-700 dark:text-gray-300 text-[11px]">{item.year}</div>
+            
+            {isTemporary && (
+                <div className="mt-2">
+                    {/* MODIFIED: Added 'pdf-temp-status' class to handle PDF styling */}
+                    <span className="pdf-temp-status px-2 py-0.5 text-[10px] font-semibold text-orange-800 bg-orange-200 dark:text-orange-200 dark:bg-orange-700/50 rounded-full">
+                        Temporary
+                    </span>
+                </div>
+            )}
+
+            <div className="mt-auto text-right text-gray-500 dark:text-gray-400 text-[10px]">{item.timeDisplay}</div>
+            <div className="mt-1 text-right text-gray-500 dark:text-gray-400 text-[11px]">{item.semester}</div>
         </div>
-        <div className="text-gray-700 dark:text-gray-300 text-[11px]">{item.year}</div>
-        <div className="mt-10 text-right text-gray-500 dark:text-gray-400 text-[10px]">{item.timeDisplay}</div>
-        <div className="mt-auto text-right text-gray-500 dark:text-gray-400 text-[11px]">{item.semester}</div>
-    </div>
-));
+    );
+});
 ScheduleItemCard.displayName = 'ScheduleItemCard';
 
-// Simplified ScheduleGrid without drag-and-drop props
 const ScheduleGrid = ({ scheduleData, loading }) => (
     <div className="overflow-x-auto">
         <div className="grid grid-cols-[minmax(120px,1fr)_repeat(7,minmax(150px,1.5fr))] border-t border-l border-gray-300 dark:border-gray-600 min-w-[1024px]">
@@ -99,7 +116,6 @@ const ScheduleGrid = ({ scheduleData, loading }) => (
     </div>
 );
 
-// Simplified ScheduleList without drag-and-drop props
 const ScheduleList = ({ scheduleData, loading }) => (
     <div className="space-y-4">
         {DAYS_OF_WEEK.map(day => (
@@ -162,6 +178,26 @@ const RoomScheduleClient = ({ initialScheduleData, roomId, roomName }) => {
         if (!captureElement) return;
         setIsGeneratingPdf(true);
 
+        // MODIFIED: Added temporary styles for PDF generation
+        const style = document.createElement('style');
+        style.id = 'pdf-capture-styles';
+        style.innerHTML = `
+            .pdf-capture-mode .pdf-subject-name {
+                max-width: none !important;
+                white-space: normal !important;
+                overflow: visible !important;
+                text-overflow: clip !important;
+                word-break: break-word !important;
+            }
+            .pdf-capture-mode .pdf-temp-status {
+                background-color: transparent !important;
+                border: none !important;
+                color: #D97706 !important; /* A dark orange for visibility */
+            }
+        `;
+        document.head.appendChild(style);
+        captureElement.classList.add('pdf-capture-mode');
+
         const statsContainer = document.createElement('div');
         const footer = document.createElement('div');
         const totalShifts = DAYS_OF_WEEK.length * TIME_SLOTS.length;
@@ -197,6 +233,9 @@ const RoomScheduleClient = ({ initialScheduleData, roomId, roomName }) => {
         } finally {
             captureElement.removeChild(statsContainer);
             captureElement.removeChild(footer);
+            // MODIFIED: Cleanup temporary styles
+            document.getElementById('pdf-capture-styles')?.remove();
+            captureElement.classList.remove('pdf-capture-mode');
             setIsGeneratingPdf(false);
         }
     };
@@ -229,8 +268,8 @@ const RoomScheduleClient = ({ initialScheduleData, roomId, roomName }) => {
                         <li>Assigned Classes: <span className="font-medium text-gray-700 dark:text-gray-300">{classAssignCount}</span></li>
                         <li>Available Shifts: <span className="font-medium text-gray-700 dark:text-gray-300">{availableShiftCount}</span></li>
                         <li>Total Shifts: <span className="font-medium text-gray-700 dark:text-gray-300">{DAYS_OF_WEEK.length * TIME_SLOTS.length}</span></li>
+                        <li>Public Date: <span className="font-medium text-gray-700 dark:text-gray-300">{publicDate}</span></li>
                     </ul>
-                    Public Date: {publicDate}
                 </div>
                 <button onClick={handleDownloadPdf} disabled={loading || isGeneratingPdf} className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 px-6 rounded-md shadow-sm order-1 sm:order-2 disabled:bg-gray-400 disabled:cursor-not-allowed w-full sm:w-auto">
                     {isGeneratingPdf ? 'Generating PDF...' : 'Download PDF file'}

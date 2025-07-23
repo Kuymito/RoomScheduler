@@ -4,7 +4,6 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import { scheduleService } from '@/services/schedule.service';
 import { getAllRooms } from '@/services/room.service';
-import { getAllShifts } from '@/services/shift.service'; // Import shift service
 import AdminLayout from '@/components/AdminLayout';
 import RoomScheduleClient from '../components/RoomScheduleClient';
 import React from 'react';
@@ -56,39 +55,52 @@ async function getRoomScheduleData(roomId) {
         }
         const roomName = room.roomName;
 
-        const roomSchedules = {};
-        allSchedules.forEach(schedule => {
-            if (String(schedule.roomId) === String(roomId)) {
-                
-                const academicYear = mapGenerationToYear(schedule.year);
+        const finalSchedule = {};
 
-                const classInfo = {
+        // Process all schedules to build the definitive schedule for the target room.
+        allSchedules.forEach(schedule => {
+            if (!schedule || !schedule.dayDetails || !schedule.shift?.startTime) return;
+
+            const academicYear = mapGenerationToYear(schedule.year);
+            const timeSlotKey = `${schedule.shift.startTime.slice(0, 5)} - ${schedule.shift.endTime.slice(0, 5)}`;
+
+            schedule.dayDetails.forEach(dayDetail => {
+                // Skip online classes as they don't occupy a physical room.
+                if (dayDetail.online) return;
+
+                const dayName = dayDetail.dayOfWeek.charAt(0).toUpperCase() + dayDetail.dayOfWeek.slice(1).toLowerCase();
+                
+                const classInfoBase = {
                     subject: schedule.className,
                     year: academicYear ? `Year ${academicYear}` : 'Year N/A',
                     semester: schedule.semester,
                     scheduleId: schedule.scheduleId,
+                    timeDisplay: timeSlotKey,
                 };
 
-                if (schedule.dayDetails && Array.isArray(schedule.dayDetails) && schedule.shift) {
-                    schedule.dayDetails.forEach(dayDetail => {
-                        const dayName = dayDetail.dayOfWeek.charAt(0).toUpperCase() + dayDetail.dayOfWeek.slice(1).toLowerCase();
-                        if (!roomSchedules[dayName]) {
-                            roomSchedules[dayName] = {};
-                        }
-
-                        // UPDATED: Simplified logic to handle all shifts, including weekend shifts, the same way.
-                        // This correctly creates a single entry for the specific time slot (e.g., "07:30 - 17:00").
-                        const timeSlotKey = `${schedule.shift.startTime.slice(0, 5)} - ${schedule.shift.endTime.slice(0, 5)}`;
-                        roomSchedules[dayName][timeSlotKey] = {
-                            ...classInfo,
-                            timeDisplay: timeSlotKey,
-                        };
-                    });
+                // Case 1: This room is the TEMPORARY assignment for the schedule.
+                // This takes precedence over any permanent assignment.
+                if (String(schedule.temporaryRoomId) === String(roomId)) {
+                    if (!finalSchedule[dayName]) finalSchedule[dayName] = {};
+                    finalSchedule[dayName][timeSlotKey] = {
+                        ...classInfoBase,
+                        status: 'temporary' // Add status for the UI
+                    };
+                } 
+                // Case 2: This room is the PERMANENT assignment, AND it has NOT been moved.
+                else if (String(schedule.roomId) === String(roomId) && !schedule.temporaryRoomId) {
+                    if (!finalSchedule[dayName]) finalSchedule[dayName] = {};
+                    finalSchedule[dayName][timeSlotKey] = {
+                        ...classInfoBase,
+                        status: 'permanent' // Add status for the UI
+                    };
                 }
-            }
+                // If a schedule's permanent room is this one, but it has a temporary room assigned elsewhere,
+                // this logic correctly leaves the slot empty, making the room available.
+            });
         });
 
-        return { roomName, scheduleData: roomSchedules, error: null };
+        return { roomName, scheduleData: finalSchedule, error: null };
 
     } catch (error) {
         console.error("Failed to fetch room schedule data:", error);
