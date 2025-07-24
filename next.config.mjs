@@ -4,7 +4,7 @@ const nextConfig = {
         return [
             {
                 source: '/',
-                destination: '/api/auth/login',
+                destination: '/signin',
                 permanent: true,
             },
         ]
@@ -24,7 +24,6 @@ const nextConfig = {
                 pathname: '/**',
             },
             {
-                // Add this object to allow images from Cloudinary
                 protocol: 'https',
                 hostname: 'res.cloudinary.com',
                 port: '',

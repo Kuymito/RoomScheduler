@@ -127,7 +127,7 @@ export default function AdminLayout({ children, activeItem, pageTitle, breadcrum
     const handleConfirmLogout = () => { 
         setShowLogoutAlert(false);
         setIsLoading(true);
-        signOut({ callbackUrl: '/api/auth/login' });
+        signOut({ callbackUrl: '/signin' });
     };
 
     const handleNavItemClick = (item) => {

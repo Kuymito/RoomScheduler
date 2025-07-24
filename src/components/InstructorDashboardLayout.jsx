@@ -122,7 +122,7 @@ export default function InstructorDashboardLayout({ children, activeItem, pageTi
     const handleConfirmLogout = () => { 
         setShowLogoutAlert(false);
         setIsLoading(true);
-        signOut({ callbackUrl: '/api/auth/login' });
+        signOut({ callbackUrl: '/signin' });
     };
 
     const handleNavItemClick = (item) => {

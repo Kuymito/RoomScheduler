@@ -119,7 +119,7 @@ export default function RightResetPasswordSection() {
 
     const handleBackToLogin = () => {
         setIsNavigating(true);
-        router.push('/api/auth/login');
+        router.push('/signin');
     };
 
     if (isLoading || isNavigating) {
@@ -170,13 +170,6 @@ export default function RightResetPasswordSection() {
                         <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute inset-y-0 right-0 px-3 flex items-center">{showPassword ? <EyeOffIcon /> : <EyeIcon />}</button>
                     </div>
                     {passwordError && (<p className="mt-2 text-xs text-red-600">{passwordError}</p>)}
-                    <ul className="max-w-md mt-2 space-y-1 text-gray-500 list-disc list-inside dark:text-gray-400 text-[12px]">
-                        <li className={passwordValidationState.length ? 'text-green-600' : 'text-gray-500'}>At least 8 characters</li>
-                        <li className={passwordValidationState.uppercase ? 'text-green-600' : 'text-gray-500'}>At least one uppercase letter</li>
-                        <li className={passwordValidationState.lowercase ? 'text-green-600' : 'text-gray-500'}>At least one lowercase letter</li>
-                        <li className={passwordValidationState.number ? 'text-green-600' : 'text-gray-500'}>At least one number</li>
-                        <li className={passwordValidationState.special ? 'text-green-600' : 'text-gray-500'}>At least one special character (@$!%*?&)</li>
-                    </ul>
                 </div>
                 <div>
                     <label htmlFor="confirmPassword" className="block text-sm sm:text-base mb-1 font-base text-gray-900">Confirm Password</label>

@@ -27,7 +27,7 @@ const RightForgotPasswordSection = () => {
             await authService.forgotPassword(email);
             // Store email to be used on the verification page
             sessionStorage.setItem('emailForVerification', email);
-            router.push('/api/auth/verification');
+            router.push('/verify-otp');
         } catch (err) {
             setError('Failed to send verification code. Please try again.');
         } finally {
@@ -37,7 +37,7 @@ const RightForgotPasswordSection = () => {
 
     const handleBackToLogin = () => {
         setIsNavigating(true);
-        router.push('/api/auth/login');
+        router.push('/signin');
     };
 
     if (isLoading || isNavigating) {

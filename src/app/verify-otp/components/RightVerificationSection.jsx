@@ -105,7 +105,7 @@ export default function RightVerificationSection() {
             await authService.verifyOtp(email, verificationCode);
             // If successful, store the OTP and redirect to the reset password page.
             sessionStorage.setItem('otpForReset', verificationCode); // Store OTP
-            router.push('/api/auth/reset');
+            router.push('/reset-password');
         } catch (err) {
             console.error("OTP verification error:", err.message); // Log the actual error
             setError("Invalid code. Please try again."); // Display user-friendly message

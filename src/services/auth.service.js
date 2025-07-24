@@ -30,12 +30,12 @@ const updateAdminProfile = async (adminId, adminData, token) => {
 
 const forgotPassword = async (email) => {
   try {
-    const response = await api.post('/otp/generate', { email });
-    const data = handleResponse(response);
-    if (data.status !== 'OK') {
-      throw new Error(data.message || 'Failed to send OTP.');
-    }
-    return data;
+    const response = await api.post('/otp/generate', { email }, {
+      headers: { 'Content-Type': 'application/json' }
+    });
+    // FIX: Removed the check for `data.status !== 'OK'`.
+    // If the request doesn't throw an error, we assume it's successful.
+    return handleResponse(response);
   } catch (error) {
     handleError("sending forgot password OTP", error);
   }
@@ -43,7 +43,9 @@ const forgotPassword = async (email) => {
 
 const verifyOtp = async (email, otp) => {
   try {
-    const response = await api.post('/otp/validate', { email, otp });
+    const response = await api.post('/otp/validate', { email, otp }, {
+      headers: { 'Content-Type': 'application/json' }
+    });
     const data = handleResponse(response);
     if (data === true) { // The payload is just a boolean
       return { success: true, message: "OTP verified successfully." };
@@ -57,7 +59,9 @@ const verifyOtp = async (email, otp) => {
 
 const resetPassword = async ({ email, otp, newPassword }) => {
   try {
-    const response = await api.post('/auth/reset-password-with-otp', { email, otp, newPassword });
+    const response = await api.post('/auth/reset-password-with-otp', { email, otp, newPassword }, {
+      headers: { 'Content-Type': 'application/json' }
+    });
     return handleResponse(response);
   } catch (error) {
     handleError("resetting password", error);

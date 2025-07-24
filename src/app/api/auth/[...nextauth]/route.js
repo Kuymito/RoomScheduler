@@ -92,9 +92,11 @@ export const authOptions = {
       }
     })
   ],
+  // UPDATED: This 'pages' object tells NextAuth to use your custom pages
+  // instead of its default built-in pages.
   pages: {
-    signIn: '/api/auth/login',
-    error: '/api/auth/login',
+    signIn: '/signin',
+    error: '/signin', // Redirect users to your custom sign-in page on error
   },
   callbacks: {
     async jwt({ token, user }) {

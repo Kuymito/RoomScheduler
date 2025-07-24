@@ -46,8 +46,6 @@ export const getAuthHeaders = async (token) => {
     return {
         'Authorization': `Bearer ${authToken}`,
         'Content-Type': 'application/json',
-        // This header is useful for bypassing ngrok's browser warning page during development.
-        'ngrok-skip-browser-warning': 'true',
     };
 };
 
