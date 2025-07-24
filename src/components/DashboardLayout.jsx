@@ -126,7 +126,7 @@ export default function DashboardLayout({ children, activeItem, pageTitle }) {
     const handleConfirmLogout = () => { 
         setShowLogoutAlert(false);
         setIsLoading(true);
-        signOut({ callbackUrl: '/api/auth/login' });
+        signOut({ callbackUrl: '/signin' });
     };
 
     const handleNavItemClick = (item) => {

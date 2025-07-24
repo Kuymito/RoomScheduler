@@ -1,4 +1,4 @@
-// src/app/api/auth/reset/components/RightResetPasswordSection.jsx
+// src/app/reset-password/components/RightResetPasswordSection.jsx
 "use client";
 
 import React, { useState } from 'react';
@@ -25,6 +25,16 @@ const CheckCircleIcon = () => (
     </svg>
 );
 
+const ValidationIndicator = ({ isValid, text }) => (
+    <p className={`flex items-center text-xs ${isValid ? 'text-green-600' : 'text-gray-500'}`}>
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1">
+            {isValid ? <><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></> : <circle cx="12" cy="12" r="10"></circle>}
+        </svg>
+        {text}
+    </p>
+);
+
+
 // --- Form Control Component ---
 export default function RightResetPasswordSection() {
     const [password, setPassword] = useState('');
@@ -39,28 +49,42 @@ export default function RightResetPasswordSection() {
     const [apiError, setApiError] = useState(''); // For API-level errors
     const router = useRouter();
 
-    const validatePassword = (value) => {
-        const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
-        if (!value) {
-            setPasswordError('Password is required.'); return false;
-        }
-        if (!passwordRegex.test(value)) {
-            setPasswordError('Password does not meet the requirements.'); return false;
-        }
-        setPasswordError(''); return true;
-    };
+    const [passwordValidation, setPasswordValidation] = useState({
+        length: false,
+        uppercase: false,
+        lowercase: false,
+        number: false,
+        special: false,
+    });
 
-    const getPasswordValidationState = (password) => {
-        return {
-            length: password.length >= 8,
-            uppercase: /[A-Z]/.test(password),
-            lowercase: /[a-z]/.test(password),
-            number: /\d/.test(password),
-            special: /[@$!%*?&]/.test(password),
-        };
+    const validatePassword = (value) => {
+        if (!value) {
+            setPasswordError('Password is required.');
+            return false;
+        }
+        if (value.length < 8) {
+            setPasswordError('Password must be at least 8 characters long.');
+            return false;
+        }
+        if (!/[a-z]/.test(value)) {
+            setPasswordError('Password must contain at least one lowercase letter.');
+            return false;
+        }
+        if (!/[A-Z]/.test(value)) {
+            setPasswordError('Password must contain at least one uppercase letter.');
+            return false;
+        }
+        if (!/\d/.test(value)) {
+            setPasswordError('Password must contain at least one number.');
+            return false;
+        }
+        if (!/[@$!%*?&]/.test(value)) {
+            setPasswordError('Password must contain at least one special symbol (@$!%*?&).');
+            return false;
+        }
+        setPasswordError('');
+        return true;
     };
-    
-    const passwordValidationState = getPasswordValidationState(password);
 
     const validateConfirmPassword = (value, currentPassword) => {
         if (!value) {
@@ -75,6 +99,15 @@ export default function RightResetPasswordSection() {
     const handlePasswordChange = (e) => {
         const newPassword = e.target.value;
         setPassword(newPassword);
+
+        setPasswordValidation({
+            length: newPassword.length >= 8,
+            uppercase: /[A-Z]/.test(newPassword),
+            lowercase: /[a-z]/.test(newPassword),
+            number: /\d/.test(newPassword),
+            special: /[@$!%*?&]/.test(newPassword),
+        });
+
         validatePassword(newPassword);
         if (confirmPassword) {
             validateConfirmPassword(confirmPassword, newPassword);
@@ -119,7 +152,7 @@ export default function RightResetPasswordSection() {
 
     const handleBackToLogin = () => {
         setIsNavigating(true);
-        router.push('/api/auth/login');
+        router.push('/signin');
     };
 
     if (isLoading || isNavigating) {
@@ -170,13 +203,6 @@ export default function RightResetPasswordSection() {
                         <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute inset-y-0 right-0 px-3 flex items-center">{showPassword ? <EyeOffIcon /> : <EyeIcon />}</button>
                     </div>
                     {passwordError && (<p className="mt-2 text-xs text-red-600">{passwordError}</p>)}
-                    <ul className="max-w-md mt-2 space-y-1 text-gray-500 list-disc list-inside dark:text-gray-400 text-[12px]">
-                        <li className={passwordValidationState.length ? 'text-green-600' : 'text-gray-500'}>At least 8 characters</li>
-                        <li className={passwordValidationState.uppercase ? 'text-green-600' : 'text-gray-500'}>At least one uppercase letter</li>
-                        <li className={passwordValidationState.lowercase ? 'text-green-600' : 'text-gray-500'}>At least one lowercase letter</li>
-                        <li className={passwordValidationState.number ? 'text-green-600' : 'text-gray-500'}>At least one number</li>
-                        <li className={passwordValidationState.special ? 'text-green-600' : 'text-gray-500'}>At least one special character (@$!%*?&)</li>
-                    </ul>
                 </div>
                 <div>
                     <label htmlFor="confirmPassword" className="block text-sm sm:text-base mb-1 font-base text-gray-900">Confirm Password</label>

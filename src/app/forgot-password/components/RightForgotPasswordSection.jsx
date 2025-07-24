@@ -27,17 +27,18 @@ const RightForgotPasswordSection = () => {
             await authService.forgotPassword(email);
             // Store email to be used on the verification page
             sessionStorage.setItem('emailForVerification', email);
-            router.push('/api/auth/verification');
+            router.push('/verify-otp');
+            // FIX: Do not set isLoading to false on success.
+            // The loading spinner will show until the new page loads and this component unmounts.
         } catch (err) {
             setError('Failed to send verification code. Please try again.');
-        } finally {
-            setIsLoading(false);
+            setIsLoading(false); // Only set loading to false if there's an error
         }
     };
 
     const handleBackToLogin = () => {
         setIsNavigating(true);
-        router.push('/api/auth/login');
+        router.push('/signin');
     };
 
     if (isLoading || isNavigating) {

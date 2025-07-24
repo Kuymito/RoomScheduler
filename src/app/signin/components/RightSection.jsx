@@ -64,7 +64,7 @@ export default function RightSection() {
 
     const handleForgotPasswordClick = () => {
         setIsForgotLoading(true);
-        router.push('/api/auth/forgot');
+        router.push('/forgot-password'); // Redirect to the forgot password page
     };
 
     if (isLoading || isForgotLoading) {

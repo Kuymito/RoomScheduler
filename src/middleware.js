@@ -1,3 +1,4 @@
+// src/middleware.js
 import { withAuth } from 'next-auth/middleware';
 import { NextResponse } from 'next/server';
 
@@ -7,9 +8,10 @@ export default withAuth(
     const { pathname } = req.nextUrl;
 
     // If the user is not logged in, `token` will be null.
-    // The `withAuth` middleware already handles redirecting to the login page.
+    // The `withAuth` middleware already handles redirecting to the login page defined in the authOptions.
+    // However, we can add an explicit redirect as a fallback.
     if (!token) {
-      return NextResponse.redirect(new URL('/auth/login', req.url));
+      return NextResponse.redirect(new URL('/signin', req.url));
     }
 
     const userRole = token.role;
@@ -36,6 +38,10 @@ export default withAuth(
   {
     callbacks: {
       authorized: ({ token }) => !!token, // A user is authorized if they have a token
+    },
+    // Adding the custom sign-in page here ensures withAuth redirects correctly
+    pages: {
+      signIn: '/signin',
     },
   }
 );

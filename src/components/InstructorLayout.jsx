@@ -110,7 +110,7 @@ export default function InstructorLayout({ children, activeItem, pageTitle, brea
     const handleUserIconClick = (event) => { event.stopPropagation(); if (showInstructorNotificationPopup) setShowInstructorNotificationPopup(false); setShowAdminPopup(prev => !prev); };
     const handleLogoutClick = () => { setShowAdminPopup(false); setShowLogoutAlert(true); };
     const handleCloseLogoutAlert = () => setShowLogoutAlert(false);
-    const handleConfirmLogout = () => { setShowLogoutAlert(false); setIsLoading(true); signOut({ callbackUrl: '/api/auth/login' }); };
+    const handleConfirmLogout = () => { setShowLogoutAlert(false); setIsLoading(true); signOut({ callbackUrl: '/signin' }); };
     const handleNavItemClick = (item) => { if (pathname !== item.href) { setNavigatingTo(item.id); router.push(item.href); } };
     const handleToggleInstructorNotificationPopup = (event) => { event.stopPropagation(); if (showAdminPopup) setShowAdminPopup(false); setShowInstructorNotificationPopup(prev => !prev); };
     const handleMarkInstructorNotificationAsRead = async (notificationId) => { await notificationService.markNotificationAsRead(notificationId, token); mutateInstructorNotifications(); if (pathname === '/instructor/room') router.refresh(); };
