@@ -144,6 +144,14 @@ const RequestChangeForm = ({ isOpen, onClose, onSave, roomDetails, instructorCla
     const dayIndexMap = { "Monday": 1, "Tuesday": 2, "Wednesday": 3, "Thursday": 4, "Friday": 5, "Saturday": 6, "Sunday": 0 };
     const allowedDayIndex = dayIndexMap[selectedDay];
 
+    const shiftNameToIdMap = {
+        'Morning Shift': 1,
+        'Noon Shift': 2,
+        'Afternoon Shift': 3,
+        'Evening Shift': 4,
+        'Weekend Shift': 5
+    };
+
     useEffect(() => {
         if (isOpen) {
             setRequestData(getInitialState());
@@ -184,9 +192,17 @@ const RequestChangeForm = ({ isOpen, onClose, onSave, roomDetails, instructorCla
     
         setIsSubmitting(true);
         try {
+            const shiftId = shiftNameToIdMap[selectedTime];
+            if (shiftId === undefined) {
+                setToast({ show: true, message: 'Invalid time slot selected.', type: 'error' });
+                setIsSubmitting(false);
+                return;
+            }
+
             const payload = {
                 scheduleId: isConferenceRoom ? null : Number(requestData.scheduleId),
                 newRoomId: Number(roomDetails.id),
+                shiftId: shiftId,
                 effectiveDate: requestData.date.toISOString().split('T')[0],
                 description: requestData.description || '',
                 eventName: isConferenceRoom ? requestData.eventName : undefined,

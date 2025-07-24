@@ -236,7 +236,11 @@ export default function InstructorClassClientView({ initialClasses }) {
                                                 {data.faculty}
                                             </div>
                                         </td>
-                                        <td className="px-6 py-2.5 sm:table-cell hidden">{data.shift}</td>
+                                        <td className="px-6 py-2.5 sm:table-cell hidden">
+                                            <div className="max-w-[65px] truncate" title={data.shift}>
+                                                {data.shift}
+                                            </div>
+                                        </td>
                                     </>
                                 )}
                             </tr>

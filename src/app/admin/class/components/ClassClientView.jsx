@@ -70,7 +70,14 @@ export default function ClassClientView({ initialClasses, initialDepartments, in
     const [toast, setToast] = useState({ show: false, message: '', type: 'info' });
     
     // --- State with localStorage Initialization ---
-    const [currentPage, setCurrentPage] = useState(1);
+    // UPDATED: Initialize currentPage from localStorage
+    const [currentPage, setCurrentPage] = useState(() => {
+        if (typeof window !== 'undefined') {
+            const savedPage = localStorage.getItem('adminClassPage_currentPage');
+            return savedPage ? parseInt(savedPage, 10) : 1;
+        }
+        return 1;
+    });
     const itemsPerPageOptions = [5, 10, 20, 50];
 
     const [itemsPerPage, setItemsPerPage] = useState(() => {
@@ -127,15 +134,17 @@ export default function ClassClientView({ initialClasses, initialDepartments, in
     const [isFilterMenuOpen, setIsFilterMenuOpen] = useState(false);
     
     // --- useEffect hooks to persist state changes ---
-    useEffect(() => { localStorage.setItem('adminClassPage_itemsPerPage', itemsPerPage); }, [itemsPerPage]);
-    useEffect(() => { localStorage.setItem('adminClassPage_statusFilter', statusFilter); }, [statusFilter]);
-    useEffect(() => { localStorage.setItem('adminClassPage_onlineFilter', onlineClassFilter); }, [onlineClassFilter]);
-    useEffect(() => { localStorage.setItem('adminClassPage_expiredFilter', expiredClassFilter); }, [expiredClassFilter]);
-    useEffect(() => { localStorage.setItem('adminClassPage_unassignedFilter', unassignedClassFilter); }, [unassignedClassFilter]);
-    useEffect(() => { if(sortColumn) localStorage.setItem('adminClassPage_sortColumn', sortColumn); else localStorage.removeItem('adminClassPage_sortColumn')}, [sortColumn]);
-    useEffect(() => { localStorage.setItem('adminClassPage_sortDirection', sortDirection); }, [sortDirection]);
-    useEffect(() => { localStorage.setItem('adminClassPage_searchTexts', JSON.stringify(searchTexts)); }, [searchTexts]);
-    useEffect(() => { localStorage.setItem('adminClassPage_globalSearch', globalSearchTerm); }, [globalSearchTerm]);
+    // UPDATED: Added useEffect for currentPage
+    useEffect(() => { if (typeof window !== 'undefined') localStorage.setItem('adminClassPage_currentPage', currentPage); }, [currentPage]);
+    useEffect(() => { if (typeof window !== 'undefined') localStorage.setItem('adminClassPage_itemsPerPage', itemsPerPage); }, [itemsPerPage]);
+    useEffect(() => { if (typeof window !== 'undefined') localStorage.setItem('adminClassPage_statusFilter', statusFilter); }, [statusFilter]);
+    useEffect(() => { if (typeof window !== 'undefined') localStorage.setItem('adminClassPage_onlineFilter', onlineClassFilter); }, [onlineClassFilter]);
+    useEffect(() => { if (typeof window !== 'undefined') localStorage.setItem('adminClassPage_expiredFilter', expiredClassFilter); }, [expiredClassFilter]);
+    useEffect(() => { if (typeof window !== 'undefined') localStorage.setItem('adminClassPage_unassignedFilter', unassignedClassFilter); }, [unassignedClassFilter]);
+    useEffect(() => { if(typeof window !== 'undefined') { if(sortColumn) localStorage.setItem('adminClassPage_sortColumn', sortColumn); else localStorage.removeItem('adminClassPage_sortColumn')} }, [sortColumn]);
+    useEffect(() => { if (typeof window !== 'undefined') localStorage.setItem('adminClassPage_sortDirection', sortDirection); }, [sortDirection]);
+    useEffect(() => { if (typeof window !== 'undefined') localStorage.setItem('adminClassPage_searchTexts', JSON.stringify(searchTexts)); }, [searchTexts]);
+    useEffect(() => { if (typeof window !== 'undefined') localStorage.setItem('adminClassPage_globalSearch', globalSearchTerm); }, [globalSearchTerm]);
 
 
     useEffect(() => {
@@ -439,7 +448,7 @@ export default function ClassClientView({ initialClasses, initialDepartments, in
                                         </td>
                                         <td className="px-6 py-2">
                                             {/* UPDATED: Added max-width and truncate */}
-                                            <div className="max-w-[70px] truncate" title={data.name}>
+                                            <div className="max-w-[70px] w-[70px] truncate" title={data.name}>
                                                 {data.name}
                                             </div>
                                         </td>
@@ -459,7 +468,11 @@ export default function ClassClientView({ initialClasses, initialDepartments, in
                                             </div>
                                         </td>
                                         <td className="px-6 py-2 2xl:table-cell hidden"> {data.semester} </td>
-                                        <td className="px-6 py-2 sm:table-cell hidden"> {data.shift} </td>
+                                        <td className="px-6 py-2 sm:table-cell hidden">
+                                            <div className="max-w-[65px] truncate" title={data.shift}>
+                                                {data.shift}
+                                            </div>
+                                        </td>
                                         <td className="px-6 py-2 capitalize"><span className={`px-2 py-0.5 rounded-full text-xs font-medium ${data.status.toLowerCase() === 'active' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'}`}>{data.status}</span></td>
                                     </>
                                 )}

@@ -63,7 +63,14 @@ export default function InstructorClientView({ initialInstructors, initialDepart
     const [showCreateInstructorPopup, setShowCreateInstructorPopup] = useState(false);
     
     // --- State with localStorage Initialization ---
-    const [currentPage, setCurrentPage] = useState(1);
+    // UPDATED: Initialize currentPage from localStorage
+    const [currentPage, setCurrentPage] = useState(() => {
+        if (typeof window !== 'undefined') {
+            const savedPage = localStorage.getItem('instructorPage_currentPage');
+            return savedPage ? parseInt(savedPage, 10) : 1;
+        }
+        return 1;
+    });
     const itemsPerPageOptions = [5, 10, 20, 50];
     
     const [itemsPerPage, setItemsPerPage] = useState(() => {
@@ -106,6 +113,8 @@ export default function InstructorClientView({ initialInstructors, initialDepart
     const [isFilterMenuOpen, setIsFilterMenuOpen] = useState(false);
 
     // --- useEffect hooks to persist state changes ---
+    // UPDATED: Added useEffect for currentPage
+    useEffect(() => { if (typeof window !== 'undefined') localStorage.setItem('instructorPage_currentPage', currentPage); }, [currentPage]);
     useEffect(() => { if (typeof window !== 'undefined') localStorage.setItem('instructorItemsPerPage', itemsPerPage); }, [itemsPerPage]);
     useEffect(() => { if (typeof window !== 'undefined') localStorage.setItem('instructorPage_statusFilter', statusFilter); }, [statusFilter]);
     useEffect(() => { if (typeof window !== 'undefined') { if (sortColumn) localStorage.setItem('instructorPage_sortColumn', sortColumn); else localStorage.removeItem('instructorPage_sortColumn'); } }, [sortColumn]);
