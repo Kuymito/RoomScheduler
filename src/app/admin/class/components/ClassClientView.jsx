@@ -78,7 +78,7 @@ export default function ClassClientView({ initialClasses, initialDepartments, in
         }
         return 1;
     });
-    const itemsPerPageOptions = [5, 10, 20, 50];
+    const itemsPerPageOptions = [1, 5, 10, 20, 50];
 
     const [itemsPerPage, setItemsPerPage] = useState(() => {
         if (typeof window !== 'undefined') {
@@ -319,15 +319,42 @@ export default function ClassClientView({ initialClasses, initialDepartments, in
     };
     const getPageNumbers = () => {
         const pageNumbers = [];
-        const maxPagesToShow = 5;
-        let startPage = Math.max(1, currentPage - Math.floor(maxPagesToShow / 2));
-        let endPage = Math.min(totalPages, startPage + maxPagesToShow - 1);
-        if (endPage - startPage + 1 < maxPagesToShow) {
-            startPage = Math.max(1, endPage - maxPagesToShow + 1);
+        const maxPagesToShow = 5; // Total items to show: 1 ... 2 3 4 ... 10
+        const pageBuffer = 1; // Pages around current page
+    
+        if (totalPages <= maxPagesToShow) {
+            for (let i = 1; i <= totalPages; i++) {
+                pageNumbers.push(i);
+            }
+        } else {
+            pageNumbers.push(1); // Always show first page
+    
+            let start = Math.max(2, currentPage - pageBuffer);
+            let end = Math.min(totalPages - 1, currentPage + pageBuffer);
+    
+            if (currentPage - pageBuffer <= 2) {
+                end = maxPagesToShow - 2;
+            }
+    
+            if (currentPage + pageBuffer >= totalPages - 1) {
+                start = totalPages - maxPagesToShow + 3;
+            }
+    
+            if (start > 2) {
+                pageNumbers.push('...');
+            }
+    
+            for (let i = start; i <= end; i++) {
+                pageNumbers.push(i);
+            }
+    
+            if (end < totalPages - 1) {
+                pageNumbers.push('...');
+            }
+    
+            pageNumbers.push(totalPages); // Always show last page
         }
-        for (let i = startPage; i <= endPage; i++) {
-            pageNumbers.push(i);
-        }
+    
         return pageNumbers;
     };
     
@@ -525,8 +552,14 @@ export default function ClassClientView({ initialClasses, initialDepartments, in
                 </div>
                 <ul className="inline-flex -space-x-px rtl:space-x-reverse text-xs h-8">
                     <li><button onClick={goToPreviousPage} disabled={currentPage === 1 || isPending} className="flex items-center justify-center px-3 h-8 ms-0 leading-tight text-gray-500 bg-white border border-gray-300 rounded-s-lg hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white disabled:opacity-50 disabled:cursor-not-allowed">Previous</button></li>
-                    {getPageNumbers().map((pageNumber) => (
-                        <li key={pageNumber}><button onClick={() => goToPage(pageNumber)} disabled={isPending} className={`flex items-center justify-center px-3 h-8 leading-tight border border-gray-300 dark:border-gray-700 ${currentPage === pageNumber ? 'text-blue-600 bg-blue-50 hover:bg-blue-100 hover:text-blue-700 dark:bg-gray-700 dark:text-white' : 'text-gray-500 bg-white hover:bg-gray-100 dark:bg-gray-800 dark:hover:bg-gray-600'} disabled:opacity-50 disabled:cursor-not-allowed`}>{pageNumber}</button></li>
+                    {getPageNumbers().map((pageNumber, index) => (
+                        <li key={index}>
+                            {pageNumber === '...' ? (
+                                <span className="flex items-center justify-center px-3 h-8 leading-tight text-gray-500 bg-white border border-gray-300 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400">...</span>
+                            ) : (
+                                <button onClick={() => goToPage(pageNumber)} disabled={isPending} className={`flex items-center justify-center px-3 h-8 leading-tight border border-gray-300 dark:border-gray-700 ${currentPage === pageNumber ? 'text-blue-600 bg-blue-50 hover:bg-blue-100 hover:text-blue-700 dark:bg-gray-700 dark:text-white' : 'text-gray-500 bg-white hover:bg-gray-100 dark:bg-gray-800 dark:hover:bg-gray-600'} disabled:opacity-50 disabled:cursor-not-allowed`}>{pageNumber}</button>
+                            )}
+                        </li>
                     ))}
                     <li><button onClick={goToNextPage} disabled={currentPage === totalPages || isPending} className="flex items-center justify-center px-3 h-8 leading-tight text-gray-500 bg-white border border-gray-300 rounded-e-lg hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white disabled:opacity-50 disabled:cursor-not-allowed">Next</button></li>
                 </ul>

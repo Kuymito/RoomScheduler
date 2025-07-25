@@ -48,12 +48,45 @@ export default function InstructorClassClientView({ initialClasses }) {
 
     const [classData, setClassData] = useState([]);
     const [rowLoading, setRowLoading] = useState(null);
-    const [currentPage, setCurrentPage] = useState(1);
+    
+    // --- State with localStorage Initialization ---
+    const [currentPage, setCurrentPage] = useState(() => {
+        if (typeof window !== 'undefined') {
+            const savedPage = localStorage.getItem('instructorClassPage_currentPage');
+            return savedPage ? parseInt(savedPage, 10) : 1;
+        }
+        return 1;
+    });
     const itemsPerPageOptions = [5, 10, 20, 50];
-    const [itemsPerPage, setItemsPerPage] = useState(itemsPerPageOptions[0]);
-    const [sortColumn, setSortColumn] = useState(null);
-    const [sortDirection, setSortDirection] = useState('asc');
-    const [searchTexts, setSearchTexts] = useState({ name: '', generation: '', group: '', major: '', degrees: '', faculty: '', shift: '' });
+    const [itemsPerPage, setItemsPerPage] = useState(() => {
+        if (typeof window !== 'undefined') {
+            const savedSize = localStorage.getItem('instructorClassPage_itemsPerPage');
+            return savedSize ? parseInt(savedSize, 10) : itemsPerPageOptions[0];
+        }
+        return itemsPerPageOptions[0];
+    });
+    const [sortColumn, setSortColumn] = useState(() => {
+        if (typeof window !== 'undefined') return localStorage.getItem('instructorClassPage_sortColumn') || null;
+        return null;
+    });
+    const [sortDirection, setSortDirection] = useState(() => {
+        if (typeof window !== 'undefined') return localStorage.getItem('instructorClassPage_sortDirection') || 'asc';
+        return 'asc';
+    });
+    const [searchTexts, setSearchTexts] = useState(() => {
+        if (typeof window !== 'undefined') {
+            const saved = localStorage.getItem('instructorClassPage_searchTexts');
+            return saved ? JSON.parse(saved) : { name: '', generation: '', group: '', major: '', degrees: '', faculty: '', shift: '' };
+        }
+        return { name: '', generation: '', group: '', major: '', degrees: '', faculty: '', shift: '' };
+    });
+
+    // --- useEffect hooks to persist state changes ---
+    useEffect(() => { if (typeof window !== 'undefined') localStorage.setItem('instructorClassPage_currentPage', currentPage); }, [currentPage]);
+    useEffect(() => { if (typeof window !== 'undefined') localStorage.setItem('instructorClassPage_itemsPerPage', itemsPerPage); }, [itemsPerPage]);
+    useEffect(() => { if (typeof window !== 'undefined') { if (sortColumn) localStorage.setItem('instructorClassPage_sortColumn', sortColumn); else localStorage.removeItem('instructorClassPage_sortColumn'); } }, [sortColumn]);
+    useEffect(() => { if (typeof window !== 'undefined') localStorage.setItem('instructorClassPage_sortDirection', sortDirection); }, [sortDirection]);
+    useEffect(() => { if (typeof window !== 'undefined') localStorage.setItem('instructorClassPage_searchTexts', JSON.stringify(searchTexts)); }, [searchTexts]);
 
     useEffect(() => {
         if (apiData) {
@@ -149,13 +182,42 @@ export default function InstructorClassClientView({ initialClasses }) {
 
     const getPageNumbers = () => {
         const pageNumbers = [];
-        const maxPagesToShow = 5;
-        let startPage = Math.max(1, currentPage - Math.floor(maxPagesToShow / 2));
-        let endPage = Math.min(totalPages, startPage + maxPagesToShow - 1);
-        if (endPage - startPage + 1 < maxPagesToShow) {
-            startPage = Math.max(1, endPage - maxPagesToShow + 1);
+        const maxPagesToShow = 5; // Total items to show: 1 ... 2 3 4 ... 10
+        const pageBuffer = 1; // Pages around current page
+    
+        if (totalPages <= maxPagesToShow) {
+            for (let i = 1; i <= totalPages; i++) {
+                pageNumbers.push(i);
+            }
+        } else {
+            pageNumbers.push(1); // Always show first page
+    
+            let start = Math.max(2, currentPage - pageBuffer);
+            let end = Math.min(totalPages - 1, currentPage + pageBuffer);
+    
+            if (currentPage - pageBuffer <= 2) {
+                end = maxPagesToShow - 2;
+            }
+    
+            if (currentPage + pageBuffer >= totalPages - 1) {
+                start = totalPages - maxPagesToShow + 3;
+            }
+    
+            if (start > 2) {
+                pageNumbers.push('...');
+            }
+    
+            for (let i = start; i <= end; i++) {
+                pageNumbers.push(i);
+            }
+    
+            if (end < totalPages - 1) {
+                pageNumbers.push('...');
+            }
+    
+            pageNumbers.push(totalPages); // Always show last page
         }
-        for (let i = startPage; i <= endPage; i++) pageNumbers.push(i);
+    
         return pageNumbers;
     };
 
@@ -272,7 +334,15 @@ export default function InstructorClassClientView({ initialClasses }) {
                 </div>
                 <ul className="inline-flex -space-x-px rtl:space-x-reverse text-sm h-8">
                     <li><button onClick={goToPreviousPage} disabled={currentPage === 1} className="flex items-center justify-center px-3 h-8 ms-0 leading-tight text-gray-500 bg-white border border-gray-300 rounded-s-lg hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white disabled:opacity-50">Previous</button></li>
-                    {getPageNumbers().map((pageNumber) => (<li key={pageNumber}><button onClick={() => goToPage(pageNumber)} className={`flex items-center justify-center px-3 h-8 leading-tight border border-gray-300 ${currentPage === pageNumber ? 'text-blue-600 bg-blue-50 dark:bg-gray-700 dark:text-white' : 'text-gray-500 bg-white hover:bg-gray-100 dark:bg-gray-800 dark:hover:bg-gray-700'} disabled:opacity-50`}>{pageNumber}</button></li>))}
+                    {getPageNumbers().map((pageNumber, index) => (
+                        <li key={index}>
+                            {pageNumber === '...' ? (
+                                <span className="flex items-center justify-center px-3 h-8 leading-tight text-gray-500 bg-white border border-gray-300 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400">...</span>
+                            ) : (
+                                <button onClick={() => goToPage(pageNumber)} className={`flex items-center justify-center px-3 h-8 leading-tight border border-gray-300 ${currentPage === pageNumber ? 'text-blue-600 bg-blue-50 dark:bg-gray-700 dark:text-white' : 'text-gray-500 bg-white hover:bg-gray-100 dark:bg-gray-800 dark:hover:bg-gray-700'} disabled:opacity-50`}>{pageNumber}</button>
+                            )}
+                        </li>
+                    ))}
                     <li><button onClick={goToNextPage} disabled={currentPage === totalPages} className="flex items-center justify-center px-3 h-8 leading-tight text-gray-500 bg-white border border-gray-300 rounded-e-lg hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white disabled:opacity-50">Next</button></li>
                 </ul>
             </nav>
