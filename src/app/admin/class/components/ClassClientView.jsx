@@ -78,7 +78,7 @@ export default function ClassClientView({ initialClasses, initialDepartments, in
         }
         return 1;
     });
-    const itemsPerPageOptions = [1, 5, 10, 20, 50];
+    const itemsPerPageOptions = [5, 10, 20, 50];
 
     const [itemsPerPage, setItemsPerPage] = useState(() => {
         if (typeof window !== 'undefined') {

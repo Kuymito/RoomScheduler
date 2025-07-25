@@ -96,7 +96,13 @@ const fetchChartData = async (timeSlot) => {
       scheduleService.getAllSchedules(token)
     ]);
 
-    const totalRoomCount = allRooms.length;
+    // Define the set of unavailable room IDs, consistent with the instructor's room page
+    const UNAVAILABLE_ROOM_IDS = new Set([1, 2, 3, 35, 36, 37, 38, 47, 48, 49, 50, 51, 53, 54, 55]);
+
+    // Filter out unavailable rooms before counting the total
+    const availableRooms = allRooms.filter(room => !UNAVAILABLE_ROOM_IDS.has(room.roomId));
+    const totalRoomCount = availableRooms.length;
+    
     const selectedStartTime = timeSlot.split(' - ')[0] + ':00';
 
     const occupiedRoomsByDay = {
