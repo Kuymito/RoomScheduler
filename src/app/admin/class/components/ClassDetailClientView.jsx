@@ -479,59 +479,44 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
     const handleDayDragEnter = (e, day) => { e.preventDefault(); if (draggedItem) setDragOverDay(day); };
     const handleDayDragLeave = (e, day) => { if (e.currentTarget.contains(e.relatedTarget)) return; if (dragOverDay === day) setDragOverDay(null); };
     
+    // MODIFIED: This function now ONLY handles local state changes. No API calls.
     const handleDayDrop = (e, targetDay) => {
         e.preventDefault();
         if (!draggedItem) return;
-    
+
         const isTargetWeekend = targetDay === 'Sat' || targetDay === 'Sun';
         if ((isWeekendShift && !isTargetWeekend) || (!isWeekendShift && isTargetWeekend)) {
             setDragOverDay(null);
             return;
         }
-
-        const timeSlot = classData.shift;
-
-        // Conflict check for new assignments and moves to empty slots.
-        if (draggedItem.type === 'new' || (draggedItem.type === 'scheduled' && !schedule[targetDay])) {
-            const roomToCheck = currentClassPermanentRoomId;
-            if (roomToCheck) {
-                const conflictingClass = roomScheduleMap[targetDay]?.[timeSlot]?.[roomToCheck];
-                if (conflictingClass && conflictingClass.classId !== classData.id) {
-                    setToast({
-                        show: true,
-                        message: `Conflict: This class's room is occupied by "${conflictingClass.className}" on ${targetDay} during the ${timeSlot}.`,
-                        type: 'error'
-                    });
-                    setDragOverDay(null);
-                    setDraggedItem(null); // Clear dragged item to prevent further actions
-                    return;
-                }
-            } else {
-                console.warn(`Could not determine a permanent room for class ID ${classData.id} to check for conflicts.`);
-            }
-        }
     
-        const newSchedule = { ...schedule };
-        if (draggedItem.type === 'new') {
-            newSchedule[targetDay] = {
-                instructor: {id: draggedItem.item.id, name: draggedItem.item.name, profileImage: draggedItem.item.profileImage, degree: draggedItem.item.degree,},
-                studyMode: 'in-class',
-            };
-        } else if (draggedItem.type === 'scheduled') {
-            const originDay = draggedItem.originDay;
-            if (originDay === targetDay) { setDragOverDay(null); return; }
-            const dataFromOriginDay = schedule[originDay];
-            const dataFromTargetDay = schedule[targetDay];
-            if (dataFromTargetDay?.instructor) { // SWAP
-                newSchedule[originDay] = { instructor: dataFromTargetDay.instructor, studyMode: dataFromTargetDay.studyMode,};
-                newSchedule[targetDay] = { instructor: draggedItem.item, studyMode: dataFromOriginDay.studyMode,};
-            } else { // MOVE TO EMPTY
-                newSchedule[targetDay] = { instructor: draggedItem.item, studyMode: dataFromOriginDay.studyMode,};
-                if (originDay) { newSchedule[originDay] = null;}
+        const { item: draggedInstructor, type: draggedType, originDay } = draggedItem;
+        
+        setSchedule(prevSchedule => {
+            const newSchedule = { ...prevSchedule };
+            const targetDayData = prevSchedule[targetDay];
+
+            if (draggedType === 'new') {
+                // This covers both assigning to an empty slot and replacing an existing one in the UI.
+                // The save logic will figure out whether to call assign or replace.
+                newSchedule[targetDay] = {
+                    instructor: draggedInstructor,
+                    studyMode: targetDayData?.studyMode || 'in-class', // Preserve study mode if replacing
+                };
+            } else if (draggedType === 'scheduled') {
+                if (originDay === targetDay) return prevSchedule; // No change if dropped on itself
+
+                const originDayData = prevSchedule[originDay];
+                
+                // This covers both moving to an empty slot and swapping with an existing instructor.
+                newSchedule[targetDay] = originDayData;
+                newSchedule[originDay] = targetDayData; // If target was null, origin becomes null.
             }
-        }
-        setSchedule(newSchedule);
+            return newSchedule;
+        });
+
         setDragOverDay(null);
+        setDraggedItem(null);
     };
     
     const handleRemoveInstructorFromDay = (day) => {
@@ -543,6 +528,7 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
 
     const handleStudyModeChange = (day, newMode) => { setSchedule(prevSchedule => { if (prevSchedule[day]?.instructor) { return { ...prevSchedule, [day]: { ...prevSchedule[day], studyMode: newMode } }; } return prevSchedule; }); };
     
+    // MODIFIED: This function now correctly determines which API to call based on state changes.
     const handleSaveSchedule = async () => {
         if (!session?.accessToken) {
             setToast({ show: true, message: "Authentication session has expired. Please log in again.", type: 'error' });
@@ -553,26 +539,73 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
 
         const promises = [];
         const originalSchedule = JSON.parse(JSON.stringify(initialScheduleForCheck));
+        const processedSwaps = new Set(); // To avoid creating duplicate swap promises
 
-        Object.entries(schedule).forEach(([day, dayData]) => {
-            const originalDayData = originalSchedule[day];
-            const hasChanged = JSON.stringify(dayData) !== JSON.stringify(originalDayData);
+        daysOfWeek.forEach(dayA => {
+            if (processedSwaps.has(dayA)) return;
 
-            if (dayData && dayData.instructor && hasChanged) {
-                const apiDay = clientDayToApiDay[day];
-                if (apiDay) {
-                    const payload = { classId: classData.id, instructorId: dayData.instructor.id, dayOfWeek: apiDay, online: dayData.studyMode === 'online', };
-                    promises.push(classService.assignInstructorToClass(payload, session.accessToken));
+            const apiDayA = clientDayToApiDay[dayA];
+            if (!apiDayA) return;
+
+            const originalA = originalSchedule[dayA];
+            const currentA = schedule[dayA];
+
+            if (JSON.stringify(originalA) === JSON.stringify(currentA)) {
+                return;
+            }
+
+            // Check for a SWAP
+            // A swap occurs if the instructor at dayA is now at dayB, and the instructor from dayB is now at dayA.
+            let swapFound = false;
+            if (originalA?.instructor && currentA?.instructor) {
+                for (const dayB of daysOfWeek) {
+                    if (dayA === dayB || processedSwaps.has(dayB)) continue;
+                    
+                    const originalB = originalSchedule[dayB];
+                    const currentB = schedule[dayB];
+
+                    if (originalB?.instructor && currentB?.instructor &&
+                        originalA.instructor.id === currentB.instructor.id &&
+                        originalB.instructor.id === currentA.instructor.id) {
+                        
+                        const payload = { classId: classData.id, fromDayOfWeek: apiDayA, toDayOfWeek: clientDayToApiDay[dayB] };
+                        promises.push(classService.swapInstructorsInClass(payload, session.accessToken));
+                        
+                        processedSwaps.add(dayA);
+                        processedSwaps.add(dayB);
+                        swapFound = true;
+
+                        // After a swap, check if study modes also changed independently
+                        if (originalA.studyMode !== currentA.studyMode) {
+                             const assignPayload = { classId: classData.id, instructorId: currentA.instructor.id, dayOfWeek: apiDayA, online: currentA.studyMode === 'online' };
+                             promises.push(classService.assignInstructorToClass(assignPayload, session.accessToken));
+                        }
+                         if (originalB.studyMode !== currentB.studyMode) {
+                            const assignPayload = { classId: classData.id, instructorId: currentB.instructor.id, dayOfWeek: clientDayToApiDay[dayB], online: currentB.studyMode === 'online' };
+                            promises.push(classService.assignInstructorToClass(assignPayload, session.accessToken));
+                        }
+                        break;
+                    }
                 }
             }
-        });
+            
+            if (swapFound) return;
 
-        Object.entries(initialScheduleForCheck).forEach(([day, dayData]) => {
-            if (dayData && dayData.instructor && (!schedule[day] || !schedule[day].instructor)) {
-                const apiDay = clientDayToApiDay[day];
-                if (apiDay) {
-                    const payload = { classId: classData.id, dayOfWeek: apiDay, };
-                    promises.push(classService.unassignInstructorFromClass(payload, session.accessToken));
+            // If not a swap, handle Assign, Unassign, Replace, or Modify
+            if (!originalA && currentA?.instructor) { // ASSIGN
+                const payload = { classId: classData.id, instructorId: currentA.instructor.id, dayOfWeek: apiDayA, online: currentA.studyMode === 'online' };
+                promises.push(classService.assignInstructorToClass(payload, session.accessToken));
+            } else if (originalA?.instructor && !currentA) { // UNASSIGN
+                const payload = { classId: classData.id, dayOfWeek: apiDayA };
+                promises.push(classService.unassignInstructorFromClass(payload, session.accessToken));
+            } else if (originalA?.instructor && currentA?.instructor) { // MODIFY
+                if (originalA.instructor.id !== currentA.instructor.id) { // REPLACE
+                    const payload = { classId: classData.id, dayOfWeek: apiDayA, newInstructorId: currentA.instructor.id };
+                    promises.push(classService.replaceInstructorInClass(payload, session.accessToken));
+                }
+                if (originalA.studyMode !== currentA.studyMode) { // STUDY MODE CHANGE
+                    const payload = { classId: classData.id, instructorId: currentA.instructor.id, dayOfWeek: apiDayA, online: currentA.studyMode === 'online' };
+                    promises.push(classService.assignInstructorToClass(payload, session.accessToken));
                 }
             }
         });
@@ -581,7 +614,6 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
             await Promise.all(promises);
             setToast({ show: true, message: 'Schedule saved successfully!', type: 'success' });
             setInitialScheduleForCheck(JSON.parse(JSON.stringify(schedule)));
-            // After a successful save, notify other tabs/windows to refetch data
             if (typeof window !== 'undefined') {
                 const channel = new BroadcastChannel('data_update_channel');
                 channel.postMessage({ type: 'DATA_UPDATED' });

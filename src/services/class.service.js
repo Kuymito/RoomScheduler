@@ -76,6 +76,27 @@ const getAssignedClasses = async (token) => {
   }
 };
 
+// ADDED: New function to swap instructors between two days for a class
+const swapInstructorsInClass = async (swapData, token) => {
+  try {
+    const response = await api.post('/class/swap-instructors-in-class', swapData, { headers: await getAuthHeaders(token) });
+    return handleResponse(response);
+  } catch (error) {
+    handleError("swapping instructors", error);
+  }
+};
+
+// ADDED: New function to replace an instructor on a specific day for a class
+const replaceInstructorInClass = async (replaceData, token) => {
+  try {
+    const response = await api.post('/class/replace-instructor', replaceData, { headers: await getAuthHeaders(token) });
+    return handleResponse(response);
+  } catch (error) {
+    handleError("replacing instructor", error);
+  }
+};
+
+
 export const classService = {
   getAllClasses,
   getClassById,
@@ -84,4 +105,6 @@ export const classService = {
   assignInstructorToClass,
   unassignInstructorFromClass,
   getAssignedClasses,
+  swapInstructorsInClass, // ADDED
+  replaceInstructorInClass, // ADDED
 };
