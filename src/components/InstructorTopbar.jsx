@@ -12,7 +12,7 @@ const InstructorTopbar = ({ onToggleSidebar, isSidebarCollapsed, onUserIconClick
         {showToggleButton && (
           <div
             id="sidebar-toggle"
-            className="sidebar-toggle-btn text-xl cursor-pointer mr-4 p-2 rounded text-black dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 select-none leading-none"
+            className="sidebar-toggle-btn text-xl cursor-pointer mr-4 p-2 rounded text-black dark:text-white hover:bg-blue-100 dark:hover:bg-blue-600 select-none leading-none"
             title={isSidebarCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
             onClick={onToggleSidebar}
           >

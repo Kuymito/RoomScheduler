@@ -409,7 +409,7 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
         <div className="form-group flex-1 min-w-[200px]">
             <label className="form-label block font-semibold text-xs text-num-dark-text dark:text-white mb-1">{label}</label>
             {isEditing ? (
-                <select name={name} value={value} onChange={handleInputChange} disabled={loading} className="form-input w-full py-2 px-3 bg-num-content-bg border border-num-gray-light dark:bg-gray-700 dark:border-gray-600 rounded-md font-medium text-xs text-num-dark-text dark:text-white">
+                <select name={name} value={value} onChange={handleInputChange} disabled={loading} className="form-input w-full py-2 px-3 bg-num-content-bg border border-num-gray-light dark:bg-gray-700 dark:border-gray-600 rounded-md font-medium text-xs text-num-dark-text dark:text-white focus:ring-2 focus:ring-blue-500 focus:outline-none">
                     {options.map(option => {
                         const optionKey = keyField ? option[keyField] : (typeof option === 'object' ? JSON.stringify(option) : option);
                         const optionValue = valueField ? option[valueField] : option;
@@ -418,7 +418,7 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
                     })}
                 </select>
             ) : (
-                <input type="text" value={value} readOnly className="form-input w-full py-2 px-3 bg-gray-100 border border-num-gray-light dark:bg-gray-800 dark:border-gray-700 rounded-md font-medium text-xs text-gray-500 dark:text-gray-400"/>
+                <input type="text" value={value} readOnly className="form-input w-full py-2 px-3 bg-gray-100 border border-num-gray-light dark:bg-gray-800 dark:border-gray-700 rounded-md font-medium text-xs text-gray-500 dark:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"/>
             )}
         </div>
     );
@@ -427,7 +427,7 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
         <div className="form-group flex-1 min-w-[200px]">
             <label className="form-label block font-semibold text-xs text-num-dark-text dark:text-white mb-1">Major</label>
             {isEditing ? (
-                <select name="major" value={classData.major} onChange={handleInputChange} disabled={loading || filteredMajors.length === 0} className="form-input w-full py-2 px-3 bg-num-content-bg border border-num-gray-light dark:bg-gray-700 dark:border-gray-600 rounded-md font-medium text-xs text-num-dark-text dark:text-white">
+                <select name="major" value={classData.major} onChange={handleInputChange} disabled={loading || filteredMajors.length === 0} className="form-input w-full py-2 px-3 bg-num-content-bg border border-num-gray-light dark:bg-gray-700 dark:border-gray-600 rounded-md font-medium text-xs text-num-dark-text dark:text-white focus:ring-2 focus:ring-blue-500 focus:outline-none">
                     {filteredMajors.length > 0 ? (
                         filteredMajors.map(major => (
                             <option key={major.major_id} value={major.majorName}>{major.majorName}</option>
@@ -437,7 +437,7 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
                     )}
                 </select>
             ) : (
-                <input type="text" value={classData.major} readOnly className="form-input w-full py-2 px-3 bg-gray-100 border border-num-gray-light dark:bg-gray-800 dark:border-gray-700 rounded-md font-medium text-xs text-gray-500 dark:text-gray-400"/>
+                <input type="text" value={classData.major} readOnly className="form-input w-full py-2 px-3 bg-gray-100 border border-num-gray-light dark:bg-gray-800 dark:border-gray-700 rounded-md font-medium text-xs text-gray-500 dark:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"/>
             )}
         </div>
     );
@@ -445,7 +445,7 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
     const renderTextField = (label, name, value, opts = {}) => (
          <div className="form-group flex-1 min-w-[200px]">
             <label className="form-label block font-semibold text-xs text-num-dark-text dark:text-white mb-1">{label}</label>
-            <input type="text" name={name} value={value || ''} onChange={handleInputChange} readOnly={!isEditing} disabled={loading} className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs text-num-dark-text dark:text-white ${!isEditing ? 'bg-gray-100 dark:bg-gray-800 border-num-gray-light dark:border-gray-700 text-gray-500 dark:text-gray-400' : 'bg-num-content-bg dark:bg-gray-700 border-num-gray-light dark:border-gray-600'}`} maxLength={opts.maxLength} />
+            <input type="text" name={name} value={value || ''} onChange={handleInputChange} readOnly={!isEditing} disabled={loading} className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs text-num-dark-text dark:text-white focus:ring-blue-500 focus:outline-none focus:ring-2 ${!isEditing ? 'bg-gray-100 dark:bg-gray-800 border-num-gray-light dark:border-gray-700 text-gray-500 dark:text-gray-400' : 'bg-num-content-bg dark:bg-gray-700 border-num-gray-light dark:border-gray-600'}`} maxLength={opts.maxLength} />
         </div>
     );
 
@@ -801,7 +801,7 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
                             <h3 className="text-base sm:text-lg font-semibold mb-2 text-num-dark-text dark:text-gray-100 border-b dark:border-gray-600 pb-2">Available Instructors</h3>
                             <div className="my-3 flex flex-col sm:flex-row items-center gap-2">
                                 <input type="text" placeholder="Search by name..." className="w-full p-2 text-sm border border-gray-300 rounded-md dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-600 placeholder-gray-400 dark:placeholder-gray-500 dark:focus:ring-offset-gray-800" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}/>
-                                <select value={selectedDegree} onChange={(e) => setSelectedDegree(e.target.value)} className="w-full sm:w-auto p-2 text-sm border border-gray-300 rounded-md dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200 focus:ring-sky-500 focus:border-sky-500">
+                                <select value={selectedDegree} onChange={(e) => setSelectedDegree(e.target.value)} className="w-full sm:w-auto p-2 text-sm border border-gray-300 rounded-md dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200 focus:ring-2 focus:ring-blue-500 focus:outline-none">
                                     {degreeFilterOptions.map(option => <option key={option} value={option}>{option}</option>)}
                                 </select>
                             </div>
