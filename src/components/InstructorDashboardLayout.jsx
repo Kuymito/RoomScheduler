@@ -169,7 +169,7 @@ export default function InstructorDashboardLayout({ children, activeItem, pageTi
         router.push(path);
     };
     
-    const sidebarWidth = isSidebarCollapsed ? '80px' : '265px';
+    const sidebarWidth = isSidebarCollapsed ? '80px' : '225px';
     const TOPBAR_HEIGHT = '90px'; 
 
     useEffect(() => {

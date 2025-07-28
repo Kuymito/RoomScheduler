@@ -188,7 +188,7 @@ export default function AdminLayout({ children, activeItem, pageTitle, breadcrum
         router.push(path);
     };
     
-    const sidebarWidth = isSidebarCollapsed ? '80px' : '265px';
+    const sidebarWidth = isSidebarCollapsed ? '80px' : '225px';
 
     useEffect(() => {
         const handleClickOutside = (event) => {
