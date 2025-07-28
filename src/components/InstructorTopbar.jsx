@@ -30,7 +30,7 @@ const InstructorTopbar = ({ onToggleSidebar, isSidebarCollapsed, onUserIconClick
                     {crumb.label}
                   </Link>
                 ) : (
-                  <span className="max-w-[100px] text-blue-700 dark:text-blue-400 truncate" title={crumb.label}>{crumb.label}</span>
+                  <span className="md:max-w-[200px] max-w-[200px] text-blue-700 dark:text-blue-400 truncate" title={crumb.label}>{crumb.label}</span>
                 )}
                 {index < breadcrumbs.length - 1 && <span className="mx-2 text-blue-400">&gt;</span>}
               </React.Fragment>

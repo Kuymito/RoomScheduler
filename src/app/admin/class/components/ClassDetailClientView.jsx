@@ -819,7 +819,7 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
                         </div>
                     </div>
                     <div id="weeklySchedulePanel" className='flex-1 p-4 sm:p-6 bg-white border border-num-gray-light dark:bg-gray-800 dark:border-gray-700 shadow-custom-light rounded-lg flex flex-col'>
-                        <h3 className="schedule-title-for-pdf max-w-[350px] text-base sm:text-lg font-semibold mb-6 text-num-dark-text dark:text-gray-100 border-b dark:border-gray-600 pb-4 truncate" title={classData.name}>Weekly Class Schedule - {classData.name}</h3>
+                        <h3 className="schedule-title-for-pdf md:max-w-[500px] max-w-[350px] text-base sm:text-lg font-semibold mb-6 text-num-dark-text dark:text-gray-100 border-b dark:border-gray-600 pb-4 truncate" title={classData.name}>Weekly Class Schedule - {classData.name}</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-7 gap-1">
                             {daysOfWeek.map((day) => {
                                 const isDayWeekend = day === 'Sat' || day === 'Sun';
