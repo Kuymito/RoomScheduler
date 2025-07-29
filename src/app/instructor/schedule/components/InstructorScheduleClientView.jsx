@@ -98,6 +98,7 @@ export default function InstructorScheduleClientView({ initialScheduleData, inst
         statsContainer.innerHTML = `
             <p>• Class assign <span class="font-semibold">: ${classAssignCount}</span></p>
             <p>• Available shift <span class="font-semibold">: ${availableShiftCount}</span></p>
+            <p>• Public Date <span class="font-semibold">: ${publicDate}</span></p>
         `;
 
         // Style and populate the footer
