@@ -45,7 +45,7 @@ const ScheduledClassCard = ({ classData, onDragStart, onDragEnd, isTemporary }) 
             onDragEnd={onDragEnd}
             className={`w-full h-24 p-2 border-2 rounded-lg shadow-md flex flex-col justify-center items-center text-center cursor-grab active:cursor-grabbing transition-all duration-150 ${cardColor}`}
         >
-            <p className={`text-xs font-semibold break-words ${textColor}`}>{classData.className}</p>
+            <p className={`max-w-[120px] text-xs font-semibold break-words truncate ${textColor}`} title={classData.className}  >{classData.className}</p>
             <p className={`text-xs opacity-80 ${subTextColor}`}>{classData.majorName}</p>
         </div>
     );
@@ -70,7 +70,7 @@ const RoomCard = React.memo(({ room, classData, isDragOver, isWarning, dragHandl
         >
             <div
                 onClick={() => !isNavigating && !classData?.isMovedPlaceholder && onHeaderClick(room.roomId)}
-                className={`px-2 py-1 flex justify-between items-center border-b-2 transition-colors ${isNavigating ? 'cursor-wait' : (classData?.isMovedPlaceholder ? 'cursor-default' : 'cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700')}
+                className={`px-2 py-1 flex justify-between items-center border-b-2 transition-colors ${isNavigating ? 'cursor-not-allowed' : (classData?.isMovedPlaceholder ? 'cursor-default' : 'cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700')}
                 ${isWarning ? 'bg-red-100 dark:bg-red-800/50' : (isUnavailable ? 'bg-slate-100 dark:bg-slate-700/60' : 'bg-gray-50 dark:bg-gray-800')}
                 `}
             >
@@ -707,7 +707,7 @@ const ScheduleClientView = ({
                                         {classesInShift.map((classItem) => (
                                             <div key={classItem.classId} draggable onDragStart={(event) => handleDragStart(event, classItem, 'new')} onDragEnd={handleDragEnd} className="p-2 bg-gray-50 dark:bg-gray-800 dark:hover:bg-gray-700 border dark:border-gray-700 rounded-lg shadow-sm hover:shadow-md cursor-grab active:cursor-grabbing transition-all flex group">
                                                 <div className={`w-1.5 h-auto rounded-lg ${generationColorMap[classItem.generation] || 'bg-slate-400'} mr-3`}></div>
-                                                <div><p className="text-sm font-medium text-gray-800 dark:text-gray-200">{classItem.className}</p><p className="text-xs text-gray-500 dark:text-gray-400">{classItem.majorName}</p></div>
+                                                <div><p className="max-w-[200px] text-sm font-medium text-gray-800 dark:text-gray-200 truncate" title={classItem.className}>{classItem.className}</p><p className="text-xs text-gray-500 dark:text-gray-400">{classItem.majorName}</p></div>
                                             </div>
                                         ))}
                                     </div>
