@@ -87,11 +87,22 @@ const moveScheduleToRoom = async (scheduleId, newRoomId, token) => {
   }
 };
 
+const revertTemporaryMove = async (scheduleId, token) => {
+    try {
+        const headers = await getAuthHeaders(token);
+        const response = await api.patch(`/schedule/${scheduleId}/revert-temporary`, {}, { headers });
+        return handleResponse(response);
+    } catch (error) {
+        handleError(`reverting temporary move for schedule ${scheduleId}`, error);
+    }
+};
+
 export const scheduleService = {
   getAllSchedules,
   getMySchedule,
   assignRoomToClass,
   unassignRoomFromClass,
   swapSchedules,
-  moveScheduleToRoom
+  moveScheduleToRoom,
+  revertTemporaryMove
 };
