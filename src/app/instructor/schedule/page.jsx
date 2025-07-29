@@ -71,11 +71,16 @@ const fetchScheduleData = async () => {
           const isWeekendShift = schedule.shift.startTime === '07:30:00';
           const academicYear = mapGenerationToYear(schedule.year);
 
+          // ✨ UPDATED: Determine the correct room name and add "(Temp)" if necessary.
+          const roomName = schedule.temporaryRoomId 
+              ? `${schedule.temporaryRoomName} (Temp)` 
+              : schedule.roomName;
+
           const classInfo = {
               subject: schedule.className,
               year: academicYear ? `Year ${academicYear}` : 'Year N/A',
               semester: schedule.semester,
-              room: schedule.roomName,
+              room: roomName, // Use the determined room name
           };
 
           schedule.dayDetails.forEach(dayDetail => {
@@ -84,9 +89,9 @@ const fetchScheduleData = async () => {
                   if (isWeekendShift && WEEKEND_SHIFT_TIMESLOT) {
                       // For weekend shifts, add the class only to its dedicated time slot.
                       scheduleData[formattedDay][WEEKEND_SHIFT_TIMESLOT] = {
-                           ...classInfo,
-                           timeDisplay: WEEKEND_SHIFT_TIMESLOT,
-                           isOnline: dayDetail.online,
+                          ...classInfo,
+                          timeDisplay: WEEKEND_SHIFT_TIMESLOT,
+                          isOnline: dayDetail.online,
                       };
                   } else if (!isWeekendShift) {
                       // For regular shifts, add it to its specific time slot.

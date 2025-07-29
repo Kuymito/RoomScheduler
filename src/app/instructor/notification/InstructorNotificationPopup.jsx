@@ -1,4 +1,3 @@
-// src/app/instructor/notification/InstructorNotificationPopup.jsx
 'use client';
 import React, { useState, useEffect } from 'react';
 import InstructorNotification from './InstructorNotification';
@@ -59,7 +58,7 @@ const InstructorNotificationPopup = ({ show, notifications = [], onMarkAllRead, 
         {notifications && notifications.length > 0 ? (
           notifications.map(notification => (
             <InstructorNotification
-              key={notification.id}
+              key={notification.notificationId} // ✨ FIX: Changed from notification.id to notification.notificationId
               notification={notification}
               onMarkAsRead={onMarkAsRead}
             />
