@@ -10,6 +10,22 @@ import html2canvas from 'html2canvas';
 
 const ConfirmationModal = lazy(() => import('./ConfirmationModal'));
 
+// --- Helper function to calculate academic year ---
+const mapGenerationToYear = (generation) => {
+    if (!generation) return null;
+    const genNumber = parseInt(generation, 10);
+    if (isNaN(genNumber)) return null;
+    // This calculation is based on the academic year structure.
+    // Assumes Generation 34 is Year 1 in the academic year 2024-2025.
+    const BASE_GENERATION = 34; 
+    const BASE_YEAR = 2025; 
+    const currentYear = new Date().getFullYear();
+    const currentFirstYearGeneration = BASE_GENERATION + (currentYear - BASE_YEAR);
+    const academicYear = currentFirstYearGeneration - genNumber + 1;
+    return academicYear > 0 ? academicYear : null;
+};
+
+
 // --- Child Components ---
 
 const SpinnerIcon = ({ className }) => (
@@ -176,7 +192,15 @@ const ScheduleClientView = ({
     const unassignmentProcessed = useRef(false);
 
     const dayApiToAbbreviationMap = { MONDAY: 'Mo', TUESDAY: 'Tu', WEDNESDAY: 'We', THURSDAY: 'Th', FRIDAY: 'Fr', SATURDAY: 'Sa', SUNDAY: 'Su' };
-    const generationColorMap = { '29': 'bg-sky-500', '30': 'bg-emerald-500', '31': 'bg-amber-500', '32': 'bg-indigo-500', '33': 'bg-violet-500' };
+    
+    // NEW: Color map based on academic year
+    const yearColorMap = {
+        1: 'bg-sky-500',      // Year 1
+        2: 'bg-emerald-500',  // Year 2
+        3: 'bg-amber-500',    // Year 3
+        4: 'bg-indigo-500',   // Year 4
+    };
+
 
     const showToast = (message, type = 'info') => setToast({ show: true, message, type });
 
@@ -250,7 +274,10 @@ const ScheduleClientView = ({
     const allFilteredAndSortedClasses = useMemo(() => {
         const selectedDayFull = Object.keys(dayApiToAbbreviationMap).find(key => dayApiToAbbreviationMap[key] === selectedDay) || '';
 
-        const filtered = availableClasses.filter(classItem => {
+        const filtered = availableClasses.map(classItem => ({
+            ...classItem,
+            year: mapGenerationToYear(classItem.generation) // Add year property
+        })).filter(classItem => {
             if (classItem.archived) return false;
 
             const occursOnSelectedDay = classItem.dayDetails?.some(day => day.dayOfWeek === selectedDayFull && !day.online);
@@ -706,7 +733,8 @@ const ScheduleClientView = ({
                                         <div className="flex items-center gap-2 mb-2"><h4 className="text-xs sm:text-sm font-medium text-slate-600 dark:text-slate-400 whitespace-nowrap">{shift}</h4><hr className="flex-1 border-t border-slate-300 dark:border-slate-700" /></div>
                                         {classesInShift.map((classItem) => (
                                             <div key={classItem.classId} draggable onDragStart={(event) => handleDragStart(event, classItem, 'new')} onDragEnd={handleDragEnd} className="p-2 bg-gray-50 dark:bg-gray-800 dark:hover:bg-gray-700 border dark:border-gray-700 rounded-lg shadow-sm hover:shadow-md cursor-grab active:cursor-grabbing transition-all flex group">
-                                                <div className={`w-1.5 h-auto rounded-lg ${generationColorMap[classItem.generation] || 'bg-slate-400'} mr-3`}></div>
+                                                {/* MODIFIED: Use yearColorMap and classItem.year */}
+                                                <div className={`w-1.5 h-auto rounded-lg ${yearColorMap[classItem.year] || 'bg-violet-500'} mr-3`}></div>
                                                 <div><p className="max-w-[200px] text-sm font-medium text-gray-800 dark:text-gray-200 truncate" title={classItem.className}>{classItem.className}</p><p className="text-xs text-gray-500 dark:text-gray-400">{classItem.majorName}</p></div>
                                             </div>
                                         ))}
