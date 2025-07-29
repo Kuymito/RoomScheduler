@@ -54,7 +54,7 @@ const InstructorSidebar = ({ isCollapsed, activeItem, onNavItemClick, navigating
     ];
 
     return (
-        <div id="sidebar" className={`sidebar fixed h-full bg-white dark:bg-gray-900 shadow-custom-medium py-5 flex flex-col transition-all duration-300 ease-in-out z-40`} style={{ width: isCollapsed ? '80px' : '265px' }}>
+        <div id="sidebar" className={`sidebar fixed h-full bg-white dark:bg-gray-900 shadow-custom-medium py-5 flex flex-col transition-all duration-300 ease-in-out z-40`} style={{ width: isCollapsed ? '80px' : '225px' }}>
             <div className={`logo h-[50px] mb-5 flex items-center justify-center ${isCollapsed ? 'px-0' : 'px-5'}`}>
                 <Image src="/images/LOGO-NUM-1.png" alt="NUM Logo" width={isCollapsed ? 0 : 150} height={50} className={`logo-img ${isCollapsed ? 'hidden' : 'block h-[50px]'}`} style={{ width: isCollapsed ? 0 : 'auto' }} />
                 <span className={`logo-text-collapsed font-bold text-lg text-black ${isCollapsed ? 'block' : 'hidden'}`}>

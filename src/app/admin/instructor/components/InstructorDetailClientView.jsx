@@ -317,25 +317,25 @@ export default function InstructorDetailClientView({ initialInstructor, allDepar
                 disabled={loading} 
                 minLength={opts.minLength}
                 maxLength={opts.maxLength}
-                className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs text-num-dark-text dark:text-white ${!isEditing ? 'bg-gray-100 dark:bg-gray-800 border-num-gray-light dark:border-gray-700 text-gray-500 dark:text-gray-400' : 'bg-num-content-bg dark:bg-gray-700 border-num-gray-light dark:border-gray-600'}`}
+                className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs text-num-dark-text dark:text-white focus:ring-blue-500 focus:outline-none focus:ring-2 ${!isEditing ? 'bg-gray-100 dark:bg-gray-800 border-num-gray-light dark:border-gray-700 text-gray-500 dark:text-gray-400' : 'bg-num-content-bg dark:bg-gray-700 border-num-gray-light dark:border-gray-600'}`}
             />
         </div>
     );
     const renderSelectField = (label, name, value, options, isEditing, valueKey = 'id', labelKey = 'name') => (
         <div className="form-group flex-1 min-w-[200px]">
             <label className="form-label block font-semibold text-xs text-num-dark-text dark:text-white mb-1">{label}</label>
-            {isEditing ? ( <select name={name} value={value} onChange={handleInputChange} disabled={loading} className="form-input w-full py-2 px-3 bg-num-content-bg border border-num-gray-light dark:bg-gray-700 dark:border-gray-600 rounded-md font-medium text-xs text-num-dark-text dark:text-white">{options.map(option => {
+            {isEditing ? ( <select name={name} value={value} onChange={handleInputChange} disabled={loading} className="form-input w-full py-2 px-3 bg-num-content-bg border border-num-gray-light dark:bg-gray-700 dark:border-gray-600 rounded-md font-medium text-xs text-num-dark-text dark:text-white focus:ring-2 focus:ring-blue-500 focus:outline-none">{options.map(option => {
                 const optionValue = typeof option === 'object' ? option[labelKey] : option;
                 const optionKey = typeof option === 'object' ? option[valueKey] : option;
                 return <option key={optionKey} value={optionValue}>{optionValue}</option>
-            })}</select> ) : ( <input type="text" value={value} readOnly className="form-input w-full py-2 px-3 bg-gray-100 border border-num-gray-light dark:bg-gray-800 dark:border-gray-700 rounded-md font-medium text-xs text-gray-500 dark:text-gray-400" /> )}
+            })}</select> ) : ( <input type="text" value={value} readOnly className="form-input w-full py-2 px-3 bg-gray-100 border border-num-gray-light dark:bg-gray-800 dark:border-gray-700 rounded-md font-medium text-xs text-gray-500 dark:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500" /> )}
         </div>
     );
     const renderPasswordField = (label, name, value, onChange, fieldName, hasError = false, opts = {}) => (
         <div className="form-group flex-1 min-w-[200px]">
             <label className="form-label block font-semibold text-xs text-num-dark-text dark:text-white mb-1">{label}</label>
             <div className="relative">
-                <input type={passwordVisibility[fieldName] ? "text" : "password"} name={name} className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs ${!isEditingPassword ? 'bg-gray-100 dark:bg-gray-800 border-num-gray-light dark:border-gray-700 text-gray-500 dark:text-gray-400' : 'bg-white dark:bg-gray-700 border-num-gray-light dark:border-gray-600 text-num-dark-text dark:text-white'} ${ hasError ? 'border-red-500 ring-1 ring-red-500' : '' }`} placeholder={`Enter ${label.toLowerCase()}`} value={value || ''} onChange={onChange} readOnly={!isEditingPassword} disabled={loading} maxLength={opts.maxLength} />
+                <input type={passwordVisibility[fieldName] ? "text" : "password"} name={name} className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs focus:ring-blue-500 focus:outline-none focus:ring-2 ${!isEditingPassword ? 'bg-gray-100 dark:bg-gray-800 border-num-gray-light dark:border-gray-700 text-gray-500 dark:text-gray-400' : 'bg-white dark:bg-gray-700 border-num-gray-light dark:border-gray-600 text-num-dark-text dark:text-white'} ${ hasError ? 'border-red-500 ring-1 ring-red-500' : '' }`} placeholder={`Enter ${label.toLowerCase()}`} value={value || ''} onChange={onChange} readOnly={!isEditingPassword} disabled={loading} maxLength={opts.maxLength} />
                 {isEditingPassword && ( <button type="button" onClick={() => togglePasswordVisibility(fieldName)} className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500 hover:text-gray-700" aria-label={passwordVisibility[fieldName] ? "Hide password" : "Show password"}>{passwordVisibility[fieldName] ? <EyeClosedIcon /> : <EyeOpenIcon />}</button> )}
             </div>
         </div>

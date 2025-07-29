@@ -2,16 +2,11 @@
 
 import React, { useState, useMemo, useEffect, useRef, lazy, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
-import { useSession } from 'next-auth/react';
-import useSWR from 'swr';
 import { scheduleService } from '@/services/schedule.service';
-import { classService } from '@/services/class.service';
-import { getAllRooms } from '@/services/room.service';
+import { useSession } from 'next-auth/react';
 import Toast from '@/components/Toast';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
-import ClassListSkeleton from './ClassListSkeleton';
-import ScheduleGridSkeleton from './ScheduleGridSkeleton';
 
 const ConfirmationModal = lazy(() => import('./ConfirmationModal'));
 
@@ -24,22 +19,41 @@ const SpinnerIcon = ({ className }) => (
     </svg>
 );
 
-const ScheduledClassCard = ({ classData, onDragStart, onDragEnd }) => (
-    <div
-        draggable
-        onDragStart={onDragStart}
-        onDragEnd={onDragEnd}
-        className="w-full h-24 p-2 bg-blue-100 dark:bg-blue-800 border-2 border-blue-400 dark:border-blue-600 rounded-lg shadow-md flex flex-col justify-center items-center text-center cursor-grab active:cursor-grabbing transition-all duration-150"
-    >
-        <p className="max-w-[100px] text-xs font-semibold text-blue-800 dark:text-blue-100 break-words truncate" title={classData.className}>{classData.className}</p>
-        <p className="text-xs text-blue-600 dark:text-blue-300 opacity-80">{classData.majorName}</p>
+const MovedClassPlaceholderCard = ({ classData }) => (
+    <div className="w-full h-24 p-2 bg-blue-100 dark:bg-blue-800 border-2 border-dashed border-blue-400 dark:border-blue-600 rounded-lg shadow-sm flex flex-col justify-center items-center text-center">
+        <p className="text-xs font-semibold text-blue-800 dark:text-blue-100 break-words">{classData.className}</p>
+        <p className="text-xs text-blue-500 dark:text-blue-300 opacity-80 mt-1">Moved to:</p>
+        <p className="text-xs font-bold text-blue-800 dark:text-blue-100">{classData.movedToRoomName}</p>
     </div>
 );
+
+const ScheduledClassCard = ({ classData, onDragStart, onDragEnd, isTemporary }) => {
+    const cardColor = isTemporary
+        ? 'bg-orange-100 dark:bg-orange-800 border-orange-400 dark:border-orange-600'
+        : 'bg-blue-100 dark:bg-blue-800 border-blue-400 dark:border-blue-600';
+    const textColor = isTemporary
+        ? 'text-orange-800 dark:text-orange-100'
+        : 'text-blue-800 dark:text-blue-100';
+    const subTextColor = isTemporary
+        ? 'text-orange-600 dark:text-orange-300'
+        : 'text-blue-600 dark:text-blue-300';
+
+    return (
+        <div
+            draggable
+            onDragStart={onDragStart}
+            onDragEnd={onDragEnd}
+            className={`w-full h-24 p-2 border-2 rounded-lg shadow-md flex flex-col justify-center items-center text-center cursor-grab active:cursor-grabbing transition-all duration-150 ${cardColor}`}
+        >
+            <p className={`text-xs font-semibold break-words ${textColor}`}>{classData.className}</p>
+            <p className={`text-xs opacity-80 ${subTextColor}`}>{classData.majorName}</p>
+        </div>
+    );
+};
 
 const RoomCard = React.memo(({ room, classData, isDragOver, isWarning, dragHandlers, className, isNavigating, onHeaderClick }) => {
     const isOccupied = !!classData;
     const isUnavailable = room.status === "unavailable";
-    const hasTemporaryRoom = isOccupied && classData.temporaryRoomId;
 
     const getBorderColor = () => {
         if (isWarning) return 'border-red-500 dark:border-red-400 shadow-lg scale-105';
@@ -55,12 +69,12 @@ const RoomCard = React.memo(({ room, classData, isDragOver, isWarning, dragHandl
             `}
         >
             <div
-                onClick={() => !isNavigating && onHeaderClick(room.roomId)}
-                className={`px-2 py-1 flex justify-between items-center border-b-2 dark:border-gray-700 transition-colors ${isNavigating ? 'cursor-not-allowed' : 'cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700'}
+                onClick={() => !isNavigating && !classData?.isMovedPlaceholder && onHeaderClick(room.roomId)}
+                className={`px-2 py-1 flex justify-between items-center border-b-2 transition-colors ${isNavigating ? 'cursor-wait' : (classData?.isMovedPlaceholder ? 'cursor-default' : 'cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700')}
                 ${isWarning ? 'bg-red-100 dark:bg-red-800/50' : (isUnavailable ? 'bg-slate-100 dark:bg-slate-700/60' : 'bg-gray-50 dark:bg-gray-800')}
                 `}
             >
-                <div className={`w-2 h-2 rounded-full ring-1 ring-white/50 dark:ring-white/10
+                <div className={`w-2 h-2 rounded-full ring-1 ring-white/50
                     ${isOccupied || isUnavailable ? 'bg-red-500' : 'bg-green-500'}
                     `}
                     title={isOccupied || isUnavailable ? 'Occupied/Unavailable' : 'Available'}
@@ -81,18 +95,16 @@ const RoomCard = React.memo(({ room, classData, isDragOver, isWarning, dragHandl
                 `}
             >
                 {isOccupied ? (
-                    <>
+                    classData.isMovedPlaceholder ? (
+                        <MovedClassPlaceholderCard classData={classData} />
+                    ) : (
                         <ScheduledClassCard
                             classData={classData}
                             onDragStart={dragHandlers.onDragStart}
                             onDragEnd={dragHandlers.onDragEnd}
+                            isTemporary={!!classData.isTemporary}
                         />
-                        {hasTemporaryRoom && (
-                            <div className="mt-1 text-xs text-orange-600 dark:text-orange-400 font-semibold">
-                                Temp: {classData.temporaryRoomName}
-                            </div>
-                        )}
-                    </>
+                    )
                 ) : (
                     <span className={`text-xs italic select-none pointer-events-none ${isUnavailable ? 'text-red-600 dark:text-red-400' : 'text-gray-400 dark:text-gray-600'}`}>
                         {isUnavailable ? 'Unavailable' : `${room.roomName}`}
@@ -104,200 +116,50 @@ const RoomCard = React.memo(({ room, classData, isDragOver, isWarning, dragHandl
 });
 RoomCard.displayName = 'RoomCard';
 
-// --- SWR Fetcher ---
-const schedulePageFetcher = async ([, token]) => {
-    const [classes, rooms, schedules] = await Promise.all([
-        classService.getAllClasses(token),
-        getAllRooms(token),
-        scheduleService.getAllSchedules(token)
-    ]);
-    return { classes, rooms, schedules };
-};
 
 // --- Main Component ---
-const ScheduleClientView = () => {
+
+const ScheduleClientView = ({
+    initialClasses,
+    initialRooms,
+    initialSchedules,
+    buildingLayout,
+    constants
+}) => {
     const { data: session } = useSession();
     const token = session?.accessToken;
+    const { degrees, generations, buildings, weekdays, timeSlots } = constants;
     const router = useRouter();
-
-    const { data, error, isLoading, mutate } = useSWR(
-        token ? ['schedulePageData', token] : null,
-        schedulePageFetcher
-    );
-
-    const { initialClasses, initialRooms, initialSchedules, buildingLayout, constants } = useMemo(() => {
-        if (!data) {
-            return { 
-                initialClasses: [], 
-                initialRooms: [], 
-                initialSchedules: {}, 
-                buildingLayout: {}, 
-                constants: {
-                    degrees: [],
-                    generations: [],
-                    buildings: [],
-                    weekdays: ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'],
-                    timeSlots: ['Morning Shift', 'Noon Shift', 'Afternoon Shift', 'Evening Shift', 'Weekend Shift']
-                } 
-            };
-        }
-        const { classes, rooms, schedules } = data;
-
-        const UNAVAILABLE_ROOM_IDS = new Set([1, 2, 3, 35, 36, 37, 38, 47, 48, 49, 50, 51, 53, 54, 55]);
-
-        const mapGenerationToYear = (generation) => {
-            if (!generation) return null;
-            const genNumber = parseInt(generation, 10);
-            if (isNaN(genNumber)) return null;
-            const BASE_GENERATION = 34;
-            const BASE_YEAR = 2025;
-            const currentYear = new Date().getFullYear();
-            const currentFirstYearGeneration = BASE_GENERATION + (currentYear - BASE_YEAR);
-            const academicYear = currentFirstYearGeneration - genNumber + 1;
-            return academicYear > 0 ? academicYear : null;
-        };
-        
-        const yearColorMap = {
-            1: 'bg-orange-400',
-            2: 'bg-blue-400',
-            3: 'bg-violet-400',
-            4: 'bg-rose-400',
-        };
-
-        const timeSlotsList = ['Morning Shift', 'Noon Shift', 'Afternoon Shift', 'Evening Shift', 'Weekend Shift'];
-        const consts = {
-            degrees: [...new Set(classes.map(c => c.degreeName))].filter(Boolean),
-            generations: [...new Set(classes.map(c => c.generation))].filter(Boolean),
-            buildings: [...new Set(rooms.map(r => r.buildingName))].filter(Boolean),
-            weekdays: ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'],
-            timeSlots: timeSlotsList
-        };
-
-        const shiftNameMap = {
-            '07:00:00': 'Morning Shift', '10:30:00': 'Noon Shift', '14:00:00': 'Afternoon Shift',
-            '17:30:00': 'Evening Shift', '07:30:00': 'Weekend Shift'
-        };
-
-        const dayApiToAbbrMap = {
-            MONDAY: 'Mo', TUESDAY: 'Tu', WEDNESDAY: 'We', THURSDAY: 'Th',
-            FRIDAY: 'Fr', SATURDAY: 'Sa', SUNDAY: 'Su'
-        };
-
-        const transformedClasses = classes.map(cls => {
-            const newCls = { ...cls };
-            if (newCls.shift && newCls.shift.startTime) {
-                newCls.shift.name = shiftNameMap[newCls.shift.startTime] || 'Unknown Shift';
-            }
-            if (newCls.dailySchedule && !newCls.dayDetails) {
-                newCls.dayDetails = Object.entries(newCls.dailySchedule).map(([day, details]) => ({
-                    dayOfWeek: day,
-                    instructorName: `${details.instructor.firstName} ${details.instructor.lastName}`,
-                    online: details.online
-                }));
-            }
-            const academicYear = mapGenerationToYear(newCls.generation);
-            newCls.academicYear = academicYear;
-            newCls.colorClass = yearColorMap[academicYear] || 'bg-slate-400';
-            return newCls;
-        });
-
-        const scheduleMap = {};
-        schedules.forEach(schedule => {
-            if (!schedule.roomId || schedule.roomName === "Unassigned" || !schedule.dayDetails || !Array.isArray(schedule.dayDetails) || !schedule.shift) {
-                return;
-            }
-            if (schedule.shift.startTime) {
-                const timeSlotName = shiftNameMap[schedule.shift.startTime];
-                if (timeSlotName) {
-                    schedule.dayDetails.forEach(dayDetail => {
-                        const dayAbbr = dayApiToAbbrMap[dayDetail.dayOfWeek.toUpperCase()];
-                        if (dayAbbr) {
-                            if (!scheduleMap[dayAbbr]) scheduleMap[dayAbbr] = {};
-                            if (!scheduleMap[dayAbbr][timeSlotName]) scheduleMap[dayAbbr][timeSlotName] = {};
-                            const academicYear = mapGenerationToYear(schedule.year);
-                            scheduleMap[dayAbbr][timeSlotName][schedule.roomId] = {
-                                classId: schedule.classId,
-                                scheduleId: schedule.scheduleId,
-                                className: schedule.className,
-                                majorName: schedule.majorName,
-                                year: academicYear ? `Year ${academicYear}` : 'Year N/A',
-                                temporaryRoomId: schedule.temporaryRoomId,
-                                temporaryRoomName: schedule.temporaryRoomName
-                            };
-                        }
-                    });
-                }
-            } else if (schedule.shift.name === 'Booked') {
-                schedule.dayDetails.forEach(dayDetail => {
-                    const dayAbbr = dayApiToAbbrMap[dayDetail.dayOfWeek.toUpperCase()];
-                    if (dayAbbr) {
-                        if (!scheduleMap[dayAbbr]) scheduleMap[dayAbbr] = {};
-                        timeSlotsList.forEach(timeSlot => {
-                            if (!scheduleMap[dayAbbr][timeSlot]) {
-                                scheduleMap[dayAbbr][timeSlot] = {};
-                            }
-                            scheduleMap[dayAbbr][timeSlot][schedule.roomId] = {
-                                classId: null,
-                                scheduleId: null,
-                                className: schedule.className,
-                                majorName: "Booking",
-                                year: "N/A"
-                            };
-                        });
-                    }
-                });
-            }
-        });
-
-        const bLayout = {};
-        rooms.forEach(room => {
-            const roomWithStatus = {
-                ...room,
-                status: UNAVAILABLE_ROOM_IDS.has(room.roomId) ? 'unavailable' : 'available'
-            };
-            if (!bLayout[room.buildingName]) bLayout[room.buildingName] = {};
-            if (!bLayout[room.buildingName][room.floor]) bLayout[room.buildingName][room.floor] = [];
-            bLayout[room.buildingName][room.floor].push(roomWithStatus);
-        });
-
-        return {
-            initialClasses: transformedClasses,
-            initialRooms: rooms,
-            initialSchedules: scheduleMap,
-            buildingLayout: bLayout,
-            constants: consts
-        };
-    }, [data]);
 
     const [schedules, setSchedules] = useState(initialSchedules);
     const [availableClasses, setAvailableClasses] = useState([]);
     const [isAssigning, setIsAssigning] = useState(false);
     
+    // Initialize state from localStorage or default to current day/first slot
     const [selectedDay, setSelectedDay] = useState(() => {
         if (typeof window !== 'undefined') {
             const savedDay = localStorage.getItem('adminSchedule_selectedDay');
-            const weekdays = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
             const dayAbbreviationMap = { 0: 'Su', 1: 'Mo', 2: 'Tu', 3: 'We', 4: 'Th', 5: 'Fr', 6: 'Sa' };
             const currentDayAbbr = dayAbbreviationMap[new Date().getDay()];
             return savedDay && weekdays.includes(savedDay) ? savedDay : (weekdays.includes(currentDayAbbr) ? currentDayAbbr : weekdays[0]);
         }
-        return 'Mo';
+        return weekdays[0];
     });
 
     const [selectedTime, setSelectedTime] = useState(() => {
         if (typeof window !== 'undefined') {
-            const timeSlots = ['Morning Shift', 'Noon Shift', 'Afternoon Shift', 'Evening Shift', 'Weekend Shift'];
             const savedTime = localStorage.getItem('adminSchedule_selectedTime');
             return savedTime && timeSlots.includes(savedTime) ? savedTime : timeSlots[0];
         }
-        return 'Morning Shift';
+        return timeSlots[0];
     });
     
     const [selectedBuilding, setSelectedBuilding] = useState(() => {
         if (typeof window !== 'undefined') {
-            return localStorage.getItem('adminSchedule_selectedBuilding') || "";
+            const savedBuilding = localStorage.getItem('adminSchedule_selectedBuilding');
+            return savedBuilding && buildings.includes(savedBuilding) ? savedBuilding : buildings[0];
         }
-        return "";
+        return buildings[0];
     });
     
     const [draggedItem, setDraggedItem] = useState(null);
@@ -314,43 +176,13 @@ const ScheduleClientView = () => {
     const unassignmentProcessed = useRef(false);
 
     const dayApiToAbbreviationMap = { MONDAY: 'Mo', TUESDAY: 'Tu', WEDNESDAY: 'We', THURSDAY: 'Th', FRIDAY: 'Fr', SATURDAY: 'Sa', SUNDAY: 'Su' };
+    const generationColorMap = { '29': 'bg-sky-500', '30': 'bg-emerald-500', '31': 'bg-amber-500', '32': 'bg-indigo-500', '33': 'bg-violet-500' };
 
     const showToast = (message, type = 'info') => setToast({ show: true, message, type });
 
     // --- Effects ---
-
-    useEffect(() => {
-        router.refresh();
-    }, []);
-
-    useEffect(() => {
-        if (typeof window === 'undefined' || !token) return;
-
-        const channel = new BroadcastChannel('data_update_channel');
-
-        const handleMessage = (event) => {
-            if (event.data && event.data.type === 'DATA_UPDATED') {
-                console.log('Data update event received. Revalidating schedule data...');
-                mutate();
-            }
-        };
-
-        channel.addEventListener('message', handleMessage);
-
-        return () => {
-            channel.removeEventListener('message', handleMessage);
-            channel.close();
-        };
-    }, [mutate, token]);
-
-    useEffect(() => {
-        if (constants && constants.buildings && constants.buildings.length > 0) {
-            if (!selectedBuilding || !constants.buildings.includes(selectedBuilding)) {
-                setSelectedBuilding(constants.buildings[0]);
-            }
-        }
-    }, [constants.buildings, selectedBuilding]);
     
+    // Effect to save selections to localStorage
     useEffect(() => {
         if (typeof window !== 'undefined') {
             localStorage.setItem('adminSchedule_selectedDay', selectedDay);
@@ -368,6 +200,21 @@ const ScheduleClientView = () => {
             localStorage.setItem('adminSchedule_selectedBuilding', selectedBuilding);
         }
     }, [selectedBuilding]);
+    
+    // Effect to handle automatic day switching based on the selected shift
+    useEffect(() => {
+        const weekdaysArray = ['Mo', 'Tu', 'We', 'Th', 'Fr'];
+        const weekendDaysArray = ['Sa', 'Su'];
+        const isWeekdayShift = selectedTime !== 'Weekend Shift';
+
+        if (isWeekdayShift && weekendDaysArray.includes(selectedDay)) {
+            // If a weekday shift is selected but a weekend day is active, switch to Monday.
+            setSelectedDay('Mo');
+        } else if (!isWeekdayShift && weekdaysArray.includes(selectedDay)) {
+            // If Weekend Shift is selected but a weekday is active, switch to Saturday.
+            setSelectedDay('Sa');
+        }
+    }, [selectedTime, selectedDay]);
 
     useEffect(() => {
         setSchedules(initialSchedules);
@@ -423,12 +270,12 @@ const ScheduleClientView = () => {
                 if (aMatches && !bMatches) return -1;
                 if (!aMatches && bMatches) return 1;
             }
-            const indexA = constants.timeSlots.indexOf(shiftA);
-            const indexB = constants.timeSlots.indexOf(shiftB);
+            const indexA = timeSlots.indexOf(shiftA);
+            const indexB = timeSlots.indexOf(shiftB);
             if (indexA !== indexB) return indexA - indexB;
             return classA.className.localeCompare(classB.className);
         });
-    }, [availableClasses, selectedDay, selectedTime, selectedDegree, selectedGeneration, searchTerm, constants.timeSlots, dayApiToAbbreviationMap]);
+    }, [availableClasses, selectedDay, selectedTime, selectedDegree, selectedGeneration, searchTerm, timeSlots, dayApiToAbbreviationMap]);
 
     const groupedClassesByShift = useMemo(() => {
         const groups = {};
@@ -441,10 +288,10 @@ const ScheduleClientView = () => {
     }, [allFilteredAndSortedClasses]);
 
     const orderedTimeSlots = useMemo(() => {
-        if (selectedTime === 'All') return constants.timeSlots;
-        const otherTimes = constants.timeSlots.filter(slot => slot !== selectedTime);
+        if (selectedTime === 'All') return timeSlots;
+        const otherTimes = timeSlots.filter(slot => slot !== selectedTime);
         return [selectedTime, ...otherTimes];
-    }, [selectedTime, constants.timeSlots]);
+    }, [selectedTime, timeSlots]);
 
     const getClassForRoom = (roomId) => {
         return schedules[selectedDay]?.[selectedTime]?.[roomId] || null;
@@ -470,6 +317,26 @@ const ScheduleClientView = () => {
         router.push(`/admin/schedule/${roomId}`);
     };
 
+    const handleRevertTemporaryMove = async (draggedItemPayload) => {
+        const { item: tempClassInfo, origin } = draggedItemPayload;
+        if (!origin || !origin.scheduleId) {
+            showToast("Cannot revert: Missing schedule ID.", 'error');
+            return;
+        }
+        if (unassignmentProcessed.current) return;
+        unassignmentProcessed.current = true;
+        setIsAssigning(true);
+        try {
+            await scheduleService.revertTemporaryMove(origin.scheduleId, token);
+            showToast("Temporary move canceled.", 'success');
+            router.refresh(); // REFETCH DATA
+        } catch (error) {
+            showToast(`Failed to cancel move: ${error.message}`, 'error');
+        } finally {
+            setIsAssigning(false);
+        }
+    };
+
     const handleUnassign = async (draggedItemPayload) => {
         const { origin } = draggedItemPayload;
         if (!origin || !origin.scheduleId) {
@@ -481,21 +348,20 @@ const ScheduleClientView = () => {
         setIsAssigning(true);
         try {
             await scheduleService.unassignRoomFromClass(origin.scheduleId, token);
-            mutate();
-            if (typeof window !== 'undefined') {
-                const channel = new BroadcastChannel('data_update_channel');
-                channel.postMessage({ type: 'DATA_UPDATED' });
-                channel.close();
-            }
             showToast("Class unassigned successfully.", 'success');
+            router.refresh(); // REFETCH DATA
         } catch (error) {
             showToast(`Failed to unassign class: ${error.message}`, 'error');
         } finally {
             setIsAssigning(false);
         }
     };
-
+    
     const handleDragStart = (event, item, type, origin = null) => {
+        if (item.isMovedPlaceholder) {
+            event.preventDefault();
+            return;
+        }
         unassignmentProcessed.current = false;
         setDraggedItem({ item, type, origin });
     };
@@ -503,9 +369,15 @@ const ScheduleClientView = () => {
     const handleDragEnd = async (event) => {
         const dropTarget = document.elementFromPoint(event.clientX, event.clientY);
         const droppedOutsideGrid = !dropTarget?.closest('.room-card-drop-zone');
+
         if (draggedItem?.type === 'scheduled' && droppedOutsideGrid) {
-            await handleUnassign(draggedItem);
+            if (draggedItem.item.isTemporary) {
+                await handleRevertTemporaryMove(draggedItem);
+            } else {
+                await handleUnassign(draggedItem);
+            }
         }
+        
         setDraggedItem(null);
         setDragOverCell(null);
         setWarningCellId(null);
@@ -546,52 +418,42 @@ const ScheduleClientView = () => {
             setWarningCellId(null);
         }
     };
-
-    const handleDropOnClassList = async (event) => {
-        event.preventDefault();
-        if (draggedItem?.type === 'scheduled') {
-            await handleUnassign(draggedItem);
-        }
-    };
-
+    
     const handleGridCellDrop = async (event, targetRoomId) => {
         event.preventDefault();
         setDragOverCell(null);
         setWarningCellId(null);
-    
+
         if (!draggedItem) return;
-    
+
         const { item: draggedClass, type: draggedType, origin: dragOrigin } = draggedItem;
-        const targetScheduleInformation = getClassForRoom(targetRoomId);
-    
-        if (draggedType === 'scheduled' && targetScheduleInformation) {
+        const targetRoomData = getClassForRoom(targetRoomId);
+
+        if (targetRoomData?.isMovedPlaceholder) {
+            showToast("Cannot drop here; this is a placeholder for a moved class.", "error");
+            return;
+        }
+
+        if (draggedType === 'scheduled' && targetRoomData) {
             if (dragOrigin.roomId === targetRoomId) return; 
-    
-            const sourceClassData = getClassForRoom(dragOrigin.roomId);
-            const targetClassData = getClassForRoom(targetRoomId);
-    
+
             setSwapConfirmation({
                 isOpen: true,
                 details: {
-                    from: { ...dragOrigin, classData: sourceClassData },
-                    to: { ...targetScheduleInformation, day: selectedDay, time: selectedTime, roomId: targetRoomId, classData: targetClassData },
+                    from: { ...dragOrigin, classData: draggedClass },
+                    to: { ...targetRoomData, day: selectedDay, time: selectedTime, roomId: targetRoomId, classData: targetRoomData },
                 },
             });
             setDraggedItem(null); 
             return;
         }
-    
-        if (draggedType === 'scheduled' && !targetScheduleInformation) {
+
+        if (draggedType === 'scheduled' && !targetRoomData) {
             setIsAssigning(true);
             try {
                 await scheduleService.moveScheduleToRoom(dragOrigin.scheduleId, targetRoomId, token);
-                mutate();
-                if (typeof window !== 'undefined') {
-                    const channel = new BroadcastChannel('data_update_channel');
-                    channel.postMessage({ type: 'DATA_UPDATED' });
-                    channel.close();
-                }
-                showToast("Class moved successfully!", 'success');
+                showToast("Class moved to temporary room!", 'success');
+                router.refresh(); // REFETCH DATA
             } catch (error) {
                 showToast(`Move failed: ${error.message}`, 'error');
             } finally {
@@ -600,42 +462,21 @@ const ScheduleClientView = () => {
             }
             return;
         }
-    
-        if (draggedType === 'new' && !targetScheduleInformation) {
+
+        if (draggedType === 'new' && !targetRoomData) {
             const classShiftName = draggedClass.shift?.name;
-            
-            const classScheduledDays = draggedClass.dayDetails?.map(d => dayApiToAbbreviationMap[d.dayOfWeek.toUpperCase()]).filter(Boolean) || [];
-            const conflicts = [];
-            if (classScheduledDays.length > 0) {
-                classScheduledDays.forEach(day => {
-                    const conflictingSchedule = schedules[day]?.[classShiftName]?.[targetRoomId];
-                    if (conflictingSchedule) {
-                        conflicts.push({
-                            day: day,
-                            className: conflictingSchedule.className
-                        });
-                    }
-                });
-            }
-    
-            if (conflicts.length > 0) {
-                const conflictMessages = conflicts.map(c => `${c.day} (with ${c.className})`).join(', ');
-                showToast(`Assignment failed. Room is already booked on: ${conflictMessages}.`, 'error');
+            if (classShiftName !== selectedTime) {
+                showToast(`Shift mismatch: A "${classShiftName}" class cannot be assigned to a "${selectedTime}" slot.`, 'error');
                 setDraggedItem(null);
                 return;
             }
-    
+
             setIsAssigning(true);
             try {
                 const payload = { classId: draggedClass.classId, roomId: targetRoomId };
-                const response = await scheduleService.assignRoomToClass(payload, token);
-                mutate();
-                if (typeof window !== 'undefined') {
-                    const channel = new BroadcastChannel('data_update_channel');
-                    channel.postMessage({ type: 'DATA_UPDATED' });
-                    channel.close();
-                }
-                showToast(response.message || "Class scheduled successfully!", 'success');
+                await scheduleService.assignRoomToClass(payload, token);
+                showToast("Class scheduled successfully!", 'success');
+                router.refresh(); // REFETCH DATA
             } catch (error) {
                 showToast(error.message || "Failed to schedule class.", 'error');
             } finally {
@@ -644,8 +485,8 @@ const ScheduleClientView = () => {
             }
             return;
         }
-    
-        if (draggedType === 'new' && targetScheduleInformation) {
+
+        if (draggedType === 'new' && targetRoomData) {
             showToast("This room is already occupied.", 'error');
         }
     };
@@ -664,14 +505,8 @@ const ScheduleClientView = () => {
         try {
             const payload = { scheduleId1: from.scheduleId, scheduleId2: to.scheduleId };
             await scheduleService.swapSchedules(payload, token);
-            mutate();
-            if (typeof window !== 'undefined') {
-                const channel = new BroadcastChannel('data_update_channel');
-                channel.postMessage({ type: 'DATA_UPDATED' });
-                channel.close();
-            }
             showToast("Classes swapped successfully!", 'success');
-
+            router.refresh(); // REFETCH DATA
         } catch (error) {
             showToast(`Swap failed: ${error.message}`, 'error');
         } finally {
@@ -766,13 +601,12 @@ const ScheduleClientView = () => {
              floorsHtml += `<p style="text-align: center; font-style: italic; color: ${document.documentElement.classList.contains('dark') ? '#9ca3af' : '#6b7280'};">No layout data found for ${selectedBuilding}.</p>`;
         }
 
-        const currentDate = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+
         const headerHtml = `
             <div style="text-align: center; margin-bottom: 24px;">
                 <h1 style="font-size: 24px; font-weight: bold;">Room Schedule</h1>
                 <h2 style="font-size: 18px; color: #4b5563;">${selectedBuilding}</h2>
                 <p style="font-size: 14px; color: #6b7280;">${selectedDay} | ${selectedTime}</p>
-                <p style="font-size: 12px; color: #6b7280;">Date: ${currentDate}</p>
             </div>
         `;
         
@@ -822,19 +656,6 @@ const ScheduleClientView = () => {
         }
     };
 
-    if (isLoading || !data) {
-        return (
-            <div className='p-6 flex flex-col lg:flex-row gap-6 h-[calc(100vh-100px)]'>
-                <ClassListSkeleton />
-                <ScheduleGridSkeleton />
-            </div>
-        );
-    }
-    
-    if (error) {
-        return <div className="p-6 text-red-500">Error loading schedule data. Please try again.</div>
-    }
-
     return (
         <>
             {toast.show && <Toast message={toast.message} type={toast.type} onClose={() => setToast({ ...toast, show: false })} />}
@@ -853,7 +674,6 @@ const ScheduleClientView = () => {
             <div className='p-6 dark:text-white flex flex-col lg:flex-row gap-6 h-[calc(100vh-100px)]'>
                 <div 
                     onDragOver={handleGridCellDragOver}
-                    onDrop={handleDropOnClassList}
                     className='w-full lg:w-[260px] xl:w-[300px] flex-shrink-0 p-4 bg-white dark:bg-gray-900 border dark:border-gray-700 shadow-lg rounded-xl flex flex-col'
                 >
                     <div className="flex items-center gap-2 mb-2">
@@ -867,13 +687,13 @@ const ScheduleClientView = () => {
                         <div className="w-1/2">
                             <select id="degree-select" value={selectedDegree} onChange={(event) => setSelectedDegree(event.target.value)} className="w-full mt-1 p-2 text-xs border border-gray-300 rounded-md dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200 focus:ring-sky-500 focus:border-sky-500">
                                 <option value="All">Degrees</option>
-                                {constants.degrees.map(degree => (<option key={degree} value={degree}>{degree}</option>))}
+                                {degrees.map(degree => (<option key={degree} value={degree}>{degree}</option>))}
                             </select>
                         </div>
                         <div className="w-1/2">
                             <select id="generation-select" value={selectedGeneration} onChange={(event) => setSelectedGeneration(event.target.value)} className="w-full mt-1 p-2 text-xs border border-gray-300 rounded-md dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200 focus:ring-sky-500 focus:border-sky-500">
                                 <option value="All">Generations</option>
-                                {constants.generations.map(generation => (<option key={generation} value={generation}>{generation}</option>))}
+                                {generations.map(generation => (<option key={generation} value={generation}>{generation}</option>))}
                             </select>
                         </div>
                     </div>
@@ -886,8 +706,8 @@ const ScheduleClientView = () => {
                                         <div className="flex items-center gap-2 mb-2"><h4 className="text-xs sm:text-sm font-medium text-slate-600 dark:text-slate-400 whitespace-nowrap">{shift}</h4><hr className="flex-1 border-t border-slate-300 dark:border-slate-700" /></div>
                                         {classesInShift.map((classItem) => (
                                             <div key={classItem.classId} draggable onDragStart={(event) => handleDragStart(event, classItem, 'new')} onDragEnd={handleDragEnd} className="p-2 bg-gray-50 dark:bg-gray-800 dark:hover:bg-gray-700 border dark:border-gray-700 rounded-lg shadow-sm hover:shadow-md cursor-grab active:cursor-grabbing transition-all flex group">
-                                                <div className={`w-1.5 h-auto rounded-lg ${classItem.colorClass || 'bg-slate-400'} mr-3`}></div>
-                                                <div><p className="max-w-[180px] text-sm font-medium text-gray-800 dark:text-gray-200 truncate" title={classItem.className}>{classItem.className}</p><p className="text-xs text-gray-500 dark:text-gray-400">{classItem.majorName}</p></div>
+                                                <div className={`w-1.5 h-auto rounded-lg ${generationColorMap[classItem.generation] || 'bg-slate-400'} mr-3`}></div>
+                                                <div><p className="text-sm font-medium text-gray-800 dark:text-gray-200">{classItem.className}</p><p className="text-xs text-gray-500 dark:text-gray-400">{classItem.majorName}</p></div>
                                             </div>
                                         ))}
                                     </div>
@@ -901,20 +721,50 @@ const ScheduleClientView = () => {
                 <div ref={schedulePageReference} className='flex-1 p-4 sm:p-6 bg-white dark:bg-gray-900 border dark:border-gray-700 shadow-xl rounded-xl flex flex-col overflow-y-auto'>
                     <div className="flex flex-row items-center justify-between mb-4 border-b dark:border-gray-600 pb-3 no-print">
                         <div className="flex rounded-lg border border-gray-300 dark:border-gray-600 overflow-hidden">
-                            {constants.weekdays.map(day => (<button key={day} onClick={() => setSelectedDay(day)} className={`px-3.5 py-1.5 text-sm font-medium transition-colors ${selectedDay === day ? 'bg-blue-600 dark:bg-blue-600 hover:bg-blue-700 dark:hover:bg-blue-700 text-white shadow' : 'border-r hover:bg-gray-50 dark:hover:bg-gray-800 dark:border-r-gray-500 last:border-r-0'}`}>{day}</button>))}
+                            {weekdays.map(day => {
+                                const isWeekendShift = selectedTime === 'Weekend Shift';
+                                const isWeekdayShift = !isWeekendShift;
+                                
+                                const isDayDisabled = (isWeekendShift && ['Mo', 'Tu', 'We', 'Th', 'Fr'].includes(day)) ||
+                                                      (isWeekdayShift && ['Sa', 'Su'].includes(day));
+
+                                return (
+                                    <button
+                                        key={day}
+                                        onClick={() => !isDayDisabled && setSelectedDay(day)}
+                                        disabled={isDayDisabled}
+                                        className={`px-3.5 py-1.5 text-sm font-medium transition-colors ${
+                                            selectedDay === day
+                                                ? 'bg-blue-600 dark:bg-blue-600 text-white shadow'
+                                                : `border-r border-gray-300 dark:border-gray-500 last:border-r-0 ${
+                                                    isDayDisabled
+                                                        ? 'bg-gray-200 dark:bg-gray-800 text-gray-400 dark:text-gray-600 cursor-not-allowed'
+                                                        : 'hover:bg-gray-50 dark:hover:bg-gray-800'
+                                                }`
+                                        }`}
+                                    >
+                                        {day}
+                                    </button>
+                                );
+                            })}
                         </div>
                         <div className="flex items-center gap-2">
                             <label htmlFor="time-select" className="text-sm font-medium dark:text-gray-300">Time:</label>
                             <select id="time-select" value={selectedTime} onChange={(event) => setSelectedTime(event.target.value)} className="p-2 text-sm border border-gray-300 rounded-md dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200 focus:ring-sky-500 focus:border-sky-500">
-                                {constants.timeSlots.map(timeSlot => (<option key={timeSlot} value={timeSlot}>{timeSlot}</option>))}
+                                {timeSlots.map(timeSlot => (<option key={timeSlot} value={timeSlot}>{timeSlot}</option>))}
                             </select>
                         </div>
                     </div>
                     <div className="flex flex-col sm:flex-row justify-between items-center gap-2 no-print">
-                        <div className="flex items-center"><select id="building-select" value={selectedBuilding} onChange={(event) => setSelectedBuilding(event.target.value)} className="block w-full p-2 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white">{constants.buildings.map(building => (<option key={building} value={building}>{building}</option>))}</select></div>
+                        <div className="flex items-center"><select id="building-select" value={selectedBuilding} onChange={(event) => setSelectedBuilding(event.target.value)} className="block w-full p-2 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white">{buildings.map(building => (<option key={building} value={building}>{building}</option>))}</select></div>
                         <hr className="flex-1 border-t border-slate-300 dark:border-slate-700" />
                     </div>
                     <div className="flex-grow flex flex-col gap-y-4 mt-4">
+                        {isAssigning && (
+                            <div className="absolute inset-0 bg-white/80 dark:bg-gray-900/80 flex justify-center items-center z-50">
+                                <SpinnerIcon className="h-10 w-10 text-blue-600" />
+                            </div>
+                        )}
                         {Object.entries(currentGrid).sort(([floorA], [floorB]) => Number(floorB) - Number(floorA)).map(([floor, rooms]) => (
                             <div key={floor}>
                                 <div className="flex items-center gap-2 mb-2"><h4 className="text-xs sm:text-sm font-medium text-slate-600 dark:text-slate-400 whitespace-nowrap">Floor {floor}</h4><hr className="flex-1 border-t border-slate-300 dark:border-slate-700" /></div>
@@ -944,7 +794,7 @@ const ScheduleClientView = () => {
                             </div>
                         ))}
                     </div>
-                    <div className="mt-auto pt-4 flex flex-wrap justify-between items-center gap-3 no-print">
+                    <div className="mt-auto pt-4 border-t border-gray-200 dark:border-gray-700 flex flex-wrap justify-between items-center gap-3 no-print">
                         <div className="text-xs text-gray-600 dark:text-gray-400 space-y-0.5">
                             <p><span className="inline-block w-2.5 h-2.5 bg-green-500 rounded-full mr-1.5 align-middle"></span> Available Rooms: {availableRoomsCount}</p>
                             <p><span className="inline-block w-2.5 h-2.5 bg-red-500 rounded-full mr-1.5 align-middle"></span> Unavailable Rooms: {unavailableRoomsCount}</p>

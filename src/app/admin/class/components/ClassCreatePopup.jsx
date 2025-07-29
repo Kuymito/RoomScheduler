@@ -238,7 +238,7 @@ const ClassCreatePopup = ({ isOpen, onClose, onSave, departments, departmentsErr
                 <h2 className="text-mb font-bold mb-3">Create New Class</h2>
                 <hr className="border-t-2 border-gray-200 mb-5" />
                 <form onSubmit={handleSubmit} className="space-y-3">
-                    <div className="grid grid-cols-2 gap-3 mb-4 max-h-[60vh] overflow-y-auto pr-2">
+                    <div className="grid grid-cols-2 gap-3 mb-4 max-h-[60vh] pr-2">
                         <div className="col-span-2">
                             <label htmlFor="className" className="block mb-2 text-xs font-medium text-gray-900 dark:text-white">Name (Optional)</label>
                             <input
@@ -247,7 +247,7 @@ const ClassCreatePopup = ({ isOpen, onClose, onSave, departments, departmentsErr
                                 name="className"
                                 value={newClass.className}
                                 onChange={handleInputChange}
-                                className={`bg-gray-50 border text-gray-900 text-xs rounded-lg block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white ${getErrorClass('className')}`}
+                                className={`bg-gray-50 border text-gray-900 text-xs rounded-lg block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white focus:outline-none focus:ring-1 ${getErrorClass('className')}`}
                                 placeholder="Auto-generates if empty (e.g., NUM30-01)"
                                 maxLength="60"
                             />
@@ -255,23 +255,23 @@ const ClassCreatePopup = ({ isOpen, onClose, onSave, departments, departmentsErr
 
                         <div>
                             <label htmlFor="generation" className="block text-xs font-medium text-gray-700 dark:text-gray-300">Generation</label>
-                            <select id="generation" name="generation" value={newClass.generation} onChange={handleInputChange} className={`mt-1 block w-full p-2 text-xs border rounded-md shadow-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white ${getErrorClass('generation')}`} required>
+                            <select id="generation" name="generation" value={newClass.generation} onChange={handleInputChange} className={`mt-1 block w-full p-2 text-xs border rounded-md shadow-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-1 focus:ring-blue-500 focus:outline-none ${getErrorClass('generation')}`} required>
                                 {generationOptions.map(option => (<option key={option} value={option}>{option}</option>))}
                             </select>
                         </div>
                         <div>
                             <label htmlFor="groupName" className="block text-xs font-medium text-gray-700 dark:text-gray-300">Group</label>
-                            <input type="text" id="groupName" name="groupName" value={newClass.groupName} onChange={handleInputChange} className={`mt-1 block w-full p-2 text-xs border rounded-md shadow-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white ${getErrorClass('groupName')}`} placeholder="01" required pattern="\d{1,3}" />
+                            <input type="text" id="groupName" name="groupName" value={newClass.groupName} onChange={handleInputChange} className={`mt-1 block w-full p-2 text-xs border rounded-md shadow-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:outline-none focus:ring-1 ${getErrorClass('groupName')}`} placeholder="01" required pattern="\d{1,3}" />
                         </div>
                         <div>
                             <label htmlFor="degree" className="block text-xs font-medium text-gray-700 dark:text-gray-300">Degree</label>
-                            <select id="degree" name="degree" value={newClass.degree} onChange={handleInputChange} className="mt-1 block w-full p-2 text-xs border border-gray-300 rounded-md shadow-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white" required>
+                            <select id="degree" name="degree" value={newClass.degree} onChange={handleInputChange} className="mt-1 block w-full p-2 text-xs border border-gray-300 rounded-md shadow-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-1 focus:ring-blue-500 focus:outline-none" required>
                                 {degreesOptions.map(option => (<option key={option} value={option}>{option}</option>))}
                             </select>
                         </div>
                         <div>
                             <label htmlFor="departmentId" className="block text-xs font-medium text-gray-700 dark:text-gray-300">Faculty</label>
-                            <select id="departmentId" name="departmentId" value={newClass.departmentId} onChange={handleInputChange} className={`mt-1 block w-full p-2 text-xs border rounded-md shadow-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white ${getErrorClass('departmentId')}`} required>
+                            <select id="departmentId" name="departmentId" value={newClass.departmentId} onChange={handleInputChange} className={`mt-1 block w-full p-2 text-xs border rounded-md shadow-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-1 focus:ring-blue-500 focus:outline-none ${getErrorClass('departmentId')}`} required>
                                 {departmentsError && <option value="">Error loading faculties</option>}
                                 {!departments && !departmentsError && <option value="">Loading...</option>}
                                 {departmentOptions.map(dep => (<option key={dep.departmentId} value={dep.departmentId}>{dep.name}</option>))}
@@ -279,7 +279,7 @@ const ClassCreatePopup = ({ isOpen, onClose, onSave, departments, departmentsErr
                         </div>
                         <div className="col-span-2">
                             <label htmlFor="major" className="block text-xs font-medium text-gray-700 dark:text-gray-300">Major</label>
-                            <select id="major" name="major" value={newClass.major} onChange={handleInputChange} className={`mt-1 block w-full p-2 text-xs border rounded-md shadow-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white ${getErrorClass('major')}`} required>
+                            <select id="major" name="major" value={newClass.major} onChange={handleInputChange} className={`mt-1 block w-full p-2 text-xs border rounded-md shadow-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-1 focus:ring-blue-500 focus:outline-none ${getErrorClass('major')}`} required>
                                 {majorsError && <option value="">Error loading majors</option>}
                                 {!majors && !majorsError && <option value="">Loading...</option>}
                                 {filteredMajors.length > 0 ? (
@@ -291,13 +291,13 @@ const ClassCreatePopup = ({ isOpen, onClose, onSave, departments, departmentsErr
                         </div>
                         <div className="col-span-2">
                             <label htmlFor="semester" className="block text-xs font-medium text-gray-700 dark:text-gray-300">Semester</label>
-                            <select id="semester" name="semester" value={newClass.semester} onChange={handleInputChange} className="mt-1 block w-full p-2 text-xs border border-gray-300 rounded-md shadow-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white" required>
+                            <select id="semester" name="semester" value={newClass.semester} onChange={handleInputChange} className="mt-1 block w-full p-2 text-xs border border-gray-300 rounded-md shadow-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-1 focus:ring-blue-500 focus:outline-none" required>
                                 {semesterOptions.map(option => (<option key={option} value={option}>{option}</option>))}
                             </select>
                         </div>
                         <div className="col-span-2">
                             <label htmlFor="shiftId" className="block text-xs font-medium text-gray-700 dark:text-gray-300">Shift</label>
-                            <select id="shiftId" name="shiftId" value={newClass.shiftId} onChange={handleInputChange} className={`mt-1 block w-full p-2 text-xs border rounded-md shadow-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white ${getErrorClass('shiftId')}`} required>
+                            <select id="shiftId" name="shiftId" value={newClass.shiftId} onChange={handleInputChange} className={`mt-1 block w-full p-2 text-xs border rounded-md shadow-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-1 focus:ring-blue-500 focus:outline-none ${getErrorClass('shiftId')}`} required>
                                 {shiftOptions.map(shiftName => (<option key={shiftMap[shiftName]} value={shiftMap[shiftName]}>{shiftName}</option>))}
                             </select>
                         </div>

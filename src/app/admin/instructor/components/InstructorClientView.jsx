@@ -63,7 +63,6 @@ export default function InstructorClientView({ initialInstructors, initialDepart
     const [showCreateInstructorPopup, setShowCreateInstructorPopup] = useState(false);
     
     // --- State with localStorage Initialization ---
-    // UPDATED: Initialize currentPage from localStorage
     const [currentPage, setCurrentPage] = useState(() => {
         if (typeof window !== 'undefined') {
             const savedPage = localStorage.getItem('instructorPage_currentPage');
@@ -113,7 +112,6 @@ export default function InstructorClientView({ initialInstructors, initialDepart
     const [isFilterMenuOpen, setIsFilterMenuOpen] = useState(false);
 
     // --- useEffect hooks to persist state changes ---
-    // UPDATED: Added useEffect for currentPage
     useEffect(() => { if (typeof window !== 'undefined') localStorage.setItem('instructorPage_currentPage', currentPage); }, [currentPage]);
     useEffect(() => { if (typeof window !== 'undefined') localStorage.setItem('instructorItemsPerPage', itemsPerPage); }, [itemsPerPage]);
     useEffect(() => { if (typeof window !== 'undefined') localStorage.setItem('instructorPage_statusFilter', statusFilter); }, [statusFilter]);
@@ -276,15 +274,42 @@ export default function InstructorClientView({ initialInstructors, initialDepart
     };
     const getPageNumbers = () => {
         const pageNumbers = [];
-        const maxPagesToShow = 5;
-        let startPage = Math.max(1, currentPage - Math.floor(maxPagesToShow / 2));
-        let endPage = Math.min(totalPages, startPage + maxPagesToShow - 1);
-        if (endPage - startPage + 1 < maxPagesToShow) {
-            startPage = Math.max(1, endPage - maxPagesToShow + 1);
+        const maxPagesToShow = 5; // Total items to show: 1 ... 2 3 4 ... 10
+        const pageBuffer = 1; // Pages around current page
+    
+        if (totalPages <= maxPagesToShow) {
+            for (let i = 1; i <= totalPages; i++) {
+                pageNumbers.push(i);
+            }
+        } else {
+            pageNumbers.push(1); // Always show first page
+    
+            let start = Math.max(2, currentPage - pageBuffer);
+            let end = Math.min(totalPages - 1, currentPage + pageBuffer);
+    
+            if (currentPage - pageBuffer <= 2) {
+                end = maxPagesToShow - 2;
+            }
+    
+            if (currentPage + pageBuffer >= totalPages - 1) {
+                start = totalPages - maxPagesToShow + 3;
+            }
+    
+            if (start > 2) {
+                pageNumbers.push('...');
+            }
+    
+            for (let i = start; i <= end; i++) {
+                pageNumbers.push(i);
+            }
+    
+            if (end < totalPages - 1) {
+                pageNumbers.push('...');
+            }
+    
+            pageNumbers.push(totalPages); // Always show last page
         }
-        for (let i = startPage; i <= endPage; i++) {
-            pageNumbers.push(i);
-        }
+    
         return pageNumbers;
     };
     
@@ -319,7 +344,7 @@ export default function InstructorClientView({ initialInstructors, initialDepart
                 <div className="flex items-center gap-2">
                     <input
                         type="text"
-                        placeholder="Search all columns..."
+                        placeholder="Search ..."
                         value={globalSearchTerm}
                         onChange={(e) => {setGlobalSearchTerm(e.target.value); setCurrentPage(1);}}
                         className="block md:w-72 sm:w-52 w-32 p-2 text-xs font-medium text-gray-900 bg-white border border-gray-200 rounded-lg hover:bg-gray-100 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:hover:text-white dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-600 dark:focus:ring-offset-gray-800"
@@ -394,21 +419,18 @@ export default function InstructorClientView({ initialInstructors, initialDepart
                                                         <img src={data.profileImage} alt={data.name} className="w-8 h-8 rounded-full object-cover border border-gray-200 dark:border-gray-600 flex-shrink-0"/> 
                                                         : <DefaultAvatarIcon className="size-8 rounded-full text-gray-400 bg-gray-100 dark:bg-gray-700 dark:text-gray-500 flex-shrink-0" />
                                                     }
-                                                    {/* UPDATED: Added max-width and truncate */}
                                                     <div className="max-w-[100px]">
                                                         <span className="truncate block" title={data.name}>{data.name}</span>
                                                     </div>
                                                 </div>
                                             </td>
                                             <td className="px-6 py-2 sm:table-cell hidden">
-                                                {/* UPDATED: Added max-width and truncate */}
                                                 <div className="max-w-[120px] truncate" title={data.email}>
                                                     {data.email}
                                                 </div>
                                             </td>
                                             <td className="px-6 py-2 lg:table-cell hidden truncate"> {formatPhoneNumber(data.phone)} </td>
                                             <td className="px-6 py-2">
-                                                {/* UPDATED: Added max-width and truncate */}
                                                 <div className="max-w-[120px] truncate" title={data.majorStudied}>
                                                     {data.majorStudied}
                                                 </div>
@@ -426,30 +448,38 @@ export default function InstructorClientView({ initialInstructors, initialDepart
                     <tfoot className="text-xs text-gray-700 border-t border-gray-200 bg-gray-50 dark:text-gray-400 dark:border-gray-600 dark:bg-gray-700">
                         <tr>
                             <td className="px-6 py-2.5"></td>
-                            <td className="px-6 py-2.5"><input type="text" placeholder="Search name..." value={searchTexts.name} onChange={(e) => handleSearchChange('name', e.target.value)} className="block w-full p-1.5 text-xs text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" /></td>
-                            <td className="px-6 py-2.5 sm:table-cell hidden"><input type="text" placeholder="Search email..." value={searchTexts.email} onChange={(e) => handleSearchChange('email', e.target.value)} className="block w-full p-1.5 text-xs text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" /></td>
-                            <td className="px-6 py-2.5 lg:table-cell hidden"><input type="text" placeholder="Search phone..." value={searchTexts.phone} onChange={(e) => handleSearchChange('phone', e.target.value)} className="block w-full p-1.5 text-xs text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" /></td>
-                            <td className="px-6 py-2.5"><input type="text" placeholder="Search major..." value={searchTexts.majorStudied} onChange={(e) => handleSearchChange('majorStudied', e.target.value)} className="block w-full p-1.5 text-xs text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" /></td>
-                            <td className="px-6 py-2.5 sm:table-cell hidden"><input type="text" placeholder="Search qual..." value={searchTexts.qualifications} onChange={(e) => handleSearchChange('qualifications', e.target.value)} className="block w-full p-1.5 text-xs text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" /></td>
+                            <td className="px-6 py-2.5"><input type="text" placeholder="Search name..." value={searchTexts.name} onChange={(e) => handleSearchChange('name', e.target.value)} className="block w-full p-1.5 text-xs text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2" /></td>
+                            <td className="px-6 py-2.5 sm:table-cell hidden"><input type="text" placeholder="Search email..." value={searchTexts.email} onChange={(e) => handleSearchChange('email', e.target.value)} className="block w-full p-1.5 text-xs text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2" /></td>
+                            <td className="px-6 py-2.5 lg:table-cell hidden"><input type="text" placeholder="Search phone..." value={searchTexts.phone} onChange={(e) => handleSearchChange('phone', e.target.value)} className="block w-full p-1.5 text-xs text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2" /></td>
+                            <td className="px-6 py-2.5"><input type="text" placeholder="Search major..." value={searchTexts.majorStudied} onChange={(e) => handleSearchChange('majorStudied', e.target.value)} className="block w-full p-1.5 text-xs text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2" /></td>
+                            <td className="px-6 py-2.5 sm:table-cell hidden"><input type="text" placeholder="Search qual..." value={searchTexts.qualifications} onChange={(e) => handleSearchChange('qualifications', e.target.value)} className="block w-full p-1.5 text-xs text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2" /></td>
                             <td className="px-6 py-2.5"></td>
                         </tr>
                     </tfoot>
                 </table>
             </div>
-            <nav className="flex items-center flex-column flex-wrap md:flex-row justify-between pt-4" aria-label="Table navigation">
-                <span className="text-xs font-normal text-gray-500 dark:text-gray-400 mb-4 md:mb-0 block w-full md:w-auto">
-                    Showing <span className="font-semibold text-gray-900 dark:text-white">{(currentPage - 1) * itemsPerPage + 1}-{Math.min(currentPage * itemsPerPage, filteredInstructorData.length)}</span> of <span className="font-semibold text-gray-900 dark:text-white">{filteredInstructorData.length}</span>
-                </span>
-                <div className="flex items-center gap-2 text-xs">
-                    <label htmlFor="items-per-page" className="text-xs font-normal text-gray-500 dark:text-gray-400">Items per page:</label>
-                    <select id="items-per-page" value={itemsPerPage} onChange={handleItemsPerPageChange} className="bg-gray-50 text-xs border border-gray-300 text-gray-900 rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-1.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white">
-                        {itemsPerPageOptions.map(option => (<option key={option} value={option}>{option}</option>))}
-                    </select>
+            <nav className="flex flex-col sm:flex-row items-center justify-between pt-4 gap-y-4" aria-label="Table navigation">
+                <div className="flex flex-wrap items-center justify-center sm:justify-start gap-4">
+                    <span className="text-xs font-normal text-gray-500 dark:text-gray-400">
+                        Showing <span className="font-semibold text-gray-900 dark:text-white">{(currentPage - 1) * itemsPerPage + 1}-{Math.min(currentPage * itemsPerPage, filteredInstructorData.length)}</span> of <span className="font-semibold text-gray-900 dark:text-white">{filteredInstructorData.length}</span>
+                    </span>
+                    <div className="flex items-center gap-2 text-xs">
+                        <label htmlFor="items-per-page" className="text-xs font-normal text-gray-500 dark:text-gray-400">Items per page:</label>
+                        <select id="items-per-page" value={itemsPerPage} onChange={handleItemsPerPageChange} className="bg-gray-50 text-xs border border-gray-300 text-gray-900 rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-1.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white">
+                            {itemsPerPageOptions.map(option => (<option key={option} value={option}>{option}</option>))}
+                        </select>
+                    </div>
                 </div>
                 <ul className="inline-flex -space-x-px rtl:space-x-reverse text-xs h-8">
                     <li><button onClick={goToPreviousPage} disabled={currentPage === 1 || isPending} className="flex items-center justify-center px-3 h-8 ms-0 leading-tight text-gray-500 bg-white border border-gray-300 rounded-s-lg hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white disabled:opacity-50 disabled:cursor-not-allowed">Previous</button></li>
-                    {getPageNumbers().map((pageNumber) => (
-                        <li key={pageNumber}><button onClick={() => goToPage(pageNumber)} disabled={isPending} className={`flex items-center justify-center px-3 h-8 leading-tight border border-gray-300 dark:border-gray-700 ${currentPage === pageNumber ? 'text-blue-600 bg-blue-50 hover:bg-blue-100 hover:text-blue-700 dark:bg-gray-700 dark:text-white' : 'text-gray-500 bg-white hover:bg-gray-100 dark:bg-gray-800 dark:hover:bg-gray-600'} disabled:opacity-50 disabled:cursor-not-allowed`}>{pageNumber}</button></li>
+                    {getPageNumbers().map((pageNumber, index) => (
+                        <li key={index}>
+                            {pageNumber === '...' ? (
+                                <span className="flex items-center justify-center px-3 h-8 leading-tight text-gray-500 bg-white border border-gray-300 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400">...</span>
+                            ) : (
+                                <button onClick={() => goToPage(pageNumber)} disabled={isPending} className={`flex items-center justify-center px-3 h-8 leading-tight border border-gray-300 dark:border-gray-700 ${currentPage === pageNumber ? 'text-blue-600 bg-blue-50 hover:bg-blue-100 hover:text-blue-700 dark:bg-gray-700 dark:text-white' : 'text-gray-500 bg-white hover:bg-gray-100 dark:bg-gray-800 dark:hover:bg-gray-600'} disabled:opacity-50 disabled:cursor-not-allowed`}>{pageNumber}</button>
+                            )}
+                        </li>
                     ))}
                     <li><button onClick={goToNextPage} disabled={currentPage === totalPages || isPending} className="flex items-center justify-center px-3 h-8 leading-tight text-gray-500 bg-white border border-gray-300 rounded-e-lg hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white disabled:opacity-50 disabled:cursor-not-allowed">Next</button></li>
                 </ul>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import useSWR from 'swr';
@@ -48,12 +48,53 @@ export default function InstructorClassClientView({ initialClasses }) {
 
     const [classData, setClassData] = useState([]);
     const [rowLoading, setRowLoading] = useState(null);
-    const [currentPage, setCurrentPage] = useState(1);
+    const [isPending, startTransition] = useTransition();
+    
+    // --- State with localStorage Initialization ---
+    const [currentPage, setCurrentPage] = useState(() => {
+        if (typeof window !== 'undefined') {
+            const savedPage = localStorage.getItem('instructorClassPage_currentPage');
+            return savedPage ? parseInt(savedPage, 10) : 1;
+        }
+        return 1;
+    });
     const itemsPerPageOptions = [5, 10, 20, 50];
-    const [itemsPerPage, setItemsPerPage] = useState(itemsPerPageOptions[0]);
-    const [sortColumn, setSortColumn] = useState(null);
-    const [sortDirection, setSortDirection] = useState('asc');
-    const [searchTexts, setSearchTexts] = useState({ name: '', generation: '', group: '', major: '', degrees: '', faculty: '', shift: '' });
+    const [itemsPerPage, setItemsPerPage] = useState(() => {
+        if (typeof window !== 'undefined') {
+            const savedSize = localStorage.getItem('instructorClassPage_itemsPerPage');
+            return savedSize ? parseInt(savedSize, 10) : itemsPerPageOptions[0];
+        }
+        return itemsPerPageOptions[0];
+    });
+    const [sortColumn, setSortColumn] = useState(() => {
+        if (typeof window !== 'undefined') return localStorage.getItem('instructorClassPage_sortColumn') || null;
+        return null;
+    });
+    const [sortDirection, setSortDirection] = useState(() => {
+        if (typeof window !== 'undefined') return localStorage.getItem('instructorClassPage_sortDirection') || 'asc';
+        return 'asc';
+    });
+    const [searchTexts, setSearchTexts] = useState(() => {
+        if (typeof window !== 'undefined') {
+            const saved = localStorage.getItem('instructorClassPage_searchTexts');
+            return saved ? JSON.parse(saved) : { name: '', generation: '', group: '', major: '', degrees: '', faculty: '', shift: '' };
+        }
+        return { name: '', generation: '', group: '', major: '', degrees: '', faculty: '', shift: '' };
+    });
+
+    const [globalSearchTerm, setGlobalSearchTerm] = useState(() => {
+        if (typeof window !== 'undefined') return localStorage.getItem('instructorClassPage_globalSearch') || '';
+        return '';
+    });
+
+    // --- useEffect hooks to persist state changes ---
+    useEffect(() => { if (typeof window !== 'undefined') localStorage.setItem('instructorClassPage_currentPage', currentPage); }, [currentPage]);
+    useEffect(() => { if (typeof window !== 'undefined') localStorage.setItem('instructorClassPage_itemsPerPage', itemsPerPage); }, [itemsPerPage]);
+    useEffect(() => { if (typeof window !== 'undefined') { if (sortColumn) localStorage.setItem('instructorClassPage_sortColumn', sortColumn); else localStorage.removeItem('instructorClassPage_sortColumn'); } }, [sortColumn]);
+    useEffect(() => { if (typeof window !== 'undefined') localStorage.setItem('instructorClassPage_sortDirection', sortDirection); }, [sortDirection]);
+    useEffect(() => { if (typeof window !== 'undefined') localStorage.setItem('instructorClassPage_searchTexts', JSON.stringify(searchTexts)); }, [searchTexts]);
+    useEffect(() => { if (typeof window !== 'undefined') localStorage.setItem('instructorClassPage_globalSearch', globalSearchTerm); }, [globalSearchTerm]);
+
 
     useEffect(() => {
         if (apiData) {
@@ -120,6 +161,16 @@ export default function InstructorClassClientView({ initialClasses }) {
 
     const filteredClassData = useMemo(() => {
         let currentFilteredData = [...sortedClassData];
+        
+        if (globalSearchTerm.trim()) {
+            const lowercasedTerm = globalSearchTerm.toLowerCase().trim();
+            currentFilteredData = currentFilteredData.filter(item => {
+                return Object.values(item).some(value =>
+                    String(value).toLowerCase().includes(lowercasedTerm)
+                );
+            });
+        }
+
         Object.keys(searchTexts).forEach(column => {
             const searchTerm = String(searchTexts[column]).toLowerCase().trim();
             if (searchTerm) {
@@ -129,7 +180,7 @@ export default function InstructorClassClientView({ initialClasses }) {
             }
         });
         return currentFilteredData;
-    }, [sortedClassData, searchTexts]);
+    }, [sortedClassData, searchTexts, globalSearchTerm]);
 
     const totalPages = Math.ceil(filteredClassData.length / itemsPerPage);
 
@@ -150,20 +201,49 @@ export default function InstructorClassClientView({ initialClasses }) {
     const getPageNumbers = () => {
         const pageNumbers = [];
         const maxPagesToShow = 5;
-        let startPage = Math.max(1, currentPage - Math.floor(maxPagesToShow / 2));
-        let endPage = Math.min(totalPages, startPage + maxPagesToShow - 1);
-        if (endPage - startPage + 1 < maxPagesToShow) {
-            startPage = Math.max(1, endPage - maxPagesToShow + 1);
+        const pageBuffer = 1;
+    
+        if (totalPages <= maxPagesToShow) {
+            for (let i = 1; i <= totalPages; i++) {
+                pageNumbers.push(i);
+            }
+        } else {
+            pageNumbers.push(1);
+    
+            let start = Math.max(2, currentPage - pageBuffer);
+            let end = Math.min(totalPages - 1, currentPage + pageBuffer);
+    
+            if (currentPage - pageBuffer <= 2) {
+                end = maxPagesToShow - 2;
+            }
+    
+            if (currentPage + pageBuffer >= totalPages - 1) {
+                start = totalPages - maxPagesToShow + 3;
+            }
+    
+            if (start > 2) {
+                pageNumbers.push('...');
+            }
+    
+            for (let i = start; i <= end; i++) {
+                pageNumbers.push(i);
+            }
+    
+            if (end < totalPages - 1) {
+                pageNumbers.push('...');
+            }
+    
+            pageNumbers.push(totalPages);
         }
-        for (let i = startPage; i <= endPage; i++) pageNumbers.push(i);
+    
         return pageNumbers;
     };
 
-    const handleRowClick = async (classId) => {
-        if (rowLoading) return;
+    const handleRowClick = (classId) => {
         setRowLoading(classId);
-        await new Promise(resolve => setTimeout(resolve, 500)); 
-        router.push(`/instructor/class/${classId}`);
+        startTransition(() => {
+            router.push(`/instructor/class/${classId}`);
+        });
     };
 
     const tableColumns = [
@@ -189,7 +269,13 @@ export default function InstructorClassClientView({ initialClasses }) {
             <h1 className="text-lg font-bold">Class List</h1>
             <hr className="border-t border-gray-200 dark:border-gray-700 mt-4 mb-4" />
             <div className="flex items-center justify-between mt-2 mb-4 gap-2">
-                <input type="text" placeholder="Search by name..." value={searchTexts.name} onChange={(e) => handleSearchChange('name', e.target.value)} className="block w-72 p-2 text-sm font-medium text-gray-900 bg-white border border-gray-200 rounded-lg hover:bg-gray-100 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:hover:text-white dark:hover:bg-gray-700" />
+                <input
+                    type="text"
+                    placeholder="Search ..."
+                    value={globalSearchTerm}
+                    onChange={(e) => {setGlobalSearchTerm(e.target.value); setCurrentPage(1);}}
+                    className="block md:w-72 sm:w-52 w-32 p-2 text-xs font-medium text-gray-900 bg-white border border-gray-200 rounded-lg hover:bg-gray-100 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:hover:text-white dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-600 dark:focus:ring-offset-gray-800"
+                />
             </div>
             <div className="relative overflow-x-auto border border-gray-200 dark:border-gray-600 rounded-lg">
                 <table className="w-full rounded-lg text-sm text-left rtl:text-right text-gray-500">
@@ -216,7 +302,6 @@ export default function InstructorClassClientView({ initialClasses }) {
                                 ) : (
                                     <>
                                         <td className="px-6 py-2.5 font-medium text-gray-900 dark:text-white">
-                                            {/* UPDATED: Added max-width and truncate */}
                                             <div className="max-w-[70px] truncate" title={data.name}>
                                                 {data.name}
                                             </div>
@@ -224,14 +309,12 @@ export default function InstructorClassClientView({ initialClasses }) {
                                         <td className="px-6 py-2.5 lg:table-cell hidden">{data.generation}</td>
                                         <td className="px-6 py-2.5 lg:table-cell hidden">{data.group}</td>
                                         <td className="px-6 py-2.5">
-                                            {/* UPDATED: Added max-width and truncate */}
                                             <div className="max-w-[120px] truncate" title={data.major}>
                                                 {data.major}
                                             </div>
                                         </td>
                                         <td className="px-6 py-2.5">{data.degrees}</td>
                                         <td className="px-6 py-2.5 2xl:table-cell hidden">
-                                            {/* UPDATED: Added max-width and truncate */}
                                             <div className="max-w-[120px] truncate" title={data.faculty}>
                                                 {data.faculty}
                                             </div>
@@ -251,29 +334,41 @@ export default function InstructorClassClientView({ initialClasses }) {
                     </tbody>
                     <tfoot className="text-xs text-gray-700 border-t border-gray-200 bg-gray-50 dark:text-gray-400 dark:border-gray-600 dark:bg-gray-700">
                         <tr>
-                            <td className="px-6 py-2.5"><input type="text" placeholder="Search..." value={searchTexts.name} onChange={(e) => handleSearchChange('name', e.target.value)} className="block w-full p-1.5 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white" /></td>
-                            <td className="px-6 py-2.5 lg:table-cell hidden"><input type="text" placeholder="Search..." value={searchTexts.generation} onChange={(e) => handleSearchChange('generation', e.target.value)} className="block w-full p-1.5 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white" /></td>
-                            <td className="px-6 py-2.5 lg:table-cell hidden"><input type="text" placeholder="Search..." value={searchTexts.group} onChange={(e) => handleSearchChange('group', e.target.value)} className="block w-full p-1.5 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white" /></td>
-                            <td className="px-6 py-2.5"><input type="text" placeholder="Search..." value={searchTexts.major} onChange={(e) => handleSearchChange('major', e.target.value)} className="block w-full p-1.5 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white" /></td>
-                            <td className="px-6 py-2.5"><input type="text" placeholder="Search..." value={searchTexts.degrees} onChange={(e) => handleSearchChange('degrees', e.target.value)} className="block w-full p-1.5 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white" /></td>
-                            <td className="px-6 py-2.5 2xl:table-cell hidden"><input type="text" placeholder="Search..." value={searchTexts.faculty} onChange={(e) => handleSearchChange('faculty', e.target.value)} className="block w-full p-1.5 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white" /></td>
-                            <td className="px-6 py-2.5 sm:table-cell hidden"><input type="text" placeholder="Search..." value={searchTexts.shift} onChange={(e) => handleSearchChange('shift', e.target.value)} className="block w-full p-1.5 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white" /></td>
+                            <td className="px-6 py-2.5"><input type="text" placeholder="Search..." value={searchTexts.name} onChange={(e) => handleSearchChange('name', e.target.value)} className="block w-full p-1.5 text-xs text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white focus:outline-none focus:ring-2" /></td>
+                            <td className="px-6 py-2.5 lg:table-cell hidden"><input type="text" placeholder="Search..." value={searchTexts.generation} onChange={(e) => handleSearchChange('generation', e.target.value)} className="block w-full p-1.5 text-xs text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white focus:outline-none focus:ring-2" /></td>
+                            <td className="px-6 py-2.5 lg:table-cell hidden"><input type="text" placeholder="Search..." value={searchTexts.group} onChange={(e) => handleSearchChange('group', e.target.value)} className="block w-full p-1.5 text-xs text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white focus:outline-none focus:ring-2" /></td>
+                            <td className="px-6 py-2.5"><input type="text" placeholder="Search..." value={searchTexts.major} onChange={(e) => handleSearchChange('major', e.target.value)} className="block w-full p-1.5 text-xs text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white focus:outline-none focus:ring-2" /></td>
+                            <td className="px-6 py-2.5"><input type="text" placeholder="Search..." value={searchTexts.degrees} onChange={(e) => handleSearchChange('degrees', e.target.value)} className="block w-full p-1.5 text-xs text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white focus:outline-none focus:ring-2" /></td>
+                            <td className="px-6 py-2.5 2xl:table-cell hidden"><input type="text" placeholder="Search..." value={searchTexts.faculty} onChange={(e) => handleSearchChange('faculty', e.target.value)} className="block w-full p-1.5 text-xs text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white focus:outline-none focus:ring-2" /></td>
+                            <td className="px-6 py-2.5 sm:table-cell hidden"><input type="text" placeholder="Search..." value={searchTexts.shift} onChange={(e) => handleSearchChange('shift', e.target.value)} className="block w-full p-1.5 text-xs text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white focus:outline-none focus:ring-2" /></td>
                         </tr>
                     </tfoot>
                 </table>
             </div>
-            <nav className="flex items-center flex-column flex-wrap md:flex-row justify-between pt-4" aria-label="Table navigation">
-                <span className="text-sm font-normal text-gray-500 dark:text-gray-400 mb-4 md:mb-0 block w-full md:w-auto">Showing <span className="font-semibold text-gray-900 dark:text-white">{(currentPage - 1) * itemsPerPage + 1}-{Math.min(currentPage * itemsPerPage, filteredClassData.length)}</span> of <span className="font-semibold text-gray-900 dark:text-white">{filteredClassData.length}</span></span>
-                <div className="flex items-center gap-2">
-                    <label htmlFor="items-per-page" className="text-sm font-normal text-gray-500 dark:text-gray-400">Items per page:</label>
-                    <select id="items-per-page" className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-full focus:ring-blue-500 focus:border-blue-500 px-2 py-1 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white" value={itemsPerPage} onChange={handleItemsPerPageChange}>
-                        {itemsPerPageOptions.map(option => (<option key={option} value={option}>{option}</option>))}
-                    </select>
+            <nav className="flex flex-col sm:flex-row items-center justify-between pt-4 gap-y-4" aria-label="Table navigation">
+                <div className="flex flex-wrap items-center justify-center sm:justify-start gap-4">
+                    <span className="text-xs font-normal text-gray-500 dark:text-gray-400">
+                        Showing <span className="font-semibold text-gray-900 dark:text-white">{(currentPage - 1) * itemsPerPage + 1}-{Math.min(currentPage * itemsPerPage, filteredClassData.length)}</span> of <span className="font-semibold text-gray-900 dark:text-white">{filteredClassData.length}</span>
+                    </span>
+                    <div className="flex items-center gap-2 text-xs">
+                        <label htmlFor="items-per-page" className="text-xs font-normal text-gray-500 dark:text-gray-400">Items per page:</label>
+                        <select id="items-per-page" value={itemsPerPage} onChange={handleItemsPerPageChange} className="bg-gray-50 text-xs border border-gray-300 text-gray-900 rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-1.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white">
+                            {itemsPerPageOptions.map(option => (<option key={option} value={option}>{option}</option>))}
+                        </select>
+                    </div>
                 </div>
-                <ul className="inline-flex -space-x-px rtl:space-x-reverse text-sm h-8">
-                    <li><button onClick={goToPreviousPage} disabled={currentPage === 1} className="flex items-center justify-center px-3 h-8 ms-0 leading-tight text-gray-500 bg-white border border-gray-300 rounded-s-lg hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white disabled:opacity-50">Previous</button></li>
-                    {getPageNumbers().map((pageNumber) => (<li key={pageNumber}><button onClick={() => goToPage(pageNumber)} className={`flex items-center justify-center px-3 h-8 leading-tight border border-gray-300 ${currentPage === pageNumber ? 'text-blue-600 bg-blue-50 dark:bg-gray-700 dark:text-white' : 'text-gray-500 bg-white hover:bg-gray-100 dark:bg-gray-800 dark:hover:bg-gray-700'} disabled:opacity-50`}>{pageNumber}</button></li>))}
-                    <li><button onClick={goToNextPage} disabled={currentPage === totalPages} className="flex items-center justify-center px-3 h-8 leading-tight text-gray-500 bg-white border border-gray-300 rounded-e-lg hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white disabled:opacity-50">Next</button></li>
+                <ul className="inline-flex -space-x-px rtl:space-x-reverse text-xs h-8">
+                    <li><button onClick={goToPreviousPage} disabled={currentPage === 1 || isPending} className="flex items-center justify-center px-3 h-8 ms-0 leading-tight text-gray-500 bg-white border border-gray-300 rounded-s-lg hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white disabled:opacity-50 disabled:cursor-not-allowed">Previous</button></li>
+                    {getPageNumbers().map((pageNumber, index) => (
+                        <li key={index}>
+                            {pageNumber === '...' ? (
+                                <span className="flex items-center justify-center px-3 h-8 leading-tight text-gray-500 bg-white border border-gray-300 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400">...</span>
+                            ) : (
+                                <button onClick={() => goToPage(pageNumber)} disabled={isPending} className={`flex items-center justify-center px-3 h-8 leading-tight border border-gray-300 dark:border-gray-700 ${currentPage === pageNumber ? 'text-blue-600 bg-blue-50 hover:bg-blue-100 hover:text-blue-700 dark:bg-gray-700 dark:text-white' : 'text-gray-500 bg-white hover:bg-gray-100 dark:bg-gray-800 dark:hover:bg-gray-600'} disabled:opacity-50 disabled:cursor-not-allowed`}>{pageNumber}</button>
+                            )}
+                        </li>
+                    ))}
+                    <li><button onClick={goToNextPage} disabled={currentPage === totalPages || isPending} className="flex items-center justify-center px-3 h-8 leading-tight text-gray-500 bg-white border border-gray-300 rounded-e-lg hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white disabled:opacity-50 disabled:cursor-not-allowed">Next</button></li>
                 </ul>
             </nav>
         </div>

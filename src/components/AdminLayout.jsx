@@ -1,4 +1,3 @@
-// src/components/AdminLayout.jsx
 'use client';
 import { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
@@ -8,13 +7,12 @@ import AdminPopup from 'src/app/admin/profile/components/AdminPopup';
 import Footer from '@/components/Footer';
 import NotificationPopup from '@/app/admin/notification/AdminNotificationPopup';
 import { signOut, useSession } from 'next-auth/react';
-import useSWR, { mutate } from 'swr';
+import useSWR from 'swr';
 import { authService } from '@/services/auth.service';
 import { notificationService } from '@/services/notification.service';
 import { moul } from './fonts';
 
 // Dynamically import the LogoutAlert component.
-// This creates a separate JavaScript chunk for the component, loaded only when needed.
 const LogoutAlert = lazy(() => import('@/components/LogoutAlert'));
 
 const TOPBAR_HEIGHT = '90px';
@@ -34,10 +32,8 @@ const useMediaQuery = (query) => {
         const media = window.matchMedia(query);
         const listener = () => setMatches(media.matches);
         
-        // Add listener
         media.addEventListener('change', listener);
         
-        // Cleanup listener on component unmount
         return () => media.removeEventListener('change', listener);
     }, [query]);
 
@@ -166,14 +162,20 @@ export default function AdminLayout({ children, activeItem, pageTitle, breadcrum
         await notificationService.approveChangeRequest(requestId, token);
         mutateChangeRequests();
         mutateNotifications();
-        mutate(['/api/v1/schedule', token]);
+        // If on the schedule page, refresh it to show the changes.
+        if (pathname.startsWith('/admin/schedule')) {
+            router.refresh();
+        }
     };
 
     const handleDenyNotification = async (requestId) => {
         await notificationService.denyChangeRequest(requestId, token);
         mutateChangeRequests();
         mutateNotifications();
-        mutate(['/api/v1/schedule', token]);
+        // If on the schedule page, refresh it to show the changes.
+        if (pathname.startsWith('/admin/schedule')) {
+            router.refresh();
+        }
     };
 
     const hasUnreadNotifications = notifications?.some(n => !n.read) || changeRequests?.some(cr => cr.status === 'PENDING');
@@ -188,7 +190,7 @@ export default function AdminLayout({ children, activeItem, pageTitle, breadcrum
         router.push(path);
     };
     
-    const sidebarWidth = isSidebarCollapsed ? '80px' : '265px';
+    const sidebarWidth = isSidebarCollapsed ? '80px' : '225px';
 
     useEffect(() => {
         const handleClickOutside = (event) => {

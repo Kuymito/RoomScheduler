@@ -278,7 +278,7 @@ export default function InstructorClassDetailClientView({ initialClassDetails, i
                         <button
                             onClick={handleDownloadSchedule}
                             disabled={isPreparingPdf}
-                            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-5 rounded-lg transition-colors shadow-sm disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center min-w-[180px]"
+                            className="bg-blue-600 hover:bg-blue-700 text-sm text-white font-semibold py-2 px-6 rounded-lg transition-colors shadow-sm disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center min-w-[180px]"
                         >
                             {isPreparingPdf ? (
                                 <>

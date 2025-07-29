@@ -359,7 +359,7 @@ function ProfileContent() {
                 value={value}
                 onChange={handleGeneralInputChange}
                 readOnly={!isEditing}
-                className={`form-input w-full py-2 px-3 border dark:border-gray-700 dark:text-gray-400 rounded-md font-medium text-xs ${
+                className={`form-input w-full py-2 px-3 border dark:border-gray-700 dark:text-gray-400 rounded-md font-medium text-xs focus:ring-blue-500 focus:outline-none focus:ring-2 ${
                     !isEditing ? "bg-gray-100 dark:bg-gray-800" : "dark:text-white bg-white dark:bg-gray-600 "
                 }`}
                 maxLength={opts.maxLength}
@@ -376,7 +376,7 @@ function ProfileContent() {
                     value={value}
                     onChange={handleGeneralInputChange}
                     disabled={isLoading}
-                    className="form-input w-full py-2 px-3 border rounded-md font-medium text-xs bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white"
+                    className="form-input w-full py-2 px-3 border rounded-md font-medium text-xs bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white focus:ring-blue-500 focus:outline-none focus:ring-2"
                 >
                     {options?.map(option => {
                         const optionValue = typeof option === 'object' ? option.name : option;
@@ -389,7 +389,7 @@ function ProfileContent() {
                     type="text"
                     value={value}
                     readOnly
-                    className="form-input w-full py-2 px-3 border rounded-md font-medium text-xs bg-gray-100 dark:bg-gray-800 border-gray-300 dark:border-gray-700 text-gray-500 dark:text-gray-400"
+                    className="form-input w-full py-2 px-3 border rounded-md font-medium text-xs bg-gray-100 dark:bg-gray-800 border-gray-300 dark:border-gray-700 text-gray-500 dark:text-gray-400 focus:ring-blue-500 focus:outline-none focus:ring-2"
                 />
             )}
         </div>
@@ -402,7 +402,7 @@ function ProfileContent() {
                 <input
                     type={passwordVisibility[fieldName] ? "text" : "password"}
                     name={name}
-                    className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs ${isReadOnly ? 'bg-gray-100 dark:bg-gray-800 border-num-gray-light dark:border-gray-700 text-gray-500 dark:text-gray-400' : 'bg-white dark:bg-gray-600 border-num-gray-light dark:border-gray-600 text-num-dark-text dark:text-white'} ${hasError ? 'border-red-500 ring-1 ring-red-500' : ''}`}
+                    className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs focus:ring-blue-500 focus:outline-none focus:ring-2 ${isReadOnly ? 'bg-gray-100 dark:bg-gray-800 border-num-gray-light dark:border-gray-700 text-gray-500 dark:text-gray-400' : 'bg-white dark:bg-gray-600 border-num-gray-light dark:border-gray-600 text-num-dark-text dark:text-white'} ${hasError ? 'border-red-500 ring-1 ring-red-500' : ''}`}
                     placeholder={`Enter ${label.toLowerCase()}`}
                     value={value}
                     onChange={onChange}

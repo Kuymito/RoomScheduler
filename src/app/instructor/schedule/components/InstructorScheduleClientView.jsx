@@ -185,7 +185,7 @@ export default function InstructorScheduleClientView({ initialScheduleData, inst
         <button
           onClick={handleDownloadPdf}
           disabled={isGeneratingPdf}
-          className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 px-6 rounded-md shadow-sm order-1 sm:order-2 mb-4 sm:mb-0 disabled:bg-blue-400 disabled:cursor-wait"
+          className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold py-2 px-6 rounded-md shadow-sm order-1 sm:order-2 mb-4 sm:mb-0 disabled:bg-blue-400 disabled:cursor-wait"
         >
           {isGeneratingPdf ? 'Generating...' : 'Download PDF file'}
         </button>

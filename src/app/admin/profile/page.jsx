@@ -234,7 +234,7 @@ function ProfileContent() {
                 const profilePayload = {
                     firstName: editableProfileState.firstName,
                     lastName: editableProfileState.lastName,
-                    phone: editableProfileState.phoneNumber,
+                    phoneNumber: editableProfileState.phoneNumber,
                     address: editableProfileState.address,
                     profile: finalImageURL,
                 };
@@ -329,7 +329,7 @@ function ProfileContent() {
                 <input
                     type={passwordVisibility[fieldName] ? "text" : "password"}
                     name={name}
-                    className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs ${isReadOnly ? 'bg-gray-100 dark:bg-gray-800 border-num-gray-light dark:border-gray-700 text-gray-500 dark:text-gray-400' : 'bg-white dark:bg-gray-600 border-num-gray-light dark:border-gray-600 text-num-dark-text dark:text-white'} ${hasError ? 'border-red-500 ring-1 ring-red-500' : ''}`}
+                    className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs focus:ring-blue-500 focus:outline-none focus:ring-2 ${isReadOnly ? 'bg-gray-100 dark:bg-gray-800 border-num-gray-light dark:border-gray-700 text-gray-500 dark:text-gray-400' : 'bg-white dark:bg-gray-600 border-num-gray-light dark:border-gray-600 text-num-dark-text dark:text-white'} ${hasError ? 'border-red-500 ring-1 ring-red-500' : ''}`}
                     placeholder={`Enter ${label.toLowerCase()}`}
                     value={value}
                     onChange={onChange}
@@ -420,23 +420,23 @@ function ProfileContent() {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="form-group">
                                 <label className="form-label block font-semibold text-xs text-gray-700 dark:text-gray-300 mb-1">First Name</label>
-                                <input type="text" name="firstName" value={displayedProfileData.firstName} maxLength={26} onChange={handleGeneralInputChange} readOnly={!isEditingGeneralInformation} className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs dark:border-gray-700 dark:text-gray-400 ${!isEditingGeneralInformation ? 'bg-gray-100 dark:bg-gray-800' : 'dark:text-white bg-white dark:bg-gray-600'}`}/>
+                                <input type="text" name="firstName" value={displayedProfileData.firstName} maxLength={26} onChange={handleGeneralInputChange} readOnly={!isEditingGeneralInformation} className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs dark:border-gray-700 dark:text-gray-400 focus:ring-blue-500 focus:outline-none focus:ring-2 ${!isEditingGeneralInformation ? 'bg-gray-100 dark:bg-gray-800' : 'dark:text-white bg-white dark:bg-gray-600'}`}/>
                             </div>
                             <div className="form-group">
                                 <label className="form-label block font-semibold text-xs text-gray-700 dark:text-gray-300 mb-1">Last Name</label>
-                                <input type="text" name="lastName" value={displayedProfileData.lastName} maxLength={26} onChange={handleGeneralInputChange} readOnly={!isEditingGeneralInformation} className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs dark:border-gray-700 dark:text-gray-400 ${!isEditingGeneralInformation ? 'bg-gray-100 dark:bg-gray-800' : 'dark:text-white bg-white dark:bg-gray-600'}`}/>
+                                <input type="text" name="lastName" value={displayedProfileData.lastName} maxLength={26} onChange={handleGeneralInputChange} readOnly={!isEditingGeneralInformation} className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs dark:border-gray-700 dark:text-gray-400 focus:ring-blue-500 focus:outline-none focus:ring-2 ${!isEditingGeneralInformation ? 'bg-gray-100 dark:bg-gray-800' : 'dark:text-white bg-white dark:bg-gray-600'}`}/>
                             </div>
                             <div className="form-group">
                                 <label className="form-label block font-semibold text-xs text-gray-700 dark:text-gray-300 mb-1">Email</label>
-                                <input type="email" name="email" value={displayedProfileData.email} maxLength={254} onChange={handleGeneralInputChange} readOnly={!isEditingGeneralInformation} className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs dark:border-gray-700 dark:text-gray-400 ${!isEditingGeneralInformation ? 'bg-gray-100 dark:bg-gray-800' : 'dark:text-white bg-white dark:bg-gray-600'}`}/>
+                                <input type="email" name="email" value={displayedProfileData.email} maxLength={254} onChange={handleGeneralInputChange} readOnly={!isEditingGeneralInformation} className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs dark:border-gray-700 dark:text-gray-400 focus:ring-blue-500 focus:outline-none focus:ring-2 ${!isEditingGeneralInformation ? 'bg-gray-100 dark:bg-gray-800' : 'dark:text-white bg-white dark:bg-gray-600'}`}/>
                             </div>
                             <div className="form-group">
                                 <label className="form-label block font-semibold text-xs text-gray-700 dark:text-gray-300 mb-1">Phone Number</label>
-                                <input type="tel" name="phoneNumber" value={displayedProfileData.phoneNumber} onChange={handleGeneralInputChange} readOnly={!isEditingGeneralInformation} className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs dark:border-gray-700 dark:text-gray-400 ${!isEditingGeneralInformation ? 'bg-gray-100 dark:bg-gray-800' : 'dark:text-white bg-white dark:bg-gray-600'}`}/>
+                                <input type="tel" name="phoneNumber" value={displayedProfileData.phoneNumber} onChange={handleGeneralInputChange} readOnly={!isEditingGeneralInformation} className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs dark:border-gray-700 dark:text-gray-400 focus:ring-blue-500 focus:outline-none focus:ring-2 ${!isEditingGeneralInformation ? 'bg-gray-100 dark:bg-gray-800' : 'dark:text-white bg-white dark:bg-gray-600'}`}/>
                             </div>
                             <div className="form-group md:col-span-2">
                                 <label className="form-label block font-semibold text-xs text-gray-700 dark:text-gray-300 mb-1">Address</label>
-                                <input type="text" name="address" value={displayedProfileData.address} minLength={20} maxLength={60} onChange={handleGeneralInputChange} readOnly={!isEditingGeneralInformation} className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs dark:border-gray-700 dark:text-gray-400 ${!isEditingGeneralInformation ? 'bg-gray-100 dark:bg-gray-800' : 'dark:text-white bg-white dark:bg-gray-600'}`}/>
+                                <input type="text" name="address" value={displayedProfileData.address} minLength={20} maxLength={60} onChange={handleGeneralInputChange} readOnly={!isEditingGeneralInformation} className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs dark:border-gray-700 dark:text-gray-400 focus:ring-blue-500 focus:outline-none focus:ring-2 ${!isEditingGeneralInformation ? 'bg-gray-100 dark:bg-gray-800' : 'dark:text-white bg-white dark:bg-gray-600'}`}/>
                             </div>
                         </div>
                         <div className="form-actions flex justify-end items-center gap-3 mt-4">

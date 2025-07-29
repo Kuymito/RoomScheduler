@@ -12,7 +12,7 @@ const InstructorTopbar = ({ onToggleSidebar, isSidebarCollapsed, onUserIconClick
         {showToggleButton && (
           <div
             id="sidebar-toggle"
-            className="sidebar-toggle-btn text-xl cursor-pointer mr-4 p-2 rounded text-black dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 select-none leading-none"
+            className="sidebar-toggle-btn text-xl cursor-pointer mr-4 p-2 rounded text-black dark:text-white hover:bg-blue-100 dark:hover:bg-blue-600 select-none leading-none"
             title={isSidebarCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
             onClick={onToggleSidebar}
           >
@@ -30,7 +30,7 @@ const InstructorTopbar = ({ onToggleSidebar, isSidebarCollapsed, onUserIconClick
                     {crumb.label}
                   </Link>
                 ) : (
-                  <span className="max-w-[100px] text-blue-700 dark:text-blue-400 truncate" title={crumb.label}>{crumb.label}</span>
+                  <span className="md:max-w-[200px] max-w-[200px] text-blue-700 dark:text-blue-400 truncate" title={crumb.label}>{crumb.label}</span>
                 )}
                 {index < breadcrumbs.length - 1 && <span className="mx-2 text-blue-400">&gt;</span>}
               </React.Fragment>
@@ -43,7 +43,7 @@ const InstructorTopbar = ({ onToggleSidebar, isSidebarCollapsed, onUserIconClick
         
         <div
           ref={notificationIconRef} 
-          className="icon-wrapper relative w-10 h-10 flex items-center justify-center border border-num-icon-border  dark:bg-gray-800 dark:border-gray-700 p-[10px] rounded-md cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
+          className="icon-wrapper relative w-10 h-10 flex items-center justify-center border border-num-icon-border  dark:bg-gray-800 dark:border-gray-700 p-[10px] rounded-md cursor-pointer hover:border-2 hover:border-blue-500 dark:hover:border-blue-400"
           onClick={onNotificationIconClick} 
           title="Notifications"
         >
@@ -57,7 +57,7 @@ const InstructorTopbar = ({ onToggleSidebar, isSidebarCollapsed, onUserIconClick
         
         <div
           ref={userIconRef}
-          className="user-icon relative w-10 h-10 flex items-center justify-center border border-num-icon-border dark:bg-gray-800 dark:border-gray-700 p-[10px] rounded-md cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
+          className="user-icon relative w-10 h-10 flex items-center justify-center border border-num-icon-border dark:bg-gray-800 dark:border-gray-700 p-[10px] rounded-md cursor-pointer hover:border-2 hover:border-blue-500 dark:hover:border-blue-400"
           onClick={onUserIconClick}
         >
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-6 text-black dark:text-white">
