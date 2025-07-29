@@ -18,31 +18,6 @@ const weeklyScheduleFetcher = async (url) => {
     return res.data;
 };
 
-/**
- * **CRUCIAL FIX:** Calculates the correct YYYY-MM-DD date for a given day name within the current week.
- * @param {string} dayName - The full name of the day (e.g., "Friday").
- * @returns {string} The formatted date string (e.g., "2025-07-18").
- */
-const getCorrectDateForDay = (dayName) => {
-    const dayMap = { 'Sunday': 0, 'Monday': 1, 'Tuesday': 2, 'Wednesday': 3, 'Thursday': 4, 'Friday': 5, 'Saturday': 6 };
-    const targetDayIndex = dayMap[dayName];
-
-    const now = new Date(); // Use server's local time, which is fine for this calculation
-    const todayIndex = now.getDay();
-    
-    // Calculate the difference in days to get to the target day
-    const date = new Date(now);
-    date.setDate(now.getDate() - todayIndex + targetDayIndex);
-    
-    // Format the date to YYYY-MM-DD
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    
-    return `${year}-${month}-${day}`;
-};
-
-
 export default function InstructorRoomClientView({ initialAllRoomsData, buildingLayout, initialInstructorClasses }) {
     const { data: session } = useSession();
     const token = session?.accessToken;
@@ -120,11 +95,10 @@ export default function InstructorRoomClientView({ initialAllRoomsData, building
         }
         
         try {
-            // **CRUCIAL FIX:** Overwrite the incorrect date from the form with the correctly calculated date.
-            const correctDate = getCorrectDateForDay(selectedDay);
+            // The requestData from the form already has the correctly formatted effectiveDate.
+            // We just need to add the instructorId.
             const payload = { 
                 ...requestData, 
-                effectiveDate: correctDate, // Use the correct date here
                 instructorId: session.user.id 
             };
             
