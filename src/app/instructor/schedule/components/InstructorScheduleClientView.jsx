@@ -22,7 +22,8 @@ const SCHEDULE_ITEM_BG_COLOR = 'bg-green-50 dark:bg-green-900/40';
 const ScheduleItemCard = ({ item }) => (
     <div className={`${SCHEDULE_ITEM_BG_COLOR} p-2 h-full w-full flex flex-col text-xs rounded-md shadow-sm border border-green-200 dark:border-green-800/60`}>
         <div className="flex justify-between items-start mb-1">
-            <span className="max-w-[180px] font-semibold text-[13px] text-gray-800 dark:text-gray-200 truncate" title={item.subject}>{item.subject}</span>
+            {/* MODIFIED: Added 'pdf-subject-name' class to handle PDF text wrapping */}
+            <span className="pdf-subject-name max-w-[180px] font-semibold text-[13px] text-gray-800 dark:text-gray-200 truncate" title={item.subject}>{item.subject}</span>
         </div>
         <div className="text-gray-700 dark:text-gray-300 text-[11px]">{item.year}</div>
         <div className="text-gray-600 dark:text-gray-400 text-[11px] mt-1">
@@ -89,6 +90,22 @@ export default function InstructorScheduleClientView({ initialScheduleData, inst
 
         setIsGeneratingPdf(true);
 
+        // MODIFIED: Added temporary styles for PDF generation to fix text truncation
+        const style = document.createElement('style');
+        style.id = 'pdf-capture-styles';
+        style.innerHTML = `
+            .pdf-capture-mode .pdf-subject-name {
+                max-width: none !important;
+                white-space: normal !important;
+                overflow: visible !important;
+                text-overflow: clip !important;
+                word-break: break-word !important;
+            }
+        `;
+        document.head.appendChild(style);
+        captureElement.classList.add('pdf-capture-mode');
+
+
         // Dynamically create stats and footer elements to append for PDF capture
         const statsContainer = document.createElement('div');
         const footer = document.createElement('div');
@@ -98,6 +115,7 @@ export default function InstructorScheduleClientView({ initialScheduleData, inst
         statsContainer.innerHTML = `
             <p>• Class assign <span class="font-semibold">: ${classAssignCount}</span></p>
             <p>• Available shift <span class="font-semibold">: ${availableShiftCount}</span></p>
+            <p>• Public Date <span class="font-semibold">: ${publicDate}</span></p>
         `;
 
         // Style and populate the footer
@@ -135,6 +153,11 @@ export default function InstructorScheduleClientView({ initialScheduleData, inst
             // Clean up by removing the temporary elements from the DOM
             captureElement.removeChild(statsContainer);
             captureElement.removeChild(footer);
+            
+            // MODIFIED: Cleanup temporary styles
+            document.getElementById('pdf-capture-styles')?.remove();
+            captureElement.classList.remove('pdf-capture-mode');
+
             setIsGeneratingPdf(false);
         }
     };

@@ -187,7 +187,7 @@ export default function DashboardLayout({ children, activeItem, pageTitle }) {
         router.push(path);
     };
     
-    const sidebarWidth = isSidebarCollapsed ? '80px' : '225px';
+    const sidebarWidth = isSidebarCollapsed ? '60px' : '205px';
 
     useEffect(() => {
         const handleClickOutside = (event) => {

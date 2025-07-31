@@ -121,9 +121,10 @@ export default function InstructorDashboardClientView() {
                         date: dayString,
                         session: sessionType,
                         shift: (item.shift && item.shift.startTime && item.shift.endTime) 
-                               ? `${item.shift.startTime.substring(0, 5)} - ${item.shift.endTime.substring(0, 5)}` 
-                               : 'N/A',
-                        room: dayDetail.online ? 'Online' : item.temporaryRoomName || 'Unavailable',
+                                ? `${item.shift.startTime.substring(0, 5)} - ${item.shift.endTime.substring(0, 5)}` 
+                                : 'N/A',
+                        // ✨ UPDATED: Add "(Temp)" label for temporary rooms
+                        room: dayDetail.online ? 'Online' : `${item.temporaryRoomName} (Temp)` || 'Unavailable',
                     });
                 });
             } 
@@ -163,8 +164,8 @@ export default function InstructorDashboardClientView() {
                         date: dayString,
                         session: sessionType,
                         shift: (item.shift && item.shift.startTime && item.shift.endTime) 
-                               ? `${item.shift.startTime.substring(0, 5)} - ${item.shift.endTime.substring(0, 5)}` 
-                               : 'N/A',
+                                ? `${item.shift.startTime.substring(0, 5)} - ${item.shift.endTime.substring(0, 5)}` 
+                                : 'N/A',
                         room: dayDetail.online ? 'Online' : item.roomName || 'Unavailable',
                     });
                 });
@@ -229,9 +230,9 @@ export default function InstructorDashboardClientView() {
     if (scheduleError || profileError) {
         return <div className="text-center text-red-500 p-8">Failed to load dashboard data. Please try again later.</div>;
     }
-  
+ 
     if (!dashboardStats) {
-      return <DashboardSkeleton />;
+        return <DashboardSkeleton />;
     }
 
     return (

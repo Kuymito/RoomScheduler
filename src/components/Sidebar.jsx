@@ -20,9 +20,9 @@ const NavItem = ({ href, icon: Icon, label, isActive, isCollapsed, onClick, isNa
     <Link
         href={href}
         onClick={onClick}
-        className={`nav-item flex items-center py-2.5 mb-1.5 rounded-[5px] cursor-pointer overflow-hidden transition-all duration-150 ease-in-out hover:bg-gray-100 dark:hover:bg-gray-800 ${isActive ? 'hover:bg-sky-100 dark:hover:bg-blue-800' : ''} ${isCollapsed ? 'px-0 justify-center' : 'px-[60px]'} ${isNavigating ? 'opacity-70' : ''}`}
+        className={`nav-item flex items-center py-2.5 mb-1.5 rounded-[5px] cursor-pointer overflow-hidden transition-all duration-150 ease-in-out hover:bg-gray-100 dark:hover:bg-gray-800 ${isActive ? 'hover:bg-sky-100 dark:hover:bg-blue-800' : ''} ${isCollapsed ? 'px-0 justify-center' : 'px-[44px]'} ${isNavigating ? 'opacity-70' : ''}`}
     >
-      <div className={`nav-icon-wrapper transition-all duration-300 ease-in-out flex-shrink-0 ${isCollapsed ? 'mr-0' : 'mr-[15px]'}`}>
+      <div className={`nav-icon-wrapper transition-all duration-300 ease-in-out flex-shrink-0 ${isCollapsed ? 'mr-0' : 'mr-[12px]'}`}>
         {isNavigating ? ( <SpinnerIcon className={`h-[15px] w-[15px] ${isActive ? 'text-num-blue' : 'text-[#737373] dark:text-gray-300'}`} /> ) : ( <Icon className={`h-[15px] w-[15px] ${isActive ? 'text-num-blue' : 'text-[#737373] dark:text-gray-300'}`} /> )}
       </div>
       <div className={`nav-text text-xs whitespace-nowrap transition-all duration-150 ease-in-out ${isActive ? 'text-num-blue' : 'text-[#737373] dark:text-gray-300'} ${isCollapsed ? 'opacity-0 max-w-0 hidden' : 'opacity-100 max-w-[150px]'}`}>
@@ -53,7 +53,7 @@ const Sidebar = ({ isCollapsed, activeItem, onNavItemClick, navigatingTo }) => {
     ];
 
     return (
-        <div id="sidebar" className={`sidebar fixed h-full bg-white dark:bg-gray-900 shadow-custom-medium py-5 flex flex-col transition-all duration-300 ease-in-out z-40`} style={{ width: isCollapsed ? '80px' : '225px' }}>
+        <div id="sidebar" className={`sidebar fixed h-full bg-white dark:bg-gray-900 shadow-custom-medium py-5 flex flex-col transition-all duration-300 ease-in-out z-40`} style={{ width: isCollapsed ? '60px' : '205px' }}>
             <div className={`logo h-[50px] mb-5 flex items-center justify-center ${isCollapsed ? 'px-0' : 'px-5'}`}>
                 <Image src="/images/LOGO-NUM-1.png" alt="NUM Logo" width={isCollapsed ? 0 : 150} height={50} className={`logo-img ${isCollapsed ? 'hidden' : 'block h-[50px]'}`} style={{ width: isCollapsed ? 0 : 'auto' }} />
                 <span className={`logo-text-collapsed font-bold text-lg text-black ${isCollapsed ? 'block' : 'hidden'}`}>

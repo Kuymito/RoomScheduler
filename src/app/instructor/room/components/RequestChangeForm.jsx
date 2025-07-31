@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { notificationService } from '@/services/notification.service';
-import Toast from '@/components/Toast'; // Import the new Toast component
+import Toast from "@/components/Toast"; // Import the new Toast component
 
 // --- Helper function to get the next date for a given weekday ---
 const getNextDateForDay = (day) => {
@@ -169,6 +169,14 @@ const RequestChangeForm = ({ isOpen, onClose, onSave, roomDetails, instructorCla
         const { name, value } = e.target;
         setRequestData(prev => ({ ...prev, [name]: value }));
     };
+    
+    // --- FIX: New function to format date to YYYY-MM-DD ---
+    const formatDateToYYYYMMDD = (date) => {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -203,7 +211,8 @@ const RequestChangeForm = ({ isOpen, onClose, onSave, roomDetails, instructorCla
                 scheduleId: isConferenceRoom ? null : Number(requestData.scheduleId),
                 newRoomId: Number(roomDetails.id),
                 shiftId: shiftId,
-                effectiveDate: requestData.date.toISOString().split('T')[0],
+                // --- FIX: Use the new formatting function ---
+                effectiveDate: formatDateToYYYYMMDD(requestData.date),
                 description: requestData.description || '',
                 eventName: isConferenceRoom ? requestData.eventName : undefined,
             };
