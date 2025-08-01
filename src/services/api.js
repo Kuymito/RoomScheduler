@@ -21,7 +21,6 @@ if (!API_URL) {
 const api = axios.create({
   baseURL: API_URL,
 });
-
 /**
  * 3. Universal Authentication Header Helper
  * Creates the necessary headers for an authenticated API request.
