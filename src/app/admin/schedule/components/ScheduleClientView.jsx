@@ -15,10 +15,8 @@ const mapGenerationToYear = (generation) => {
     if (!generation) return null;
     const genNumber = parseInt(generation, 10);
     if (isNaN(genNumber)) return null;
-    // This calculation is based on the academic year structure.
-    // Assumes Generation 34 is Year 1 in the academic year 2024-2025.
-    const BASE_GENERATION = 34; 
-    const BASE_YEAR = 2025; 
+    const BASE_GENERATION = 34;
+    const BASE_YEAR = 2025;
     const currentYear = new Date().getFullYear();
     const currentFirstYearGeneration = BASE_GENERATION + (currentYear - BASE_YEAR);
     const academicYear = currentFirstYearGeneration - genNumber + 1;
@@ -79,22 +77,13 @@ const RoomCard = React.memo(({ room, classData, isDragOver, isWarning, dragHandl
 
     return (
         <div
-            className={`rounded-lg border flex flex-col transition-all duration-150 overflow-hidden ${getBorderColor()}
-            ${isUnavailable ? 'cursor-not-allowed bg-slate-50 dark:bg-slate-800/50 opacity-70' : ''}
-            ${className || ''}
-            `}
+            className={`rounded-lg border flex flex-col transition-all duration-150 overflow-hidden ${getBorderColor()} ${isUnavailable ? 'cursor-not-allowed bg-slate-50 dark:bg-slate-800/50 opacity-70' : ''} ${className || ''}`}
         >
             <div
                 onClick={() => !isNavigating && !classData?.isMovedPlaceholder && onHeaderClick(room.roomId)}
-                className={`px-2 py-1 flex justify-between items-center border-b-2 transition-colors ${isNavigating ? 'cursor-not-allowed' : (classData?.isMovedPlaceholder ? 'cursor-default' : 'cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700')}
-                ${isWarning ? 'bg-red-100 dark:bg-red-800/50' : (isUnavailable ? 'bg-slate-100 dark:bg-slate-700/60' : 'bg-gray-50 dark:bg-gray-800')}
-                `}
+                className={`px-2 py-1 flex justify-between items-center border-b-2 transition-colors ${isNavigating ? 'cursor-not-allowed' : (classData?.isMovedPlaceholder ? 'cursor-default' : 'cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700')} ${isWarning ? 'bg-red-100 dark:bg-red-800/50' : (isUnavailable ? 'bg-slate-100 dark:bg-slate-700/60' : 'bg-gray-50 dark:bg-gray-800')}`}
             >
-                <div className={`w-2 h-2 rounded-full ring-1 ring-white/50
-                    ${isOccupied || isUnavailable ? 'bg-red-500' : 'bg-green-500'}
-                    `}
-                    title={isOccupied || isUnavailable ? 'Occupied/Unavailable' : 'Available'}
-                ></div>
+                <div className={`w-2 h-2 rounded-full ring-1 ring-white/50 ${isOccupied || isUnavailable ? 'bg-red-500' : 'bg-green-500'}`} title={isOccupied || isUnavailable ? 'Occupied/Unavailable' : 'Available'}></div>
                 {isNavigating ? (
                     <SpinnerIcon className="h-4 w-4 text-gray-500" />
                 ) : (
@@ -106,9 +95,7 @@ const RoomCard = React.memo(({ room, classData, isDragOver, isWarning, dragHandl
                 onDragEnter={dragHandlers.onDragEnter}
                 onDragLeave={dragHandlers.onDragLeave}
                 onDrop={dragHandlers.onDrop}
-                className={`flex-grow p-2 flex flex-col justify-center items-center text-center transition-colors min-h-[112px] room-card-drop-zone
-                ${isDragOver ? 'bg-emerald-100 dark:bg-emerald-800/50' : (isUnavailable ? 'bg-slate-50 dark:bg-slate-800/50' : 'bg-white dark:bg-gray-900')}
-                `}
+                className={`flex-grow p-2 flex flex-col justify-center items-center text-center transition-colors min-h-[112px] room-card-drop-zone ${isDragOver ? 'bg-emerald-100 dark:bg-emerald-800/50' : (isUnavailable ? 'bg-slate-50 dark:bg-slate-800/50' : 'bg-white dark:bg-gray-900')}`}
             >
                 {isOccupied ? (
                     classData.isMovedPlaceholder ? (
@@ -150,34 +137,32 @@ const ScheduleClientView = ({
     const [schedules, setSchedules] = useState(initialSchedules);
     const [availableClasses, setAvailableClasses] = useState([]);
     const [isAssigning, setIsAssigning] = useState(false);
-    
-    // Initialize state from localStorage or default to current day/first slot
-    const [selectedDay, setSelectedDay] = useState(() => {
-        if (typeof window !== 'undefined') {
-            const savedDay = localStorage.getItem('adminSchedule_selectedDay');
-            const dayAbbreviationMap = { 0: 'Su', 1: 'Mo', 2: 'Tu', 3: 'We', 4: 'Th', 5: 'Fr', 6: 'Sa' };
-            const currentDayAbbr = dayAbbreviationMap[new Date().getDay()];
-            return savedDay && weekdays.includes(savedDay) ? savedDay : (weekdays.includes(currentDayAbbr) ? currentDayAbbr : weekdays[0]);
-        }
-        return weekdays[0];
-    });
 
-    const [selectedTime, setSelectedTime] = useState(() => {
-        if (typeof window !== 'undefined') {
-            const savedTime = localStorage.getItem('adminSchedule_selectedTime');
-            return savedTime && timeSlots.includes(savedTime) ? savedTime : timeSlots[0];
-        }
-        return timeSlots[0];
-    });
+    // **FIX**: Initialize state with simple, consistent defaults to prevent hydration errors.
+    const [selectedDay, setSelectedDay] = useState(weekdays[0]);
+    const [selectedTime, setSelectedTime] = useState(timeSlots[0]);
+    const [selectedBuilding, setSelectedBuilding] = useState(buildings[0]);
     
-    const [selectedBuilding, setSelectedBuilding] = useState(() => {
-        if (typeof window !== 'undefined') {
-            const savedBuilding = localStorage.getItem('adminSchedule_selectedBuilding');
-            return savedBuilding && buildings.includes(savedBuilding) ? savedBuilding : buildings[0];
+    // **FIX**: Use a useEffect to set the state from client-side sources (localStorage, new Date())
+    // This runs *after* the initial render, avoiding the server-client mismatch.
+    useEffect(() => {
+        const savedDay = localStorage.getItem('adminSchedule_selectedDay');
+        const dayAbbreviationMap = { 0: 'Su', 1: 'Mo', 2: 'Tu', 3: 'We', 4: 'Th', 5: 'Fr', 6: 'Sa' };
+        const currentDayAbbr = dayAbbreviationMap[new Date().getDay()];
+        const dayToSet = savedDay && weekdays.includes(savedDay) ? savedDay : (weekdays.includes(currentDayAbbr) ? currentDayAbbr : weekdays[0]);
+        setSelectedDay(dayToSet);
+
+        const savedTime = localStorage.getItem('adminSchedule_selectedTime');
+        if (savedTime && timeSlots.includes(savedTime)) {
+            setSelectedTime(savedTime);
         }
-        return buildings[0];
-    });
-    
+
+        const savedBuilding = localStorage.getItem('adminSchedule_selectedBuilding');
+        if (savedBuilding && buildings.includes(savedBuilding)) {
+            setSelectedBuilding(savedBuilding);
+        }
+    }, [weekdays, timeSlots, buildings]); // Dependencies ensure this runs if constants change
+
     const [draggedItem, setDraggedItem] = useState(null);
     const [dragOverCell, setDragOverCell] = useState(null);
     const [warningCellId, setWarningCellId] = useState(null);
@@ -193,70 +178,41 @@ const ScheduleClientView = ({
 
     const dayApiToAbbreviationMap = { MONDAY: 'Mo', TUESDAY: 'Tu', WEDNESDAY: 'We', THURSDAY: 'Th', FRIDAY: 'Fr', SATURDAY: 'Sa', SUNDAY: 'Su' };
     
-    // NEW: Color map based on academic year
     const yearColorMap = {
-        1: 'bg-sky-500',      // Year 1
-        2: 'bg-emerald-500',  // Year 2
-        3: 'bg-amber-500',    // Year 3
-        4: 'bg-indigo-500',   // Year 4
+        1: 'bg-sky-500', 2: 'bg-emerald-500', 3: 'bg-amber-500', 4: 'bg-indigo-500',
     };
-
 
     const showToast = (message, type = 'info') => setToast({ show: true, message, type });
 
     // --- Effects ---
+    useEffect(() => { localStorage.setItem('adminSchedule_selectedDay', selectedDay); }, [selectedDay]);
+    useEffect(() => { localStorage.setItem('adminSchedule_selectedTime', selectedTime); }, [selectedTime]);
+    useEffect(() => { localStorage.setItem('adminSchedule_selectedBuilding', selectedBuilding); }, [selectedBuilding]);
     
-    // Effect to save selections to localStorage
-    useEffect(() => {
-        if (typeof window !== 'undefined') {
-            localStorage.setItem('adminSchedule_selectedDay', selectedDay);
-        }
-    }, [selectedDay]);
-
-    useEffect(() => {
-        if (typeof window !== 'undefined') {
-            localStorage.setItem('adminSchedule_selectedTime', selectedTime);
-        }
-    }, [selectedTime]);
-    
-    useEffect(() => {
-        if (typeof window !== 'undefined') {
-            localStorage.setItem('adminSchedule_selectedBuilding', selectedBuilding);
-        }
-    }, [selectedBuilding]);
-    
-    // Effect to handle automatic day switching based on the selected shift
     useEffect(() => {
         const weekdaysArray = ['Mo', 'Tu', 'We', 'Th', 'Fr'];
         const weekendDaysArray = ['Sa', 'Su'];
         const isWeekdayShift = selectedTime !== 'Weekend Shift';
 
         if (isWeekdayShift && weekendDaysArray.includes(selectedDay)) {
-            // If a weekday shift is selected but a weekend day is active, switch to Monday.
             setSelectedDay('Mo');
         } else if (!isWeekdayShift && weekdaysArray.includes(selectedDay)) {
-            // If Weekend Shift is selected but a weekday is active, switch to Saturday.
             setSelectedDay('Sa');
         }
     }, [selectedTime, selectedDay]);
 
     useEffect(() => {
         setSchedules(initialSchedules);
-        
         const currentAssignedIds = new Set();
-        Object.values(initialSchedules).forEach(day => {
-            Object.values(day).forEach(time => {
+        Object.values(initialSchedules).forEach(day => 
+            Object.values(day).forEach(time => 
                 Object.values(time).forEach(schedule => {
-                    if (schedule.classId) {
-                        currentAssignedIds.add(schedule.classId);
-                    }
-                });
-            });
-        });
-
+                    if (schedule.classId) currentAssignedIds.add(schedule.classId);
+                })
+            )
+        );
         const unassigned = initialClasses.filter(cls => !currentAssignedIds.has(cls.classId));
         setAvailableClasses(unassigned);
-
     }, [initialSchedules, initialClasses]);
 
     useEffect(() => {
@@ -273,21 +229,19 @@ const ScheduleClientView = ({
 
     const allFilteredAndSortedClasses = useMemo(() => {
         const selectedDayFull = Object.keys(dayApiToAbbreviationMap).find(key => dayApiToAbbreviationMap[key] === selectedDay) || '';
-
         const filtered = availableClasses.map(classItem => ({
             ...classItem,
-            year: mapGenerationToYear(classItem.generation) // Add year property
+            year: mapGenerationToYear(classItem.generation)
         })).filter(classItem => {
             if (classItem.archived) return false;
-
-            const occursOnSelectedDay = classItem.dayDetails?.some(day => day.dayOfWeek === selectedDayFull && !day.online);
+            const dailySchedule = classItem.dailySchedule || {};
+            const assignmentForDay = dailySchedule[selectedDayFull];
+            const occursOnSelectedDay = assignmentForDay && !assignmentForDay.online;
             const degreeMatch = selectedDegree === 'All' || classItem.degreeName === selectedDegree;
             const generationMatch = selectedGeneration === 'All' || classItem.generation === selectedGeneration;
             const searchTermMatch = searchTerm === '' || classItem.className.toLowerCase().includes(searchTerm.toLowerCase()) || (classItem.majorName && classItem.majorName.toLowerCase().includes(searchTerm.toLowerCase()));
-
             return occursOnSelectedDay && degreeMatch && generationMatch && searchTermMatch;
         });
-
         return filtered.sort((classA, classB) => {
             const shiftA = classA.shift?.name;
             const shiftB = classB.shift?.name;
@@ -541,7 +495,6 @@ const ScheduleClientView = ({
         }
     };
 
-
     const getGridColumnClasses = (building, floorNumber) => {
         switch (building) {
             case "Building A": return "xl:grid-cols-5 lg:grid-cols-3 md:grid-cols-2 grid-cols-[repeat(auto-fit,minmax(160px,1fr))]";
@@ -595,39 +548,38 @@ const ScheduleClientView = ({
                     const roomNameColor = document.documentElement.classList.contains('dark') ? '#e5e7eb' : '#1f2937';
 
                     floorsHtml += `
-                        <div
-                            style="
-                                border: 1px solid ${borderColor};
-                                border-radius: 8px;
-                                padding: 10px;
-                                background-color: ${backgroundColor};
-                                color: ${textColor};
-                                text-align: center;
-                                font-size: 12px;
-                                word-break: break-word;
-                                min-height: 90px;
-                                display: flex;
-                                flex-direction: column;
-                                justify-content: center;
-                                align-items: center;
-                            "
-                        >
-                            <div style="font-weight: bold; font-size: 14px; margin-bottom: 4px; color: ${roomNameColor};">${room.roomName}</div>
-                            ${isOccupied ? `
-                                <div style="font-weight: 500; font-size: 13px;">${classData.className}</div>
-                                <div style="font-size: 11px; opacity: 0.8;">${classData.majorName}</div>
-                            ` : `
-                                <div style="font-style: italic; opacity: 0.9;">${isUnavailable ? 'Unavailable' : 'Available'}</div>
-                            `}
-                        </div>
-                    `;
+                            <div
+                                style="
+                                    border: 1px solid ${borderColor};
+                                    border-radius: 8px;
+                                    padding: 10px;
+                                    background-color: ${backgroundColor};
+                                    color: ${textColor};
+                                    text-align: center;
+                                    font-size: 12px;
+                                    word-break: break-word;
+                                    min-height: 90px;
+                                    display: flex;
+                                    flex-direction: column;
+                                    justify-content: center;
+                                    align-items: center;
+                                "
+                            >
+                                <div style="font-weight: bold; font-size: 14px; margin-bottom: 4px; color: ${roomNameColor};">${room.roomName}</div>
+                                ${isOccupied ? `
+                                    <div style="font-weight: 500; font-size: 13px;">${classData.className}</div>
+                                    <div style="font-size: 11px; opacity: 0.8;">${classData.majorName}</div>
+                                ` : `
+                                    <div style="font-style: italic; opacity: 0.9;">${isUnavailable ? 'Unavailable' : 'Available'}</div>
+                                `}
+                            </div>
+                        `;
                 });
                 floorsHtml += `</div></div>`;
             });
         } else {
              floorsHtml += `<p style="text-align: center; font-style: italic; color: ${document.documentElement.classList.contains('dark') ? '#9ca3af' : '#6b7280'};">No layout data found for ${selectedBuilding}.</p>`;
         }
-
 
         const headerHtml = `
             <div style="text-align: center; margin-bottom: 24px;">
@@ -733,7 +685,6 @@ const ScheduleClientView = ({
                                         <div className="flex items-center gap-2 mb-2"><h4 className="text-xs sm:text-sm font-medium text-slate-600 dark:text-slate-400 whitespace-nowrap">{shift}</h4><hr className="flex-1 border-t border-slate-300 dark:border-slate-700" /></div>
                                         {classesInShift.map((classItem) => (
                                             <div key={classItem.classId} draggable onDragStart={(event) => handleDragStart(event, classItem, 'new')} onDragEnd={handleDragEnd} className="p-2 bg-gray-50 dark:bg-gray-800 dark:hover:bg-gray-700 border dark:border-gray-700 rounded-lg shadow-sm hover:shadow-md cursor-grab active:cursor-grabbing transition-all flex group">
-                                                {/* MODIFIED: Use yearColorMap and classItem.year */}
                                                 <div className={`w-1.5 h-auto rounded-lg ${yearColorMap[classItem.year] || 'bg-violet-500'} mr-3`}></div>
                                                 <div><p className="max-w-[200px] text-sm font-medium text-gray-800 dark:text-gray-200 truncate" title={classItem.className}>{classItem.className}</p><p className="text-xs text-gray-500 dark:text-gray-400">{classItem.majorName}</p></div>
                                             </div>
@@ -753,23 +704,14 @@ const ScheduleClientView = ({
                                 const isWeekendShift = selectedTime === 'Weekend Shift';
                                 const isWeekdayShift = !isWeekendShift;
                                 
-                                const isDayDisabled = (isWeekendShift && ['Mo', 'Tu', 'We', 'Th', 'Fr'].includes(day)) ||
-                                                      (isWeekdayShift && ['Sa', 'Su'].includes(day));
+                                const isDayDisabled = (isWeekendShift && ['Mo', 'Tu', 'We', 'Th', 'Fr'].includes(day)) || (isWeekdayShift && ['Sa', 'Su'].includes(day));
 
                                 return (
                                     <button
                                         key={day}
                                         onClick={() => !isDayDisabled && setSelectedDay(day)}
                                         disabled={isDayDisabled}
-                                        className={`px-3.5 py-1.5 text-sm font-medium transition-colors ${
-                                            selectedDay === day
-                                                ? 'bg-blue-600 dark:bg-blue-600 text-white shadow'
-                                                : `border-r border-gray-300 dark:border-gray-500 last:border-r-0 ${
-                                                    isDayDisabled
-                                                        ? 'bg-gray-200 dark:bg-gray-800 text-gray-400 dark:text-gray-600 cursor-not-allowed'
-                                                        : 'hover:bg-gray-50 dark:hover:bg-gray-800'
-                                                }`
-                                        }`}
+                                        className={`px-3.5 py-1.5 text-sm font-medium transition-colors ${selectedDay === day ? 'bg-blue-600 dark:bg-blue-600 text-white shadow' : `border-r border-gray-300 dark:border-gray-500 last:border-r-0 ${isDayDisabled ? 'bg-gray-200 dark:bg-gray-800 text-gray-400 dark:text-gray-600 cursor-not-allowed' : 'hover:bg-gray-50 dark:hover:bg-gray-800'}`}`}
                                     >
                                         {day}
                                     </button>

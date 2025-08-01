@@ -7,7 +7,6 @@ import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import { getAllRooms } from '@/services/room.service';
 import { scheduleService } from '@/services/schedule.service';
 
-// Define the unavailable room IDs
 const UNAVAILABLE_ROOM_IDS = new Set([1, 2, 3, 35, 36, 37, 38, 47, 48, 49, 50, 51, 53, 54, 55]);
 
 async function fetchInitialPageData() {
@@ -19,19 +18,16 @@ async function fetchInitialPageData() {
         return { 
             initialAllRoomsData: {}, 
             buildingLayout: {}, 
-            initialInstructorClasses: [] 
+            initialInstructorSchedules: [] // Fallback to empty array
         };
     }
 
     try {
-        // Fetch only rooms and the instructor's specific classes.
-        // The main schedule map will be fetched on the client.
         const [apiRooms, apiInstructorSchedules] = await Promise.all([
             getAllRooms(token),
             scheduleService.getMySchedule(token) 
         ]);
 
-        // Process rooms into a map and layout structure.
         const roomsDataMap = {};
         const populatedLayout = {};
         apiRooms.forEach(room => {
@@ -58,28 +54,22 @@ async function fetchInitialPageData() {
             populatedLayout[building].sort((a, b) => b.floor - a.floor);
         }
 
-        // Format the classes specific to the instructor for the request form.
-        const formattedClasses = apiInstructorSchedules.map(cls => ({
-            id: cls.scheduleId,
-            name: cls.className,
-            shift: `${cls.shift.startTime}-${cls.shift.endTime}`,
-        }));
-
+        // **FIX**: Return the full, detailed schedule data, not a formatted version.
         return { 
             initialAllRoomsData: roomsDataMap, 
             buildingLayout: populatedLayout,
-            initialInstructorClasses: formattedClasses
+            initialInstructorSchedules: apiInstructorSchedules || [] // Ensure it's always an array
         };
 
     } catch (error) {
-        console.error("Failed to fetch initial data for instructor room page:", error.message);
-        return { initialAllRoomsData: {}, buildingLayout: {}, initialInstructorClasses: [] };
+        console.error("Failed to fetch initial data for instructor room page:", error);
+        return { initialAllRoomsData: {}, buildingLayout: {}, initialInstructorSchedules: [] };
     }
 }
 
-
 export default async function InstructorRoomPage() {
-    const { initialAllRoomsData, buildingLayout, initialInstructorClasses } = await fetchInitialPageData();
+    // **FIX**: Renamed prop for clarity to reflect it holds the full schedule.
+    const { initialAllRoomsData, buildingLayout, initialInstructorSchedules } = await fetchInitialPageData();
 
     return (
         <InstructorLayout activeItem="room" pageTitle="Room">
@@ -87,9 +77,9 @@ export default async function InstructorRoomPage() {
                 <InstructorRoomClientView
                     initialAllRoomsData={initialAllRoomsData}
                     buildingLayout={buildingLayout}
-                    // The initial schedule map is no longer passed; the client will fetch it.
                     initialScheduleMap={{}} 
-                    initialInstructorClasses={initialInstructorClasses}
+                    // Pass the full schedule data to the client component
+                    initialInstructorSchedules={initialInstructorSchedules}
                 />
             </Suspense>
         </InstructorLayout>

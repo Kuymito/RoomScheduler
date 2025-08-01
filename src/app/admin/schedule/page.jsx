@@ -1,5 +1,3 @@
-// src/app/admin/schedule/page.jsx
-
 import { Suspense } from 'react';
 import AdminLayout from '@/components/AdminLayout';
 import ScheduleClientView from './components/ScheduleClientView';
@@ -11,35 +9,21 @@ import { scheduleService } from '@/services/schedule.service';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 
-// Define the unavailable room IDs
 const UNAVAILABLE_ROOM_IDS = new Set([1, 2, 3, 28, 29, 30, 31, 32, 35, 36, 37, 38, 47, 48, 49, 50, 51, 53, 54, 55]);
 
-/**
- * Helper function to calculate the academic year from the generation number.
- * @param {string | number} generation - The generation number of the class.
- * @returns {number | null} The calculated academic year, or null if invalid.
- */
 const mapGenerationToYear = (generation) => {
     if (!generation) return null;
     const genNumber = parseInt(generation, 10);
     if (isNaN(genNumber)) return null;
 
-    // Define the base generation and year for calculation.
-    const BASE_GENERATION = 34; // This is the generation for the first year students in BASE_YEAR.
-    const BASE_YEAR = 2025; 
-
+    const BASE_GENERATION = 34;
+    const BASE_YEAR = 2025;
     const currentYear = new Date().getFullYear();
-    
-    // Calculate what generation is currently in their first year.
     const currentFirstYearGeneration = BASE_GENERATION + (currentYear - BASE_YEAR);
-
-    // Calculate the academic year for the given generation.
     const academicYear = currentFirstYearGeneration - genNumber + 1;
-    
     return academicYear > 0 ? academicYear : null;
 };
 
-// This function now transforms the data to have a consistent structure.
 const fetchSchedulePageData = async () => {
     const session = await getServerSession(authOptions);
     const token = session?.accessToken;
@@ -55,20 +39,13 @@ const fetchSchedulePageData = async () => {
             getAllRooms(token),
             scheduleService.getAllSchedules(token)
         ]);
-        
-        // --- Constants and Mappings ---
-        const timeSlotsList = ['Morning Shift', 'Noon Shift', 'Afternoon Shift', 'Evening Shift', 'Weekend Shift'];
-        const constants = {
-            degrees: [...new Set(classes.map(c => c.degreeName))].filter(Boolean),
-            generations: [...new Set(classes.map(c => c.generation))].filter(Boolean),
-            buildings: [...new Set(rooms.map(r => r.buildingName))].filter(Boolean),
-            weekdays: ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'],
-            timeSlots: timeSlotsList
-        };
 
-        const shiftNameMap = {
-            '07:00:00': 'Morning Shift', '10:30:00': 'Noon Shift', '14:00:00': 'Afternoon Shift',
-            '17:30:00': 'Evening Shift', '07:30:00': 'Weekend Shift'
+        const shiftNameToTimeDisplay = {
+            'Morning Shift': '07:00 - 10:00',
+            'Noon Shift': '10:30 - 13:30',
+            'Afternoon Shift': '14:00 - 17:00',
+            'Evening Shift': '17:30 - 20:30',
+            'Weekend Shift': '07:30 - 17:00'
         };
 
         const dayApiToAbbrMap = {
@@ -76,109 +53,113 @@ const fetchSchedulePageData = async () => {
             FRIDAY: 'Fr', SATURDAY: 'Sa', SUNDAY: 'Su'
         };
 
-        // Transform classes data
-        const transformedClasses = classes.map(cls => {
-            const newCls = { ...cls };
-            if (newCls.shift && newCls.shift.startTime) {
-                newCls.shift.name = shiftNameMap[newCls.shift.startTime] || 'Unknown Shift';
-            }
-            if (newCls.dailySchedule && !newCls.dayDetails) {
-                newCls.dayDetails = Object.entries(newCls.dailySchedule).map(([day, details]) => ({
-                    dayOfWeek: day,
-                    instructorName: `${details.instructor.firstName} ${details.instructor.lastName}`,
-                    online: details.online
-                }));
-            }
-            return newCls;
-        });
+        const constants = {
+            degrees: [...new Set(classes.map(c => c.degreeName))].filter(Boolean),
+            generations: [...new Set(classes.map(c => c.generation))].filter(Boolean),
+            buildings: [...new Set(rooms.map(r => r.buildingName))].filter(Boolean),
+            weekdays: Object.values(dayApiToAbbrMap),
+            timeSlots: Object.keys(shiftNameToTimeDisplay)
+        };
 
-        // Process schedules
         const scheduleMap = {};
-        schedules.forEach(schedule => {
-            if (!schedule.roomId || schedule.roomName === "Unassigned" || !schedule.dayDetails || !Array.isArray(schedule.dayDetails) || !schedule.shift) {
-                return; // Skip malformed entries
-            }
+        
+        const today = new Date();
+        const dayOfWeekIndex = today.getDay();
+        const startOfWeek = new Date(today);
+        startOfWeek.setDate(today.getDate() - (dayOfWeekIndex === 0 ? 6 : dayOfWeekIndex - 1));
+        startOfWeek.setHours(0, 0, 0, 0);
 
-            if (schedule.shift.startTime) {
-                const timeSlotName = shiftNameMap[schedule.shift.startTime];
-                if (timeSlotName) {
-                    schedule.dayDetails.forEach(dayDetail => {
-                        const dayAbbr = dayApiToAbbrMap[dayDetail.dayOfWeek.toUpperCase()];
-                        if (dayAbbr) {
-                            if (!scheduleMap[dayAbbr]) scheduleMap[dayAbbr] = {};
-                            if (!scheduleMap[dayAbbr][timeSlotName]) scheduleMap[dayAbbr][timeSlotName] = {};
-                            
-                            const academicYear = mapGenerationToYear(schedule.year);
-                            const classDetails = {
-                                classId: schedule.classId,
-                                scheduleId: schedule.scheduleId,
-                                className: schedule.className,
-                                majorName: schedule.majorName,
-                                year: academicYear ? `Year ${academicYear}` : 'Year N/A',
-                            };
+        const endOfWeek = new Date(startOfWeek);
+        endOfWeek.setDate(startOfWeek.getDate() + 6);
+        endOfWeek.setHours(23, 59, 59, 999);
 
-                            if (schedule.temporaryRoomId) {
-                                // Class is in a temporary room.
-                                // 1. Place the orange temporary card in the new room.
-                                scheduleMap[dayAbbr][timeSlotName][schedule.temporaryRoomId] = {
-                                    ...classDetails,
-                                    isTemporary: true,
-                                    originalRoomId: schedule.roomId, // Keep track of the original room
-                                };
+        (schedules || []).forEach(schedule => {
+            // Skip classes that don't have a room or a properly defined shift
+            if (!schedule.roomId || !schedule.shift?.name) return;
 
-                                // 2. Place a blue "Moved" placeholder in the original room.
-                                scheduleMap[dayAbbr][timeSlotName][schedule.roomId] = {
-                                    ...classDetails, // Keep original details for styling
-                                    isMovedPlaceholder: true,
-                                    movedToRoomName: schedule.temporaryRoomName,
-                                };
-                            } else {
-                                // Class is in its regular room.
-                                scheduleMap[dayAbbr][timeSlotName][schedule.roomId] = classDetails;
-                            }
-                        }
-                    });
-                }
-            } else if (schedule.shift.name === 'Booked') {
-                // --- Handle CONFERENCE room bookings ---
-                schedule.dayDetails.forEach(dayDetail => {
-                    const dayAbbr = dayApiToAbbrMap[dayDetail.dayOfWeek.toUpperCase()];
-                    if (dayAbbr) {
-                        if (!scheduleMap[dayAbbr]) scheduleMap[dayAbbr] = {};
-                        timeSlotsList.forEach(timeSlot => {
-                            if (!scheduleMap[dayAbbr][timeSlot]) {
-                                scheduleMap[dayAbbr][timeSlot] = {};
-                            }
-                            scheduleMap[dayAbbr][timeSlot][schedule.roomId] = {
-                                className: schedule.className,
-                                majorName: "Booking",
-                                year: "N/A"
-                            };
-                        });
+            const academicYear = mapGenerationToYear(schedule.year);
+            const baseClassDetails = {
+                classId: schedule.classId,
+                scheduleId: schedule.scheduleId,
+                className: schedule.className,
+                majorName: schedule.majorName,
+                year: academicYear ? `Year ${academicYear}` : 'Year N/A',
+                semester: schedule.semester,
+            };
+
+            (schedule.dayDetails || []).forEach(dayDetail => {
+                const effectiveDate = dayDetail.effectiveDate ? new Date(`${dayDetail.effectiveDate}T00:00:00`) : null;
+                const isTemporaryAndActive = effectiveDate && dayDetail.temporaryDay && dayDetail.temporaryShift && effectiveDate >= startOfWeek && effectiveDate <= endOfWeek;
+
+                if (isTemporaryAndActive) {
+                    // --- Handle Active Temporary Assignment ---
+
+                    // 1. Place the "Temporary" card in the new slot
+                    const tempDayAbbr = dayApiToAbbrMap[dayDetail.temporaryDay.toUpperCase()];
+                    const tempTimeSlot = dayDetail.temporaryShift.name;
+                    if (tempDayAbbr && tempTimeSlot) {
+                        if (!scheduleMap[tempDayAbbr]) scheduleMap[tempDayAbbr] = {};
+                        if (!scheduleMap[tempDayAbbr][tempTimeSlot]) scheduleMap[tempDayAbbr][tempTimeSlot] = {};
+                        scheduleMap[tempDayAbbr][tempTimeSlot][dayDetail.temporaryRoomId] = {
+                            ...baseClassDetails,
+                            subject: baseClassDetails.className,
+                            timeDisplay: shiftNameToTimeDisplay[tempTimeSlot],
+                            isTemporary: true,
+                        };
                     }
-                });
-            }
+                    
+                    // 2. Place the "Moved" placeholder in the original slot
+                    const originalDayAbbr = dayApiToAbbrMap[dayDetail.dayOfWeek.toUpperCase()];
+                    const originalTimeSlot = schedule.shift.name;
+                    if (originalDayAbbr && originalTimeSlot) {
+                        if (!scheduleMap[originalDayAbbr]) scheduleMap[originalDayAbbr] = {};
+                        if (!scheduleMap[originalDayAbbr][originalTimeSlot]) scheduleMap[originalDayAbbr][originalTimeSlot] = {};
+                        scheduleMap[originalDayAbbr][originalTimeSlot][schedule.roomId] = {
+                            ...baseClassDetails,
+                            isMovedPlaceholder: true,
+                            movedToRoomName: dayDetail.temporaryRoomName,
+                        };
+                    }
+
+                } else {
+                    // --- Handle Regular Assignment ---
+                    const dayAbbr = dayApiToAbbrMap[dayDetail.dayOfWeek.toUpperCase()];
+                    const timeSlot = schedule.shift.name;
+                    if (dayAbbr && timeSlot) {
+                        if (!scheduleMap[dayAbbr]) scheduleMap[dayAbbr] = {};
+                        if (!scheduleMap[dayAbbr][timeSlot]) scheduleMap[dayAbbr][timeSlot] = {};
+                        
+                        // Ensure we don't overwrite a "Moved" placeholder
+                        if (!scheduleMap[dayAbbr][timeSlot][schedule.roomId]) {
+                             scheduleMap[dayAbbr][timeSlot][schedule.roomId] = {
+                                ...baseClassDetails,
+                                subject: baseClassDetails.className,
+                                timeDisplay: shiftNameToTimeDisplay[timeSlot],
+                                isTemporary: false,
+                            };
+                        }
+                    }
+                }
+            });
         });
 
-        // Building layout
         const buildingLayout = {};
         rooms.forEach(room => {
             const roomWithStatus = {
                 ...room,
                 status: UNAVAILABLE_ROOM_IDS.has(room.roomId) ? 'unavailable' : 'available'
             };
-
             if (!buildingLayout[room.buildingName]) buildingLayout[room.buildingName] = {};
             if (!buildingLayout[room.buildingName][room.floor]) buildingLayout[room.buildingName][room.floor] = [];
             buildingLayout[room.buildingName][room.floor].push(roomWithStatus);
         });
 
         return {
-            initialClasses: transformedClasses,
+            initialClasses: classes,
             initialRooms: rooms,
             initialSchedules: scheduleMap,
-            buildingLayout: buildingLayout,
-            constants: constants
+            buildingLayout,
+            constants
         };
 
     } catch (error) {
@@ -186,7 +167,6 @@ const fetchSchedulePageData = async () => {
         return { initialClasses: [], initialRooms: [], initialSchedules: {}, buildingLayout: {}, constants: {} };
     }
 };
-
 
 export default async function AdminSchedulePage() {
     const { initialClasses, initialRooms, initialSchedules, buildingLayout, constants } = await fetchSchedulePageData();
