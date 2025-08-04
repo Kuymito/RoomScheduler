@@ -42,7 +42,6 @@ async function ClassData() {
         return <ClassClientView initialClasses={[]} initialDepartments={[]} initialMajors={[]} />; 
     }
 }
-
 /**
  * The main page component, responsible for layout and the Suspense boundary.
  */
