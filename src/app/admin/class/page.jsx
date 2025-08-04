@@ -12,6 +12,7 @@ import { majorService } from '@/services/major.service';
  * An async Server Component to fetch the raw data for classes, departments, and majors.
  * The client component will handle all formatting and display logic.
  */
+
 async function ClassData() {
     const session = await getServerSession(authOptions);
     const token = session?.accessToken;
@@ -42,6 +43,7 @@ async function ClassData() {
         return <ClassClientView initialClasses={[]} initialDepartments={[]} initialMajors={[]} />; 
     }
 }
+
 /**
  * The main page component, responsible for layout and the Suspense boundary.
  */
