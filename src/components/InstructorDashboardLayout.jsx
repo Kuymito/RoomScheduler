@@ -261,7 +261,7 @@ export default function InstructorDashboardLayout({ children, activeItem, pageTi
                     />
                 </div>
                 <div className="flex flex-col flex-grow" style={{ paddingTop: TOPBAR_HEIGHT }}>
-                    <main className="content-area flex-grow m-6">
+                    <main className="content-area flex-grow sm:m-6 m-3">
                         {children}
                     </main>
                     <Footer />

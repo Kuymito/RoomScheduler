@@ -151,7 +151,7 @@ export default function InstructorLayout({ children, activeItem, pageTitle, brea
                     <InstructorTopbar onToggleSidebar={toggleSidebar} isSidebarCollapsed={isSidebarCollapsed} onUserIconClick={handleUserIconClick} breadcrumbs={finalBreadcrumbs} userIconRef={userIconRef} onNotificationIconClick={handleToggleInstructorNotificationPopup} notificationIconRef={notificationIconRef} hasUnreadNotifications={hasUnreadInstructorNotifications} showToggleButton={!isSmallScreen} />
                 </div>
                 <div className="flex flex-col flex-grow" style={{ paddingTop: TOPBAR_HEIGHT }}>
-                    <main className="content-area flex-grow p-3 m-6 bg-white dark:bg-gray-900 rounded-lg shadow-md">{children}</main>
+                    <main className="content-area flex-grow sm:p-3 p-1.5 sm:m-6 m-3 bg-white dark:bg-gray-900 rounded-lg shadow-md">{children}</main>
                     <Footer />
                 </div>
             </div>

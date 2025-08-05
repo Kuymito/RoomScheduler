@@ -69,14 +69,14 @@ export default function DashboardClientContent({ dashboardStats, initialChartDat
         academicYear={academicYear}
       />
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mt-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 sm:gap-6 gap-3 sm:mt-6 mt-3">
         <StatCard title="Class Assign" value={classAssign} />
         <StatCard title="Expired" value={expired} />
         <StatCard title="Unassigned Class" value={unassignedClass} />
         <StatCard title="Online Class" value={onlineClass} />
       </div>
 
-      <div className="mt-6 grid grid-cols-1 gap-6">
+      <div className="sm:mt-6 mt-3 grid grid-cols-1 sm:gap-6 gap-3">
         <RoomAvailabilityWrapper
           initialChartData={initialChartData}
           updateChartAction={updateChartAction}
