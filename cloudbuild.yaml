@@ -1,0 +1,14 @@
+steps:
+  # This step builds your Docker image
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '-t'
+      - 'gcr.io/$PROJECT_ID/roomscheduler-frontend:$COMMIT_SHA'
+      # This is the critical line that passes the variable to your Dockerfile
+      - '--build-arg'
+      - 'NEXT_PUBLIC_API_URL=${_NEXT_PUBLIC_API_URL}'
+      - '.'
+# This step tells Cloud Build to push the finished image so Cloud Run can use it
+images:
+  - 'gcr.io/$PROJECT_ID/roomscheduler-frontend:$COMMIT_SHA'
