@@ -23,8 +23,9 @@ const roboto = Roboto({
   display: 'swap',
 });
 
-// UPDATED METADATA OBJECT
 export const metadata = {
+  metadataBase: new URL('https://num-digital-scheduler.fit'),
+
   title: 'NUM Digital Scheduler',
   description: 'A comprehensive room and class scheduling management system for the National University of Management.',
   openGraph: {
@@ -34,7 +35,7 @@ export const metadata = {
     siteName: 'National University of Management Scheduler',
     images: [
       {
-        url: '/images/LOGO-NUM-1.png',
+        url: '/images/LOGO-NUM-1.png', // Next.js will now correctly turn this into an absolute URL
         width: 800,
         height: 800,
         alt: 'National University of Management Logo',
@@ -43,16 +44,15 @@ export const metadata = {
     locale: 'en_US',
     type: 'website',
   },
+  icons: {
+    icon: '/favicon.ico',
+    apple: '/images/LOGO-NUM-1.png',
+  },
 };
 
 export default function RootLayout({ children }) {
   return (
     <html lang="en" className={`${inter.variable} ${poppins.variable} ${roboto.variable}`}>
-      {/*
-        The <head> tag is no longer needed here. 
-        Next.js automatically generates it from the 'metadata' object above.
-        Your favicon.ico file in the `src/app` directory will also be picked up automatically.
-      */}
       <body>
         <AuthProvider>
           <ThemeProvider>
