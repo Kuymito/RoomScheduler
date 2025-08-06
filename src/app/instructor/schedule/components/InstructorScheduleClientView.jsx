@@ -20,23 +20,23 @@ const DAY_HEADER_COLORS = {
 const SCHEDULE_ITEM_BG_COLOR = 'bg-green-50 dark:bg-green-900/40';
 
 const ScheduleItemCard = ({ item }) => (
-    <div className={`${SCHEDULE_ITEM_BG_COLOR} p-2 h-full w-full flex flex-col text-xs rounded-md shadow-sm border border-green-200 dark:border-green-800/60`}>
-        <div className="flex justify-between items-start mb-1">
+    <div className={`${SCHEDULE_ITEM_BG_COLOR} sm:p-2 p-1.5 h-full w-full flex flex-col text-xs rounded-md shadow-sm border border-green-200 dark:border-green-800/60`}>
+        <div className="flex justify-between items-start sm:mb-1">
             {/* MODIFIED: Added 'pdf-subject-name' class to handle PDF text wrapping */}
-            <span className="pdf-subject-name max-w-[180px] font-semibold text-[13px] text-gray-800 dark:text-gray-200 truncate" title={item.subject}>{item.subject}</span>
+            <span className="pdf-subject-name max-w-[180px] sm:font-semibold sm:text-[13px] text-[10px] text-gray-800 dark:text-gray-200 truncate" title={item.subject}>{item.subject}</span>
         </div>
-        <div className="text-gray-700 dark:text-gray-300 text-[11px]">{item.year}</div>
-        <div className="text-gray-600 dark:text-gray-400 text-[11px] mt-1">
+        <div className="text-gray-700 dark:text-gray-300 sm:text-[11px] text-[8px]">{item.year}</div>
+        <div className="text-gray-600 dark:text-gray-400 sm:text-[11px] text-[8px] sm:mt-1">
             {item.isOnline ? (
-                <span className="font-medium text-orange-600 dark:text-orange-400">Online</span>
+                <span className="font-medium sm:text-[11px] text-[8px] text-orange-600 dark:text-orange-400">Online</span>
             ) : (
                 <>
-                    <span className="font-medium text-green-600 dark:text-green-400">In Class:</span> {item.room || 'N/A'}
+                    <span className="font-medium sm:text-[11px] text-[8px] text-green-600 dark:text-green-400">In Class:</span> {item.room || 'N/A'}
                 </>
             )}
         </div>
-        <div className="mt-auto text-right text-gray-500 dark:text-gray-400 text-[10px]">{item.timeDisplay}</div>
-        <div className="mt-1 text-right text-gray-500 dark:text-gray-400 text-[11px]">{item.semester}</div>
+        <div className="sm:block hidden mt-auto text-right text-gray-500 dark:text-gray-400 sm:text-[11px] text-[8px]">{item.timeDisplay}</div>
+        <div className="sm:block hidden sm:mt-1 text-right text-gray-500 dark:text-gray-400 sm:text-[11px] text-[8px]">{item.semester}</div>
     </div>
 );
 export default function InstructorScheduleClientView({ initialScheduleData, instructorDetails, allShifts }) {
@@ -68,7 +68,7 @@ export default function InstructorScheduleClientView({ initialScheduleData, inst
         
         const rowConfig = {};
         timeSlots.forEach(slot => {
-            rowConfig[slot] = { heightClass: 'h-36' };
+            rowConfig[slot] = { heightClass: 'sm:h-36 h-20' };
         });
 
         return { TIME_SLOTS: timeSlots, ROW_CONFIG: rowConfig };
@@ -163,21 +163,21 @@ export default function InstructorScheduleClientView({ initialScheduleData, inst
     };
     
     return (
-    <div className='p-6 min-h-screen dark:bg-gray-900'>
+    <div className='sm:p-6 p-2 min-h-screen dark:bg-gray-900'>
       <div className="mb-6">
-        <h1 className="text-2xl font-semibold text-gray-800 dark:text-gray-200">Schedule</h1>
+        <h1 className="sm:text-lg text-sm font-bold text-gray-800 dark:text-gray-200">Schedule</h1>
         <hr className="border-t border-gray-200 dark:border-gray-700 mt-3" />
       </div>
 
       <div ref={scheduleContainerRef} className="bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-lg shadow-md border border-gray-200 dark:border-gray-700">
-        <h2 className="text-xl font-medium text-gray-700 dark:text-gray-300 mb-4">{instructorName}</h2>
+        <h2 className="sm:text-xl text-sm sm:font-medium text-gray-700 dark:text-gray-300 mb-4">{instructorName}</h2>
 
         <div className="overflow-x-auto">
-          <div className="grid grid-cols-[minmax(100px,1.5fr)_repeat(7,minmax(120px,2fr))] border border-gray-300 dark:border-gray-600 rounded-md min-w-[900px]">
+          <div className="grid sm:grid-cols-[minmax(100px,1.5fr)_repeat(7,minmax(120px,2fr))] grid-cols-[minmax(30px,0.4fr)_repeat(7,minmax(40px,1fr))] border border-gray-300 dark:border-gray-600 rounded-md min-w-[900px]">
             {/* Header Row */}
-            <div className="font-semibold text-sm text-gray-700 dark:text-gray-300 p-3 text-center border-r border-b border-gray-300 dark:border-gray-600 dark:bg-gray-700 sticky top-0 z-10">Time</div>
+            <div className="font-semibold sm:text-sm text-[7px] text-gray-700 dark:text-gray-300 sm:p-3 p-1 text-center border-r border-b border-gray-300 dark:border-gray-600 dark:bg-gray-700 sticky top-0 z-10">Time</div>
             {DAYS_OF_WEEK.map(day => (
-              <div key={day} className={`font-semibold text-sm p-3 text-center border-b border-gray-300 dark:border-gray-600 ${DAY_HEADER_COLORS[day]} ${day !== 'Sunday' ? 'border-r dark:border-r-gray-600' : ''} sticky top-0 z-10`}>
+              <div key={day} className={`font-semibold sm:text-sm text-[7px] sm:p-3 p-1 text-center border-b border-gray-300 dark:border-gray-600 ${DAY_HEADER_COLORS[day]} ${day !== 'Sunday' ? 'border-r dark:border-r-gray-600' : ''} sticky top-0 z-10`}>
                 {day}
               </div>
             ))}
@@ -185,13 +185,13 @@ export default function InstructorScheduleClientView({ initialScheduleData, inst
             {/* Data Rows */}
             {TIME_SLOTS.map(timeSlot => (
               <React.Fragment key={timeSlot}>
-                <div className={`p-3 text-sm font-medium text-gray-600 dark:text-gray-400 text-center border-r border-gray-300 dark:border-gray-600 ${timeSlot !== TIME_SLOTS[TIME_SLOTS.length - 1] ? 'border-b dark:border-b-gray-600' : ''} ${ROW_CONFIG[timeSlot]?.heightClass || 'h-36'} flex items-center justify-center dark:bg-gray-700/50`}>
+                <div className={`sm:p-3 p-1 sm:text-sm text-[7px] font-medium text-gray-600 dark:text-gray-400 text-center border-r border-gray-300 dark:border-gray-600 ${timeSlot !== TIME_SLOTS[TIME_SLOTS.length - 1] ? 'border-b dark:border-b-gray-600' : ''} ${ROW_CONFIG[timeSlot]?.heightClass || 'sm:h-36 h-20'} flex items-center justify-center dark:bg-gray-700/50`}>
                   {timeSlot}
                 </div>
                 {DAYS_OF_WEEK.map(day => {
                   const item = scheduleData[day]?.[timeSlot];
                   return (
-                    <div key={`${day}-${timeSlot}`} className={`p-1.5 border-gray-300 dark:border-gray-600 ${day !== 'Sunday' ? 'border-r dark:border-r-gray-600' : ''} ${timeSlot !== TIME_SLOTS[TIME_SLOTS.length - 1] ? 'border-b dark:border-b-gray-600' : ''} ${ROW_CONFIG[timeSlot]?.heightClass || 'h-36'} flex items-stretch justify-stretch`}>
+                    <div key={`${day}-${timeSlot}`} className={`sm:p-1.5 p-1 border-gray-300 dark:border-gray-600 ${day !== 'Sunday' ? 'border-r dark:border-r-gray-600' : ''} ${timeSlot !== TIME_SLOTS[TIME_SLOTS.length - 1] ? 'border-b dark:border-b-gray-600' : ''} ${ROW_CONFIG[timeSlot]?.heightClass || 'sm:h-36 h-20'} flex items-stretch justify-stretch`}>
                       {item ? <ScheduleItemCard item={item} /> : <div className="w-full h-full"></div>}
                     </div>
                   );

@@ -76,7 +76,7 @@ const NotificationItem = ({ notification, onApprove, onDeny, onMarkAsRead }) => 
                 </div>
 
                 <div className="flex flex-col gap-1 flex-1 min-w-0">
-                    <div className="font-inter font-semibold text-sm leading-normal text-slate-700 dark:text-gray-300 self-stretch flex items-baseline gap-2 flex-wrap">
+                    <div className="font-inter font-semibold sm:text-sm text-[11px] leading-normal text-slate-700 dark:text-gray-300 self-stretch flex items-baseline gap-2 flex-wrap">
                         <span>{message}</span>
                         {description && (
                             <button

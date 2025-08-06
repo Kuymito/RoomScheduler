@@ -37,10 +37,10 @@ const InstructorClassPageSkeleton = () => {
         <div className="sm:p-6 p-2 animate-pulse">
             {/* Header */}
             <div className="h-7 w-36 bg-slate-300 dark:bg-slate-600 rounded"></div>
-            <div className="h-px bg-slate-300 dark:bg-slate-700 mt-4 mb-4" />
+            <div className="h-px bg-slate-300 dark:bg-slate-700 sm:mt-4 mt-2 sm:mb-4 mb-2" />
 
             {/* Filter/Action Controls */}
-            <div className="flex items-center justify-between mt-2 mb-4 gap-2">
+            <div className="flex items-center justify-between mt-2 sm:mb-4 mb-2 sm:gap-2 gap-1">
                 <div className="flex items-center gap-2">
                     <div className="sm:h-9 h-6 sm:w-72 w-16 bg-slate-200 dark:bg-slate-700 rounded-lg"></div>
                 </div>

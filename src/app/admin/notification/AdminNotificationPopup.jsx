@@ -53,7 +53,7 @@ const NotificationPopup = ({ show, notifications = [], onMarkAllRead, onApprove,
 
     return (
         <div
-            className={`fixed md:absolute w-full max-w-md bg-white dark:bg-gray-800 shadow-lg rounded-lg z-[1000] flex flex-col right-5 top-20 md:right-auto md:left-auto ${show && !isExiting ? 'animate-fade-in-scale' : ''} ${isExiting ? 'animate-fade-out-scale' : ''}`}
+            className={`fixed md:absolute w-full sm:max-w-md max-w-[320px] bg-white dark:bg-gray-800 shadow-lg rounded-lg z-[1000] flex flex-col right-5 top-20 md:right-auto md:left-auto ${show && !isExiting ? 'animate-fade-in-scale' : ''} ${isExiting ? 'animate-fade-out-scale' : ''}`}
             style={anchorRef?.current ? popupStyle : {}}
         >
             <div className="relative flex justify-between items-center py-4 px-5">

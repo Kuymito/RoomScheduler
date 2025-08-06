@@ -76,7 +76,7 @@ const InstructorNotification = ({ notification, onMarkAsRead }) => {
                 </div>
 
                 <div className="flex flex-col gap-2 flex-1 min-w-0">
-                    <p className="font-inter font-semibold text-sm leading-normal text-slate-700 dark:text-gray-300 self-stretch break-words">
+                    <p className="font-inter font-semibold sm:text-sm text-[11px] leading-normal text-slate-700 dark:text-gray-300 self-stretch break-words">
                         {message}
                     </p>
                 </div>

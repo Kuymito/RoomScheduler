@@ -266,15 +266,15 @@ export default function InstructorClassClientView({ initialClasses }) {
 
     return (
         <div className="sm:p-6 p-2 dark:text-white">
-            <h1 className="text-lg font-bold">Class List</h1>
-            <hr className="border-t border-gray-200 dark:border-gray-700 mt-4 mb-4" />
-            <div className="flex items-center justify-between mt-2 mb-4 gap-2">
+            <h1 className="sm:text-lg text-sm font-bold">Class List</h1>
+            <hr className="border-t border-gray-200 dark:border-gray-700 sm:mt-4 mt-2 sm:mb-4 mb-2" />
+            <div className="flex items-center justify-between mt-2 sm:mb-4 mb-2 sm:gap-2 gap-1">
                 <input
                     type="text"
                     placeholder="Search ..."
                     value={globalSearchTerm}
                     onChange={(e) => {setGlobalSearchTerm(e.target.value); setCurrentPage(1);}}
-                    className="block md:w-72 sm:w-52 w-32 p-2 text-xs font-medium text-gray-900 bg-white border border-gray-200 rounded-lg hover:bg-gray-100 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:hover:text-white dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-600 dark:focus:ring-offset-gray-800"
+                    className="block md:w-72 sm:w-52 w-32 sm:p-2 p-1.5 sm:text-xs text-[7px] font-medium text-gray-900 bg-white border border-gray-200 rounded-lg hover:bg-gray-100 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:hover:text-white dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-600 dark:focus:ring-offset-gray-800"
                 />
             </div>
             <div className="relative overflow-x-auto border border-gray-200 dark:border-gray-600 sm:rounded-lg rounded-md">

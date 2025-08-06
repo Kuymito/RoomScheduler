@@ -11,7 +11,7 @@ const VerificationFormControl = () => {
     return (
         <div className="min-h-screen w-screen flex flex-col md:flex-row font-sans">
             {/* Left Column (Info Section) */}
-            <div className="hidden md:flex md:w-3/5 bg-[#3165F8] text-white items-center justify-center p-6 sm:p-8 md:p-12 lg:p-16 relative overflow-hidden">
+            <div className="hidden lg:flex lg:w-3/5 bg-[#3165F8] text-white items-center justify-center p-6 sm:p-8 md:p-12 lg:p-16 relative overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-br opacity-75"></div>
                 <div className="relative z-10 max-w-lg sm:max-w-xl lg:max-w-2xl">
                     <Image 
@@ -37,7 +37,7 @@ const VerificationFormControl = () => {
             </div>
 
             {/* Right Column (Form Section) */}
-            <div className="w-full md:w-2/5 bg-[#E0E4F3] flex items-center justify-center p-6 sm:p-8 md:p-12 lg:p-16 min-h-screen">
+            <div className="w-full lg:w-2/5 bg-[#E0E4F3] flex items-center justify-center p-6 sm:p-8 md:p-12 lg:p-16">
                 <Suspense fallback={<RightVerificationSectionSkeleton />}>
                     <RightVerificationSection />
                 </Suspense>
