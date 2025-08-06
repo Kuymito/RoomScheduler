@@ -34,7 +34,6 @@ const mapApiDayToClientDay = (apiDay) => {
     return dayMap[apiDay.toUpperCase()];
 };
 
-
 /**
  * Server-side data fetching function.
  * It fetches class details, all instructors, all departments, all majors, all classes, and all schedules.
