@@ -45,7 +45,6 @@ export default function InstructorDetailClientView({ initialInstructor, allDepar
         setLoading(true);
         setToast({ show: false, message: '', type: 'info' });
 
-        // --- NEW: Detailed Field Validation ---
         const fieldsToValidate = {
             firstName: 'First Name',
             lastName: 'Last Name',
@@ -118,14 +117,8 @@ export default function InstructorDetailClientView({ initialInstructor, allDepar
             if (!session?.accessToken) {
                 throw new Error("Authentication token not found.");
             }
-            const response = await instructorService.updateInstructor(instructorDetails.id, payload, session.accessToken);
+            const updatedDataFromServer = await instructorService.updateInstructor(instructorDetails.id, payload, session.accessToken);
             
-            // --- FIX START ---
-            // The `updateInstructor` service now returns the payload directly.
-            // We no longer need to access a `.payload` property on the response.
-            const updatedDataFromServer = response; 
-            // --- FIX END ---
-
             const formattedUpdatedDetails = {
                 id: updatedDataFromServer.instructorId,
                 name: `${updatedDataFromServer.firstName} ${updatedDataFromServer.lastName}`,
@@ -342,56 +335,56 @@ export default function InstructorDetailClientView({ initialInstructor, allDepar
     );
     
     return (
-        <div className='p-6 dark:text-white'>
+        <div className='p-4 md:p-6 dark:text-white'>
             {toast.show && <Toast message={toast.message} type={toast.type} onClose={() => setToast({ ...toast, show: false })} />}
             <div className="section-title font-semibold text-lg text-num-dark-text dark:text-white mb-4">Instructor Details</div>
             <hr className="border-t border-slate-300 dark:border-slate-700 mt-4 mb-8" />
-            <div className="profile-section flex gap-8 mb-4 flex-wrap">
-                <div className="avatar-card w-[220px] h-[110px] p-3 bg-white border border-num-gray-light dark:bg-gray-800 dark:border-gray-700 shadow-custom-light rounded-lg flex-shrink-0">
-                    <div className="avatar-content flex relative">
-                        {imagePreviewUrl ? ( <Image src={imagePreviewUrl} alt="Profile Preview" width={56} height={56} className="avatar-img w-14 h-14 rounded-full mr-3 object-cover" /> ) : ( <DefaultAvatarIcon className="avatar-img w-16 h-16 rounded-full mr-3" /> )}
-                        <span className={`avatar-img absolute left-[40px] bottom-[20px] block h-4 w-4 rounded-full border-2 border-white dark:border-gray-800 ${instructorDetails.status === 'active' ? 'bg-green-500' : 'bg-red-500'}`} title={`Status: ${instructorDetails.status}`}></span>
-                        <div className='avatar-info flex flex-col overflow-hidden min-w-0'>
-                            <div className='avatar-name font-semibold text-lg text-black dark:text-white mb-0.5'>
-                                <h2 className="max-w-[120px] text-sm font-semibold text-gray-900 dark:text-white truncate" title={currentData.name}>{currentData.name}</h2>
-                                <p className="text-xs text-gray-500 dark:text-gray-400">Instructor</p>
-                            </div>
-                            <button type="button" onClick={handleUploadButtonClick} disabled={isUploading || !isEditingGeneral} className="w-full rounded-md mt-2 px-3 py-2 text-xs font-semibold text-white shadow-sm ring-1 ring-inset bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed dark:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600">
-                                {isUploading ? 'Uploading...' : 'Upload Photo'}
-                            </button>
-                            <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" className="sr-only" />
+            
+            {/* Responsive Layout: Stacks on mobile, row on large screens */}
+            <div className="profile-section flex flex-col lg:flex-row gap-8 mb-4">
+                
+                {/* Responsive Avatar Card */}
+                <div className="avatar-card w-full lg:w-[220px] p-3 bg-white border border-num-gray-light dark:bg-gray-800 dark:border-gray-700 shadow-custom-light rounded-lg flex-shrink-0 self-start">
+                    <div className="avatar-content flex items-center relative">
+                        <div className="relative flex-shrink-0">
+                            {imagePreviewUrl ? ( <Image src={imagePreviewUrl} alt="Profile Preview" width={56} height={56} className="avatar-img w-14 h-14 rounded-full object-cover" /> ) : ( <DefaultAvatarIcon className="avatar-img w-14 h-14 text-gray-500" /> )}
+                            <span className={`absolute left-10 bottom-0 block h-4 w-4 rounded-full border-2 border-white dark:border-gray-800 ${instructorDetails.status === 'active' ? 'bg-green-500' : 'bg-red-500'}`} title={`Status: ${instructorDetails.status}`}></span>
+                        </div>
+                        <div className='avatar-info flex flex-col overflow-hidden min-w-0 ml-3'>
+                            <h2 className="text-sm font-semibold text-gray-900 dark:text-white truncate" title={currentData.name}>{currentData.name}</h2>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">Instructor</p>
                         </div>
                     </div>
+                    <button type="button" onClick={handleUploadButtonClick} disabled={isUploading || !isEditingGeneral} className="w-full rounded-md mt-2 px-3 py-2 text-xs font-semibold text-white shadow-sm bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed">
+                        {isUploading ? 'Uploading...' : 'Upload Photo'}
+                    </button>
+                    <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" className="sr-only" />
                 </div>
 
-                <div className="info-details-wrapper flex-grow flex flex-col gap-8 min-w-[300px]">
-                    <div className="info-card p-3 sm:p-4 bg-white border border-num-gray-light dark:bg-gray-800 dark:border-gray-700 shadow-custom-light rounded-lg">
-                        <div className="section-title font-semibold text-sm text-num-dark-text dark:text-white mb-3">General Information</div>
-                        <div className="form-row flex gap-3 mb-2 flex-wrap">
+                <div className="info-details-wrapper flex-grow flex flex-col gap-8 min-w-0">
+                    <div className="info-card p-4 bg-white border border-num-gray-light dark:bg-gray-800 dark:border-gray-700 shadow-custom-light rounded-lg">
+                        <div className="section-title font-semibold text-sm text-num-dark-text dark:text-white mb-4">General Information</div>
+                        {/* Responsive grid for form fields */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             {renderTextField("First Name", "firstName", currentData.firstName, isEditingGeneral, { maxLength: 20 })}
                             {renderTextField("Last Name", "lastName", currentData.lastName, isEditingGeneral, { maxLength: 30 })}
-                        </div>
-                        <div className="form-row flex gap-3 mb-2 flex-wrap">
                             {renderTextField("Email", "email", currentData.email, isEditingGeneral, { type: 'email', maxLength: 254 })}
                             {renderTextField("Phone Number", "phone", currentData.phone, isEditingGeneral, { type: 'tel', minLength: 8, maxLength: 15 })}
-                        </div>
-                        <div className="form-row flex gap-3 mb-2 flex-wrap">
                             {renderTextField("Major", "major", currentData.major, isEditingGeneral, { maxLength: 50 })}
                             {renderSelectField("Degree", "degree", currentData.degree, degreeOptions, isEditingGeneral)}
+                            {renderSelectField("Department / Faculty", "department", currentData.department, allDepartments, isEditingGeneral, 'departmentId', 'name')}
+                            {renderTextField("Address", "address", currentData.address, isEditingGeneral, { maxLength: 65 })}
                         </div>
-                        <div className="form-row flex gap-3 mb-2 flex-wrap">{renderSelectField("Department / Faculty", "department", currentData.department, allDepartments, isEditingGeneral, 'departmentId', 'name')}{renderTextField("Address", "address", currentData.address, isEditingGeneral, { maxLength: 65 })}</div>
                         <div className="form-actions flex justify-end items-center gap-3 mt-4">
-                            {isEditingGeneral ? ( <> <button onClick={() => handleCancelClick('general')} className="back-button bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 shadow-custom-light rounded-md text-gray-800 dark:text-white border-none py-2 px-3 font-semibold text-xs cursor-pointer" disabled={loading}>Cancel</button><button onClick={() => handleSaveClick('general')} className="save-button bg-blue-600 hover:bg-blue-700 shadow-custom-light rounded-md text-white border-none py-2 px-3 font-semibold text-xs cursor-pointer" disabled={loading}>{loading ? "Saving..." : "Save Changes"}</button> </> ) : ( <> <button onClick={() => handleEditClick('general')} className="save-button bg-blue-600 hover:bg-blue-700 shadow-custom-light rounded-md text-white border-none py-2 px-3 font-semibold text-xs cursor-pointer" disabled={loading}>Edit Profile</button> </> )}
+                            {isEditingGeneral ? ( <> <button onClick={() => handleCancelClick('general')} className="back-button bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 shadow-custom-light rounded-md text-gray-800 dark:text-white border-none py-2 px-3 font-semibold text-xs cursor-pointer" disabled={loading}>Cancel</button><button onClick={() => handleSaveClick('general')} className="save-button bg-blue-600 hover:bg-blue-700 shadow-custom-light rounded-md text-white border-none py-2 px-3 font-semibold text-xs cursor-pointer" disabled={loading || isUploading}>{loading || isUploading ? "Saving..." : "Save Changes"}</button> </> ) : ( <button onClick={() => handleEditClick('general')} className="save-button bg-blue-600 hover:bg-blue-700 shadow-custom-light rounded-md text-white border-none py-2 px-3 font-semibold text-xs cursor-pointer" disabled={loading}>Edit Profile</button> )}
                         </div>
                     </div>
 
-                    <div className="info-card-password p-3 sm:p-4 bg-white border border-num-gray-light dark:bg-gray-800 dark:border-gray-700 shadow-custom-light rounded-lg">
+                    <div className="info-card-password p-4 bg-white border border-num-gray-light dark:bg-gray-800 dark:border-gray-700 shadow-custom-light rounded-lg">
                         <div className="section-title font-semibold text-sm text-num-dark-text dark:text-white mb-3">Password information</div>
-                        <div className="space-y-4">
-                            <div className="form-row flex gap-3 mb-2 flex-wrap">
-                                {renderPasswordField("New Password", "newPassword", newPassword, handleNewPasswordChange, "new", passwordMismatchError || emptyPasswordError.new, { maxLength: 64 })}
-                                {renderPasswordField("Confirm New Password", "confirmNewPassword", confirmNewPassword, handleConfirmPasswordChange, "confirm", passwordMismatchError || emptyPasswordError.confirm, { maxLength: 64 })}
-                            </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {renderPasswordField("New Password", "newPassword", newPassword, handleNewPasswordChange, "new", passwordMismatchError || emptyPasswordError.new, { maxLength: 64 })}
+                            {renderPasswordField("Confirm New Password", "confirmNewPassword", confirmNewPassword, handleConfirmPasswordChange, "confirm", passwordMismatchError || emptyPasswordError.confirm, { maxLength: 64 })}
                         </div>
                         <div className="form-actions flex justify-end items-center gap-3 mt-4">
                              {isEditingPassword ? ( <> <button onClick={() => handleCancelClick('password')} className="back-button bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 shadow-custom-light rounded-md text-gray-800 dark:text-white border-none py-2 px-3 font-semibold text-xs cursor-pointer" disabled={loading}>Cancel</button><button onClick={() => handleSaveClick('password')} className="save-button bg-blue-600 hover:bg-blue-700 shadow-custom-light rounded-md text-white border-none py-2 px-3 font-semibold text-xs cursor-pointer" disabled={loading}>{loading ? "Saving..." : "Save Password"}</button> </> ) : ( <> <button onClick={() => router.back()} className="back-button bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 shadow-custom-light rounded-md text-gray-800 dark:text-white border-none py-2 px-3 font-semibold text-xs cursor-pointer" disabled={loading}> Back </button> <button onClick={() => handleEditClick('password')} className="save-button bg-blue-600 hover:bg-blue-700 shadow-custom-light rounded-md text-white border-none py-2 px-3 font-semibold text-xs cursor-pointer" disabled={loading}>Change Password</button> </> )}
