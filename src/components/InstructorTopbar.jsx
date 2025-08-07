@@ -5,7 +5,9 @@ import React from 'react';
 import Link from 'next/link';
 import ThemeToggle from './ThemeToggle';
 
-const InstructorTopbar = ({ onToggleSidebar, isSidebarCollapsed, onUserIconClick, breadcrumbs, userIconRef, onNotificationIconClick, notificationIconRef, hasUnreadNotifications, showToggleButton = true }) => {
+const InstructorTopbar = ({ onToggleSidebar, isSidebarCollapsed, isMobileSidebarOpen, isSmallScreen, breadcrumbs, userIconRef, onNotificationIconClick, notificationIconRef, hasUnreadNotifications, onUserIconClick, showToggleButton = true }) => {
+  const showCloseIcon = isSmallScreen ? isMobileSidebarOpen : !isSidebarCollapsed;
+
   return (
     <div className="flex justify-between items-center w-full h-full"> 
       <div className="topbar-content-left flex items-center">
@@ -13,10 +15,14 @@ const InstructorTopbar = ({ onToggleSidebar, isSidebarCollapsed, onUserIconClick
           <div
             id="sidebar-toggle"
             className="sidebar-toggle-btn text-xl cursor-pointer mr-4 p-2 rounded text-black dark:text-white hover:bg-blue-100 dark:hover:bg-blue-600 select-none leading-none"
-            title={isSidebarCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
+            title={
+              isSmallScreen
+                ? (isMobileSidebarOpen ? "Close Menu" : "Open Menu")
+                : (isSidebarCollapsed ? "Expand Sidebar" : "Collapse Sidebar")
+            }
             onClick={onToggleSidebar}
           >
-            {isSidebarCollapsed ? <span dangerouslySetInnerHTML={{ __html: '&#x2715;' }} /> : <span dangerouslySetInnerHTML={{ __html: '&#9776;' }} />}
+            {showCloseIcon ? <span dangerouslySetInnerHTML={{ __html: '&#x2715;' }} /> : <span dangerouslySetInnerHTML={{ __html: '&#9776;' }} />}
           </div>
         )}
         <div className="page-title font-medium sm:text-xl text-base text-black dark:text-white">

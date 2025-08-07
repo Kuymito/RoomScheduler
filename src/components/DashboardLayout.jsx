@@ -9,13 +9,12 @@ import Footer from '@/components/Footer';
 import NotificationPopup from '@/app/admin/notification/AdminNotificationPopup';
 import { usePathname, useRouter } from 'next/navigation';
 import { signOut, useSession } from 'next-auth/react';
-import useSWR, { mutate } from 'swr';
+import useSWR from 'swr';
 import { authService } from '@/services/auth.service';
 import { notificationService } from '@/services/notification.service';
 import { moul } from './fonts';
 
 // Dynamically import the LogoutAlert component.
-// This creates a separate JavaScript chunk for the component, loaded only when needed.
 const LogoutAlert = lazy(() => import('@/components/LogoutAlert'));
 
 const TOPBAR_HEIGHT = '90px';
@@ -58,20 +57,18 @@ export default function DashboardLayout({ children, activeItem, pageTitle }) {
     const [ isProfileNavigating, setIsProfileNavigating] = useState(false);
     
     const isSmallScreen = useMediaQuery('(max-width: 1023px)');
+    const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
     
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
         if (typeof window === 'undefined') {
             return false;
         }
-        if (window.matchMedia('(max-width: 1023px)').matches) {
-            return true;
-        }
         return localStorage.getItem('sidebarCollapsed') === 'true';
     });
     
     useEffect(() => {
-        if (isSmallScreen) {
-            setIsSidebarCollapsed(true);
+        if (!isSmallScreen) {
+            setIsMobileSidebarOpen(false);
         }
     }, [isSmallScreen]);
 
@@ -107,11 +104,8 @@ export default function DashboardLayout({ children, activeItem, pageTitle }) {
 
     const finalBreadcrumbs = [{ label: pageTitle }];
 
-    const toggleSidebar = () => {
-        if (!isSmallScreen) {
-            setIsSidebarCollapsed(!isSidebarCollapsed);
-        }
-    };
+    const toggleDesktopSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
+    const toggleMobileSidebar = () => setIsMobileSidebarOpen(!isMobileSidebarOpen);
     
     const handleUserIconClick = (event) => {
         event.stopPropagation();
@@ -133,6 +127,9 @@ export default function DashboardLayout({ children, activeItem, pageTitle }) {
         if (pathname !== item.href) {
             setNavigatingTo(item.id);
             router.push(item.href);
+        }
+        if (isSmallScreen) {
+            setIsMobileSidebarOpen(false);
         }
     };
     
@@ -165,17 +162,21 @@ export default function DashboardLayout({ children, activeItem, pageTitle }) {
         await notificationService.approveChangeRequest(requestId, token);
         mutateChangeRequests();
         mutateNotifications();
-        mutate(['/api/v1/schedule', token]);
+        if (pathname.startsWith('/admin/schedule')) {
+            router.refresh();
+        }
     };
 
     const handleDenyNotification = async (requestId) => {
         await notificationService.denyChangeRequest(requestId, token);
         mutateChangeRequests();
         mutateNotifications();
-        mutate(['/api/v1/schedule', token]);
+        if (pathname.startsWith('/admin/schedule')) {
+            router.refresh();
+        }
     };
 
-    const hasUnreadNotifications = notifications?.some(n => !n.read);
+    const hasUnreadNotifications = notifications?.some(n => !n.read) || changeRequests?.some(cr => cr.status === 'PENDING');
 
     const handleProfileNav = (path) => {
         if (isProfileNavigating) return;
@@ -187,8 +188,6 @@ export default function DashboardLayout({ children, activeItem, pageTitle }) {
         router.push(path);
     };
     
-    const sidebarWidth = isSidebarCollapsed ? '60px' : '205px';
-
     useEffect(() => {
         const handleClickOutside = (event) => {
             if (showAdminPopup && adminPopupRef.current && !adminPopupRef.current.contains(event.target) && userIconRef.current && !userIconRef.current.contains(event.target)) {
@@ -221,11 +220,37 @@ export default function DashboardLayout({ children, activeItem, pageTitle }) {
     }
 
     return (
-        <div className="flex w-full min-h-screen bg-[#E2E1EF] dark:bg-gray-800">
-            <Sidebar isCollapsed={isSidebarCollapsed} activeItem={activeItem} onNavItemClick={handleNavItemClick} navigatingTo={navigatingTo} profile={profile} isProfileLoading={isProfileLoading} />
-            <div className="flex flex-col flex-grow transition-all duration-300 ease-in-out" style={{ marginLeft: sidebarWidth, width: `calc(100% - ${sidebarWidth})`, height: '100vh', overflowY: 'auto' }}>
-                <div className="fixed top-0 bg-white dark:bg-gray-900 shadow-custom-medium p-5 flex justify-between items-center z-30 transition-all duration-300 ease-in-out" style={{ left: sidebarWidth, width: `calc(100% - ${sidebarWidth})`, height: TOPBAR_HEIGHT }}>
-                    <Topbar onToggleSidebar={toggleSidebar} isSidebarCollapsed={isSidebarCollapsed} onUserIconClick={handleUserIconClick} breadcrumbs={finalBreadcrumbs} userIconRef={userIconRef} onNotificationIconClick={handleToggleNotificationPopup} notificationIconRef={notificationIconRef} hasUnreadNotifications={hasUnreadNotifications} showToggleButton={!isSmallScreen} />
+        <div className="relative flex w-full min-h-screen bg-[#E2E1EF] dark:bg-gray-800">
+            {isMobileSidebarOpen && (
+                <div
+                    className="fixed inset-0 bg-black bg-opacity-50 z-30 lg:hidden"
+                    onClick={toggleMobileSidebar}
+                ></div>
+            )}
+            <Sidebar 
+                isCollapsed={isSidebarCollapsed} 
+                isMobileOpen={isMobileSidebarOpen}
+                activeItem={activeItem} 
+                onNavItemClick={handleNavItemClick} 
+                navigatingTo={navigatingTo} 
+                profile={profile} 
+                isProfileLoading={isProfileLoading} 
+            />
+            <div className={`flex flex-col flex-grow transition-all duration-300 ease-in-out ${isSidebarCollapsed ? 'lg:ml-[60px]' : 'lg:ml-[205px]'}`}>
+                <div className={`fixed top-0 bg-white dark:bg-gray-900 shadow-custom-medium p-5 flex justify-between items-center z-20 transition-all duration-300 ease-in-out w-full ${isSidebarCollapsed ? 'lg:w-[calc(100%-60px)] lg:left-[60px]' : 'lg:w-[calc(100%-205px)] lg:left-[205px]'}`} style={{ height: TOPBAR_HEIGHT }}>
+                    <Topbar 
+                        onToggleSidebar={isSmallScreen ? toggleMobileSidebar : toggleDesktopSidebar} 
+                        isSidebarCollapsed={isSidebarCollapsed} 
+                        isMobileSidebarOpen={isMobileSidebarOpen}
+                        isSmallScreen={isSmallScreen}
+                        onUserIconClick={handleUserIconClick} 
+                        breadcrumbs={finalBreadcrumbs} 
+                        userIconRef={userIconRef} 
+                        onNotificationIconClick={handleToggleNotificationPopup} 
+                        notificationIconRef={notificationIconRef} 
+                        hasUnreadNotifications={hasUnreadNotifications} 
+                        showToggleButton={true} 
+                    />
                 </div>
                 <div className="flex flex-col flex-grow" style={{ paddingTop: TOPBAR_HEIGHT }}>
                     <main className="content-area flex-grow sm:m-6 m-3">{children}</main>
@@ -255,7 +280,6 @@ export default function DashboardLayout({ children, activeItem, pageTitle }) {
                     onClose={() => setShowNotificationPopup(false)}
                 />
             </div>
-            {/* Wrap the LogoutAlert component in a Suspense boundary */}
             {showLogoutAlert && (
                 <Suspense fallback={<div className="fixed inset-0 bg-black bg-opacity-50 z-[1002] flex items-center justify-center"><div className="w-10 h-10 border-4 border-t-transparent border-white rounded-full animate-spin"></div></div>}>
                     <LogoutAlert show={showLogoutAlert} onClose={handleCloseLogoutAlert} onConfirmLogout={handleConfirmLogout} />

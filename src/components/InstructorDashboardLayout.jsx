@@ -9,7 +9,7 @@ import Footer from '@/components/Footer';
 import InstructorNotificationPopup from '@/app/instructor/notification/InstructorNotificationPopup';
 import { usePathname, useRouter } from 'next/navigation';
 import { signOut, useSession } from 'next-auth/react';
-import useSWR, { mutate } from 'swr';
+import useSWR from 'swr';
 import { authService } from '@/services/auth.service';
 import { notificationService } from '@/services/notification.service';
 import { moul } from './fonts';
@@ -55,20 +55,18 @@ export default function InstructorDashboardLayout({ children, activeItem, pageTi
     const [isProfileNavigating, setIsProfileNavigating] = useState(false);
     
     const isSmallScreen = useMediaQuery('(max-width: 1023px)');
+    const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
     
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
         if (typeof window === 'undefined') {
             return false;
         }
-        if (window.matchMedia('(max-width: 1023px)').matches) {
-            return true;
-        }
         return localStorage.getItem('sidebarCollapsed') === 'true';
     });
     
     useEffect(() => {
-        if (isSmallScreen) {
-            setIsSidebarCollapsed(true);
+        if (!isSmallScreen) {
+            setIsMobileSidebarOpen(false);
         }
     }, [isSmallScreen]);
 
@@ -96,17 +94,8 @@ export default function InstructorDashboardLayout({ children, activeItem, pageTi
 
     const breadcrumbs = [{ label: pageTitle }];
 
-    useEffect(() => {
-        if (typeof window !== 'undefined') {
-            localStorage.setItem('sidebarCollapsed', isSidebarCollapsed);
-        }
-    }, [isSidebarCollapsed]);
-
-    const toggleSidebar = () => {
-        if (!isSmallScreen) {
-            setIsSidebarCollapsed(!isSidebarCollapsed);
-        }
-    };
+    const toggleDesktopSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
+    const toggleMobileSidebar = () => setIsMobileSidebarOpen(!isMobileSidebarOpen);
 
     const handleUserIconClick = (event) => {
         event.stopPropagation();
@@ -130,6 +119,9 @@ export default function InstructorDashboardLayout({ children, activeItem, pageTi
             setNavigatingTo(item.id);
             router.push(item.href);
         }
+        if (isSmallScreen) {
+            setIsMobileSidebarOpen(false);
+        }
     };
 
     const handleToggleInstructorNotificationPopup = (event) => {
@@ -143,7 +135,6 @@ export default function InstructorDashboardLayout({ children, activeItem, pageTi
     const handleMarkInstructorNotificationAsRead = async (notificationId) => {
         await notificationService.markNotificationAsRead(notificationId, token);
         mutateInstructorNotifications();
-        mutate(['/api/v1/schedule', token]);
     };
 
     const handleMarkAllInstructorNotificationsAsRead = async () => {
@@ -151,7 +142,6 @@ export default function InstructorDashboardLayout({ children, activeItem, pageTi
         if (unreadIds.length > 0) {
             await Promise.all(unreadIds.map(id => notificationService.markNotificationAsRead(id, token)));
             mutateInstructorNotifications();
-            mutate(['/api/v1/schedule', token]);
         }
     };
 
@@ -169,7 +159,6 @@ export default function InstructorDashboardLayout({ children, activeItem, pageTi
         router.push(path);
     };
     
-    const sidebarWidth = isSidebarCollapsed ? '60px' : '205px';
     const TOPBAR_HEIGHT = '90px'; 
 
     useEffect(() => {
@@ -224,40 +213,39 @@ export default function InstructorDashboardLayout({ children, activeItem, pageTi
     }
 
     return (
-        <div className="flex w-full min-h-screen bg-[#E2E1EF] dark:bg-gray-800">
+        <div className="relative flex w-full min-h-screen bg-[#E2E1EF] dark:bg-gray-800">
+             {isMobileSidebarOpen && (
+                <div
+                    className="fixed inset-0 bg-black bg-opacity-50 z-30 lg:hidden"
+                    onClick={toggleMobileSidebar}
+                ></div>
+            )}
             <InstructorSidebar
                 isCollapsed={isSidebarCollapsed}
+                isMobileOpen={isMobileSidebarOpen}
                 activeItem={activeItem}
                 onNavItemClick={handleNavItemClick}
                 navigatingTo={navigatingTo}
             />
             <div
-                className="flex flex-col flex-grow transition-all duration-300 ease-in-out"
-                style={{
-                    marginLeft: sidebarWidth,
-                    width: `calc(100% - ${sidebarWidth})`,
-                    height: '100vh',
-                    overflowY: 'auto',
-                }}
+                className={`flex flex-col flex-grow transition-all duration-300 ease-in-out ${isSidebarCollapsed ? 'lg:ml-[60px]' : 'lg:ml-[205px]'}`}
             >
                 <div
-                    className="fixed top-0 bg-white dark:bg-gray-900 shadow-custom-medium p-5 flex justify-between items-center z-30 transition-all duration-300 ease-in-out"
-                    style={{
-                        left: sidebarWidth,
-                        width: `calc(100% - ${sidebarWidth})`,
-                        height: TOPBAR_HEIGHT,
-                    }}
+                    className={`fixed top-0 bg-white dark:bg-gray-900 shadow-custom-medium p-5 flex justify-between items-center z-20 transition-all duration-300 ease-in-out w-full ${isSidebarCollapsed ? 'lg:w-[calc(100%-60px)] lg:left-[60px]' : 'lg:w-[calc(100%-205px)] lg:left-[205px]'}`}
+                    style={{ height: TOPBAR_HEIGHT }}
                 >
                     <InstructorTopbar
-                        onToggleSidebar={toggleSidebar}
+                        onToggleSidebar={isSmallScreen ? toggleMobileSidebar : toggleDesktopSidebar}
                         isSidebarCollapsed={isSidebarCollapsed}
+                        isMobileSidebarOpen={isMobileSidebarOpen}
+                        isSmallScreen={isSmallScreen}
                         onUserIconClick={handleUserIconClick}
                         breadcrumbs={breadcrumbs}
                         userIconRef={userIconRef}
                         onNotificationIconClick={handleToggleInstructorNotificationPopup}
                         notificationIconRef={notificationIconRef}
                         hasUnreadNotifications={hasUnreadInstructorNotifications}
-                        showToggleButton={!isSmallScreen}
+                        showToggleButton={true}
                     />
                 </div>
                 <div className="flex flex-col flex-grow" style={{ paddingTop: TOPBAR_HEIGHT }}>

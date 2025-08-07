@@ -37,7 +37,7 @@ const NavItem = ({ href, icon: Icon, label, isActive, isCollapsed, onClick, isNa
 const profileFetcher = ([, token]) => authService.getProfile(token);
 const sessionFetcher = (url) => fetch(url).then(res => res.json());
 
-const InstructorSidebar = ({ isCollapsed, activeItem, onNavItemClick, navigatingTo }) => {
+const InstructorSidebar = ({ isCollapsed, isMobileOpen, activeItem, onNavItemClick, navigatingTo }) => {
     const { data: session, isLoading: isSessionLoading } = useSWR('/api/auth/session', sessionFetcher);
     const token = session?.accessToken;
 
@@ -53,32 +53,34 @@ const InstructorSidebar = ({ isCollapsed, activeItem, onNavItemClick, navigating
         { id: 'schedule', href: '/instructor/schedule', icon: ScheduleIcon, label: 'Schedule' },
     ];
 
+    const finalIsCollapsed = isCollapsed && !isMobileOpen;
+
     return (
-        <div id="sidebar" className={`sidebar fixed h-full bg-white dark:bg-gray-900 shadow-custom-medium py-5 flex flex-col transition-all duration-300 ease-in-out z-40`} style={{ width: isCollapsed ? '60px' : '205px' }}>
-            <div className={`logo h-[50px] mb-5 flex items-center justify-center ${isCollapsed ? 'px-0' : 'px-5'}`}>
-                <Image src="/images/LOGO-NUM-1.png" alt="NUM Logo" width={isCollapsed ? 0 : 150} height={50} className={`logo-img ${isCollapsed ? 'hidden' : 'block h-[50px]'}`} style={{ width: isCollapsed ? 0 : 'auto' }} />
-                <span className={`logo-text-collapsed font-bold text-lg text-black ${isCollapsed ? 'block' : 'hidden'}`}>
+        <div id="sidebar" className={`sidebar fixed top-0 left-0 h-full bg-white dark:bg-gray-900 shadow-custom-medium py-5 flex flex-col transition-transform duration-300 ease-in-out z-40 ${finalIsCollapsed ? 'lg:w-[60px]' : 'lg:w-[205px]'} ${isMobileOpen ? 'translate-x-0 w-[205px]' : '-translate-x-full lg:translate-x-0'}`}>
+            <div className={`logo h-[50px] mb-5 flex items-center justify-center ${finalIsCollapsed ? 'px-0' : 'px-5'}`}>
+                <Image src="/images/LOGO-NUM-1.png" alt="NUM Logo" width={finalIsCollapsed ? 0 : 150} height={50} className={`logo-img ${finalIsCollapsed ? 'hidden' : 'block h-[50px]'}`} style={{ width: finalIsCollapsed ? 0 : 'auto' }} />
+                <span className={`logo-text-collapsed font-bold text-lg text-black ${finalIsCollapsed ? 'block' : 'hidden'}`}>
                     <Image src="/images/LOGO-NUM-1.png" alt="NUM Logo" width={32} height={32} />
                 </span>
             </div>
             <hr className="border-t border-num-gray-light dark:border-gray-700" />
             <div className="profile-info flex flex-col items-center my-7 overflow-hidden">
-                <div className={`profile-avatar rounded-full mb-4 flex justify-center items-center ${isCollapsed ? 'w-10 h-10' : 'w-20 h-20'}`}>
+                <div className={`profile-avatar rounded-full mb-4 flex justify-center items-center ${finalIsCollapsed ? 'w-10 h-10' : 'w-20 h-20'}`}>
                     {isLoading ? (
-                         <div className={`rounded-full bg-gray-300 dark:bg-gray-600 animate-pulse ${isCollapsed ? 'h-10 w-10' : 'h-[79px] w-[79px]'}`}></div>
+                         <div className={`rounded-full bg-gray-300 dark:bg-gray-600 animate-pulse ${finalIsCollapsed ? 'h-10 w-10' : 'h-[79px] w-[79px]'}`}></div>
                     ) : user?.profile ? (
                         <Image
                             src={user.profile}
                             alt={user.name || "Instructor Avatar"}
-                            width={isCollapsed ? 40 : 80}
-                            height={isCollapsed ? 40 : 80}
+                            width={finalIsCollapsed ? 40 : 80}
+                            height={finalIsCollapsed ? 40 : 80}
                             className={`w-full h-full rounded-full object-cover`}
                         />
                     ) : (
-                        <InstructorAvatarIcon className={`text-gray-700 dark:text-gray-400 ${isCollapsed ? 'h-16 w-16' : 'h-22 w-22'}`} />
+                        <InstructorAvatarIcon className={`text-gray-700 dark:text-gray-400 ${finalIsCollapsed ? 'h-16 w-16' : 'h-22 w-22'}`} />
                     )}
                 </div>
-                <div className={`profile-texts-wrapper transition-opacity duration-200 ease-in-out px-2 ${isCollapsed ? 'opacity-0 max-w-0 h-0 overflow-hidden' : 'opacity-100 max-w-full'}`}>
+                <div className={`profile-texts-wrapper transition-opacity duration-200 ease-in-out px-2 ${finalIsCollapsed ? 'opacity-0 max-w-0 h-0 overflow-hidden' : 'opacity-100 max-w-full'}`}>
                     {isLoading ? (
                         <div className="space-y-2">
                             <div className="h-6 bg-gray-300 dark:bg-gray-600 rounded w-24 mx-auto"></div>
@@ -104,7 +106,7 @@ const InstructorSidebar = ({ isCollapsed, activeItem, onNavItemClick, navigating
             </div>
             <nav className="nav-menu flex-grow mt-4 px-2">
                 {navItemsData.map((item) => (
-                    <NavItem key={item.id} href={item.href} icon={item.icon} label={item.label} isActive={activeItem === item.id} isCollapsed={isCollapsed} onClick={() => onNavItemClick(item)} isNavigating={navigatingTo === item.id} />
+                    <NavItem key={item.id} href={item.href} icon={item.icon} label={item.label} isActive={activeItem === item.id} isCollapsed={finalIsCollapsed} onClick={() => onNavItemClick(item)} isNavigating={navigatingTo === item.id} />
                 ))}
             </nav>
         </div>
