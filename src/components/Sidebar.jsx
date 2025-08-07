@@ -86,13 +86,13 @@ const Sidebar = ({ isCollapsed, isMobileOpen, activeItem, onNavItemClick, naviga
                     ) : (
                         <>
                             <div 
-                                className="profile-name max-w-[200px] text-center font-semibold text-base text-black dark:text-white mb-1 whitespace-nowrap truncate"
+                                className="profile-name max-w-[200px] text-center font-semibold sm:text-base text-sm text-black dark:text-white mb-1 whitespace-nowrap truncate"
                                 title={ user.firstName ? `${user.firstName}` : 'Admin'}
                             >
                                 { user.firstName ? `${user.firstName}` : 'Admin'}
                             </div>
                             <div 
-                                className="profile-email text-center text-[10px] text-num-gray dark:text-gray-200 whitespace-nowrap truncate"
+                                className="profile-email text-center sm:text-[10px] text-[8px] text-num-gray dark:text-gray-200 whitespace-nowrap truncate"
                                 title={user.email || 'NA'}
                             >
                                 {user.email || 'NA'}

@@ -14,7 +14,7 @@ const Topbar = ({ onToggleSidebar, isSidebarCollapsed, isMobileSidebarOpen, isSm
         {showToggleButton && (
           <div
             id="sidebar-toggle"
-            className="sidebar-toggle-btn text-xl cursor-pointer mr-4 p-2 rounded text-black dark:text-white hover:bg-blue-100 dark:hover:bg-blue-600 select-none leading-none"
+            className="sidebar-toggle-btn sm:text-xl text-md cursor-pointer mr-4 sm:p-2 p-1 rounded text-black dark:text-white hover:bg-blue-100 dark:hover:bg-blue-600 select-none leading-none"
             title={
               isSmallScreen
                 ? (isMobileSidebarOpen ? "Close Menu" : "Open Menu")
@@ -25,7 +25,7 @@ const Topbar = ({ onToggleSidebar, isSidebarCollapsed, isMobileSidebarOpen, isSm
             {showCloseIcon ? <span dangerouslySetInnerHTML={{ __html: '&#x2715;' }} /> : <span dangerouslySetInnerHTML={{ __html: '&#9776;' }} />}
           </div>
         )}
-        <div className="page-title font-medium sm:text-xl text-base text-black dark:text-white">
+        <div className="page-title font-medium sm:text-xl text-sm text-black dark:text-white">
           <span className="lg:hidden">NUM</span>
           <span className="hidden lg:inline">National University of Management</span>
           <div className="dashboard sm:text-sm text-xs font-normal text-blue-600 mt-1 flex items-center">
