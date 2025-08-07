@@ -31,11 +31,9 @@ const NavItem = ({ href, icon: Icon, label, isActive, isCollapsed, onClick, isNa
     </Link>
 );
 
-// SWR fetcher function for profile data
 const profileFetcher = ([, token]) => authService.getProfile(token);
 
-// The main Sidebar component now fetches its own data
-const Sidebar = ({ isCollapsed, activeItem, onNavItemClick, navigatingTo }) => {
+const Sidebar = ({ isCollapsed, isMobileOpen, activeItem, onNavItemClick, navigatingTo }) => {
     const { data: session } = useSession();
     const token = session?.accessToken;
 
@@ -52,34 +50,34 @@ const Sidebar = ({ isCollapsed, activeItem, onNavItemClick, navigatingTo }) => {
         { id: 'schedule', href: '/admin/schedule', icon: ScheduleIcon, label: 'Schedule' },
     ];
 
+    const finalIsCollapsed = isCollapsed && !isMobileOpen;
+
     return (
-        <div id="sidebar" className={`sidebar fixed h-full bg-white dark:bg-gray-900 shadow-custom-medium py-5 flex flex-col transition-all duration-300 ease-in-out z-40`} style={{ width: isCollapsed ? '60px' : '205px' }}>
-            <div className={`logo h-[50px] mb-5 flex items-center justify-center ${isCollapsed ? 'px-0' : 'px-5'}`}>
-                <Image src="/images/LOGO-NUM-1.png" alt="NUM Logo" width={isCollapsed ? 0 : 150} height={50} className={`logo-img ${isCollapsed ? 'hidden' : 'block h-[50px]'}`} style={{ width: isCollapsed ? 0 : 'auto' }} />
-                <span className={`logo-text-collapsed font-bold text-lg text-black ${isCollapsed ? 'block' : 'hidden'}`}>
+        <div id="sidebar" className={`sidebar fixed top-0 left-0 h-full bg-white dark:bg-gray-900 shadow-custom-medium py-5 flex flex-col transition-all duration-300 ease-in-out z-40 ${finalIsCollapsed ? 'lg:w-[60px]' : 'lg:w-[205px]'} ${isMobileOpen ? 'translate-x-0 w-[205px]' : '-translate-x-full lg:translate-x-0'}`}>
+            <div className={`logo h-[50px] mb-5 flex items-center justify-center ${finalIsCollapsed ? 'px-0' : 'px-5'}`}>
+                <Image src="/images/LOGO-NUM-1.png" alt="NUM Logo" width={finalIsCollapsed ? 0 : 150} height={50} className={`logo-img ${finalIsCollapsed ? 'hidden' : 'block h-[50px]'}`} style={{ width: finalIsCollapsed ? 0 : 'auto' }} />
+                <span className={`logo-text-collapsed font-bold text-lg text-black ${finalIsCollapsed ? 'block' : 'hidden'}`}>
                     <Image src="/images/LOGO-NUM-1.png" alt="NUM Logo" width={32} height={32} />
                 </span>
             </div>
             <hr className="border-t border-num-gray-light dark:border-gray-700" />
             <div className="profile-info flex flex-col items-center my-7 overflow-hidden">
-                <div className={`profile-avatar rounded-full mb-4 flex justify-center items-center ${isCollapsed ? 'w-10 h-10' : 'w-20 h-20'}`}>
-                    {/* FIX: Show skeleton if loading OR if data is not yet available */}
+                <div className={`profile-avatar rounded-full mb-4 flex justify-center items-center ${finalIsCollapsed ? 'w-10 h-10' : 'w-20 h-20'}`}>
                     {(isLoading || !user) ? (
-                         <div className={`rounded-full bg-gray-300 dark:bg-gray-600 animate-pulse ${isCollapsed ? 'h-10 w-10' : 'h-[79px] w-[79px]'}`}></div>
+                         <div className={`rounded-full bg-gray-300 dark:bg-gray-600 animate-pulse ${finalIsCollapsed ? 'h-10 w-10' : 'h-[79px] w-[79px]'}`}></div>
                     ) : user.profile ? (
                         <Image
                             src={user.profile}
                             alt={user.name || "Admin Avatar"}
-                            width={isCollapsed ? 40 : 80}
-                            height={isCollapsed ? 40 : 80}
+                            width={finalIsCollapsed ? 40 : 80}
+                            height={finalIsCollapsed ? 40 : 80}
                             className={`w-full h-full rounded-full object-cover`}
                         />
                     ) : (
-                        <AdminAvatarIcon className={`text-gray-700 dark:text-gray-400 ${isCollapsed ? 'h-22 w-22' : 'h-34 w-34'}`} />
+                        <AdminAvatarIcon className={`text-gray-700 dark:text-gray-400 ${finalIsCollapsed ? 'h-22 w-22' : 'h-34 w-34'}`} />
                     )}
                 </div>
-                <div className={`profile-texts-wrapper transition-opacity duration-200 ease-in-out px-2 ${isCollapsed ? 'opacity-0 max-w-0 h-0 overflow-hidden' : 'opacity-100 max-w-full'}`}>
-                    {/* FIX: Show skeleton if loading OR if data is not yet available */}
+                <div className={`profile-texts-wrapper transition-opacity duration-200 ease-in-out px-2 ${finalIsCollapsed ? 'opacity-0 max-w-0 h-0 overflow-hidden' : 'opacity-100 max-w-full'}`}>
                     {(isLoading || !user) ? (
                         <div className="space-y-2">
                             <div className="h-6 bg-gray-300 dark:bg-gray-600 rounded w-24 mx-auto"></div>
@@ -88,13 +86,13 @@ const Sidebar = ({ isCollapsed, activeItem, onNavItemClick, navigatingTo }) => {
                     ) : (
                         <>
                             <div 
-                                className="profile-name max-w-[200px] text-center font-semibold text-base text-black dark:text-white mb-1 whitespace-nowrap truncate"
+                                className="profile-name max-w-[200px] text-center font-semibold sm:text-base text-sm text-black dark:text-white mb-1 whitespace-nowrap truncate"
                                 title={ user.firstName ? `${user.firstName}` : 'Admin'}
                             >
                                 { user.firstName ? `${user.firstName}` : 'Admin'}
                             </div>
                             <div 
-                                className="profile-email text-center text-[10px] text-num-gray dark:text-gray-200 whitespace-nowrap truncate"
+                                className="profile-email text-center sm:text-[10px] text-[8px] text-num-gray dark:text-gray-200 whitespace-nowrap truncate"
                                 title={user.email || 'NA'}
                             >
                                 {user.email || 'NA'}
@@ -105,7 +103,7 @@ const Sidebar = ({ isCollapsed, activeItem, onNavItemClick, navigatingTo }) => {
             </div>
             <nav className="nav-menu flex-grow mt-4 px-2">
                 {navItemsData.map((item) => (
-                    <NavItem key={item.id} href={item.href} icon={item.icon} label={item.label} isActive={activeItem === item.id} isCollapsed={isCollapsed} onClick={() => onNavItemClick(item)} isNavigating={navigatingTo === item.id} />
+                    <NavItem key={item.id} href={item.href} icon={item.icon} label={item.label} isActive={activeItem === item.id} isCollapsed={finalIsCollapsed} onClick={() => onNavItemClick(item)} isNavigating={navigatingTo === item.id} />
                 ))}
             </nav>
         </div>

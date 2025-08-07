@@ -13,7 +13,7 @@ import Toast from '@/components/Toast';
 const InstructorCreatePopup = lazy(() => import('./InstructorCreatePopup'));
 
 // --- Reusable Icon and Spinner Components ---
-const Spinner = () => ( <svg className="animate-spin h-5 w-5 text-gray-500 dark:text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> );
+const Spinner = () => ( <svg className="animate-spin sm:h-5 h-3 sm:w-5 w-3 text-gray-500 dark:text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> );
 const EditIcon = ({ className = "w-[14px] h-[14px]" }) => ( <svg className={className} viewBox="0 0 17 17" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M8.06671 2.125H4.95837C3.00254 2.125 2.12504 3.0025 2.12504 4.95833V12.0417C2.12504 13.9975 3.00254 14.875 4.95837 14.875H12.0417C13.9975 14.875 14.875 13.9975 14.875 12.0417V8.93333" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/><path d="M10.6579 3.2658L6.28042 7.64327C6.10542 7.81827 5.93042 8.15055 5.89125 8.3928L5.64958 10.112C5.56625 10.7037 6.01958 11.157 6.61125 11.0737L8.33042 10.832C8.57292 10.7928 8.90542 10.6178 9.08042 10.4428L13.4579 6.0653C14.2662 5.25705 14.5796 4.26827 13.4579 3.14662C12.3362 2.03205 11.3479 2.45705 10.6579 3.2658Z" stroke="currentColor" strokeWidth="1.2" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round"/><path d="M9.8999 4.02502C10.2716 5.66752 11.0583 6.45419 12.7008 6.82585" stroke="currentColor" strokeWidth="1.2" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round"/></svg> );
 const ArchiveIcon = ({ className = "w-[14px] h-[14px]" }) => ( <svg className={className} viewBox="0 0 17 17" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M14.1667 5.66667V12.0417C14.1667 13.9975 13.2892 14.875 11.3334 14.875H5.66671C3.71087 14.875 2.83337 13.9975 2.83337 12.0417V5.66667" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/><path d="M14.875 2.125H2.125L2.12504 5.66667H14.875V2.125Z" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/><path d="M7.79163 8.5H9.20829" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/></svg> );
 const DefaultAvatarIcon = ({ className = "w-12 h-12" }) => ( <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1} stroke="currentColor" className={className}>
@@ -334,89 +334,89 @@ export default function InstructorClientView({ initialInstructors, initialDepart
     }
 
     return (
-        <div className="p-6 dark:text-white">
+        <div className="sm:p-6 p-2 dark:text-white">
             {toast.show && <Toast message={toast.message} type={toast.type} onClose={() => setToast({ ...toast, show: false })} />}
             <div className="flex items-center justify-between">
-                <h1 className="text-lg font-bold">Instructor List</h1>
+                <h1 className="sm:text-lg text-sm font-bold">Instructor List</h1>
             </div>
-            <hr className="border-t border-slate-300 dark:border-slate-700 mt-4 mb-4" />
-            <div className="flex items-center justify-between mt-2 mb-4 gap-2">
+            <hr className="border-t border-slate-300 dark:border-slate-700 sm:mt-4 mt-2 sm:mb-4 mb-2" />
+            <div className="flex items-center justify-between mt-2 sm:mb-4 mb-2 sm:gap-2 gap-1">
                 <div className="flex items-center gap-2">
                     <input
                         type="text"
                         placeholder="Search ..."
                         value={globalSearchTerm}
                         onChange={(e) => {setGlobalSearchTerm(e.target.value); setCurrentPage(1);}}
-                        className="block md:w-72 sm:w-52 w-32 p-2 text-xs font-medium text-gray-900 bg-white border border-gray-200 rounded-lg hover:bg-gray-100 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:hover:text-white dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-600 dark:focus:ring-offset-gray-800"
+                        className="block md:w-72 sm:w-52 w-16 sm:p-2 p-1.5 sm:text-xs text-[7px] font-medium text-gray-900 bg-white border border-gray-200 rounded-lg hover:bg-gray-100 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:hover:text-white dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-600 dark:focus:ring-offset-gray-800"
                     />
                      <div ref={filterMenuRef} className="relative inline-block text-left">
                         <div>
-                            <button type="button" onClick={() => setIsFilterMenuOpen(!isFilterMenuOpen)} className="inline-flex justify-center w-full rounded-lg border border-gray-300 shadow-sm px-4 py-1.5 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-600 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-600 dark:focus:ring-offset-gray-800" id="menu-button" aria-expanded="true" aria-haspopup="true">
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-5">
+                            <button type="button" onClick={() => setIsFilterMenuOpen(!isFilterMenuOpen)} className="inline-flex justify-center w-full rounded-lg border border-gray-300 shadow-sm sm:px-4 px-2 py-1.5 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-600 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-600 dark:focus:ring-offset-gray-800" id="menu-button" aria-expanded="true" aria-haspopup="true">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="sm:size-5 size-3">
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 1 1-3 0m3 0a1.5 1.5 0 1 0-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-9.75 0h9.75" />
                                 </svg>
                             </button>
                         </div>
                         {isFilterMenuOpen && (
-                        <div className="origin-top-left absolute left-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none dark:bg-gray-800 dark:ring-gray-700 z-10" role="menu" aria-orientation="vertical" aria-labelledby="menu-button" tabIndex="-1">
+                        <div className="origin-top-left absolute left-0 mt-2 sm:w-56 w-32 rounded-lg shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none dark:bg-gray-800 dark:ring-gray-700 z-10" role="menu" aria-orientation="vertical" aria-labelledby="menu-button" tabIndex="-1">
                             <div className="py-1" role="none">
-                                <div className="px-4 py-2 text-xs text-gray-400">Status</div>
-                                <button onClick={() => setStatusFilter('active')} className={`${statusFilter === 'active' ? 'bg-gray-100 text-gray-900 dark:bg-gray-700 dark:text-white' : 'text-gray-700 dark:text-gray-300'} hover:bg-gray-200 hover:dark:bg-gray-600 block w-full text-left px-4 py-2 text-sm`} role="menuitem" tabIndex="-1">Active</button>
-                                <button onClick={() => setStatusFilter('archived')} className={`${statusFilter === 'archived' ? 'bg-gray-100 text-gray-900 dark:bg-gray-700 dark:text-white' : 'text-gray-700 dark:text-gray-300'} hover:bg-gray-200 hover:dark:bg-gray-600 block w-full text-left px-4 py-2 text-sm`} role="menuitem" tabIndex="-1">Archived</button>
-                                <button onClick={() => setStatusFilter('all')} className={`${statusFilter === 'all' ? 'bg-gray-100 text-gray-900 dark:bg-gray-700 dark:text-white' : 'text-gray-700 dark:text-gray-300'} hover:bg-gray-200 hover:dark:bg-gray-600 block w-full text-left px-4 py-2 text-sm`} role="menuitem" tabIndex="-1">All</button>
+                                <div className="sm:px-4 px-2 sm:py-2 py-1 sm:text-xs text-[7px] font-medium text-gray-400">Status</div>
+                                <button onClick={() => setStatusFilter('active')} className={`${statusFilter === 'active' ? 'bg-gray-100 text-gray-900 dark:bg-gray-700 dark:text-white' : 'text-gray-700 dark:text-gray-300'} hover:bg-gray-200 hover:dark:bg-gray-600 block w-full text-left sm:px-4 px-2 sm:py-2 py-1 sm:text-sm text-[7px]`} role="menuitem" tabIndex="-1">Active</button>
+                                <button onClick={() => setStatusFilter('archived')} className={`${statusFilter === 'archived' ? 'bg-gray-100 text-gray-900 dark:bg-gray-700 dark:text-white' : 'text-gray-700 dark:text-gray-300'} hover:bg-gray-200 hover:dark:bg-gray-600 block w-full text-left sm:px-4 px-2 sm:py-2 py-1 sm:text-sm text-[7px]`} role="menuitem" tabIndex="-1">Archived</button>
+                                <button onClick={() => setStatusFilter('all')} className={`${statusFilter === 'all' ? 'bg-gray-100 text-gray-900 dark:bg-gray-700 dark:text-white' : 'text-gray-700 dark:text-gray-300'} hover:bg-gray-200 hover:dark:bg-gray-600 block w-full text-left sm:px-4 px-2 sm:py-2 py-1 sm:text-sm text-[7px]`} role="menuitem" tabIndex="-1">All</button>
                             </div>
                         </div>
                         )}
                     </div>
                 </div>
-                <button type="button" onClick={() => setShowCreateInstructorPopup(true)} className="text-white bg-[#75B846] hover:bg-[#87D94D] focus:ring-2 focus:ring-green-600 font-medium rounded-md text-xs px-3 py-2 text-center inline-flex items-center dark:bg-[#75B846] me-2 dark:hover:bg-[#79c344] dark:focus:ring-green-800 gap-1">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-4"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+                <button type="button" onClick={() => setShowCreateInstructorPopup(true)} className="text-white bg-[#75B846] hover:bg-[#87D94D] focus:ring-2 focus:ring-green-600 font-medium rounded-md sm:text-xs text-[7px] sm:px-3 px-1.5 sm:py-2 py-1.5 text-center inline-flex items-center dark:bg-[#75B846] me-2 dark:hover:bg-[#79c344] dark:focus:ring-green-800 gap-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="sm:size-4 size-2"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
                     Create
                 </button>
             </div>
-             <div className="relative overflow-x-auto border border-gray-200 dark:border-gray-600 rounded-lg">
-                <table className="w-full rounded-lg text-sm text-left rtl:text-right text-gray-500">
-                    <thead className="text-xs text-gray-700 border-b border-gray-200 bg-gray-50 dark:text-gray-400 dark:border-gray-600 dark:bg-gray-700">
+             <div className="relative overflow-x-auto border border-gray-200 dark:border-gray-600 sm:rounded-lg rounded-md">
+                <table className="w-full rounded-lg sm:text-xs text-[7px] text-left rtl:text-right text-gray-500">
+                    <thead className="sm:text-xs text-[7px] text-gray-700 border-b border-gray-200 bg-gray-50 dark:text-gray-400 dark:border-gray-600 dark:bg-gray-700">
                         <tr>
-                            <th scope="col" className="px-6 py-2.5"> Action </th>
-                            <th scope="col" className="px-6 py-2.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600">
-                                <div className="flex items-center" onClick={() => handleSort('name')}> Name {getSortIndicator('name')}</div> 
+                            <th scope="col" className="sm:px-6 px-2 sm:py-2.5 py-1.5 md:table-cell hidden"> Action </th>
+                            <th scope="col" className="sm:px-6 px-2 sm:py-2.5 py-1.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600" onClick={() => handleSort('name')}>
+                                <div className="flex items-center"> Name {getSortIndicator('name')}</div> 
                             </th>
-                            <th scope="col" className="px-6 py-2.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 sm:table-cell hidden">
+                            <th scope="col" className="sm:px-6 px-2 sm:py-2.5 py-1.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 sm:table-cell hidden">
                                 <div className="flex items-center" onClick={() => handleSort('email')}> Email {getSortIndicator('email')}</div>
                             </th>
-                            <th scope="col" className="px-6 py-2.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 lg:table-cell hidden">
+                            <th scope="col" className="sm:px-6 px-2 sm:py-2.5 py-1.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 lg:table-cell hidden">
                                 <div className="flex items-center" onClick={() => handleSort('phone')}> Phone {getSortIndicator('phone')}</div>
                             </th>
-                            <th scope="col" className="px-6 py-2.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600">
+                            <th scope="col" className="sm:px-6 px-2 sm:py-2.5 py-1.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600">
                                 <div className="flex items-center" onClick={() => handleSort('majorStudied')}> Major {getSortIndicator('majorStudied')}</div>
                             </th>
-                            <th scope="col" className="px-6 py-2.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 sm:table-cell hidden">
+                            <th scope="col" className="sm:px-6 px-2 sm:py-2.5 py-1.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 sm:table-cell hidden">
                                 <div className="flex items-center" onClick={() => handleSort('qualifications')}> Degree {getSortIndicator('qualifications')}</div>
                             </th>
-                            <th scope="col" className="px-6 py-2.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600">
+                            <th scope="col" className="sm:px-6 px-2 sm:py-2.5 py-1.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600">
                                 <div className="flex items-center" onClick={() => handleSort('status')}> Status {getSortIndicator('status')}</div>
                             </th>
                         </tr>
                     </thead>
-                    <tbody className="text-xs font-normal text-gray-700 dark:text-gray-400">
+                    <tbody className="sm:text-xs text-[7px] font-normal text-gray-700 dark:text-gray-400">
                         {currentTableData.length > 0 ? (
                             currentTableData.map((data) => (
                                 <tr key={data.id} className={`bg-white border-b border-gray-200 dark:bg-gray-800 dark:border-gray-700 ${ (isPending && rowLoadingId === data.id) ? 'cursor-wait bg-gray-100 dark:bg-gray-700' : 'hover:bg-gray-50 dark:hover:bg-gray-600 cursor-pointer'}`} onClick={() => handleRowClick(data.id)}>
                                     {(isPending && rowLoadingId === data.id) ? (
-                                        <td colSpan={7} className="px-6 py-1 text-center"><div className="flex justify-center items-center h-10"><Spinner /></div></td>
+                                        <td colSpan={7} className="sm:px-6 px-2 sm:py-2.5 py-1.5 text-center"><div className="flex justify-center items-center sm:h-10 h-5"><Spinner /></div></td>
                                     ) : (
                                         <>
-                                            <td scope="row" className="px-6 py-2.5 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                                            <td scope="row" className="sm:px-6 px-2 sm:py-2.5 py-1.5 font-medium text-gray-900 whitespace-nowrap dark:text-white md:table-cell hidden">
                                                 <div className="flex gap-2">
                                                     <button onClick={(e) => { e.stopPropagation(); handleRowClick(data.id); }} className={`p-1 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300`}><EditIcon className="size-4" /></button>
                                                     <button onClick={(e) => { e.stopPropagation(); toggleInstructorStatus(data.id); }} className={`p-1 ${data.status === 'active' ? 'text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300' : 'text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300'}`} title={data.status === 'active' ? 'Archive Instructor' : 'Activate Instructor'}><ArchiveIcon className="size-4" /></button>
                                                 </div>
                                             </td>
-                                            <td className="px-6 py-2">
+                                            <td className="sm:px-6 px-2 sm:py-2.5 py-1.5">
                                                 <div className="flex items-center gap-2">
                                                     {data.profileImage ? 
-                                                        <img src={data.profileImage} alt={data.name} className="w-8 h-8 rounded-full object-cover border border-gray-200 dark:border-gray-600 flex-shrink-0"/> 
+                                                        <img src={data.profileImage} alt={data.name} className="sm:w-8 w-4 sm:h-8 h-4 rounded-full object-cover border border-gray-200 dark:border-gray-600 flex-shrink-0"/> 
                                                         : <DefaultAvatarIcon className="size-8 rounded-full text-gray-400 bg-gray-100 dark:bg-gray-700 dark:text-gray-500 flex-shrink-0" />
                                                     }
                                                     <div className="max-w-[100px]">
@@ -424,19 +424,19 @@ export default function InstructorClientView({ initialInstructors, initialDepart
                                                     </div>
                                                 </div>
                                             </td>
-                                            <td className="px-6 py-2 sm:table-cell hidden">
+                                            <td className="sm:px-6 px-2 sm:py-2.5 py-1.5 sm:table-cell hidden">
                                                 <div className="max-w-[120px] truncate" title={data.email}>
                                                     {data.email}
                                                 </div>
                                             </td>
-                                            <td className="px-6 py-2 lg:table-cell hidden truncate"> {formatPhoneNumber(data.phone)} </td>
-                                            <td className="px-6 py-2">
+                                            <td className="sm:px-6 px-2 sm:py-2.5 py-1.5 lg:table-cell hidden truncate"> {formatPhoneNumber(data.phone)} </td>
+                                            <td className="sm:px-6 px-2 sm:py-2.5 py-1.5">
                                                 <div className="max-w-[120px] truncate" title={data.majorStudied}>
                                                     {data.majorStudied}
                                                 </div>
                                             </td>
-                                            <td className="px-6 py-2 sm:table-cell hidden truncate"> {data.qualifications} </td>
-                                            <td className="px-6 py-2 capitalize"><span className={`px-2 py-0.5 rounded-full text-xs font-medium ${ data.status === 'active' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200' }`}>{data.status}</span></td>
+                                            <td className="sm:px-6 px-2 sm:py-2.5 py-1.5 sm:table-cell hidden truncate"> {data.qualifications} </td>
+                                            <td className="sm:px-6 px-2 sm:py-2.5 py-1.5 capitalize"><span className={`px-2 py-0.5 rounded-full sm:text-xs text-[7px] font-medium ${ data.status === 'active' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200' }`}>{data.status}</span></td>
                                         </>
                                     )}
                                 </tr>
@@ -445,43 +445,43 @@ export default function InstructorClientView({ initialInstructors, initialDepart
                             <tr className="bg-white dark:bg-gray-800"><td colSpan="7" className="px-6 py-4 text-center text-gray-500 dark:text-gray-400">No matching results found.</td></tr>
                         )}
                     </tbody>
-                    <tfoot className="text-xs text-gray-700 border-t border-gray-200 bg-gray-50 dark:text-gray-400 dark:border-gray-600 dark:bg-gray-700">
-                        <tr>
-                            <td className="px-6 py-2.5"></td>
-                            <td className="px-6 py-2.5"><input type="text" placeholder="Search name..." value={searchTexts.name} onChange={(e) => handleSearchChange('name', e.target.value)} className="block w-full p-1.5 text-xs text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2" /></td>
-                            <td className="px-6 py-2.5 sm:table-cell hidden"><input type="text" placeholder="Search email..." value={searchTexts.email} onChange={(e) => handleSearchChange('email', e.target.value)} className="block w-full p-1.5 text-xs text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2" /></td>
-                            <td className="px-6 py-2.5 lg:table-cell hidden"><input type="text" placeholder="Search phone..." value={searchTexts.phone} onChange={(e) => handleSearchChange('phone', e.target.value)} className="block w-full p-1.5 text-xs text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2" /></td>
-                            <td className="px-6 py-2.5"><input type="text" placeholder="Search major..." value={searchTexts.majorStudied} onChange={(e) => handleSearchChange('majorStudied', e.target.value)} className="block w-full p-1.5 text-xs text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2" /></td>
-                            <td className="px-6 py-2.5 sm:table-cell hidden"><input type="text" placeholder="Search qual..." value={searchTexts.qualifications} onChange={(e) => handleSearchChange('qualifications', e.target.value)} className="block w-full p-1.5 text-xs text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2" /></td>
-                            <td className="px-6 py-2.5"></td>
+                    <tfoot className="sm:text-xs text-[7px] text-gray-700 border-t border-gray-200 bg-gray-50 dark:text-gray-400 dark:border-gray-600 dark:bg-gray-700">
+                        <tr className='sm:text-xs text-[7px]'>
+                            <td className="sm:px-6 px-2 sm:py-2.5 py-1.5 md:table-cell hidden"></td>
+                            <td className="sm:px-6 px-2 sm:py-2.5 py-1.5"><input type="text" placeholder="Search name..." value={searchTexts.name} onChange={(e) => handleSearchChange('name', e.target.value)} className="block w-full p-1.5 text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2" /></td>
+                            <td className="sm:px-6 px-2 sm:py-2.5 py-1.5 sm:table-cell hidden"><input type="text" placeholder="Search email..." value={searchTexts.email} onChange={(e) => handleSearchChange('email', e.target.value)} className="block w-full p-1.5 text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2" /></td>
+                            <td className="sm:px-6 px-2 sm:py-2.5 py-1.5 lg:table-cell hidden"><input type="text" placeholder="Search phone..." value={searchTexts.phone} onChange={(e) => handleSearchChange('phone', e.target.value)} className="block w-full p-1.5 text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2" /></td>
+                            <td className="sm:px-6 px-2 sm:py-2.5 py-1.5"><input type="text" placeholder="Search major..." value={searchTexts.majorStudied} onChange={(e) => handleSearchChange('majorStudied', e.target.value)} className="block w-full p-1.5 text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2" /></td>
+                            <td className="sm:px-6 px-2 sm:py-2.5 py-1.5 sm:table-cell hidden"><input type="text" placeholder="Search qual..." value={searchTexts.qualifications} onChange={(e) => handleSearchChange('qualifications', e.target.value)} className="block w-full p-1.5 text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2" /></td>
+                            <td className="sm:px-6 px-2 sm:py-2.5 py-1.5"></td>
                         </tr>
                     </tfoot>
                 </table>
             </div>
             <nav className="flex flex-col sm:flex-row items-center justify-between pt-4 gap-y-4" aria-label="Table navigation">
                 <div className="flex flex-wrap items-center justify-center sm:justify-start gap-4">
-                    <span className="text-xs font-normal text-gray-500 dark:text-gray-400">
+                    <span className="sm:text-xs text-[7px] font-normal text-gray-500 dark:text-gray-400">
                         Showing <span className="font-semibold text-gray-900 dark:text-white">{(currentPage - 1) * itemsPerPage + 1}-{Math.min(currentPage * itemsPerPage, filteredInstructorData.length)}</span> of <span className="font-semibold text-gray-900 dark:text-white">{filteredInstructorData.length}</span>
                     </span>
                     <div className="flex items-center gap-2 text-xs">
-                        <label htmlFor="items-per-page" className="text-xs font-normal text-gray-500 dark:text-gray-400">Items per page:</label>
-                        <select id="items-per-page" value={itemsPerPage} onChange={handleItemsPerPageChange} className="bg-gray-50 text-xs border border-gray-300 text-gray-900 rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-1.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white">
+                        <label htmlFor="items-per-page" className="sm:text-xs text-[7px] font-normal text-gray-500 dark:text-gray-400">Items per page:</label>
+                        <select id="items-per-page" value={itemsPerPage} onChange={handleItemsPerPageChange} className="bg-gray-50 sm:text-xs text-[7px] border border-gray-300 text-gray-900 rounded-lg focus:ring-blue-500 focus:border-blue-500 block sm:p-1.5 p-1 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white">
                             {itemsPerPageOptions.map(option => (<option key={option} value={option}>{option}</option>))}
                         </select>
                     </div>
                 </div>
-                <ul className="inline-flex -space-x-px rtl:space-x-reverse text-xs h-8">
-                    <li><button onClick={goToPreviousPage} disabled={currentPage === 1 || isPending} className="flex items-center justify-center px-3 h-8 ms-0 leading-tight text-gray-500 bg-white border border-gray-300 rounded-s-lg hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white disabled:opacity-50 disabled:cursor-not-allowed">Previous</button></li>
+                <ul className="inline-flex -space-x-px rtl:space-x-reverse sm:text-xs text-[7px] sm:h-8 h-4">
+                    <li><button onClick={goToPreviousPage} disabled={currentPage === 1 || isPending} className="flex items-center justify-center sm:px-3 px-1.5 sm:h-8 h-4 ms-0 leading-tight text-gray-500 bg-white border border-gray-300 rounded-s-lg hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white disabled:opacity-50 disabled:cursor-not-allowed">Previous</button></li>
                     {getPageNumbers().map((pageNumber, index) => (
                         <li key={index}>
                             {pageNumber === '...' ? (
-                                <span className="flex items-center justify-center px-3 h-8 leading-tight text-gray-500 bg-white border border-gray-300 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400">...</span>
+                                <span className="flex items-center justify-center px-3 sm:h-8 h-4 leading-tight text-gray-500 bg-white border border-gray-300 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400">...</span>
                             ) : (
-                                <button onClick={() => goToPage(pageNumber)} disabled={isPending} className={`flex items-center justify-center px-3 h-8 leading-tight border border-gray-300 dark:border-gray-700 ${currentPage === pageNumber ? 'text-blue-600 bg-blue-50 hover:bg-blue-100 hover:text-blue-700 dark:bg-gray-700 dark:text-white' : 'text-gray-500 bg-white hover:bg-gray-100 dark:bg-gray-800 dark:hover:bg-gray-600'} disabled:opacity-50 disabled:cursor-not-allowed`}>{pageNumber}</button>
+                                <button onClick={() => goToPage(pageNumber)} disabled={isPending} className={`flex items-center justify-center sm:px-3 px-1.5 sm:h-8 h-4 leading-tight border border-gray-300 dark:border-gray-700 ${currentPage === pageNumber ? 'text-blue-600 bg-blue-50 hover:bg-blue-100 hover:text-blue-700 dark:bg-gray-700 dark:text-white' : 'text-gray-500 bg-white hover:bg-gray-100 dark:bg-gray-800 dark:hover:bg-gray-600'} disabled:opacity-50 disabled:cursor-not-allowed`}>{pageNumber}</button>
                             )}
                         </li>
                     ))}
-                    <li><button onClick={goToNextPage} disabled={currentPage === totalPages || isPending} className="flex items-center justify-center px-3 h-8 leading-tight text-gray-500 bg-white border border-gray-300 rounded-e-lg hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white disabled:opacity-50 disabled:cursor-not-allowed">Next</button></li>
+                    <li><button onClick={goToNextPage} disabled={currentPage === totalPages || isPending} className="flex items-center justify-center sm:px-3 px-1.5 sm:h-8 h-4 leading-tight text-gray-500 bg-white border border-gray-300 rounded-e-lg hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white disabled:opacity-50 disabled:cursor-not-allowed">Next</button></li>
                 </ul>
             </nav>
             

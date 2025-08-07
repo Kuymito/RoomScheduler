@@ -185,19 +185,19 @@ export default function RoomClientView({ initialRooms }) {
     const getRoomColSpan = (room) => {
         if (!room) return "";
         const id = room.id;
-        if (id === 10 && room.building === "Building A") return "col-span-2";
-        if (id === 34 && room.building === "Building B") return "col-span-4";
+        if (id === 10 && room.building === "Building A") return "md:col-span-2";
+        if (id === 34 && room.building === "Building B") return "sm:col-span-4 col-span-2";
         if ([47, 48, 49].includes(id) && room.building === "Building D") return "col-span-full";
         return "";
     };
     
     const getGridColumnClasses = (building, floorNumber) => {
         switch (building) {
-            case "Building A": return "xl:grid-cols-5 lg:grid-cols-3 md:grid-cols-2 grid-cols-[repeat(auto-fit,minmax(160px,1fr))]";
-            case "Building B": return floorNumber === 2 ? "grid-cols-5" : "xl:grid-cols-5 lg:grid-cols-3 md:grid-cols-2 grid-cols-[repeat(auto-fit,minmax(160px,1fr))]";
-            case "Building C": case "Building F": return "xl:grid-cols-4 lg:grid-cols-2 md:grid-cols-2 grid-cols-[repeat(auto-fit,minmax(160px,1fr))]";
+            case "Building A": return "xl:grid-cols-5 grid-cols-4";
+            case "Building B": return floorNumber === 2 ? "sm:grid-cols-5 grid-cols-3" : "xl:grid-cols-5 grid-cols-3";
+            case "Building C": case "Building F": return "xl:grid-cols-4 grid-cols-4";
             case "Building D": return "grid-cols-1";
-            case "Building E": return floorNumber === 1 ? "xl:grid-cols-6 lg:grid-cols-3 md:grid-cols-2 grid-cols-[repeat(auto-fit,minmax(160px,1fr))]" : "xl:grid-cols-5 lg:grid-cols-3 md:grid-cols-2 grid-cols-[repeat(auto-fit,minmax(160px,1fr))]";
+            case "Building E": return floorNumber === 1 ? "xl:grid-cols-6 grid-cols-3" : "xl:grid-cols-5 grid-cols-3";
             default: return "grid-cols-[repeat(auto-fit,minmax(160px,1fr))]";
         }
     };
@@ -215,12 +215,15 @@ export default function RoomClientView({ initialRooms }) {
     return (
         <>
             {toast.show && <Toast message={toast.message} type={toast.type} onClose={() => setToast({ ...toast, show: false })} />}
-            <div className='p-4 sm:p-6 min-h-full'>
-                <div className="mb-4 w-full"><h2 className="text-xl font-semibold text-slate-800 dark:text-white">Room</h2><hr className="border-t border-slate-300 dark:border-slate-700 mt-3" /></div>
+            <div className='sm:p-6 p-2 min-h-full'>
+                <div className="sm:mb-4 mb-3 w-full">
+                    <h2 className="sm:text-lg text-sm font-bold text-slate-800 dark:text-white">Room</h2>
+                    <hr className="border-t border-slate-300 dark:border-slate-700 sm:mt-4 mt-2" />
+                </div>
                 <div className="flex flex-col lg:flex-row gap-6">
                     <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-3 sm:mb-4">
-                            <select value={selectedBuilding} onChange={handleBuildingChange} className="text-sm font-semibold text-slate-700 bg-white border border-slate-300 dark:text-slate-200 dark:bg-slate-800 dark:border-slate-600 rounded-md px-3 py-2 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                            <select value={selectedBuilding} onChange={handleBuildingChange} className="sm:text-sm text-[11px] sm:font-semibold  text-slate-700 bg-white border border-slate-300 dark:text-slate-200 dark:bg-slate-800 dark:border-slate-600 rounded-md sm:px-3 px-1.5 sm:py-2 py-1 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
                                 {Object.keys(buildings).map((building) => <option key={building} value={building}>{building}</option>)}
                             </select>
                             <hr className="flex-1 border-t border-slate-300 dark:border-slate-700" />
@@ -228,20 +231,20 @@ export default function RoomClientView({ initialRooms }) {
                         <div className="space-y-4">
                             {floors.map(({ floor, rooms }) => (
                                 <div key={floor} className="space-y-3">
-                                    <div className="flex items-center gap-2 mb-2"><h4 className="text-xs sm:text-sm font-medium text-slate-600 dark:text-slate-400 whitespace-nowrap">Floor {floor}</h4><hr className="flex-1 border-t border-slate-300 dark:border-slate-700" /></div>
-                                    <div className={`grid gap-3 sm:gap-4 ${getGridColumnClasses(selectedBuilding, floor)}`}>
+                                    <div className="flex items-center gap-2 mb-2"><h4 className="text-[11px] sm:text-sm sm:font-medium text-slate-600 dark:text-slate-400 whitespace-nowrap">Floor {floor}</h4><hr className="flex-1 border-t border-slate-300 dark:border-slate-700" /></div>
+                                    <div className={`grid gap-1.5 sm:gap-4 ${getGridColumnClasses(selectedBuilding, floor)}`}>
                                         {rooms.map((roomId) => {
                                             const room = allRoomsData[roomId];
                                             if (!room) return null;
                                             const isSelected = selectedRoomId === room.id;
                                             return (
-                                                <div key={room.id} className={`h-[90px] sm:h-[100px] border rounded-md flex flex-col transition-all duration-150 shadow-sm cursor-pointer hover:shadow-md bg-white dark:bg-slate-800 ${getRoomColSpan(room)} ${isSelected ? "border-blue-500 ring-2 ring-blue-500 dark:border-blue-500" : "border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600"}`}
+                                                <div key={room.id} className={`h-[70px] sm:h-[100px] border rounded-md flex flex-col transition-all duration-150 shadow-sm cursor-pointer hover:shadow-md bg-white dark:bg-slate-800 ${getRoomColSpan(room)} ${isSelected ? "border-blue-500 ring-2 ring-blue-500 dark:border-blue-500" : "border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600"}`}
                                                     onClick={() => handleRoomClick(room.id)}>
-                                                    <div className={`h-[30px] rounded-t-md flex items-center justify-center px-2 relative border-b ${isSelected ? 'border-b-transparent' : 'border-slate-200 dark:border-slate-600'} bg-slate-50 dark:bg-slate-700`}>
-                                                        <span className={`max-w-[100px] text-xs sm:text-sm font-medium truncate ${isSelected ? 'text-blue-700 dark:text-blue-300' : 'text-slate-700 dark:text-slate-300'}`} title={room.name}>{room.name}</span>
+                                                    <div className={`sm:h-[30px] h-[20px] rounded-t-md flex items-center justify-center px-2 relative border-b ${isSelected ? 'border-b-transparent' : 'border-slate-200 dark:border-slate-600'} bg-slate-50 dark:bg-slate-700`}>
+                                                        <span className={`max-w-[100px] text-[9px] sm:text-[13px] font-medium truncate ${isSelected ? 'text-blue-700 dark:text-blue-300' : 'text-slate-700 dark:text-slate-300'}`} title={room.name}>{room.name}</span>
                                                     </div>
                                                     <div className="flex-1 rounded-b-md p-2 flex flex-col justify-center items-center bg-white dark:bg-slate-800">
-                                                        <span className={`text-xs text-slate-500 dark:text-slate-400 ${isSelected ? "text-slate-600 dark:text-slate-300" : ""}`}>Capacity: {room.capacity}</span>
+                                                        <span className={`text-[7px] xs:text-[9px] sm:text-[11px] text-slate-500 dark:text-slate-400 ${isSelected ? "text-slate-600 dark:text-slate-300" : ""}`}>Capacity: {room.capacity}</span>
                                                     </div>
                                                 </div>
                                             );

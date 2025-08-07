@@ -13,7 +13,7 @@ const AdminPopup = ({ show, onLogoutClick, adminName, adminEmail, isNavigating, 
   if (!show) return null;
 
   return (
-    <div className="admin-popup absolute w-[299px] right-5 top-20 bg-white dark:bg-gray-700 shadow-custom-heavy rounded-[5px] z-[1000]">
+    <div className="admin-popup absolute sm:w-[299px] w-[220px] right-5 top-20 bg-white dark:bg-gray-700 shadow-custom-heavy rounded-[5px] z-[1000]">
       <div className="admin-popup-header w-full h-[84px] bg-num-blue dark:bg-blue-800 rounded-t-[5px] flex flex-col items-center justify-center p-2.5 overflow-hidden">
         {/* UPDATED: Added truncate and title attribute for better UX on long names */}
         <div 

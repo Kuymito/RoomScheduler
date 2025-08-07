@@ -173,18 +173,19 @@ export default function InstructorRoomClientView({ initialAllRoomsData, building
     // Dynamic grid styling functions
     const getGridColumnClasses = (building, floorNumber) => {
         switch (building) {
-            case "Building A": return "xl:grid-cols-5 lg:grid-cols-3 md:grid-cols-2 grid-cols-[repeat(auto-fit,minmax(160px,1fr))]";
-            case "Building B": return floorNumber === 2 ? "grid-cols-5" : "xl:grid-cols-5 lg:grid-cols-3 md:grid-cols-2 grid-cols-[repeat(auto-fit,minmax(160px,1fr))]";
-            case "Building C": case "Building F": return "xl:grid-cols-4 lg:grid-cols-2 md:grid-cols-2 grid-cols-[repeat(auto-fit,minmax(160px,1fr))]";
+            case "Building A": return "xl:grid-cols-5 grid-cols-4";
+            case "Building B": return floorNumber === 2 ? "sm:grid-cols-5 grid-cols-3" : "xl:grid-cols-5 grid-cols-3";
+            case "Building C": case "Building F": return "xl:grid-cols-4 grid-cols-2";
             case "Building D": return "grid-cols-1";
-            case "Building E": return floorNumber === 1 ? "xl:grid-cols-6 lg:grid-cols-3 md:grid-cols-2 grid-cols-[repeat(auto-fit,minmax(160px,1fr))]" : "xl:grid-cols-5 lg:grid-cols-3 md:grid-cols-2 grid-cols-[repeat(auto-fit,minmax(160px,1fr))]";
+            case "Building E": return floorNumber === 1 ? "xl:grid-cols-6 grid-cols-3" : "xl:grid-cols-5 grid-cols-3";
             default: return "grid-cols-[repeat(auto-fit,minmax(160px,1fr))]";
         }
     };
+
     const getRoomColSpan = (room) => {
         if (!room) return "";
         const id = room.id;
-        if (id === 10 && room.building === "Building A") return "col-span-2";
+        if (id === 10 && room.building === "Building A") return "sm:col-span-2";
         if (id === 34 && room.building === "Building B") return "col-span-4";
         if ([47, 48, 49].includes(id) && room.building === "Building D") return "col-span-full";
         return "";
@@ -215,28 +216,28 @@ export default function InstructorRoomClientView({ initialAllRoomsData, building
                 </Suspense>
             )}
 
-            <div className="p-4 sm:p-6 min-h-full">
-                <div className="mb-4 w-full">
-                    <h2 className="text-xl font-semibold text-slate-800 dark:text-white">Room</h2>
-                    <hr className="border-t border-slate-300 dark:border-slate-700 mt-3" />
+            <div className="sm:p-6 p-2 min-h-full">
+                <div className="sm:mb-4 w-full">
+                    <h2 className="sm:text-lg text-sm font-bold text-slate-800 dark:text-white">Room</h2>
+                    <hr className="border-t border-slate-300 dark:border-slate-700 sm:mt-4 mt-2 sm:mb-0.5 mb-3" />
                 </div>
                 <div className="flex flex-col lg:flex-row gap-6">
                     <div className="flex-1 min-w-0">
                         {/* Day and Time Filters */}
                         <div className="flex flex-col sm:flex-row items-center justify-between border-b dark:border-gray-600 pb-3 gap-4 mb-4">
-                            <div className="flex rounded-lg border border-gray-300 dark:border-gray-600 dark:text-gray-300 overflow-hidden w-full sm:w-auto">
-                                {WEEKDAYS.map(day => (<button key={day} onClick={() => handleDayChange(day)} className={`px-3.5 py-1.5 text-sm font-medium transition-colors w-full ${selectedDay === day ? 'bg-blue-600 text-white shadow' : 'border-r dark:border-r-gray-500 last:border-r-0 hover:bg-gray-100 dark:hover:bg-gray-700'}`}>{day.substring(0, 3)}</button>))}
+                            <div className="flex sm:rounded-lg rounded-md border border-gray-300 dark:border-gray-600 dark:text-gray-300 overflow-hidden w-full sm:w-auto">
+                                {WEEKDAYS.map(day => (<button key={day} onClick={() => handleDayChange(day)} className={`sm:px-3.5 px-0.5 sm:py-1.5 py-0.5 sm:text-sm text-[11px] sm:font-medium transition-colors w-full ${selectedDay === day ? 'bg-blue-600 text-white shadow' : 'border-r dark:border-r-gray-500 last:border-r-0 hover:bg-gray-100 dark:hover:bg-gray-700'}`}>{day.substring(0, 3)}</button>))}
                             </div>
                             <div className="flex items-center gap-2 w-full sm:w-auto">
-                                <label htmlFor="time-select" className="text-sm font-medium dark:text-gray-300">Time:</label>
-                                <select id="time-select" value={selectedTimeSlot} onChange={handleTimeChange} className="p-2 text-sm border border-gray-300 rounded-md dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200 focus:ring-blue-500 focus:border-blue-500 w-full">
+                                <label htmlFor="time-select" className="sm:text-sm text-[11px] sm:font-medium dark:text-gray-300">Time:</label>
+                                <select id="time-select" value={selectedTimeSlot} onChange={handleTimeChange} className="sm:p-2 p-1 sm:text-sm text-[11px] border border-gray-300 rounded-md dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200 focus:ring-blue-500 focus:border-blue-500 w-full">
                                     {TIME_SLOTS.map(t => <option key={t} value={t}>{t}</option>)}
                                 </select>
                             </div>
                         </div>
                         {/* Building Selector */}
                         <div className="flex items-center gap-2 mb-3 sm:mb-4">
-                            <select value={selectedBuilding} onChange={handleBuildingChange} className="text-sm font-semibold text-slate-700 bg-white border border-slate-300 dark:text-slate-200 dark:bg-slate-800 dark:border-slate-600 rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500">
+                            <select value={selectedBuilding} onChange={handleBuildingChange} className="sm:text-sm text-[11px] sm:font-semibold text-slate-700 bg-white border border-slate-300 dark:text-slate-200 dark:bg-slate-800 dark:border-slate-600 rounded-md sm:px-3 px-1.5 sm:py-2 py-1 focus:outline-none focus:ring-1 focus:ring-blue-500">
                                 {Object.keys(buildings).map((building) => <option key={building} value={building}>{building}</option>)}
                             </select>
                             <hr className="flex-1 border-t border-slate-300 dark:border-slate-700" />
@@ -245,8 +246,8 @@ export default function InstructorRoomClientView({ initialAllRoomsData, building
                         <div className="space-y-4">
                             {floors.map(({ floor, rooms }) => (
                                 <div key={floor} className="space-y-3">
-                                    <div className="flex items-center gap-2 mb-2"><h4 className="text-xs sm:text-sm font-medium text-slate-600 dark:text-slate-400 whitespace-nowrap">Floor {floor}</h4><hr className="flex-1 border-t border-slate-300 dark:border-slate-700" /></div>
-                                    <div className={`grid gap-3 sm:gap-4 ${getGridColumnClasses(selectedBuilding, floor)}`}>
+                                    <div className="flex items-center gap-2 mb-2"><h4 className="text-[11px] sm:text-sm sm:font-medium text-slate-600 dark:text-slate-400 whitespace-nowrap">Floor {floor}</h4><hr className="flex-1 border-t border-slate-300 dark:border-slate-700" /></div>
+                                    <div className={`grid gap-1.5 sm:gap-4 ${getGridColumnClasses(selectedBuilding, floor)}`}>
                                         {rooms.map((roomId) => {
                                             const room = allRoomsData[roomId];
                                             if (!room) return null;
@@ -259,15 +260,15 @@ export default function InstructorRoomClientView({ initialAllRoomsData, building
                                             return (
                                                 <div
                                                     key={room.id}
-                                                    className={`h-[90px] sm:h-[100px] border rounded-md flex flex-col transition-all duration-150 shadow-sm cursor-pointer hover:shadow-md ${getRoomColSpan(room)} ${isDisabled ? 'bg-slate-50 dark:bg-slate-800/50 opacity-70' : 'bg-white dark:bg-slate-800'} ${isSelected ? "border-blue-500 ring-2 ring-blue-500 dark:border-blue-500" : isDisabled ? "border-slate-200 dark:border-slate-700" : "border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600"}`}
+                                                    className={`h-[70px] sm:h-[100px] border rounded-md flex flex-col transition-all duration-150 shadow-sm cursor-pointer hover:shadow-md ${getRoomColSpan(room)} ${isDisabled ? 'bg-slate-50 dark:bg-slate-800/50 opacity-70' : 'bg-white dark:bg-slate-800'} ${isSelected ? "border-blue-500 ring-2 ring-blue-500 dark:border-blue-500" : isDisabled ? "border-slate-200 dark:border-slate-700" : "border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600"}`}
                                                     onClick={() => handleRoomClick(room.id)}>
-                                                    <div className={`h-[30px] rounded-t-md flex items-center justify-center px-2 relative border-b ${isSelected ? 'border-b-transparent' : 'border-slate-200 dark:border-slate-600'} ${isDisabled ? 'bg-slate-100 dark:bg-slate-700/60' : 'bg-slate-50 dark:bg-slate-700'}`}>
-                                                        <div className={`absolute left-2 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full ${isSelected ? 'bg-blue-500' : isUnavailable ? 'bg-gray-400' : isOccupied ? 'bg-red-500' : 'bg-green-500'}`}></div>
-                                                        <span className={`max-w-[100px] truncate ml-3 text-xs sm:text-sm font-medium ${isSelected ? 'text-blue-700 dark:text-blue-300' : isDisabled ? 'text-slate-500 dark:text-slate-400' : 'text-slate-700 dark:text-slate-300'}`} title={room.name}>{room.name}</span>
+                                                    <div className={`sm:h-[30px] h-[20px] rounded-t-md flex items-center justify-center px-2 relative border-b ${isSelected ? 'border-b-transparent' : 'border-slate-200 dark:border-slate-600'} ${isDisabled ? 'bg-slate-100 dark:bg-slate-700/60' : 'bg-slate-50 dark:bg-slate-700'}`}>
+                                                        <div className={`absolute left-2 top-1/2 -translate-y-1/2 sm:w-2 w-1.5 sm:h-2 h-1.5 rounded-full ${isSelected ? 'bg-blue-500' : isUnavailable ? 'bg-gray-400' : isOccupied ? 'bg-red-500' : 'bg-green-500'}`}></div>
+                                                        <span className={`max-w-[100px] truncate ml-3 text-[10px] sm:text-sm sm:font-medium ${isSelected ? 'text-blue-700 dark:text-blue-300' : isDisabled ? 'text-slate-500 dark:text-slate-400' : 'text-slate-700 dark:text-slate-300'}`} title={room.name}>{room.name}</span>
                                                     </div>
                                                     <div className={`flex-1 rounded-b-md p-2 flex flex-col justify-center items-center ${isDisabled ? 'bg-slate-50 dark:bg-slate-800/50' : 'bg-white dark:bg-slate-800'}`}>
-                                                        <span className={`max-w-[100px] truncate text-xs ${isUnavailable ? 'text-gray-500 dark:text-gray-400' : isOccupied ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}`} title={scheduledClass}>{isUnavailable ? 'Unavailable' : isOccupied ? scheduledClass : 'Available'}</span>
-                                                        <span className={`text-xs text-slate-500 dark:text-slate-400 ${isSelected ? "text-slate-600 dark:text-slate-300" : ""} mt-1`}>Capacity: {room.capacity}</span>
+                                                        <span className={`max-w-[100px] truncate sm:text-[11px] text-[9px] ${isUnavailable ? 'text-gray-500 dark:text-gray-400' : isOccupied ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}`} title={scheduledClass}>{isUnavailable ? 'Unavailable' : isOccupied ? scheduledClass : 'Available'}</span>
+                                                        <span className={`max-w-[100px] truncate sm:text-[11px] text-[7px] text-slate-500 dark:text-slate-400 ${isSelected ? "text-slate-600 dark:text-slate-300" : ""} mt-1`}title={room.capacity}>Capacity: {room.capacity}</span>
                                                     </div>
                                                 </div>
                                             );

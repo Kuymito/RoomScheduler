@@ -5,24 +5,30 @@ import React from 'react';
 import Link from 'next/link';
 import ThemeToggle from './ThemeToggle';
 
-const InstructorTopbar = ({ onToggleSidebar, isSidebarCollapsed, onUserIconClick, breadcrumbs, userIconRef, onNotificationIconClick, notificationIconRef, hasUnreadNotifications, showToggleButton = true }) => {
+const InstructorTopbar = ({ onToggleSidebar, isSidebarCollapsed, isMobileSidebarOpen, isSmallScreen, breadcrumbs, userIconRef, onNotificationIconClick, notificationIconRef, hasUnreadNotifications, onUserIconClick, showToggleButton = true }) => {
+  const showCloseIcon = isSmallScreen ? isMobileSidebarOpen : !isSidebarCollapsed;
+
   return (
     <div className="flex justify-between items-center w-full h-full"> 
       <div className="topbar-content-left flex items-center">
         {showToggleButton && (
           <div
             id="sidebar-toggle"
-            className="sidebar-toggle-btn text-xl cursor-pointer mr-4 p-2 rounded text-black dark:text-white hover:bg-blue-100 dark:hover:bg-blue-600 select-none leading-none"
-            title={isSidebarCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
+            className="sidebar-toggle-btn sm:text-xl text-md cursor-pointer mr-4 p-2 rounded text-black dark:text-white hover:bg-blue-100 dark:hover:bg-blue-600 select-none leading-none"
+            title={
+              isSmallScreen
+                ? (isMobileSidebarOpen ? "Close Menu" : "Open Menu")
+                : (isSidebarCollapsed ? "Expand Sidebar" : "Collapse Sidebar")
+            }
             onClick={onToggleSidebar}
           >
-            {isSidebarCollapsed ? <span dangerouslySetInnerHTML={{ __html: '&#x2715;' }} /> : <span dangerouslySetInnerHTML={{ __html: '&#9776;' }} />}
+            {showCloseIcon ? <span dangerouslySetInnerHTML={{ __html: '&#x2715;' }} /> : <span dangerouslySetInnerHTML={{ __html: '&#9776;' }} />}
           </div>
         )}
-        <div className="page-title font-medium text-xl text-black dark:text-white">
+        <div className="page-title font-medium sm:text-xl text-sm text-black dark:text-white">
           <span className="lg:hidden">NUM</span>
           <span className="hidden lg:inline">National University of Management</span>
-          <div className="dashboard text-sm font-normal text-blue-600 mt-1 flex items-center">
+          <div className="dashboard sm:text-sm text-xs font-normal text-blue-600 mt-1 flex items-center">
             {breadcrumbs.map((crumb, index) => (
               <React.Fragment key={index}>
                 {crumb.href ? (
@@ -38,16 +44,16 @@ const InstructorTopbar = ({ onToggleSidebar, isSidebarCollapsed, onUserIconClick
           </div>
         </div>
       </div>
-      <div className="topbar-icons flex items-center gap-4">
+      <div className="topbar-icons flex items-center sm:gap-4 gap-2">
         <ThemeToggle />
         
         <div
           ref={notificationIconRef} 
-          className="icon-wrapper relative w-10 h-10 flex items-center justify-center border border-num-icon-border  dark:bg-gray-800 dark:border-gray-700 p-[10px] rounded-md cursor-pointer hover:border-2 hover:border-blue-500 dark:hover:border-blue-400"
+          className="icon-wrapper relative sm:w-10 w-7 sm:h-10 h-7 flex items-center justify-center border border-num-icon-border  dark:bg-gray-800 dark:border-gray-700 sm:p-[10px] p-[6px] rounded-md cursor-pointer hover:border-2 hover:border-blue-500 dark:hover:border-blue-400"
           onClick={onNotificationIconClick} 
           title="Notifications"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="h-16 w-12 text-black dark:text-white">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="sm:size-6 size-4 text-black dark:text-white">
             <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0" />
           </svg>
           {hasUnreadNotifications && (
@@ -57,10 +63,10 @@ const InstructorTopbar = ({ onToggleSidebar, isSidebarCollapsed, onUserIconClick
         
         <div
           ref={userIconRef}
-          className="user-icon relative w-10 h-10 flex items-center justify-center border border-num-icon-border dark:bg-gray-800 dark:border-gray-700 p-[10px] rounded-md cursor-pointer hover:border-2 hover:border-blue-500 dark:hover:border-blue-400"
+          className="user-icon relative sm:w-10 w-7 sm:h-10 h-7 flex items-center justify-center border border-num-icon-border dark:bg-gray-800 dark:border-gray-700 sm:p-[10px] p-[6px] rounded-md cursor-pointer hover:border-2 hover:border-blue-500 dark:hover:border-blue-400"
           onClick={onUserIconClick}
         >
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-6 text-black dark:text-white">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="sm:size-6 size-4 text-black dark:text-white">
             <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
           </svg>
         </div>

@@ -43,9 +43,9 @@ export default function InstructorLayout({ children, activeItem, pageTitle, brea
     const [isLoading, setIsLoading] = useState(false);
     const [isProfileNavigating, setIsProfileNavigating] = useState(false);
     const isSmallScreen = useMediaQuery('(max-width: 1023px)');
+    const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
         if (typeof window === 'undefined') return false;
-        if (window.matchMedia('(max-width: 1023px)').matches) return true;
         return localStorage.getItem('sidebarCollapsed') === 'true';
     });
     const notificationPopupRef = useRef(null);
@@ -58,9 +58,8 @@ export default function InstructorLayout({ children, activeItem, pageTitle, brea
     
     const { data: session } = useSession();
     const token = session?.accessToken;
-    const { mutate } = useSWRConfig(); // Get the global mutate function
+    const { mutate } = useSWRConfig(); 
 
-    // --- Broadcast Channel Listener for real-time updates ---
     useEffect(() => {
         if (typeof window === 'undefined' || !token) return;
 
@@ -69,7 +68,6 @@ export default function InstructorLayout({ children, activeItem, pageTitle, brea
         const handleMessage = (event) => {
             if (event.data && event.data.type === 'DATA_UPDATED') {
                 console.log('Data update event received. Revalidating instructor data...');
-                // Revalidate the keys used by the instructor's room page
                 mutate(['allRooms', token]);
                 mutate(['allSchedules', token]);
             }
@@ -84,11 +82,15 @@ export default function InstructorLayout({ children, activeItem, pageTitle, brea
     }, [mutate, token]);
 
     useEffect(() => {
-        if (isSmallScreen) setIsSidebarCollapsed(true);
+        if (!isSmallScreen) {
+            setIsMobileSidebarOpen(false);
+        }
     }, [isSmallScreen]);
     
     useEffect(() => {
-        if (typeof window !== 'undefined' && !isSmallScreen) localStorage.setItem('sidebarCollapsed', isSidebarCollapsed);
+        if (typeof window !== 'undefined' && !isSmallScreen) {
+            localStorage.setItem('sidebarCollapsed', isSidebarCollapsed);
+        }
     }, [isSidebarCollapsed, isSmallScreen]);
 
     const { data: profile } = useSWR(token ? ['/api/profile', token] : null, profileFetcher);
@@ -106,20 +108,27 @@ export default function InstructorLayout({ children, activeItem, pageTitle, brea
     );
 
     const finalBreadcrumbs = breadcrumbs || [{ label: pageTitle }];
-    const toggleSidebar = () => { if (!isSmallScreen) setIsSidebarCollapsed(!isSidebarCollapsed); };
+    const toggleDesktopSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
+    const toggleMobileSidebar = () => setIsMobileSidebarOpen(!isMobileSidebarOpen);
     const handleUserIconClick = (event) => { event.stopPropagation(); if (showInstructorNotificationPopup) setShowInstructorNotificationPopup(false); setShowAdminPopup(prev => !prev); };
     const handleLogoutClick = () => { setShowAdminPopup(false); setShowLogoutAlert(true); };
     const handleCloseLogoutAlert = () => setShowLogoutAlert(false);
     const handleConfirmLogout = () => { setShowLogoutAlert(false); setIsLoading(true); signOut({ callbackUrl: '/signin' }); };
-    const handleNavItemClick = (item) => { if (pathname !== item.href) { setNavigatingTo(item.id); router.push(item.href); } };
+    const handleNavItemClick = (item) => { 
+        if (pathname !== item.href) { 
+            setNavigatingTo(item.id); 
+            router.push(item.href); 
+        }
+        if(isSmallScreen) {
+            setIsMobileSidebarOpen(false);
+        }
+    };
     const handleToggleInstructorNotificationPopup = (event) => { event.stopPropagation(); if (showAdminPopup) setShowAdminPopup(false); setShowInstructorNotificationPopup(prev => !prev); };
     const handleMarkInstructorNotificationAsRead = async (notificationId) => { await notificationService.markNotificationAsRead(notificationId, token); mutateInstructorNotifications(); if (pathname === '/instructor/room') router.refresh(); };
     const handleMarkAllInstructorNotificationsAsRead = async () => { const unreadIds = instructorNotifications?.filter(n => !n.read).map(n => n.notificationId) || []; if (unreadIds.length > 0) { await Promise.all(unreadIds.map(id => notificationService.markNotificationAsRead(id, token))); mutateInstructorNotifications(); if (pathname === '/instructor/room') router.refresh(); } };
     const hasUnreadInstructorNotifications = instructorNotifications?.some(n => !n.read);
     const handleProfileNav = (path) => { if (isProfileNavigating) return; if (pathname === path) { setShowAdminPopup(false); return; } setIsProfileNavigating(true); router.push(path); };
     
-    const sidebarWidth = isSidebarCollapsed ? '60px' : '205px';
-
     useEffect(() => {
         const handleClickOutside = (event) => {
             if (showAdminPopup && adminPopupRef.current && !adminPopupRef.current.contains(event.target) && userIconRef.current && !userIconRef.current.contains(event.target)) setShowAdminPopup(false);
@@ -144,14 +153,20 @@ export default function InstructorLayout({ children, activeItem, pageTitle, brea
     }
 
     return (
-        <div className="flex w-full min-h-screen bg-[#E2E1EF] dark:bg-gray-800">
-            <InstructorSidebar isCollapsed={isSidebarCollapsed} activeItem={activeItem} onNavItemClick={handleNavItemClick} navigatingTo={navigatingTo} />
-            <div className="flex flex-col flex-grow transition-all duration-300 ease-in-out" style={{ marginLeft: sidebarWidth, width: `calc(100% - ${sidebarWidth})`, height: '100vh', overflowY: 'auto' }}>
-                <div className="fixed top-0 bg-white dark:bg-gray-900 shadow-custom-medium p-5 flex justify-between items-center z-30 transition-all duration-300 ease-in-out" style={{ left: sidebarWidth, width: `calc(100% - ${sidebarWidth})`, height: TOPBAR_HEIGHT }}>
-                    <InstructorTopbar onToggleSidebar={toggleSidebar} isSidebarCollapsed={isSidebarCollapsed} onUserIconClick={handleUserIconClick} breadcrumbs={finalBreadcrumbs} userIconRef={userIconRef} onNotificationIconClick={handleToggleInstructorNotificationPopup} notificationIconRef={notificationIconRef} hasUnreadNotifications={hasUnreadInstructorNotifications} showToggleButton={!isSmallScreen} />
+        <div className="relative flex w-full min-h-screen bg-[#E2E1EF] dark:bg-gray-800">
+            {isMobileSidebarOpen && (
+                <div
+                    className="fixed inset-0 bg-black bg-opacity-50 z-30 lg:hidden"
+                    onClick={toggleMobileSidebar}
+                ></div>
+            )}
+            <InstructorSidebar isCollapsed={isSidebarCollapsed} isMobileOpen={isMobileSidebarOpen} activeItem={activeItem} onNavItemClick={handleNavItemClick} navigatingTo={navigatingTo} />
+            <div className={`flex flex-col flex-grow transition-all duration-300 ease-in-out ${isSidebarCollapsed ? 'lg:ml-[60px]' : 'lg:ml-[205px]'}`}>
+                <div className={`fixed top-0 bg-white dark:bg-gray-900 shadow-custom-medium p-5 flex justify-between items-center z-20 transition-all duration-300 ease-in-out w-full ${isSidebarCollapsed ? 'lg:w-[calc(100%-60px)] lg:left-[60px]' : 'lg:w-[calc(100%-205px)] lg:left-[205px]'}`} style={{ height: TOPBAR_HEIGHT }}>
+                    <InstructorTopbar onToggleSidebar={isSmallScreen ? toggleMobileSidebar : toggleDesktopSidebar} isSidebarCollapsed={isSidebarCollapsed} isMobileSidebarOpen={isMobileSidebarOpen} isSmallScreen={isSmallScreen} onUserIconClick={handleUserIconClick} breadcrumbs={finalBreadcrumbs} userIconRef={userIconRef} onNotificationIconClick={handleToggleInstructorNotificationPopup} notificationIconRef={notificationIconRef} hasUnreadNotifications={hasUnreadInstructorNotifications} showToggleButton={true} />
                 </div>
                 <div className="flex flex-col flex-grow" style={{ paddingTop: TOPBAR_HEIGHT }}>
-                    <main className="content-area flex-grow p-3 m-6 bg-white dark:bg-gray-900 rounded-lg shadow-md">{children}</main>
+                    <main className="content-area flex-grow sm:p-3 p-1.5 sm:m-6 m-3 bg-white dark:bg-gray-900 rounded-lg shadow-md">{children}</main>
                     <Footer />
                 </div>
             </div>

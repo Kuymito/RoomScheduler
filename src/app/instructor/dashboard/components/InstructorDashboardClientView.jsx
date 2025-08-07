@@ -244,14 +244,14 @@ export default function InstructorDashboardClientView() {
                 academicYear={dashboardStats.academicYear}
             />
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-6">
+            <div className="grid grid-cols-2 lg:grid-cols-4 sm:gap-6 gap-3 sm:mt-6 mt-3">
                 <ClassCard title="Class Assign" value={dashboardStats.classAssign} />
                 <ClassCard title="Class Today" value={dashboardStats.ClassToday} />
                 <ClassCard title="Online Class" value={dashboardStats.onlineClass} />
                 <div /> 
             </div>
 
-            <div className="mt-6">
+            <div className="sm:mt-6 mt-3">
                 <ScheduleTable 
                     scheduleItems={sortedScheduleItems} 
                     onSort={handleSort}

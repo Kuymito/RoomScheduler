@@ -3,13 +3,13 @@
 const HeaderSkeleton = () => (
     <div className="animate-pulse flex justify-between items-start p-5 bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-200 dark:border-gray-700">
         <div>
-            <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded-full w-72 mb-4"></div>
-            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded-full w-96 mb-2"></div>
-            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded-full w-80"></div>
+            <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded-full sm:w-72 w-32 mb-4"></div>
+            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded-full sm:w-96 w-66 mb-2"></div>
+            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded-full sm:w-80 w-40"></div>
         </div>
         <div className="text-right">
-            <div className="h-5 bg-gray-200 dark:bg-gray-700 rounded-full w-32 mb-2"></div>
-            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded-full w-40"></div>
+            <div className="h-5 bg-gray-200 dark:bg-gray-700 rounded-full sm:w-32 w-26 mb-2"></div>
+            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded-full sm:w-40 w-20"></div>
         </div>
     </div>
 );
@@ -22,7 +22,7 @@ const CardSkeleton = () => (
 );
 
 const TableSkeleton = ({ rows = 6 }) => (
-    <div className="animate-pulse mt-6 overflow-x-auto relative p-5 bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-200 dark:border-gray-700">
+    <div className="animate-pulse sm:mt-6 mt-3 overflow-x-auto relative p-5 bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-200 dark:border-gray-700">
         <div className="w-full">
             {/* Table Header */}
             <div className="flex bg-gray-50 dark:bg-gray-700/50 p-4">
@@ -55,7 +55,7 @@ export default function DashboardSkeleton() {
     return (
         <>
             <HeaderSkeleton />
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-6">
+            <div className="grid grid-cols-2 lg:grid-cols-4 sm:gap-6 gap-3 sm:mt-6 mt-3">
                 <CardSkeleton />
                 <CardSkeleton />
                 <CardSkeleton />

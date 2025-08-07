@@ -22,7 +22,7 @@ const SortIndicator = ({ direction }) => {
 const SortableHeader = ({ children, columnId, onSort, sortColumn, sortDirection }) => {
   return (
     <th 
-        className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 tracking-wider whitespace-nowrap cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+        className="sm:px-4 px-2 sm:py-3 py-1.5 text-left sm:text-xs text-[10px] font-medium text-gray-500 dark:text-gray-400 tracking-wider whitespace-nowrap cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
         onClick={() => onSort(columnId)}
     >
       <div className="flex items-center">
@@ -53,7 +53,7 @@ const ScheduleTable = ({ scheduleItems, onSort, sortColumn, sortDirection }) => 
         Schedule
       </h3>
       <div className="overflow-x-auto">
-        <div className="rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
+        <div className="sm:rounded-lg rounded-md overflow-hidden border border-gray-200 dark:border-gray-700">
           <table className="min-w-full">
             <thead className="bg-gray-50 dark:bg-gray-800">
               <tr className="border-b border-gray-200 dark:border-gray-700">
@@ -65,29 +65,29 @@ const ScheduleTable = ({ scheduleItems, onSort, sortColumn, sortDirection }) => 
                 <SortableHeader columnId="room" onSort={onSort} sortColumn={sortColumn} sortDirection={sortDirection}>Room</SortableHeader>
               </tr>
             </thead>
-            <tbody className="bg-white dark:bg-gray-900">
+            <tbody className="bg-white dark:bg-gray-900 sm:text-xs text-[10px]">
               {scheduleItems.map((item) => (
                 <tr
                   key={item.id}
                   className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors border-b border-gray-200 dark:border-gray-700 last:border-b-0"
                 >
-                  <td className="max-w-[100px] px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100 truncate" title={item.classNum}>
+                  <td className="max-w-[100px] sm:px-4 px-2 sm:py-3 py-1.5 whitespace-nowrap sm:text-sm font-medium text-gray-900 dark:text-gray-100 truncate" title={item.classNum}>
                     {item.classNum}
                   </td>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
+                  <td className="sm:px-4 px-2 sm:py-3 py-1.5 whitespace-nowrap text-gray-500 dark:text-gray-300">
                     {item.major}
                   </td>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
+                  <td className="sm:px-4 px-2 sm:py-3 py-1.5 whitespace-nowrap text-gray-500 dark:text-gray-300">
                     {item.date}
                   </td>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
+                  <td className="sm:px-4 px-2 sm:py-3 py-1.5 whitespace-nowrap text-gray-500 dark:text-gray-300">
                     {item.session}
                   </td>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
+                  <td className="sm:px-4 px-2 sm:py-3 py-1.5 whitespace-nowrap text-gray-500 dark:text-gray-300">
                     {item.shift}
                   </td>
                   <td
-                    className={`px-4 py-3 whitespace-nowrap text-sm font-medium ${
+                    className={`px-4 py-3 whitespace-nowrap font-medium ${
                       item.room === "Unavailable"
                         ? "text-gray-500 dark:text-gray-400"
                         : "text-gray-900 dark:text-gray-100"
