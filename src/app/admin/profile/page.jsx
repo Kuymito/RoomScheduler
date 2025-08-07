@@ -22,15 +22,17 @@ const DefaultUserIcon = ({ className }) => (
     </svg>
 );
 
-// --- Skeleton Component ---
+// --- Responsive Skeleton Loader ---
 const ProfileContentSkeleton = () => (
-    <div className='p-6 animate-pulse'>
+    <div className='p-4 md:p-6 animate-pulse'>
         <div className="h-7 w-24 bg-slate-300 dark:bg-slate-600 rounded mb-4"></div>
         <hr className="border-t border-slate-300 dark:border-slate-700 mt-4 mb-8" />
-        <div className="profile-section flex gap-8 mb-4 flex-wrap">
-            <div className="avatar-card w-[220px] p-3 bg-white border border-gray-200 dark:bg-gray-800 dark:border-gray-700 shadow-sm rounded-lg flex-shrink-0 self-start">
+        {/* Responsive layout: vertical on small screens, horizontal on large screens */}
+        <div className="profile-section flex flex-col lg:flex-row gap-8 mb-4">
+            {/* Responsive avatar card: full-width on small screens */}
+            <div className="avatar-card w-full lg:w-[220px] p-3 bg-white border border-gray-200 dark:bg-gray-800 dark:border-gray-700 shadow-sm rounded-lg flex-shrink-0 self-start">
                 <div className="flex items-center">
-                    <div className="w-14 h-14 rounded-full bg-slate-300 dark:bg-slate-600 mr-3"></div>
+                    <div className="w-14 h-14 rounded-full bg-slate-300 dark:bg-slate-600 mr-3 flex-shrink-0"></div>
                     <div className="flex-1 space-y-2">
                         <div className="h-5 bg-slate-300 dark:bg-slate-600 rounded w-full"></div>
                         <div className="h-4 bg-slate-300 dark:bg-slate-600 rounded w-3/4"></div>
@@ -38,22 +40,32 @@ const ProfileContentSkeleton = () => (
                 </div>
                  <div className="h-9 mt-3 bg-slate-300 dark:bg-slate-600 rounded-md"></div>
             </div>
-            <div className="info-details-wrapper flex-grow flex flex-col gap-8 min-w-[300px]">
-                <div className="info-card p-4 bg-white border border-gray-200 dark:bg-gray-800 dark:border-gray-700 shadow-sm rounded-lg space-y-4">
-                     <div className="h-5 w-48 bg-slate-300 dark:bg-slate-600 rounded mb-3"></div>
-                     <div className="h-9 bg-slate-200 dark:bg-slate-700 rounded-md w-full"></div>
-                     <div className="h-9 bg-slate-200 dark:bg-slate-700 rounded-md w-full"></div>
-                     <div className="h-9 bg-slate-200 dark:bg-slate-700 rounded-md w-full"></div>
+            <div className="info-details-wrapper flex-grow flex flex-col gap-8 min-w-0">
+                {/* General Info Skeleton */}
+                <div className="info-card p-4 bg-white border border-gray-200 dark:bg-gray-800 dark:border-gray-700 shadow-sm rounded-lg">
+                    <div className="h-5 w-48 bg-slate-300 dark:bg-slate-600 rounded mb-4"></div>
+                    {/* Responsive grid for skeleton fields */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="h-9 bg-slate-200 dark:bg-slate-700 rounded-md w-full"></div>
+                        <div className="h-9 bg-slate-200 dark:bg-slate-700 rounded-md w-full"></div>
+                        <div className="h-9 bg-slate-200 dark:bg-slate-700 rounded-md w-full"></div>
+                        <div className="h-9 bg-slate-200 dark:bg-slate-700 rounded-md w-full"></div>
+                        <div className="h-9 bg-slate-200 dark:bg-slate-700 rounded-md md:col-span-2"></div>
+                    </div>
                 </div>
-                <div className="info-card p-4 bg-white border border-gray-200 dark:bg-gray-800 dark:border-gray-700 shadow-sm rounded-lg space-y-4">
-                     <div className="h-5 w-48 bg-slate-300 dark:bg-slate-600 rounded mb-3"></div>
-                     <div className="h-9 bg-slate-200 dark:bg-slate-700 rounded-md w-full"></div>
-                     <div className="h-9 bg-slate-200 dark:bg-slate-700 rounded-md w-full"></div>
+                {/* Password Info Skeleton */}
+                <div className="info-card p-4 bg-white border border-gray-200 dark:bg-gray-800 dark:border-gray-700 shadow-sm rounded-lg">
+                     <div className="h-5 w-48 bg-slate-300 dark:bg-slate-600 rounded mb-4"></div>
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="h-9 bg-slate-200 dark:bg-slate-700 rounded-md w-full"></div>
+                        <div className="h-9 bg-slate-200 dark:bg-slate-700 rounded-md w-full"></div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 );
+
 
 const profileFetcher = ([, token]) => authService.getProfile(token);
 
@@ -168,7 +180,6 @@ function ProfileContent() {
         if (section === 'general') {
             setIsLoading(true);
 
-            // --- NEW: Detailed Field Validation ---
             const fieldsToValidate = {
                 firstName: 'First Name',
                 lastName: 'Last Name',
@@ -321,6 +332,25 @@ function ProfileContent() {
     const togglePasswordVisibility = (fieldName) => {
         setPasswordVisibility(previousState => ({ ...previousState, [fieldName]: !previousState[fieldName] }))
     };
+    
+    // Helper function to render text fields for cleaner code
+    const renderTextField = (label, name, value, isEditing, opts = {}) => (
+        <div className={`form-group ${opts.className || ''}`}>
+            <label className="form-label block font-semibold text-xs text-gray-700 dark:text-gray-300 mb-1">{label}</label>
+            <input
+                type={opts.type || 'text'}
+                name={name}
+                value={value}
+                onChange={handleGeneralInputChange}
+                readOnly={!isEditing}
+                className={`form-input w-full py-2 px-3 border dark:border-gray-700 dark:text-gray-400 rounded-md font-medium text-xs focus:ring-blue-500 focus:outline-none focus:ring-2 ${
+                    !isEditing ? "bg-gray-100 dark:bg-gray-800" : "dark:text-white bg-white dark:bg-gray-600 "
+                }`}
+                maxLength={opts.maxLength}
+                minLength={opts.minLength}
+            />
+        </div>
+    );
 
     const renderPasswordField = (label, name, value, onChange, fieldName, isReadOnly = false, hasError = false) => (
         <div className="form-group flex-1 min-w-[200px]">
@@ -357,9 +387,10 @@ function ProfileContent() {
     }
 
     const displayedProfileData = isEditingGeneralInformation ? editableProfileState : profileState;
+    const fullName = `${displayedProfileData.firstName} ${displayedProfileData.lastName}`.trim();
 
     return (
-        <div className="p-6">
+        <div className="p-4 md:p-6">
             {toast.show && <Toast message={toast.message} type={toast.type} onClose={() => setToast({ ...toast, show: false })} />}
             {isConfirmationModalOpen && (
                 <Suspense fallback={<div className="fixed inset-0 bg-black bg-opacity-50 z-[1002] flex items-center justify-center"><div className="w-10 h-10 border-4 border-t-transparent border-white rounded-full animate-spin"></div></div>}>
@@ -376,8 +407,12 @@ function ProfileContent() {
                 Profile
             </div>
             <hr className="border-t border-gray-300 dark:border-gray-700 mt-4 mb-8" />
-            <div className="profile-section flex gap-8 mb-4 flex-wrap">
-                <div className="avatar-card w-[220px] p-3 bg-white border border-gray-300 dark:bg-gray-800 dark:border-gray-700 shadow-sm rounded-lg flex-shrink-0 self-start">
+            
+            {/* Responsive Layout: Stacks on small screens, row on large screens */}
+            <div className="profile-section flex flex-col lg:flex-row gap-8 mb-4">
+                
+                {/* Responsive Avatar Card: Full width on mobile */}
+                <div className="avatar-card w-full lg:w-[220px] p-3 bg-white border border-gray-300 dark:bg-gray-800 dark:border-gray-700 shadow-sm rounded-lg flex-shrink-0 self-start">
                     <div className="avatar-content flex items-center">
                         {imagePreviewURL ? (
                             <Image
@@ -385,16 +420,16 @@ function ProfileContent() {
                                 alt="Profile Avatar"
                                 width={56}
                                 height={56}
-                                className="avatar-img w-14 h-14 rounded-full mr-3 object-cover"
+                                className="avatar-img w-14 h-14 rounded-full mr-3 object-cover flex-shrink-0"
                             />
                         ) : (
-                            <div className="w-14 h-14 rounded-full mr-3 flex items-center justify-center">
+                            <div className="w-14 h-14 rounded-full mr-3 flex items-center justify-center flex-shrink-0">
                                 <DefaultUserIcon className="h-34 w-34 text-gray-700 dark:text-gray-400"/>
                             </div>
                         )}
-                        <div className="avatar-info flex flex-col">
-                            <div className="max-w-[120px] avatar-name font-semibold text-sm text-gray-800 dark:text-gray-200 mb-0.5 truncate" title={`${displayedProfileData.firstName} ${displayedProfileData.lastName}`}>
-                                {displayedProfileData.firstName} {displayedProfileData.lastName}
+                        <div className="avatar-info flex flex-col overflow-hidden min-w-0">
+                            <div className="avatar-name font-semibold text-sm text-gray-800 dark:text-gray-200 mb-0.5 truncate" title={fullName}>
+                                {fullName}
                             </div>
                             <div className="avatar-role font-semibold text-xs text-gray-500 dark:text-gray-400">
                                 Admin
@@ -412,32 +447,17 @@ function ProfileContent() {
                     <input type="file" ref={fileInputReference} onChange={handleFileChange} accept="image/*" className="sr-only" />
                 </div>
 
-                <div className="info-details-wrapper flex-grow flex flex-col gap-8 min-w-[300px]">
+                <div className="info-details-wrapper flex-grow flex flex-col gap-8 min-w-0">
                     <div className="info-card p-3 sm:p-4 bg-white border border-gray-300 dark:bg-gray-800 dark:border-gray-700 shadow-sm rounded-lg">
                         <div className="section-title font-semibold text-sm text-gray-800 dark:text-gray-200 mb-3">
                             General Information
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="form-group">
-                                <label className="form-label block font-semibold text-xs text-gray-700 dark:text-gray-300 mb-1">First Name</label>
-                                <input type="text" name="firstName" value={displayedProfileData.firstName} maxLength={26} onChange={handleGeneralInputChange} readOnly={!isEditingGeneralInformation} className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs dark:border-gray-700 dark:text-gray-400 focus:ring-blue-500 focus:outline-none focus:ring-2 ${!isEditingGeneralInformation ? 'bg-gray-100 dark:bg-gray-800' : 'dark:text-white bg-white dark:bg-gray-600'}`}/>
-                            </div>
-                            <div className="form-group">
-                                <label className="form-label block font-semibold text-xs text-gray-700 dark:text-gray-300 mb-1">Last Name</label>
-                                <input type="text" name="lastName" value={displayedProfileData.lastName} maxLength={26} onChange={handleGeneralInputChange} readOnly={!isEditingGeneralInformation} className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs dark:border-gray-700 dark:text-gray-400 focus:ring-blue-500 focus:outline-none focus:ring-2 ${!isEditingGeneralInformation ? 'bg-gray-100 dark:bg-gray-800' : 'dark:text-white bg-white dark:bg-gray-600'}`}/>
-                            </div>
-                            <div className="form-group">
-                                <label className="form-label block font-semibold text-xs text-gray-700 dark:text-gray-300 mb-1">Email</label>
-                                <input type="email" name="email" value={displayedProfileData.email} maxLength={254} onChange={handleGeneralInputChange} readOnly={!isEditingGeneralInformation} className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs dark:border-gray-700 dark:text-gray-400 focus:ring-blue-500 focus:outline-none focus:ring-2 ${!isEditingGeneralInformation ? 'bg-gray-100 dark:bg-gray-800' : 'dark:text-white bg-white dark:bg-gray-600'}`}/>
-                            </div>
-                            <div className="form-group">
-                                <label className="form-label block font-semibold text-xs text-gray-700 dark:text-gray-300 mb-1">Phone Number</label>
-                                <input type="tel" name="phoneNumber" value={displayedProfileData.phoneNumber} onChange={handleGeneralInputChange} readOnly={!isEditingGeneralInformation} className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs dark:border-gray-700 dark:text-gray-400 focus:ring-blue-500 focus:outline-none focus:ring-2 ${!isEditingGeneralInformation ? 'bg-gray-100 dark:bg-gray-800' : 'dark:text-white bg-white dark:bg-gray-600'}`}/>
-                            </div>
-                            <div className="form-group md:col-span-2">
-                                <label className="form-label block font-semibold text-xs text-gray-700 dark:text-gray-300 mb-1">Address</label>
-                                <input type="text" name="address" value={displayedProfileData.address} minLength={20} maxLength={60} onChange={handleGeneralInputChange} readOnly={!isEditingGeneralInformation} className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs dark:border-gray-700 dark:text-gray-400 focus:ring-blue-500 focus:outline-none focus:ring-2 ${!isEditingGeneralInformation ? 'bg-gray-100 dark:bg-gray-800' : 'dark:text-white bg-white dark:bg-gray-600'}`}/>
-                            </div>
+                            {renderTextField("First Name", "firstName", displayedProfileData.firstName, isEditingGeneralInformation, { maxLength: 26 })}
+                            {renderTextField("Last Name", "lastName", displayedProfileData.lastName, isEditingGeneralInformation, { maxLength: 26 })}
+                            {renderTextField("Email", "email", displayedProfileData.email, !isEditingGeneralInformation, { type: 'email', maxLength: 254 })}
+                            {renderTextField("Phone Number", "phoneNumber", displayedProfileData.phoneNumber, isEditingGeneralInformation, { type: 'tel' })}
+                            {renderTextField("Address", "address", displayedProfileData.address, isEditingGeneralInformation, { className: 'md:col-span-2', minLength: 20, maxLength: 60 })}
                         </div>
                         <div className="form-actions flex justify-end items-center gap-3 mt-4">
                             {isEditingGeneralInformation ? (
