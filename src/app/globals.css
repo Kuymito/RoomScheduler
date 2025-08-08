@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 body {
-  @apply font-sans bg-num-bg;
+  @apply font-sans bg-[#E2E1EF] dark:bg-gray-800;
 }
 
 @layer components {

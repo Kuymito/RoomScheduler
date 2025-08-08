@@ -472,14 +472,14 @@ export default function ClassClientView({ initialClasses, initialDepartments, in
                                             </div>
                                         </td>
                                         <td className="sm:px-6 px-2 sm:py-2.5 py-1.5">
-                                            <div className="max-w-[70px] w-[70px] truncate" title={data.name}>
+                                            <div className="max-w-[70px] truncate" title={data.name}>
                                                 {data.name}
                                             </div>
                                         </td>
                                         <td className="sm:px-6 px-2 sm:py-2.5 py-1.5 lg:table-cell hidden"> {data.generation} </td>
                                         <td className="sm:px-6 px-2 sm:py-2.5 py-1.5 lg:table-cell hidden"> {data.group} </td>
                                         <td className="sm:px-6 px-2 sm:py-2.5 py-1.5">
-                                            <div className="max-w-[120px] truncate" title={data.major}>
+                                            <div className="sm:max-w-[120px] max-w-[50px] truncate" title={data.major}>
                                                 {data.major}
                                             </div>
                                         </td>

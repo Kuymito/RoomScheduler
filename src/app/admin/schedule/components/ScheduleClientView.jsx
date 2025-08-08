@@ -81,7 +81,7 @@ const RoomCard = React.memo(({ room, classData, isDragOver, isWarning, dragHandl
         >
             <div
                 onClick={() => !isNavigating && !classData?.isMovedPlaceholder && onHeaderClick(room.roomId)}
-                className={`sm:px-2 px-1.5 sm:py-1 py-0.5 flex justify-between items-center border-b-2 transition-colors ${isNavigating ? 'cursor-not-allowed' : (classData?.isMovedPlaceholder ? 'cursor-default' : 'cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700')} ${isWarning ? 'bg-red-100 dark:bg-red-800/50' : (isUnavailable ? 'bg-slate-100 dark:bg-slate-700/60' : 'bg-gray-50 dark:bg-gray-800')}`}
+                className={`sm:px-2 px-1.5 sm:py-1 py-0.5 flex justify-between items-center border-b-2 border-b-gray-300 dark:border-b-gray-700 transition-colors ${isNavigating ? 'cursor-not-allowed' : (classData?.isMovedPlaceholder ? 'cursor-default' : 'cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700')} ${isWarning ? 'bg-red-100 dark:bg-red-800/50' : (isUnavailable ? 'bg-slate-100 dark:bg-slate-700/60' : 'bg-gray-50 dark:bg-gray-800')}`}
             >
                 <div className={`w-2 h-2 rounded-full ring-1 ring-white/50 ${isOccupied || isUnavailable ? 'bg-red-500' : 'bg-green-500'}`} title={isOccupied || isUnavailable ? 'Occupied/Unavailable' : 'Available'}></div>
                 {isNavigating ? (
@@ -653,7 +653,7 @@ const ScheduleClientView = ({
             <div className='sm:p-6 p-2 dark:text-white flex flex-col lg:flex-row sm:gap-6 gap-3 h-[calc(100vh-100px)]'>
                 <div 
                     onDragOver={handleGridCellDragOver}
-                    className='w-full lg:w-[220px] xl:w-[300px] flex-shrink-0 sm:p-4 p-2 bg-white dark:bg-gray-900 border dark:border-gray-700 shadow-lg rounded-xl flex flex-col'
+                    className='w-full lg:w-[220px] xl:w-[300px] flex-shrink-0 sm:p-4 p-2 bg-white dark:bg-gray-900 border dark:border-gray-700 sm:shadow-lg shadow-md rounded-xl flex flex-col'
                 >
                     <div className="flex items-center gap-2 sm:mb-2 mb-1">
                         <h3 className="sm:text-lg text-sm font-semibold text-num-dark-text dark:text-gray-100">Classes</h3>
@@ -681,12 +681,12 @@ const ScheduleClientView = ({
                             const classesInShift = groupedClassesByShift[shift];
                             if (classesInShift && classesInShift.length > 0) {
                                 return (
-                                    <div key={shift} className="space-y-3">
-                                        <div className="flex items-center gap-2 mb-2"><h4 className="text-xs sm:text-sm font-medium text-slate-600 dark:text-slate-400 whitespace-nowrap">{shift}</h4><hr className="flex-1 border-t border-slate-300 dark:border-slate-700" /></div>
+                                    <div key={shift} className="sm:space-y-3 space-y-1.5">
+                                        <div className="flex items-center sm:gap-2 gap-1 sm:mb-2 mb-1"><h4 className="text-xs sm:text-sm font-medium text-slate-600 dark:text-slate-400 whitespace-nowrap">{shift}</h4><hr className="flex-1 border-t border-slate-300 dark:border-slate-700" /></div>
                                         {classesInShift.map((classItem) => (
-                                            <div key={classItem.classId} draggable onDragStart={(event) => handleDragStart(event, classItem, 'new')} onDragEnd={handleDragEnd} className="p-2 bg-gray-50 dark:bg-gray-800 dark:hover:bg-gray-700 border dark:border-gray-700 rounded-lg shadow-sm hover:shadow-md cursor-grab active:cursor-grabbing transition-all flex group">
-                                                <div className={`w-1.5 h-auto rounded-lg ${yearColorMap[classItem.year] || 'bg-violet-500'} mr-3`}></div>
-                                                <div><p className="max-w-[200px] text-sm font-medium text-gray-800 dark:text-gray-200 truncate" title={classItem.className}>{classItem.className}</p><p className="text-xs text-gray-500 dark:text-gray-400">{classItem.majorName}</p></div>
+                                            <div key={classItem.classId} draggable onDragStart={(event) => handleDragStart(event, classItem, 'new')} onDragEnd={handleDragEnd} className="sm:p-2 p-1 bg-gray-50 dark:bg-gray-800 dark:hover:bg-gray-700 border dark:border-gray-700 sm:rounded-lg rounded-md shadow-sm hover:shadow-md cursor-grab active:cursor-grabbing transition-all flex group">
+                                                <div className={`w-1.5 h-auto sm:rounded-lg rounded-md ${yearColorMap[classItem.year] || 'bg-violet-500'} sm:mr-3 mr-1.5`}></div>
+                                                <div><p className="max-w-[200px] sm:text-sm text-[10px] font-medium text-gray-800 dark:text-gray-200 truncate" title={classItem.className}>{classItem.className}</p><p className="sm:text-xs text-[10px] text-gray-500 dark:text-gray-400">{classItem.majorName}</p></div>
                                             </div>
                                         ))}
                                     </div>
@@ -697,7 +697,7 @@ const ScheduleClientView = ({
                         {Object.values(groupedClassesByShift).every(array => array.length === 0) && (<div className="text-center sm:text-md text-sm text-gray-400 dark:text-gray-600 mt-4">No classes available for the selected filters.</div>)}
                     </div>
                 </div>
-                <div ref={schedulePageReference} className='flex-1 p-2.5 sm:p-6 bg-white dark:bg-gray-900 border dark:border-gray-700 shadow-xl rounded-xl flex flex-col overflow-y-auto'>
+                <div ref={schedulePageReference} className='flex-1 p-2.5 sm:p-6 bg-white dark:bg-gray-900 border dark:border-gray-700 sm:shadow-xl shadow-md rounded-xl flex flex-col overflow-y-auto'>
                     <div className="flex flex-row items-center justify-between sm:mb-4 mb-2 sm:border-b dark:border-gray-600 sm:pb-3 no-print">
                         <div className="flex rounded-lg border border-gray-300 dark:border-gray-600 overflow-hidden">
                             {weekdays.map(day => {
@@ -765,14 +765,14 @@ const ScheduleClientView = ({
                         ))}
                     </div>
                     <div className="mt-auto pt-4 border-t border-gray-200 dark:border-gray-700 flex flex-wrap justify-between items-center gap-3 no-print">
-                        <div className="text-xs text-gray-600 dark:text-gray-400 space-y-0.5">
+                        <div className="sm:text-xs text-[10px] text-gray-600 dark:text-gray-400 space-y-0.5">
                             <p><span className="inline-block w-2.5 h-2.5 bg-green-500 rounded-full mr-1.5 align-middle"></span> Available Rooms: {availableRoomsCount}</p>
                             <p><span className="inline-block w-2.5 h-2.5 bg-red-500 rounded-full mr-1.5 align-middle"></span> Unavailable Rooms: {unavailableRoomsCount}</p>
                         </div>
                         <button
                             onClick={handleDownloadPdf}
                             disabled={isGeneratingPdf}
-                            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-md text-sm transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+                            className="bg-blue-600 hover:bg-blue-700 text-white sm:font-semibold sm:py-2 py-1.5 sm:px-4 px-2 rounded-md sm:text-sm text-[10px] transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
                         >
                             {isGeneratingPdf ? 'Generating...' : 'Download PDF'}
                         </button>

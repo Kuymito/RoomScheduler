@@ -173,7 +173,7 @@ export default function InstructorScheduleClientView({ initialScheduleData, inst
         <h2 className="sm:text-xl text-sm sm:font-medium text-gray-700 dark:text-gray-300 mb-4">{instructorName}</h2>
 
         <div className="overflow-x-auto">
-          <div className="grid sm:grid-cols-[minmax(100px,1.5fr)_repeat(7,minmax(120px,2fr))] grid-cols-[minmax(30px,0.4fr)_repeat(7,minmax(40px,1fr))] border border-gray-300 dark:border-gray-600 rounded-md min-w-[900px]">
+          <div className="grid sm:grid-cols-[minmax(100px,2fr)_repeat(7,minmax(120px,2.5fr))] grid-cols-[minmax(30px,0.4fr)_repeat(7,minmax(40px,1fr))] border border-gray-300 dark:border-gray-600 rounded-md sm:min-w-[1124px] min-w-[650px]">
             {/* Header Row */}
             <div className="font-semibold sm:text-sm text-[7px] text-gray-700 dark:text-gray-300 sm:p-3 p-1 text-center border-r border-b border-gray-300 dark:border-gray-600 dark:bg-gray-700 sticky top-0 z-10">Time</div>
             {DAYS_OF_WEEK.map(day => (
@@ -204,15 +204,15 @@ export default function InstructorScheduleClientView({ initialScheduleData, inst
 
       {/* The stats are now dynamically added during PDF generation, so they are removed from the main JSX */}
 
-      <div className="mt-8 flex flex-col sm:flex-row justify-between items-center">
+      <div className="sm:mt-8 mt-4 flex flex-row justify-between items-center">
         <button
           onClick={handleDownloadPdf}
           disabled={isGeneratingPdf}
-          className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold py-2 px-6 rounded-md shadow-sm order-1 sm:order-2 mb-4 sm:mb-0 disabled:bg-blue-400 disabled:cursor-wait"
+          className="bg-blue-600 hover:bg-blue-700 text-white sm:text-sm text-xs sm:font-semibold sm:py-2 py-2 sm:px-6 px-3 rounded-md shadow-sm order-1 sm:order-2 mb-4 sm:mb-0 disabled:bg-blue-400 disabled:cursor-wait"
         >
           {isGeneratingPdf ? 'Generating...' : 'Download PDF file'}
         </button>
-        <p className="text-sm text-gray-500 dark:text-gray-400 order-2 sm:order-1">
+        <p className="sm:text-sm text-xs text-gray-500 dark:text-gray-400 order-2 sm:order-1">
           Public Date : {publicDate}
         </p>
       </div>
