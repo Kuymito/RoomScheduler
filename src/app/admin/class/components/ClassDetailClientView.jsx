@@ -783,13 +783,13 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
                         <div className="form-actions flex justify-end items-center sm:gap-3 gap-1.5 mt-4">
                             {isEditing ? (
                                 <>
-                                    <button onClick={handleCancelClick} className="back-button bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 shadow-custom-light sm:rounded-md rounded-sm text-gray-800 dark:text-white border-none sm:py-2 py-1 sm:px-3 px-1.5 sm:font-semibold sm:text-xs text-[10px] cursor-pointer" disabled={loading}>Cancel</button>
-                                    <button onClick={handleSaveDetails} className="save-button bg-blue-600 hover:bg-blue-700 shadow-custom-light sm:rounded-md rounded-sm text-white border-none sm:py-2 py-1 sm:px-3 px-1.5 sm:font-semibold sm:text-xs text-[10px] cursor-pointer" disabled={loading}>{loading ? "Saving..." : "Save Changes"}</button>
+                                    <button onClick={handleCancelClick} className="back-button bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 shadow-custom-light sm:rounded-md rounded-[6px] text-gray-800 dark:text-white border-none sm:py-2 py-1 sm:px-3 px-1.5 sm:font-semibold sm:text-xs text-[10px] cursor-pointer" disabled={loading}>Cancel</button>
+                                    <button onClick={handleSaveDetails} className="save-button bg-blue-600 hover:bg-blue-700 shadow-custom-light sm:rounded-md rounded-[6px] text-white border-none sm:py-2 py-1 sm:px-3 px-1.5 sm:font-semibold sm:text-xs text-[10px] cursor-pointer" disabled={loading}>{loading ? "Saving..." : "Save Changes"}</button>
                                 </>
                             ) : (
                                 <>
-                                    <button onClick={() => router.back()} className="back-button bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 shadow-custom-light sm:rounded-md rounded-sm text-gray-800 dark:text-white border-none sm:py-2 py-1 sm:px-3 px-1.5 sm:font-semibold sm:text-xs text-[10px] cursor-pointer" disabled={loading}>Back</button>
-                                    <button onClick={handleEditToggle} className="edit-button bg-blue-600 hover:bg-blue-700 shadow-custom-light sm:rounded-md rounded-sm text-white border-none sm:py-2 py-1 sm:px-3 px-1.5 sm:font-semibold sm:text-xs text-[10px] cursor-pointer" disabled={loading}>Edit Class</button>
+                                    <button onClick={() => router.back()} className="back-button bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 shadow-custom-light sm:rounded-md rounded-[6px] text-gray-800 dark:text-white border-none sm:py-2 py-1 sm:px-3 px-1.5 sm:font-semibold sm:text-xs text-[10px] cursor-pointer" disabled={loading}>Back</button>
+                                    <button onClick={handleEditToggle} className="edit-button bg-blue-600 hover:bg-blue-700 shadow-custom-light sm:rounded-md rounded-[6px] text-white border-none sm:py-2 py-1 sm:px-3 px-1.5 sm:font-semibold sm:text-xs text-[10px] cursor-pointer" disabled={loading}>Edit Class</button>
                                 </>
                             )}
                         </div>

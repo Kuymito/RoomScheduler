@@ -305,8 +305,8 @@ export default function InstructorDetailClientView({ initialInstructor, allDepar
     const currentData = isEditingGeneral ? editableInstructorDetails : instructorDetails;
     
     const renderTextField = (label, name, value, isEditing, opts = {}) => (
-        <div className="form-group flex-1 min-w-[200px]">
-            <label className="form-label block font-semibold text-xs text-num-dark-text dark:text-white mb-1">{label}</label>
+        <div className="form-group flex-1">
+            <label className="form-label block font-semibold sm:text-xs text-[8px] text-num-dark-text dark:text-white mb-1">{label}</label>
             <input 
                 type={opts.type || "text"} 
                 name={name} 
@@ -317,25 +317,25 @@ export default function InstructorDetailClientView({ initialInstructor, allDepar
                 disabled={loading} 
                 minLength={opts.minLength}
                 maxLength={opts.maxLength}
-                className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs text-num-dark-text dark:text-white focus:ring-blue-500 focus:outline-none focus:ring-2 ${!isEditing ? 'bg-gray-100 dark:bg-gray-800 border-num-gray-light dark:border-gray-700 text-gray-500 dark:text-gray-400' : 'bg-num-content-bg dark:bg-gray-700 border-num-gray-light dark:border-gray-600'}`}
+                className={`form-input w-full sm:py-2 py-1 sm:px-3 px-1.5 border rounded-md font-medium sm:text-xs text-[8px] text-num-dark-text dark:text-white focus:ring-blue-500 focus:outline-none focus:ring-2 ${!isEditing ? 'bg-gray-100 dark:bg-gray-800 border-num-gray-light dark:border-gray-700 text-gray-500 dark:text-gray-400' : 'bg-num-content-bg dark:bg-gray-700 border-num-gray-light dark:border-gray-600'}`}
             />
         </div>
     );
     const renderSelectField = (label, name, value, options, isEditing, valueKey = 'id', labelKey = 'name') => (
-        <div className="form-group flex-1 min-w-[200px]">
-            <label className="form-label block font-semibold text-xs text-num-dark-text dark:text-white mb-1">{label}</label>
-            {isEditing ? ( <select name={name} value={value} onChange={handleInputChange} disabled={loading} className="form-input w-full py-2 px-3 bg-num-content-bg border border-num-gray-light dark:bg-gray-700 dark:border-gray-600 rounded-md font-medium text-xs text-num-dark-text dark:text-white focus:ring-2 focus:ring-blue-500 focus:outline-none">{options.map(option => {
+        <div className="form-group flex-1">
+            <label className="form-label block font-semibold sm:text-xs text-[8px] text-num-dark-text dark:text-white mb-1">{label}</label>
+            {isEditing ? ( <select name={name} value={value} onChange={handleInputChange} disabled={loading} className="form-input w-full sm:py-2 py-1 sm:px-3 px-1.5 bg-num-content-bg border border-num-gray-light dark:bg-gray-700 dark:border-gray-600 rounded-md font-medium sm:text-xs text-[8px] text-num-dark-text dark:text-white focus:ring-2 focus:ring-blue-500 focus:outline-none">{options.map(option => {
                 const optionValue = typeof option === 'object' ? option[labelKey] : option;
                 const optionKey = typeof option === 'object' ? option[valueKey] : option;
                 return <option key={optionKey} value={optionValue}>{optionValue}</option>
-            })}</select> ) : ( <input type="text" value={value} readOnly className="form-input w-full py-2 px-3 bg-gray-100 border border-num-gray-light dark:bg-gray-800 dark:border-gray-700 rounded-md font-medium text-xs text-gray-500 dark:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500" /> )}
+            })}</select> ) : ( <input type="text" value={value} readOnly className="form-input w-full sm:py-2 py-1 sm:px-3 px-1.5 bg-gray-100 border border-num-gray-light dark:bg-gray-800 dark:border-gray-700 rounded-md font-medium sm:text-xs text-[8px] text-gray-500 dark:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500" /> )}
         </div>
     );
     const renderPasswordField = (label, name, value, onChange, fieldName, hasError = false, opts = {}) => (
-        <div className="form-group flex-1 min-w-[200px]">
-            <label className="form-label block font-semibold text-xs text-num-dark-text dark:text-white mb-1">{label}</label>
+        <div className="form-group flex-1">
+            <label className="form-label block font-semibold sm:text-xs text-[8px] text-num-dark-text dark:text-white mb-1">{label}</label>
             <div className="relative">
-                <input type={passwordVisibility[fieldName] ? "text" : "password"} name={name} className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs focus:ring-blue-500 focus:outline-none focus:ring-2 ${!isEditingPassword ? 'bg-gray-100 dark:bg-gray-800 border-num-gray-light dark:border-gray-700 text-gray-500 dark:text-gray-400' : 'bg-white dark:bg-gray-700 border-num-gray-light dark:border-gray-600 text-num-dark-text dark:text-white'} ${ hasError ? 'border-red-500 ring-1 ring-red-500' : '' }`} placeholder={`Enter ${label.toLowerCase()}`} value={value || ''} onChange={onChange} readOnly={!isEditingPassword} disabled={loading} maxLength={opts.maxLength} />
+                <input type={passwordVisibility[fieldName] ? "text" : "password"} name={name} className={`form-input w-full sm:py-2 py-1 sm:px-3 px-1.5 border rounded-md font-medium sm:text-xs text-[8px] focus:ring-blue-500 focus:outline-none focus:ring-2 ${!isEditingPassword ? 'bg-gray-100 dark:bg-gray-800 border-num-gray-light dark:border-gray-700 text-gray-500 dark:text-gray-400' : 'bg-white dark:bg-gray-700 border-num-gray-light dark:border-gray-600 text-num-dark-text dark:text-white'} ${ hasError ? 'border-red-500 ring-1 ring-red-500' : '' }`} placeholder={`Enter ${label.toLowerCase()}`} value={value || ''} onChange={onChange} readOnly={!isEditingPassword} disabled={loading} maxLength={opts.maxLength} />
                 {isEditingPassword && ( <button type="button" onClick={() => togglePasswordVisibility(fieldName)} className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500 hover:text-gray-700" aria-label={passwordVisibility[fieldName] ? "Hide password" : "Show password"}>{passwordVisibility[fieldName] ? <EyeClosedIcon /> : <EyeOpenIcon />}</button> )}
             </div>
         </div>
@@ -384,7 +384,7 @@ export default function InstructorDetailClientView({ initialInstructor, allDepar
                             {renderTextField("Address", "address", currentData.address, isEditingGeneral, { maxLength: 65 })}
                         </div>
                         <div className="form-actions flex justify-end items-center gap-3 mt-4">
-                            {isEditingGeneral ? ( <> <button onClick={() => handleCancelClick('general')} className="back-button bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 shadow-custom-light rounded-md text-gray-800 dark:text-white border-none py-2 px-3 font-semibold text-xs cursor-pointer" disabled={loading}>Cancel</button><button onClick={() => handleSaveClick('general')} className="save-button bg-blue-600 hover:bg-blue-700 shadow-custom-light rounded-md text-white border-none py-2 px-3 font-semibold text-xs cursor-pointer" disabled={loading}>{loading ? "Saving..." : "Save Changes"}</button> </> ) : ( <> <button onClick={() => handleEditClick('general')} className="save-button bg-blue-600 hover:bg-blue-700 shadow-custom-light rounded-md text-white border-none py-2 px-3 font-semibold text-xs cursor-pointer" disabled={loading}>Edit Profile</button> </> )}
+                            {isEditingGeneral ? ( <> <button onClick={() => handleCancelClick('general')} className="back-button bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 shadow-custom-light sm:rounded-md rounded-[6px] text-gray-800 dark:text-white border-none sm:py-2 py-1 sm:px-3 px-1.5 sm:font-semibold sm:text-xs text-[10px] cursor-pointer" disabled={loading}>Cancel</button><button onClick={() => handleSaveClick('general')} className="save-button bg-blue-600 hover:bg-blue-700 shadow-custom-light sm:rounded-md rounded-[6px] text-white border-none sm:py-2 py-1 sm:px-3 px-1.5 sm:font-semibold sm:text-xs text-[10px] cursor-pointer" disabled={loading}>{loading ? "Saving..." : "Save Changes"}</button> </> ) : ( <> <button onClick={() => handleEditClick('general')} className="save-button bg-blue-600 hover:bg-blue-700 shadow-custom-light sm:rounded-md rounded-[6px] text-white border-none sm:py-2 py-1 sm:px-3 px-1.5 sm:font-semibold sm:text-xs text-[10px] cursor-pointer" disabled={loading}>Edit Profile</button> </> )}
                         </div>
                     </div>
 
@@ -397,7 +397,7 @@ export default function InstructorDetailClientView({ initialInstructor, allDepar
                             </div>
                         </div>
                         <div className="form-actions flex justify-end items-center gap-3 mt-4">
-                             {isEditingPassword ? ( <> <button onClick={() => handleCancelClick('password')} className="back-button bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 shadow-custom-light rounded-md text-gray-800 dark:text-white border-none py-2 px-3 font-semibold text-xs cursor-pointer" disabled={loading}>Cancel</button><button onClick={() => handleSaveClick('password')} className="save-button bg-blue-600 hover:bg-blue-700 shadow-custom-light rounded-md text-white border-none py-2 px-3 font-semibold text-xs cursor-pointer" disabled={loading}>{loading ? "Saving..." : "Save Password"}</button> </> ) : ( <> <button onClick={() => router.back()} className="back-button bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 shadow-custom-light rounded-md text-gray-800 dark:text-white border-none py-2 px-3 font-semibold text-xs cursor-pointer" disabled={loading}> Back </button> <button onClick={() => handleEditClick('password')} className="save-button bg-blue-600 hover:bg-blue-700 shadow-custom-light rounded-md text-white border-none py-2 px-3 font-semibold text-xs cursor-pointer" disabled={loading}>Change Password</button> </> )}
+                             {isEditingPassword ? ( <> <button onClick={() => handleCancelClick('password')} className="back-button bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 shadow-custom-light sm:rounded-md rounded-[6px] text-gray-800 dark:text-white border-none sm:py-2 py-1 sm:px-3 px-1.5 sm:font-semibold sm:text-xs text-[10px] cursor-pointer" disabled={loading}>Cancel</button><button onClick={() => handleSaveClick('password')} className="save-button bg-blue-600 hover:bg-blue-700 shadow-custom-light sm:rounded-md rounded-[6px] text-white border-none sm:py-2 py-1 sm:px-3 px-1.5 sm:font-semibold sm:text-xs text-[10px] cursor-pointer" disabled={loading}>{loading ? "Saving..." : "Save Password"}</button> </> ) : ( <> <button onClick={() => router.back()} className="back-button bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 shadow-custom-light sm:rounded-md rounded-[6px] text-gray-800 dark:text-white border-none sm:py-2 py-1 sm:px-3 px-1.5 sm:font-semibold sm:text-xs text-[10px] cursor-pointer" disabled={loading}> Back </button> <button onClick={() => handleEditClick('password')} className="save-button bg-blue-600 hover:bg-blue-700 shadow-custom-light sm:rounded-md rounded-[6px] text-white border-none sm:py-2 py-1 sm:px-3 px-1.5 sm:font-semibold sm:text-xs text-[10px] cursor-pointer" disabled={loading}>Change Password</button> </> )}
                         </div>
                     </div>
                 </div>
