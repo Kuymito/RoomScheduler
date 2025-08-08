@@ -56,7 +56,7 @@ const InstructorSidebar = ({ isCollapsed, isMobileOpen, activeItem, onNavItemCli
     const finalIsCollapsed = isCollapsed && !isMobileOpen;
 
     return (
-        <div id="sidebar" className={`sidebar fixed top-0 left-0 h-full bg-white dark:bg-gray-900 shadow-custom-medium py-5 flex flex-col transition-transform duration-300 ease-in-out z-40 ${finalIsCollapsed ? 'lg:w-[60px]' : 'lg:w-[205px]'} ${isMobileOpen ? 'translate-x-0 w-[205px]' : '-translate-x-full lg:translate-x-0'}`}>
+        <div id="sidebar" className={`sidebar fixed top-0 left-0 h-full bg-white dark:bg-gray-900 shadow-custom-medium py-5 flex flex-col transition-all duration-300 ease-in-out z-40 ${finalIsCollapsed ? 'lg:w-[60px]' : 'lg:w-[205px]'} ${isMobileOpen ? 'translate-x-0 w-[205px]' : '-translate-x-full lg:translate-x-0'}`}>
             <div className={`logo h-[50px] mb-5 flex items-center justify-center ${finalIsCollapsed ? 'px-0' : 'px-5'}`}>
                 <Image src="/images/LOGO-NUM-1.png" alt="NUM Logo" width={finalIsCollapsed ? 0 : 150} height={50} className={`logo-img ${finalIsCollapsed ? 'hidden' : 'block h-[50px]'}`} style={{ width: finalIsCollapsed ? 0 : 'auto' }} />
                 <span className={`logo-text-collapsed font-bold text-lg text-black ${finalIsCollapsed ? 'block' : 'hidden'}`}>
