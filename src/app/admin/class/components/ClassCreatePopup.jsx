@@ -234,52 +234,52 @@ const ClassCreatePopup = ({ isOpen, onClose, onSave, departments, departmentsErr
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-            <div ref={popupRef} className="relative p-5 bg-white rounded-lg shadow-lg max-w-lg w-full dark:bg-gray-800 dark:text-white">
-                <h2 className="text-mb font-bold mb-3">Create New Class</h2>
-                <hr className="border-t-2 border-gray-200 mb-5" />
-                <form onSubmit={handleSubmit} className="space-y-3">
-                    <div className="grid grid-cols-2 gap-3 mb-4 max-h-[60vh] pr-2">
+            <div ref={popupRef} className="relative sm:p-5 p-2.5 bg-white rounded-lg shadow-lg sm:max-w-lg xs:max-w-[380px] max-w-[340px] w-full dark:bg-gray-800 dark:text-white">
+                <h2 className="text-sm sm:text-mb font-bold sm:mb-3 mb-1.5">Create New Class</h2>
+                <hr className="border-t-2 border-gray-200 sm:mb-5 mb-2.5" />
+                <form onSubmit={handleSubmit} className="sm:space-y-3 space-y-1.5">
+                    <div className="grid grid-cols-2 sm:gap-3 gap-1.5 sm:mb-4 mb-2 max-h-[60vh] pr-2">
                         <div className="col-span-2">
-                            <label htmlFor="className" className="block mb-2 text-xs font-medium text-gray-900 dark:text-white">Name (Optional)</label>
+                            <label htmlFor="className" className="block mb-2 text-[10px] sm:text-xs font-medium text-gray-900 dark:text-white">Name (Optional)</label>
                             <input
                                 type="text"
                                 id="className"
                                 name="className"
                                 value={newClass.className}
                                 onChange={handleInputChange}
-                                className={`bg-gray-50 border text-gray-900 text-xs rounded-lg block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white focus:outline-none focus:ring-1 ${getErrorClass('className')}`}
+                                className={`bg-gray-50 border text-gray-900 text-[10px] sm:text-xs sm:rounded-lg rounded-md block w-full sm:p-2.5 p-1 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white focus:outline-none focus:ring-1 ${getErrorClass('className')}`}
                                 placeholder="Auto-generates if empty (e.g., NUM30-01)"
                                 maxLength="60"
                             />
                         </div>
 
                         <div>
-                            <label htmlFor="generation" className="block text-xs font-medium text-gray-700 dark:text-gray-300">Generation</label>
-                            <select id="generation" name="generation" value={newClass.generation} onChange={handleInputChange} className={`mt-1 block w-full p-2 text-xs border rounded-md shadow-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-1 focus:ring-blue-500 focus:outline-none ${getErrorClass('generation')}`} required>
+                            <label htmlFor="generation" className="block text-[10px] sm:text-xs font-medium text-gray-700 dark:text-gray-300">Generation</label>
+                            <select id="generation" name="generation" value={newClass.generation} onChange={handleInputChange} className={`mt-1 block w-full sm:p-2 p-1 text-[10px] sm:text-xs border rounded-md shadow-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-1 focus:ring-blue-500 focus:outline-none ${getErrorClass('generation')}`} required>
                                 {generationOptions.map(option => (<option key={option} value={option}>{option}</option>))}
                             </select>
                         </div>
                         <div>
-                            <label htmlFor="groupName" className="block text-xs font-medium text-gray-700 dark:text-gray-300">Group</label>
-                            <input type="text" id="groupName" name="groupName" value={newClass.groupName} onChange={handleInputChange} className={`mt-1 block w-full p-2 text-xs border rounded-md shadow-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:outline-none focus:ring-1 ${getErrorClass('groupName')}`} placeholder="01" required pattern="\d{1,3}" />
+                            <label htmlFor="groupName" className="block text-[10px] sm:text-xs font-medium text-gray-700 dark:text-gray-300">Group</label>
+                            <input type="text" id="groupName" name="groupName" value={newClass.groupName} onChange={handleInputChange} className={`mt-1 block w-full sm:p-2 p-1 text-[10px] sm:text-xs border rounded-md shadow-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:outline-none focus:ring-1 ${getErrorClass('groupName')}`} placeholder="01" required pattern="\d{1,3}" />
                         </div>
                         <div>
-                            <label htmlFor="degree" className="block text-xs font-medium text-gray-700 dark:text-gray-300">Degree</label>
-                            <select id="degree" name="degree" value={newClass.degree} onChange={handleInputChange} className="mt-1 block w-full p-2 text-xs border border-gray-300 rounded-md shadow-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-1 focus:ring-blue-500 focus:outline-none" required>
+                            <label htmlFor="degree" className="block text-[10px] sm:text-xs font-medium text-gray-700 dark:text-gray-300">Degree</label>
+                            <select id="degree" name="degree" value={newClass.degree} onChange={handleInputChange} className="mt-1 block w-full sm:p-2 p-1 text-[10px] sm:text-xs border border-gray-300 rounded-md shadow-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-1 focus:ring-blue-500 focus:outline-none" required>
                                 {degreesOptions.map(option => (<option key={option} value={option}>{option}</option>))}
                             </select>
                         </div>
                         <div>
-                            <label htmlFor="departmentId" className="block text-xs font-medium text-gray-700 dark:text-gray-300">Faculty</label>
-                            <select id="departmentId" name="departmentId" value={newClass.departmentId} onChange={handleInputChange} className={`mt-1 block w-full p-2 text-xs border rounded-md shadow-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-1 focus:ring-blue-500 focus:outline-none ${getErrorClass('departmentId')}`} required>
+                            <label htmlFor="departmentId" className="block text-[10px] sm:text-xs font-medium text-gray-700 dark:text-gray-300">Faculty</label>
+                            <select id="departmentId" name="departmentId" value={newClass.departmentId} onChange={handleInputChange} className={`mt-1 block w-full sm:p-2 p-1 text-[10px] sm:text-xs border rounded-md shadow-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-1 focus:ring-blue-500 focus:outline-none ${getErrorClass('departmentId')}`} required>
                                 {departmentsError && <option value="">Error loading faculties</option>}
                                 {!departments && !departmentsError && <option value="">Loading...</option>}
                                 {departmentOptions.map(dep => (<option key={dep.departmentId} value={dep.departmentId}>{dep.name}</option>))}
                             </select>
                         </div>
                         <div className="col-span-2">
-                            <label htmlFor="major" className="block text-xs font-medium text-gray-700 dark:text-gray-300">Major</label>
-                            <select id="major" name="major" value={newClass.major} onChange={handleInputChange} className={`mt-1 block w-full p-2 text-xs border rounded-md shadow-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-1 focus:ring-blue-500 focus:outline-none ${getErrorClass('major')}`} required>
+                            <label htmlFor="major" className="block text-[10px] sm:text-xs font-medium text-gray-700 dark:text-gray-300">Major</label>
+                            <select id="major" name="major" value={newClass.major} onChange={handleInputChange} className={`mt-1 block w-full sm:p-2 p-1 text-[10px] sm:text-xs border rounded-md shadow-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-1 focus:ring-blue-500 focus:outline-none ${getErrorClass('major')}`} required>
                                 {majorsError && <option value="">Error loading majors</option>}
                                 {!majors && !majorsError && <option value="">Loading...</option>}
                                 {filteredMajors.length > 0 ? (
@@ -290,26 +290,26 @@ const ClassCreatePopup = ({ isOpen, onClose, onSave, departments, departmentsErr
                             </select>
                         </div>
                         <div className="col-span-2">
-                            <label htmlFor="semester" className="block text-xs font-medium text-gray-700 dark:text-gray-300">Semester</label>
-                            <select id="semester" name="semester" value={newClass.semester} onChange={handleInputChange} className="mt-1 block w-full p-2 text-xs border border-gray-300 rounded-md shadow-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-1 focus:ring-blue-500 focus:outline-none" required>
+                            <label htmlFor="semester" className="block text-[10px] sm:text-xs font-medium text-gray-700 dark:text-gray-300">Semester</label>
+                            <select id="semester" name="semester" value={newClass.semester} onChange={handleInputChange} className="mt-1 block w-full sm:p-2 p-1 text-[10px] sm:text-xs border border-gray-300 rounded-md shadow-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-1 focus:ring-blue-500 focus:outline-none" required>
                                 {semesterOptions.map(option => (<option key={option} value={option}>{option}</option>))}
                             </select>
                         </div>
                         <div className="col-span-2">
-                            <label htmlFor="shiftId" className="block text-xs font-medium text-gray-700 dark:text-gray-300">Shift</label>
-                            <select id="shiftId" name="shiftId" value={newClass.shiftId} onChange={handleInputChange} className={`mt-1 block w-full p-2 text-xs border rounded-md shadow-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-1 focus:ring-blue-500 focus:outline-none ${getErrorClass('shiftId')}`} required>
+                            <label htmlFor="shiftId" className="block text-[10px] sm:text-xs font-medium text-gray-700 dark:text-gray-300">Shift</label>
+                            <select id="shiftId" name="shiftId" value={newClass.shiftId} onChange={handleInputChange} className={`mt-1 block w-full sm:p-2 p-1 text-[10px] sm:text-xs border rounded-md shadow-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-1 focus:ring-blue-500 focus:outline-none ${getErrorClass('shiftId')}`} required>
                                 {shiftOptions.map(shiftName => (<option key={shiftMap[shiftName]} value={shiftMap[shiftName]}>{shiftName}</option>))}
                             </select>
                         </div>
                     </div>
                     {formError.message && (
-                        <div className="text-red-500 text-xs text-center mb-4">
+                        <div className="text-red-500 text-[10px] sm:text-xs text-center mb-4">
                             {formError.message}
                         </div>
                     )}
-                    <div className="flex justify-end gap-2 pt-16">
-                        <button type="button" onClick={onClose} className="px-4 py-2 text-xs font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600">Cancel</button>
-                        <button type="submit" className="px-4 py-2 text-xs font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700">Create Class</button>
+                    <div className="flex justify-end gap-2 sm:pt-16 pt-8">
+                        <button type="button" onClick={onClose} className="sm:px-4 px-2 sm:py-2 py-1 text-[10px] sm:text-xs font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600">Cancel</button>
+                        <button type="submit" className="sm:px-4 px-2 sm:py-2 py-1 text-[10px] sm:text-xs font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700">Create Class</button>
                     </div>
                 </form>
             </div>
