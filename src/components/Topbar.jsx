@@ -32,11 +32,11 @@ const Topbar = ({ onToggleSidebar, isSidebarCollapsed, isMobileSidebarOpen, isSm
             {breadcrumbs.map((crumb, index) => (
               <React.Fragment key={index}>
                 {crumb.href ? (
-                  <Link href={crumb.href} className="max-w-[100px] hover:underline text-blue-600 truncate" title={crumb.label}>
+                  <Link href={crumb.href} className="max-w-[200px] hover:underline text-blue-600 truncate" title={crumb.label}>
                     {crumb.label}
                   </Link>
                 ) : (
-                  <span className="md:max-w-[400px] max-w-[200px] text-blue-700 dark:text-blue-400 truncate" title={crumb.label}>{crumb.label}</span>
+                  <span className="md:max-w-[400px] sm:max-w-[200px] max-w-[75px] text-blue-700 dark:text-blue-400 truncate" title={crumb.label}>{crumb.label}</span>
                 )}
                 {index < breadcrumbs.length - 1 && <span className="mx-2 text-blue-400">&gt;</span>}
               </React.Fragment>

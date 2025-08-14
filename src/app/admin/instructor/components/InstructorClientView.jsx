@@ -417,9 +417,9 @@ export default function InstructorClientView({ initialInstructors, initialDepart
                                                 <div className="flex items-center gap-2">
                                                     {data.profileImage ? 
                                                         <img src={data.profileImage} alt={data.name} className="sm:w-8 w-4 sm:h-8 h-4 rounded-full object-cover border border-gray-200 dark:border-gray-600 flex-shrink-0"/> 
-                                                        : <DefaultAvatarIcon className="size-8 rounded-full text-gray-400 bg-gray-100 dark:bg-gray-700 dark:text-gray-500 flex-shrink-0" />
+                                                        : <DefaultAvatarIcon className="sm:size-8 size-4 rounded-full text-gray-400 bg-gray-100 dark:bg-gray-700 dark:text-gray-500 flex-shrink-0" />
                                                     }
-                                                    <div className="max-w-[100px]">
+                                                    <div className="sm:max-w-[100px] max-w-[80px]">
                                                         <span className="truncate block" title={data.name}>{data.name}</span>
                                                     </div>
                                                 </div>
@@ -431,7 +431,7 @@ export default function InstructorClientView({ initialInstructors, initialDepart
                                             </td>
                                             <td className="sm:px-6 px-2 sm:py-2.5 py-1.5 lg:table-cell hidden truncate"> {formatPhoneNumber(data.phone)} </td>
                                             <td className="sm:px-6 px-2 sm:py-2.5 py-1.5">
-                                                <div className="max-w-[120px] truncate" title={data.majorStudied}>
+                                                <div className="sm:max-w-[120px] max-w-[85px] truncate" title={data.majorStudied}>
                                                     {data.majorStudied}
                                                 </div>
                                             </td>

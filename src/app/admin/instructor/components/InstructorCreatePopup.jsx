@@ -228,27 +228,27 @@ const InstructorCreatePopup = ({ isOpen, onClose, onSave, departments, departmen
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-            <div ref={popupRef} className="relative p-5 bg-white rounded-lg shadow-lg max-w-lg w-full dark:bg-gray-800 dark:text-white">
-                <h2 className="text-xl font-bold mb-4">Create New Instructor</h2>
-                <hr className="border-t border-gray-200 mt-4 mb-4" />
+            <div ref={popupRef} className="relative p-5 bg-white rounded-lg shadow-lg sm:max-w-lg max-w-[370px] w-full dark:bg-gray-800 dark:text-white">
+                <h2 className="sm:text-xl text-md font-bold sm:mb-4 mb-2">Create New Instructor</h2>
+                <hr className="border-t border-gray-200 sm:mt-4 mt-2 sm:mb-4 mb-2" />
                 <form onSubmit={handleSubmit}>
                     {/* Photo Upload Section */}
-                    <div className="flex flex-row items-center gap-4 mb-5">
+                    <div className="flex flex-row items-center sm:gap-4 gap-2 sm:mb-5 mb-3">
                         {imagePreviewUrl ? (
                             <img
                                 src={imagePreviewUrl}
                                 alt="Profile Preview"
-                                className="w-16 h-16 rounded-full object-cover border-2 border-gray-200 shadow-md"
+                                className="sm:w-16 w-12 sm:h-16 h-12 rounded-full object-cover border-2 border-gray-200 shadow-md"
                             />
                         ) : (
-                            <div className="w-16 h-16 rounded-full bg-gray-200 flex items-center justify-center text-gray-400 text-sm border-2 border-gray-200 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-400">
+                            <div className="sm:w-16 w-12 sm:h-16 h-12 rounded-full bg-gray-200 flex items-center justify-center text-gray-400 text-sm border-2 border-gray-200 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-400">
                                 <DefaultAvatarIcon className="w-26 h-26" />
                             </div>
                         )}
                         <button
                             type="button"
                             onClick={handleUploadButtonClick}
-                            className="rounded-md bg-white px-3 py-2 text-xs font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 dark:bg-gray-700 dark:text-gray-200 dark:ring-gray-600 dark:hover:bg-gray-600"
+                            className="rounded-md bg-white sm:px-3 px-1.5 sm:py-2 py-1 sm:text-xs text-[10px] font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 dark:bg-gray-700 dark:text-gray-200 dark:ring-gray-600 dark:hover:bg-gray-600"
                         >
                             {imagePreviewUrl ? 'Change Photo' : 'Upload Photo'}
                         </button>
@@ -259,7 +259,7 @@ const InstructorCreatePopup = ({ isOpen, onClose, onSave, departments, departmen
                                 className="p-1 rounded-full text-red-500 hover:bg-red-100 dark:text-red-400 dark:hover:bg-red-900/50"
                                 aria-label="Remove image"
                             >
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-6">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="sm:size-6 size-5">
                                   <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
                                 </svg>
                             </button>
@@ -276,68 +276,68 @@ const InstructorCreatePopup = ({ isOpen, onClose, onSave, departments, departmen
                     </div>
 
                     {/* Form Fields Section */}
-                    <div className="grid grid-cols-2 gap-3 mb-4 max-h-[60vh] pr-2">
+                    <div className="grid grid-cols-2 sm:gap-3 gap-1.5 sm:mb-4 mb-2 max-h-[60vh] pr-2">
                         <div>
-                            <label htmlFor="firstName" className="block mb-2 text-xs font-medium text-gray-900 dark:text-white">First Name</label>
-                            <input type="text" id="firstName" name="firstName" value={newInstructor.firstName} onChange={handleInputChange} className={`bg-gray-50 border text-gray-900 dark:text-white text-xs rounded-lg block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 focus:outline-none focus:ring-1 ${getErrorClass('firstName')}`} placeholder="John" required maxLength="26" />
+                            <label htmlFor="firstName" className="block mb-2 sm:text-xs text-[10px] font-medium text-gray-900 dark:text-white">First Name</label>
+                            <input type="text" id="firstName" name="firstName" value={newInstructor.firstName} onChange={handleInputChange} className={`bg-gray-50 border text-gray-900 dark:text-white sm:text-xs text-[10px] sm:rounded-lg rounded-md block w-full sm:p-2.5 p-1 dark:bg-gray-700 dark:border-gray-600 focus:outline-none focus:ring-1 ${getErrorClass('firstName')}`} placeholder="John" required maxLength="26" />
                         </div>
                         <div>
-                            <label htmlFor="lastName" className="block mb-2 text-xs font-medium text-gray-900 dark:text-white">Last Name</label>
-                            <input type="text" id="lastName" name="lastName" value={newInstructor.lastName} onChange={handleInputChange} className={`bg-gray-50 border text-gray-900 dark:text-white text-xs rounded-lg block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 focus:outline-none focus:ring-1 ${getErrorClass('lastName')}`} placeholder="Doe" required maxLength="26" />
+                            <label htmlFor="lastName" className="block mb-2 sm:text-xs text-[10px] font-medium text-gray-900 dark:text-white">Last Name</label>
+                            <input type="text" id="lastName" name="lastName" value={newInstructor.lastName} onChange={handleInputChange} className={`bg-gray-50 border text-gray-900 dark:text-white sm:text-xs text-[10px] sm:rounded-lg rounded-md block w-full sm:p-2.5 p-1 dark:bg-gray-700 dark:border-gray-600 focus:outline-none focus:ring-1 ${getErrorClass('lastName')}`} placeholder="Doe" required maxLength="26" />
                         </div>
                         <div className="col-span-2">
-                            <label htmlFor="email" className="block mb-2 text-xs font-medium text-gray-700 dark:text-gray-300">Email</label>
-                            <input type="email" id="email" name="email" value={newInstructor.email} onChange={handleInputChange} className={`bg-gray-50 border text-gray-900 dark:text-white text-xs rounded-lg block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 focus:outline-none focus:ring-1 ${getErrorClass('email')}`} placeholder="john.doe@example.com" required maxLength="254" />
+                            <label htmlFor="email" className="block mb-2 sm:text-xs text-[10px] font-medium text-gray-700 dark:text-gray-300">Email</label>
+                            <input type="email" id="email" name="email" value={newInstructor.email} onChange={handleInputChange} className={`bg-gray-50 border text-gray-900 dark:text-white sm:text-xs text-[10px] sm:rounded-lg rounded-md block w-full sm:p-2.5 p-1 dark:bg-gray-700 dark:border-gray-600 focus:outline-none focus:ring-1 ${getErrorClass('email')}`} placeholder="john.doe@example.com" required maxLength="254" />
                         </div>
                         <div className="col-span-2">
-                            <label htmlFor="password" className="block mb-2 text-xs font-medium text-gray-700 dark:text-gray-300">Password</label>
-                            <input type="password" id="password" name="password" value={newInstructor.password} onChange={handleInputChange} className={`bg-gray-50 border text-gray-900 dark:text-white text-xs rounded-lg block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 focus:outline-none focus:ring-1 ${getErrorClass('password')}`} placeholder="••••••••" required minLength={8} maxLength="65" />
+                            <label htmlFor="password" className="block mb-2 sm:text-xs text-[10px] font-medium text-gray-700 dark:text-gray-300">Password</label>
+                            <input type="password" id="password" name="password" value={newInstructor.password} onChange={handleInputChange} className={`bg-gray-50 border text-gray-900 dark:text-white sm:text-xs text-[10px] sm:rounded-lg rounded-md block w-full sm:p-2.5 p-1 dark:bg-gray-700 dark:border-gray-600 focus:outline-none focus:ring-1 ${getErrorClass('password')}`} placeholder="••••••••" required minLength={8} maxLength="65" />
                         </div>
                         <div>
-                            <label htmlFor="phone" className="block mb-2 text-xs font-medium text-gray-700 dark:text-gray-300">Phone Number</label>
-                            <input type="text" id="phone" name="phone" value={newInstructor.phone} onChange={handleInputChange} className={`bg-gray-50 border text-gray-900 dark:text-white text-xs rounded-lg block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 focus:outline-none focus:ring-1 ${getErrorClass('phone')}`} placeholder="012345678" required minLength="8" maxLength="15" />
+                            <label htmlFor="phone" className="block mb-2 sm:text-xs text-[10px] font-medium text-gray-700 dark:text-gray-300">Phone Number</label>
+                            <input type="text" id="phone" name="phone" value={newInstructor.phone} onChange={handleInputChange} className={`bg-gray-50 border text-gray-900 dark:text-white sm:text-xs text-[10px] sm:rounded-lg rounded-md block w-full sm:p-2.5 p-1 dark:bg-gray-700 dark:border-gray-600 focus:outline-none focus:ring-1 ${getErrorClass('phone')}`} placeholder="012345678" required minLength="8" maxLength="15" />
                         </div>
                         <div>
-                            <label htmlFor="degree" className="block mb-2 text-xs font-medium text-gray-700 dark:text-gray-300">Degree</label>
-                            <select id="degree" name="degree" value={newInstructor.degree} onChange={handleInputChange} className="bg-gray-50 border border-gray-300 text-gray-900 dark:text-white text-xs rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 focus:ring-1 focus:outline-none" required>
+                            <label htmlFor="degree" className="block mb-2 sm:text-xs text-[10px] font-medium text-gray-700 dark:text-gray-300">Degree</label>
+                            <select id="degree" name="degree" value={newInstructor.degree} onChange={handleInputChange} className="bg-gray-50 border border-gray-300 text-gray-900 dark:text-white sm:text-xs text-[10px] sm:rounded-lg rounded-md focus:ring-blue-500 focus:border-blue-500 block w-full sm:p-2.5 p-1 dark:bg-gray-700 dark:border-gray-600 focus:ring-1 focus:outline-none" required>
                                 {qualificationOptions.map(option => (<option key={option} value={option}>{option}</option>))}
                             </select>
                         </div>
                         <div>
-                            <label htmlFor="major" className="block mb-2 text-xs font-medium text-gray-700 dark:text-gray-300">Major</label>
+                            <label htmlFor="major" className="block mb-2 sm:text-xs text-[10px] font-medium text-gray-700 dark:text-gray-300">Major</label>
                             <input
                                 type="text"
                                 id="major"
                                 name="major"
                                 value={newInstructor.major}
                                 onChange={handleInputChange}
-                                className={`bg-gray-50 border text-gray-900 dark:text-white text-xs rounded-lg block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 focus:outline-none focus:ring-1 ${getErrorClass('major')}`}
+                                className={`bg-gray-50 border text-gray-900 dark:text-white sm:text-xs text-[10px] sm:rounded-lg rounded-md block w-full sm:p-2.5 p-1 dark:bg-gray-700 dark:border-gray-600 focus:outline-none focus:ring-1 ${getErrorClass('major')}`}
                                 placeholder="e.g., Computer Science"
                                 required
                                 maxLength="50"
                             />
                         </div>
                         <div>
-                            <label htmlFor="departmentId" className="block mb-2 text-xs font-medium text-gray-700 dark:text-gray-300">Department / Faculty</label>
-                            <select id="departmentId" name="departmentId" value={newInstructor.departmentId} onChange={handleInputChange} className="bg-gray-50 border border-gray-300 text-gray-900 dark:text-white text-xs rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 focus:ring-1 focus:outline-none" required>
+                            <label htmlFor="departmentId" className="block mb-2 sm:text-xs text-[10px] font-medium text-gray-700 dark:text-gray-300">Department / Faculty</label>
+                            <select id="departmentId" name="departmentId" value={newInstructor.departmentId} onChange={handleInputChange} className="bg-gray-50 border border-gray-300 text-gray-900 dark:text-white sm:text-xs text-[10px] sm:rounded-lg rounded-md focus:ring-blue-500 focus:border-blue-500 block w-full sm:p-2.5 p-1 dark:bg-gray-700 dark:border-gray-600 focus:ring-1 focus:outline-none" required>
                                 {departmentsError && <option value="">Error loading departments</option>}
                                 {!departments && !departmentsError && <option value="">Loading...</option>}
                                 {departments && departments.map(dep => (<option key={dep.departmentId} value={dep.departmentId}>{dep.name}</option>))}
                             </select>
                         </div>
                         <div className="col-span-2">
-                            <label htmlFor="address" className="block mb-2 text-xs font-medium text-gray-700 dark:text-gray-300">Address</label>
-                            <input id="address" name="address" value={newInstructor.address} onChange={handleInputChange} className={`bg-gray-50 border text-gray-900 text-xs rounded-lg block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 focus:outline-none focus:ring-1 ${getErrorClass('address')}`} placeholder="123 Main Street, City, Country" required minLength={20} maxLength={60} />
+                            <label htmlFor="address" className="block mb-2 sm:text-xs text-[10px] font-medium text-gray-700 dark:text-gray-300">Address</label>
+                            <input id="address" name="address" value={newInstructor.address} onChange={handleInputChange} className={`bg-gray-50 border text-gray-900 sm:text-xs text-[10px] sm:rounded-lg rounded-md block w-full sm:p-2.5 p-1 dark:bg-gray-700 dark:border-gray-600 focus:outline-none focus:ring-1 ${getErrorClass('address')}`} placeholder="123 Main Street, City, Country" required minLength={20} maxLength={60} />
                         </div>
                     </div>
                     {formError.message && (
-                        <div className="text-red-500 text-xs text-center mb-4">
+                        <div className="text-red-500 sm:text-xs text-[10px] text-center mb-4">
                             {formError.message}
                         </div>
                     )}
                     <div className="flex justify-end gap-2 pt-2">
-                        <button type="button" onClick={onClose} className="px-4 py-2 text-xs font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600">Cancel</button>
-                        <button type="submit" disabled={isSubmitting} className="px-4 py-2 text-xs font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed">
+                        <button type="button" onClick={onClose} className="sm:px-4 px-2 sm:py-2 py-1 sm:text-xs text-[10px] font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600">Cancel</button>
+                        <button type="submit" disabled={isSubmitting} className="sm:px-4 px-2 sm:py-2 py-1 sm:text-xs text-[10px] font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed">
                             {isSubmitting ? 'Creating...' : 'Create Instructor'}
                         </button>
                     </div>

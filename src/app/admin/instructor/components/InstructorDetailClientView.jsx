@@ -305,8 +305,8 @@ export default function InstructorDetailClientView({ initialInstructor, allDepar
     const currentData = isEditingGeneral ? editableInstructorDetails : instructorDetails;
     
     const renderTextField = (label, name, value, isEditing, opts = {}) => (
-        <div className="form-group flex-1 min-w-[200px]">
-            <label className="form-label block font-semibold text-xs text-num-dark-text dark:text-white mb-1">{label}</label>
+        <div className="form-group flex-1">
+            <label className="form-label block font-semibold sm:text-xs text-[8px] text-num-dark-text dark:text-white mb-1">{label}</label>
             <input 
                 type={opts.type || "text"} 
                 name={name} 
@@ -317,46 +317,46 @@ export default function InstructorDetailClientView({ initialInstructor, allDepar
                 disabled={loading} 
                 minLength={opts.minLength}
                 maxLength={opts.maxLength}
-                className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs text-num-dark-text dark:text-white focus:ring-blue-500 focus:outline-none focus:ring-2 ${!isEditing ? 'bg-gray-100 dark:bg-gray-800 border-num-gray-light dark:border-gray-700 text-gray-500 dark:text-gray-400' : 'bg-num-content-bg dark:bg-gray-700 border-num-gray-light dark:border-gray-600'}`}
+                className={`form-input w-full sm:py-2 py-1 sm:px-3 px-1.5 border rounded-md font-medium sm:text-xs text-[8px] text-num-dark-text dark:text-white focus:ring-blue-500 focus:outline-none focus:ring-2 ${!isEditing ? 'bg-gray-100 dark:bg-gray-800 border-num-gray-light dark:border-gray-700 text-gray-500 dark:text-gray-400' : 'bg-num-content-bg dark:bg-gray-700 border-num-gray-light dark:border-gray-600'}`}
             />
         </div>
     );
     const renderSelectField = (label, name, value, options, isEditing, valueKey = 'id', labelKey = 'name') => (
-        <div className="form-group flex-1 min-w-[200px]">
-            <label className="form-label block font-semibold text-xs text-num-dark-text dark:text-white mb-1">{label}</label>
-            {isEditing ? ( <select name={name} value={value} onChange={handleInputChange} disabled={loading} className="form-input w-full py-2 px-3 bg-num-content-bg border border-num-gray-light dark:bg-gray-700 dark:border-gray-600 rounded-md font-medium text-xs text-num-dark-text dark:text-white focus:ring-2 focus:ring-blue-500 focus:outline-none">{options.map(option => {
+        <div className="form-group flex-1">
+            <label className="form-label block font-semibold sm:text-xs text-[8px] text-num-dark-text dark:text-white mb-1">{label}</label>
+            {isEditing ? ( <select name={name} value={value} onChange={handleInputChange} disabled={loading} className="form-input w-full sm:py-2 py-1 sm:px-3 px-1.5 bg-num-content-bg border border-num-gray-light dark:bg-gray-700 dark:border-gray-600 rounded-md font-medium sm:text-xs text-[8px] text-num-dark-text dark:text-white focus:ring-2 focus:ring-blue-500 focus:outline-none">{options.map(option => {
                 const optionValue = typeof option === 'object' ? option[labelKey] : option;
                 const optionKey = typeof option === 'object' ? option[valueKey] : option;
                 return <option key={optionKey} value={optionValue}>{optionValue}</option>
-            })}</select> ) : ( <input type="text" value={value} readOnly className="form-input w-full py-2 px-3 bg-gray-100 border border-num-gray-light dark:bg-gray-800 dark:border-gray-700 rounded-md font-medium text-xs text-gray-500 dark:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500" /> )}
+            })}</select> ) : ( <input type="text" value={value} readOnly className="form-input w-full sm:py-2 py-1 sm:px-3 px-1.5 bg-gray-100 border border-num-gray-light dark:bg-gray-800 dark:border-gray-700 rounded-md font-medium sm:text-xs text-[8px] text-gray-500 dark:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500" /> )}
         </div>
     );
     const renderPasswordField = (label, name, value, onChange, fieldName, hasError = false, opts = {}) => (
-        <div className="form-group flex-1 min-w-[200px]">
-            <label className="form-label block font-semibold text-xs text-num-dark-text dark:text-white mb-1">{label}</label>
+        <div className="form-group flex-1">
+            <label className="form-label block font-semibold sm:text-xs text-[8px] text-num-dark-text dark:text-white mb-1">{label}</label>
             <div className="relative">
-                <input type={passwordVisibility[fieldName] ? "text" : "password"} name={name} className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs focus:ring-blue-500 focus:outline-none focus:ring-2 ${!isEditingPassword ? 'bg-gray-100 dark:bg-gray-800 border-num-gray-light dark:border-gray-700 text-gray-500 dark:text-gray-400' : 'bg-white dark:bg-gray-700 border-num-gray-light dark:border-gray-600 text-num-dark-text dark:text-white'} ${ hasError ? 'border-red-500 ring-1 ring-red-500' : '' }`} placeholder={`Enter ${label.toLowerCase()}`} value={value || ''} onChange={onChange} readOnly={!isEditingPassword} disabled={loading} maxLength={opts.maxLength} />
+                <input type={passwordVisibility[fieldName] ? "text" : "password"} name={name} className={`form-input w-full sm:py-2 py-1 sm:px-3 px-1.5 border rounded-md font-medium sm:text-xs text-[8px] focus:ring-blue-500 focus:outline-none focus:ring-2 ${!isEditingPassword ? 'bg-gray-100 dark:bg-gray-800 border-num-gray-light dark:border-gray-700 text-gray-500 dark:text-gray-400' : 'bg-white dark:bg-gray-700 border-num-gray-light dark:border-gray-600 text-num-dark-text dark:text-white'} ${ hasError ? 'border-red-500 ring-1 ring-red-500' : '' }`} placeholder={`Enter ${label.toLowerCase()}`} value={value || ''} onChange={onChange} readOnly={!isEditingPassword} disabled={loading} maxLength={opts.maxLength} />
                 {isEditingPassword && ( <button type="button" onClick={() => togglePasswordVisibility(fieldName)} className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500 hover:text-gray-700" aria-label={passwordVisibility[fieldName] ? "Hide password" : "Show password"}>{passwordVisibility[fieldName] ? <EyeClosedIcon /> : <EyeOpenIcon />}</button> )}
             </div>
         </div>
     );
     
     return (
-        <div className='p-6 dark:text-white'>
+        <div className='sm:p-6 p-2 dark:text-white'>
             {toast.show && <Toast message={toast.message} type={toast.type} onClose={() => setToast({ ...toast, show: false })} />}
-            <div className="section-title font-semibold text-lg text-num-dark-text dark:text-white mb-4">Instructor Details</div>
-            <hr className="border-t border-slate-300 dark:border-slate-700 mt-4 mb-8" />
-            <div className="profile-section flex gap-8 mb-4 flex-wrap">
-                <div className="avatar-card w-[220px] h-[110px] p-3 bg-white border border-num-gray-light dark:bg-gray-800 dark:border-gray-700 shadow-custom-light rounded-lg flex-shrink-0">
+            <div className="section-title font-bold sm:text-lg text-sm text-num-dark-text dark:text-white sm:mb-4 mb-2">Instructor Details</div>
+            <hr className="border-t border-slate-300 dark:border-slate-700 sm:mt-4 mt-2 sm:mb-8 mb-4" />
+            <div className="profile-section flex flex-col lg:flex-row sm:gap-6 gap-3">
+                <div className="avatar-card w-full lg:w-[220px] h-auto lg:h-[110px] p-3 bg-white border border-num-gray-light dark:bg-gray-800 dark:border-gray-700 shadow-custom-light rounded-lg flex-shrink-0">
                     <div className="avatar-content flex relative">
                         {imagePreviewUrl ? ( <Image src={imagePreviewUrl} alt="Profile Preview" width={56} height={56} className="avatar-img w-14 h-14 rounded-full mr-3 object-cover" /> ) : ( <DefaultAvatarIcon className="avatar-img w-16 h-16 rounded-full mr-3" /> )}
                         <span className={`avatar-img absolute left-[40px] bottom-[20px] block h-4 w-4 rounded-full border-2 border-white dark:border-gray-800 ${instructorDetails.status === 'active' ? 'bg-green-500' : 'bg-red-500'}`} title={`Status: ${instructorDetails.status}`}></span>
                         <div className='avatar-info flex flex-col overflow-hidden min-w-0'>
                             <div className='avatar-name font-semibold text-lg text-black dark:text-white mb-0.5'>
-                                <h2 className="max-w-[120px] text-sm font-semibold text-gray-900 dark:text-white truncate" title={currentData.name}>{currentData.name}</h2>
+                                <h2 className="lg:max-w-[120px] max-w-[200px] text-sm font-semibold text-gray-900 dark:text-white truncate" title={currentData.name}>{currentData.name}</h2>
                                 <p className="text-xs text-gray-500 dark:text-gray-400">Instructor</p>
                             </div>
-                            <button type="button" onClick={handleUploadButtonClick} disabled={isUploading || !isEditingGeneral} className="w-full rounded-md mt-2 px-3 py-2 text-xs font-semibold text-white shadow-sm ring-1 ring-inset bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed dark:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600">
+                            <button type="button" onClick={handleUploadButtonClick} disabled={isUploading || !isEditingGeneral} className="sm:w-full max-w-[120px] rounded-md mt-2 px-3 py-2 text-xs font-semibold text-white shadow-sm ring-1 ring-inset bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed dark:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600">
                                 {isUploading ? 'Uploading...' : 'Upload Photo'}
                             </button>
                             <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" className="sr-only" />
@@ -364,37 +364,40 @@ export default function InstructorDetailClientView({ initialInstructor, allDepar
                     </div>
                 </div>
 
-                <div className="info-details-wrapper flex-grow flex flex-col gap-8 min-w-[300px]">
-                    <div className="info-card p-3 sm:p-4 bg-white border border-num-gray-light dark:bg-gray-800 dark:border-gray-700 shadow-custom-light rounded-lg">
+                <div className="info-details-wrapper flex-grow flex flex-col sm:gap-6 gap-3">
+                    <div className="info-card p-2 sm:p-4 bg-white border border-num-gray-light dark:bg-gray-800 dark:border-gray-700 shadow-custom-light rounded-lg">
                         <div className="section-title font-semibold text-sm text-num-dark-text dark:text-white mb-3">General Information</div>
-                        <div className="form-row flex gap-3 mb-2 flex-wrap">
+                        <div className="form-row flex flex-wrap sm:gap-3 gap-1.5 mb-2">
                             {renderTextField("First Name", "firstName", currentData.firstName, isEditingGeneral, { maxLength: 20 })}
                             {renderTextField("Last Name", "lastName", currentData.lastName, isEditingGeneral, { maxLength: 30 })}
                         </div>
-                        <div className="form-row flex gap-3 mb-2 flex-wrap">
+                        <div className="form-row flex flex-wrap sm:gap-3 gap-1.5 mb-2">
                             {renderTextField("Email", "email", currentData.email, isEditingGeneral, { type: 'email', maxLength: 254 })}
                             {renderTextField("Phone Number", "phone", currentData.phone, isEditingGeneral, { type: 'tel', minLength: 8, maxLength: 15 })}
                         </div>
-                        <div className="form-row flex gap-3 mb-2 flex-wrap">
+                        <div className="form-row flex flex-wrap sm:gap-3 gap-1.5 mb-2">
                             {renderTextField("Major", "major", currentData.major, isEditingGeneral, { maxLength: 50 })}
                             {renderSelectField("Degree", "degree", currentData.degree, degreeOptions, isEditingGeneral)}
                         </div>
-                        <div className="form-row flex gap-3 mb-2 flex-wrap">{renderSelectField("Department / Faculty", "department", currentData.department, allDepartments, isEditingGeneral, 'departmentId', 'name')}{renderTextField("Address", "address", currentData.address, isEditingGeneral, { maxLength: 65 })}</div>
+                        <div className="form-row flex flex-wrap sm:gap-3 gap-1.5 mb-2">
+                            {renderSelectField("Department / Faculty", "department", currentData.department, allDepartments, isEditingGeneral, 'departmentId', 'name')}
+                            {renderTextField("Address", "address", currentData.address, isEditingGeneral, { maxLength: 65 })}
+                        </div>
                         <div className="form-actions flex justify-end items-center gap-3 mt-4">
-                            {isEditingGeneral ? ( <> <button onClick={() => handleCancelClick('general')} className="back-button bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 shadow-custom-light rounded-md text-gray-800 dark:text-white border-none py-2 px-3 font-semibold text-xs cursor-pointer" disabled={loading}>Cancel</button><button onClick={() => handleSaveClick('general')} className="save-button bg-blue-600 hover:bg-blue-700 shadow-custom-light rounded-md text-white border-none py-2 px-3 font-semibold text-xs cursor-pointer" disabled={loading}>{loading ? "Saving..." : "Save Changes"}</button> </> ) : ( <> <button onClick={() => handleEditClick('general')} className="save-button bg-blue-600 hover:bg-blue-700 shadow-custom-light rounded-md text-white border-none py-2 px-3 font-semibold text-xs cursor-pointer" disabled={loading}>Edit Profile</button> </> )}
+                            {isEditingGeneral ? ( <> <button onClick={() => handleCancelClick('general')} className="back-button bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 shadow-custom-light sm:rounded-md rounded-[6px] text-gray-800 dark:text-white border-none sm:py-2 py-1 sm:px-3 px-1.5 sm:font-semibold sm:text-xs text-[10px] cursor-pointer" disabled={loading}>Cancel</button><button onClick={() => handleSaveClick('general')} className="save-button bg-blue-600 hover:bg-blue-700 shadow-custom-light sm:rounded-md rounded-[6px] text-white border-none sm:py-2 py-1 sm:px-3 px-1.5 sm:font-semibold sm:text-xs text-[10px] cursor-pointer" disabled={loading}>{loading ? "Saving..." : "Save Changes"}</button> </> ) : ( <> <button onClick={() => handleEditClick('general')} className="save-button bg-blue-600 hover:bg-blue-700 shadow-custom-light sm:rounded-md rounded-[6px] text-white border-none sm:py-2 py-1 sm:px-3 px-1.5 sm:font-semibold sm:text-xs text-[10px] cursor-pointer" disabled={loading}>Edit Profile</button> </> )}
                         </div>
                     </div>
 
-                    <div className="info-card-password p-3 sm:p-4 bg-white border border-num-gray-light dark:bg-gray-800 dark:border-gray-700 shadow-custom-light rounded-lg">
+                    <div className="info-card-password p-2 sm:p-4 bg-white border border-num-gray-light dark:bg-gray-800 dark:border-gray-700 shadow-custom-light rounded-lg">
                         <div className="section-title font-semibold text-sm text-num-dark-text dark:text-white mb-3">Password information</div>
                         <div className="space-y-4">
-                            <div className="form-row flex gap-3 mb-2 flex-wrap">
+                            <div className="form-row flex flex-wrap sm:gap-3 gap-1.5 mb-2">
                                 {renderPasswordField("New Password", "newPassword", newPassword, handleNewPasswordChange, "new", passwordMismatchError || emptyPasswordError.new, { maxLength: 64 })}
                                 {renderPasswordField("Confirm New Password", "confirmNewPassword", confirmNewPassword, handleConfirmPasswordChange, "confirm", passwordMismatchError || emptyPasswordError.confirm, { maxLength: 64 })}
                             </div>
                         </div>
                         <div className="form-actions flex justify-end items-center gap-3 mt-4">
-                             {isEditingPassword ? ( <> <button onClick={() => handleCancelClick('password')} className="back-button bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 shadow-custom-light rounded-md text-gray-800 dark:text-white border-none py-2 px-3 font-semibold text-xs cursor-pointer" disabled={loading}>Cancel</button><button onClick={() => handleSaveClick('password')} className="save-button bg-blue-600 hover:bg-blue-700 shadow-custom-light rounded-md text-white border-none py-2 px-3 font-semibold text-xs cursor-pointer" disabled={loading}>{loading ? "Saving..." : "Save Password"}</button> </> ) : ( <> <button onClick={() => router.back()} className="back-button bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 shadow-custom-light rounded-md text-gray-800 dark:text-white border-none py-2 px-3 font-semibold text-xs cursor-pointer" disabled={loading}> Back </button> <button onClick={() => handleEditClick('password')} className="save-button bg-blue-600 hover:bg-blue-700 shadow-custom-light rounded-md text-white border-none py-2 px-3 font-semibold text-xs cursor-pointer" disabled={loading}>Change Password</button> </> )}
+                             {isEditingPassword ? ( <> <button onClick={() => handleCancelClick('password')} className="back-button bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 shadow-custom-light sm:rounded-md rounded-[6px] text-gray-800 dark:text-white border-none sm:py-2 py-1 sm:px-3 px-1.5 sm:font-semibold sm:text-xs text-[10px] cursor-pointer" disabled={loading}>Cancel</button><button onClick={() => handleSaveClick('password')} className="save-button bg-blue-600 hover:bg-blue-700 shadow-custom-light sm:rounded-md rounded-[6px] text-white border-none sm:py-2 py-1 sm:px-3 px-1.5 sm:font-semibold sm:text-xs text-[10px] cursor-pointer" disabled={loading}>{loading ? "Saving..." : "Save Password"}</button> </> ) : ( <> <button onClick={() => router.back()} className="back-button bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 shadow-custom-light sm:rounded-md rounded-[6px] text-gray-800 dark:text-white border-none sm:py-2 py-1 sm:px-3 px-1.5 sm:font-semibold sm:text-xs text-[10px] cursor-pointer" disabled={loading}> Back </button> <button onClick={() => handleEditClick('password')} className="save-button bg-blue-600 hover:bg-blue-700 shadow-custom-light sm:rounded-md rounded-[6px] text-white border-none sm:py-2 py-1 sm:px-3 px-1.5 sm:font-semibold sm:text-xs text-[10px] cursor-pointer" disabled={loading}>Change Password</button> </> )}
                         </div>
                     </div>
                 </div>

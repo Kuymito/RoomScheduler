@@ -406,10 +406,10 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
     };
     
     const renderSelectField = (label, name, value, options, keyField, valueField, labelField) => (
-        <div className="form-group flex-1 min-w-[200px]">
-            <label className="form-label block font-semibold text-xs text-num-dark-text dark:text-white mb-1">{label}</label>
+        <div className="form-group flex-1">
+            <label className="form-label block font-semibold sm:text-xs text-[8px] text-num-dark-text dark:text-white mb-1">{label}</label>
             {isEditing ? (
-                <select name={name} value={value} onChange={handleInputChange} disabled={loading} className="form-input w-full py-2 px-3 bg-num-content-bg border border-num-gray-light dark:bg-gray-700 dark:border-gray-600 rounded-md font-medium text-xs text-num-dark-text dark:text-white focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                <select name={name} value={value} onChange={handleInputChange} disabled={loading} className="form-input w-full sm:py-2 py-1 sm:px-3 px-1.5 bg-num-content-bg border border-num-gray-light dark:bg-gray-700 dark:border-gray-600 rounded-md font-medium sm:text-xs text-[8px] text-num-dark-text dark:text-white focus:ring-2 focus:ring-blue-500 focus:outline-none">
                     {options.map(option => {
                         const optionKey = keyField ? option[keyField] : (typeof option === 'object' ? JSON.stringify(option) : option);
                         const optionValue = valueField ? option[valueField] : option;
@@ -418,16 +418,16 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
                     })}
                 </select>
             ) : (
-                <input type="text" value={value} readOnly className="form-input w-full py-2 px-3 bg-gray-100 border border-num-gray-light dark:bg-gray-800 dark:border-gray-700 rounded-md font-medium text-xs text-gray-500 dark:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+                <input type="text" value={value} readOnly className="form-input w-full sm:py-2 py-1 sm:px-3 px-1.5 bg-gray-100 border border-num-gray-light dark:bg-gray-800 dark:border-gray-700 rounded-md font-medium sm:text-xs text-[8px] text-gray-500 dark:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"/>
             )}
         </div>
     );
 
     const renderMajorSelectField = () => (
-        <div className="form-group flex-1 min-w-[200px]">
-            <label className="form-label block font-semibold text-xs text-num-dark-text dark:text-white mb-1">Major</label>
+        <div className="form-group flex-1">
+            <label className="form-label block font-semibold sm:text-xs text-[8px] text-num-dark-text dark:text-white mb-1">Major</label>
             {isEditing ? (
-                <select name="major" value={classData.major} onChange={handleInputChange} disabled={loading || filteredMajors.length === 0} className="form-input w-full py-2 px-3 bg-num-content-bg border border-num-gray-light dark:bg-gray-700 dark:border-gray-600 rounded-md font-medium text-xs text-num-dark-text dark:text-white focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                <select name="major" value={classData.major} onChange={handleInputChange} disabled={loading || filteredMajors.length === 0} className="form-input w-full sm:py-2 py-1 sm:px-3 px-1.5 bg-num-content-bg border border-num-gray-light dark:bg-gray-700 dark:border-gray-600 rounded-md font-medium sm:text-xs text-[8px] text-num-dark-text dark:text-white focus:ring-2 focus:ring-blue-500 focus:outline-none">
                     {filteredMajors.length > 0 ? (
                         filteredMajors.map(major => (
                             <option key={major.major_id} value={major.majorName}>{major.majorName}</option>
@@ -437,20 +437,20 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
                     )}
                 </select>
             ) : (
-                <input type="text" value={classData.major} readOnly className="form-input w-full py-2 px-3 bg-gray-100 border border-num-gray-light dark:bg-gray-800 dark:border-gray-700 rounded-md font-medium text-xs text-gray-500 dark:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+                <input type="text" value={classData.major} readOnly className="form-input w-full sm:py-2 py-1 sm:px-3 px-1.5 bg-gray-100 border border-num-gray-light dark:bg-gray-800 dark:border-gray-700 rounded-md font-medium sm:text-xs text-[8px] text-gray-500 dark:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"/>
             )}
         </div>
     );
     
     const renderTextField = (label, name, value, opts = {}) => (
-         <div className="form-group flex-1 min-w-[200px]">
-            <label className="form-label block font-semibold text-xs text-num-dark-text dark:text-white mb-1">{label}</label>
-            <input type="text" name={name} value={value || ''} onChange={handleInputChange} readOnly={!isEditing} disabled={loading} className={`form-input w-full py-2 px-3 border rounded-md font-medium text-xs text-num-dark-text dark:text-white focus:ring-blue-500 focus:outline-none focus:ring-2 ${!isEditing ? 'bg-gray-100 dark:bg-gray-800 border-num-gray-light dark:border-gray-700 text-gray-500 dark:text-gray-400' : 'bg-num-content-bg dark:bg-gray-700 border-num-gray-light dark:border-gray-600'}`} maxLength={opts.maxLength} />
+         <div className="form-group flex-1">
+            <label className="form-label block font-semibold sm:text-xs text-[8px] text-num-dark-text dark:text-white mb-1">{label}</label>
+            <input type="text" name={name} value={value || ''} onChange={handleInputChange} readOnly={!isEditing} disabled={loading} className={`form-input w-full sm:py-2 py-1 sm:px-3 px-1.5 border rounded-md font-medium sm:text-xs text-[8px] text-num-dark-text dark:text-white focus:ring-blue-500 focus:outline-none focus:ring-2 ${!isEditing ? 'bg-gray-100 dark:bg-gray-800 border-num-gray-light dark:border-gray-700 text-gray-500 dark:text-gray-400' : 'bg-num-content-bg dark:bg-gray-700 border-num-gray-light dark:border-gray-600'}`} maxLength={opts.maxLength} />
         </div>
     );
 
     const renderDateField = (label, name, value) => (
-        <div className="form-group flex-1 min-w-[200px]">
+        <div className="form-group flex-1">
             <label className="form-label block font-semibold text-xs text-num-dark-text dark:text-white mb-1">{label}</label>
             <input
                 type={isEditing ? 'date' : 'text'}
@@ -741,14 +741,14 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
         }
     };
 
-    const saveButtonBaseClasses = "w-full sm:w-auto px-6 py-2 text-sm text-white rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-opacity-50 transition-all duration-150 ease-in-out transform active:scale-95";
-    const downloadButtonBaseClasses = "w-full sm:w-auto px-6 py-2 text-sm text-white rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-opacity-50 transition-colors duration-150 ease-in-out transform active:scale-95";
+    const saveButtonBaseClasses = "sm:w-auto sm:px-6 px-3 sm:py-2 py-1.5 sm:text-sm text-xs text-white rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-opacity-50 transition-all duration-150 ease-in-out transform active:scale-95";
+    const downloadButtonBaseClasses = "sm:w-auto sm:px-6 px-3 sm:py-2 py-1.5 sm:text-sm text-xs text-white rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-opacity-50 transition-colors duration-150 ease-in-out transform active:scale-95";
     const scheduleIsEmpty = Object.values(schedule).every(dayData => !dayData || !dayData.instructor);
     const saveButtonColorClasses = isSaving ? "bg-gray-400 opacity-60 cursor-not-allowed" : isDirty ? "bg-blue-600 hover:bg-blue-700 focus:ring-blue-500" : "bg-gray-400 opacity-80 cursor-not-allowed";
     const downloadButtonColorClasses = isSaving || isDirty || scheduleIsEmpty ? "bg-gray-400 opacity-60 cursor-not-allowed" : "bg-blue-500 hover:bg-blue-600 focus:ring-blue-400";
     
     return (
-        <div className='p-6 dark:text-white relative'>
+        <div className='sm:p-6 p-2 dark:text-white'>
             {isPreparingPdf && (
                 <div className="absolute inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center z-50 rounded-lg">
                     <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-xl flex items-center gap-4">
@@ -759,68 +759,68 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
             )}
 
             {toast.show && <Toast message={toast.message} type={toast.type} onClose={() => setToast({ ...toast, show: false })} />}
-            <div className="section-title font-semibold text-lg text-num-dark-text dark:text-white mb-1">Class Details</div>
-            <hr className="border-t border-slate-300 dark:border-slate-700 mt-4 mb-8" />
-            <div className="class-section flex flex-col gap-6">
-                <div className="info-details-wrapper flex-grow flex flex-col gap-8 min-w-[300px]">
-                    <div className="info-card p-3 sm:p-4 bg-white border border-num-gray-light dark:bg-gray-800 dark:border-gray-700 shadow-custom-light rounded-lg">
-                        <div className="section-title font-semibold text-md text-num-dark-text dark:text-white mb-3">General Information</div>
-                        <div className="form-row flex gap-3 mb-2 flex-wrap">{renderTextField("Class Name", "name", classData.name, { maxLength: 30 })}</div>
-                        <div className="form-row flex gap-3 mb-2 flex-wrap">
+            <div className="section-title font-bold sm:text-lg text-sm text-num-dark-text dark:text-white sm:mb-1 mb-0.5">Class Details</div>
+            <hr className="border-t border-slate-300 dark:border-slate-700 sm:mt-4 mt-1.5 sm:mb-8 mb-3" />
+            <div className="class-section flex flex-col sm:gap-6 gap-3">
+                <div className="info-details-wrapper flex-grow flex flex-col sm:gap-8 gap-4">
+                    <div className="info-card p-2 sm:p-4 bg-white border border-num-gray-light dark:bg-gray-800 dark:border-gray-700 shadow-custom-light rounded-lg">
+                        <div className="section-title font-semibold sm:text-md text-xs text-num-dark-text dark:text-white mb-3">General Information</div>
+                        <div className="form-row flex sm:gap-3 gap-1.5 mb-2 flex-wrap">{renderTextField("Class Name", "name", classData.name, { maxLength: 30 })}</div>
+                        <div className="form-row flex sm:gap-3 gap-1.5 mb-2 flex-wrap">
                             {renderTextField("Group", "group", classData.group, { maxLength: 3 })}
                             {renderSelectField("Generation", "generation", classData.generation, generationOptions)}
                         </div>
-                        <div className="form-row flex gap-3 mb-2 flex-wrap">
+                        <div className="form-row flex sm:gap-3 gap-1.5 mb-2 flex-wrap">
                             {renderSelectField("Faculty", "faculty", classData.faculty, allDepartments, 'departmentId', 'name', 'name')}
                             {renderSelectField("Degree", "degrees", classData.degrees, degreesOptions)}
                             {renderMajorSelectField()}
                         </div>
-                        <div className="form-row flex gap-3 mb-2 flex-wrap">
+                        <div className="form-row flex sm:gap-3 gap-1.5 mb-2 flex-wrap">
                             {renderSelectField("Semester", "semester", classData.semester, semesterOptions)}
                             {renderSelectField("Shift", "shift", classData.shift, shiftOptions, null, null, null)}
                             {renderSelectField("Status", "status", classData.status, statusOptions)}
                         </div>
-                        <div className="form-actions flex justify-end items-center gap-3 mt-4">
+                        <div className="form-actions flex justify-end items-center sm:gap-3 gap-1.5 mt-4">
                             {isEditing ? (
                                 <>
-                                    <button onClick={handleCancelClick} className="back-button bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 shadow-custom-light rounded-md text-gray-800 dark:text-white border-none py-2 px-3 font-semibold text-xs cursor-pointer" disabled={loading}>Cancel</button>
-                                    <button onClick={handleSaveDetails} className="save-button bg-blue-600 hover:bg-blue-700 shadow-custom-light rounded-md text-white border-none py-2 px-3 font-semibold text-xs cursor-pointer" disabled={loading}>{loading ? "Saving..." : "Save Changes"}</button>
+                                    <button onClick={handleCancelClick} className="back-button bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 shadow-custom-light sm:rounded-md rounded-[6px] text-gray-800 dark:text-white border-none sm:py-2 py-1 sm:px-3 px-1.5 sm:font-semibold sm:text-xs text-[10px] cursor-pointer" disabled={loading}>Cancel</button>
+                                    <button onClick={handleSaveDetails} className="save-button bg-blue-600 hover:bg-blue-700 shadow-custom-light sm:rounded-md rounded-[6px] text-white border-none sm:py-2 py-1 sm:px-3 px-1.5 sm:font-semibold sm:text-xs text-[10px] cursor-pointer" disabled={loading}>{loading ? "Saving..." : "Save Changes"}</button>
                                 </>
                             ) : (
                                 <>
-                                    <button onClick={() => router.back()} className="back-button bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 shadow-custom-light rounded-md text-gray-800 dark:text-white border-none py-2 px-3 font-semibold text-xs cursor-pointer" disabled={loading}>Back</button>
-                                    <button onClick={handleEditToggle} className="edit-button bg-blue-600 hover:bg-blue-700 shadow-custom-light rounded-md text-white border-none py-2 px-3 font-semibold text-xs cursor-pointer" disabled={loading}>Edit Class</button>
+                                    <button onClick={() => router.back()} className="back-button bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 shadow-custom-light sm:rounded-md rounded-[6px] text-gray-800 dark:text-white border-none sm:py-2 py-1 sm:px-3 px-1.5 sm:font-semibold sm:text-xs text-[10px] cursor-pointer" disabled={loading}>Back</button>
+                                    <button onClick={handleEditToggle} className="edit-button bg-blue-600 hover:bg-blue-700 shadow-custom-light sm:rounded-md rounded-[6px] text-white border-none sm:py-2 py-1 sm:px-3 px-1.5 sm:font-semibold sm:text-xs text-[10px] cursor-pointer" disabled={loading}>Edit Class</button>
                                 </>
                             )}
                         </div>
                     </div>
                 </div>
-                <div className='flex-grow flex flex-col lg:flex-row gap-6 min-w-[300px]'>
-                    <div className='h-[530px] lg:w-[250px] xl:w-[280px] flex-shrink-0 p-4 bg-white border border-num-gray-light dark:bg-gray-800 dark:border-gray-700 shadow-custom-light rounded-lg self-start flex flex-col'>
+                <div className='flex-grow flex flex-col lg:flex-row sm:gap-6 gap-3'>
+                    <div className='sm:h-[530px] h-[330px] lg:w-[250px] xl:w-[280px] w-full flex-shrink-0 sm:p-4 p-2 bg-white border border-num-gray-light dark:bg-gray-800 dark:border-gray-700 shadow-custom-light rounded-lg self-start flex flex-col'>
                         <div> 
-                            <h3 className="text-base sm:text-lg font-semibold mb-2 text-num-dark-text dark:text-gray-100 border-b dark:border-gray-600 pb-2">Available Instructors</h3>
-                            <div className="my-3 flex flex-col sm:flex-row items-center gap-2">
-                                <input type="text" placeholder="Search by name..." className="w-full p-2 text-sm border border-gray-300 rounded-md dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-600 placeholder-gray-400 dark:placeholder-gray-500 dark:focus:ring-offset-gray-800" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}/>
-                                <select value={selectedDegree} onChange={(e) => setSelectedDegree(e.target.value)} className="w-full sm:w-auto p-2 text-sm border border-gray-300 rounded-md dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                            <h3 className="text-xs sm:text-md font-semibold mb-2 text-num-dark-text dark:text-gray-100 border-b dark:border-gray-600 pb-2">Available Instructors</h3>
+                            <div className="sm:my-3 my-1.5 flex flex-col sm:flex-row items-center sm:gap-2 gap-1">
+                                <input type="text" placeholder="Search by name..." className="w-full sm:p-2 p-1 sm:text-sm text-xs border border-gray-300 rounded-md dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-600 placeholder-gray-400 dark:placeholder-gray-500 dark:focus:ring-offset-gray-800" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}/>
+                                <select value={selectedDegree} onChange={(e) => setSelectedDegree(e.target.value)} className="w-full sm:w-auto sm:p-2 p-1 sm:text-sm text-xs border border-gray-300 rounded-md dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200 focus:ring-2 focus:ring-blue-500 focus:outline-none">
                                     {degreeFilterOptions.map(option => <option key={option} value={option}>{option}</option>)}
                                 </select>
                             </div>
                         </div>
-                        <div className="space-y-3 flex-grow overflow-y-auto pr-1 min-h-[200px]">
+                        <div className="sm:space-y-3 space-y-1.5 flex-grow overflow-y-auto pr-1">
                             {availableInstructors.length > 0 ? availableInstructors.map((instructor) => (
-                                <div key={instructor.id} draggable onDragStart={(e) => handleNewInstructorDragStart(e, instructor)} onDragEnd={handleNewInstructorDragEnd} className="p-2 bg-sky-50 dark:bg-sky-700 dark:hover:bg-sky-600 border border-sky-200 dark:border-sky-600 rounded-md shadow-sm hover:shadow-md cursor-grab active:cursor-grabbing transition-all flex items-center gap-3 group">
-                                    {instructor.profileImage ? (<img src={instructor.profileImage} alt={instructor.name} className="w-10 h-10 rounded-full object-cover border border-gray-200 dark:border-gray-600 flex-shrink-0" onError={(e) => { e.currentTarget.style.display = 'none'; }}/>) : (<DefaultAvatarIcon className={`w-10 h-10 flex-shrink-0`} /> )}
-                                    <div className="flex-grow min-w-0">
-                                        <p className="text-sm font-medium text-sky-800 dark:text-sky-100 group-hover:text-sky-900 dark:group-hover:text-white truncate" title={instructor.name}>{instructor.name}</p>
-                                        {instructor.degree && (<p className="text-xs text-gray-500 dark:text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300">{instructor.degree}</p>)}
+                                <div key={instructor.id} draggable onDragStart={(e) => handleNewInstructorDragStart(e, instructor)} onDragEnd={handleNewInstructorDragEnd} className="sm:p-2 p-1 bg-sky-50 dark:bg-sky-700 dark:hover:bg-sky-600 border border-sky-200 dark:border-sky-600 rounded-md shadow-sm hover:shadow-md cursor-grab active:cursor-grabbing transition-all flex items-center gap-3 group">
+                                    {instructor.profileImage ? (<img src={instructor.profileImage} alt={instructor.name} className="sm:w-10 w-7 sm:h-10 h-7 rounded-full object-cover border border-gray-200 dark:border-gray-600 flex-shrink-0" onError={(e) => { e.currentTarget.style.display = 'none'; }}/>) : (<DefaultAvatarIcon className={`sm:w-10 w-7 sm:h-10 h-7 flex-shrink-0`} /> )}
+                                    <div className="flex-grow">
+                                        <p className="sm:text-sm text-xs font-medium text-sky-800 dark:text-sky-100 group-hover:text-sky-900 dark:group-hover:text-white truncate" title={instructor.name}>{instructor.name}</p>
+                                        {instructor.degree && (<p className="sm:text-xs text-[10px] text-gray-500 dark:text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300">{instructor.degree}</p>)}
                                     </div>
                                 </div>)) : 
-                                (<p className="text-sm text-gray-500 dark:text-gray-400 italic">{searchTerm ? 'No matching instructors found.' : 'No instructors available.'}</p>)}
+                                (<p className="sm:text-sm text-xs text-gray-500 dark:text-gray-400 italic">{searchTerm ? 'No matching instructors found.' : 'No instructors available.'}</p>)}
                         </div>
                     </div>
-                    <div id="weeklySchedulePanel" className='flex-1 p-4 sm:p-6 bg-white border border-num-gray-light dark:bg-gray-800 dark:border-gray-700 shadow-custom-light rounded-lg flex flex-col'>
+                    <div id="weeklySchedulePanel" className='flex-1 p-3 sm:p-6 bg-white border border-num-gray-light dark:bg-gray-800 dark:border-gray-700 shadow-custom-light rounded-lg flex flex-col'>
                         <h3 className="schedule-title-for-pdf md:max-w-[500px] max-w-[350px] text-base sm:text-lg font-semibold mb-6 text-num-dark-text dark:text-gray-100 border-b dark:border-gray-600 pb-4 truncate" title={classData.name}>Weekly Class Schedule - {classData.name}</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-7 gap-1">
+                        <div className="grid grid-cols-3 xl:grid-cols-4 2xl:grid-cols-7 gap-1">
                             {daysOfWeek.map((day) => {
                                 const isDayWeekend = day === 'Sat' || day === 'Sun';
                                 const isValidDropTarget = (isWeekendShift && isDayWeekend) || (!isWeekendShift && !isDayWeekend);
@@ -841,10 +841,10 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
                                             }`
                                         }
                                     >
-                                        <h4 className="text-sm sm:text-base text-center font-semibold text-gray-700 dark:text-gray-200 mb-3 select-none pt-1">{day}</h4>
+                                        <h4 className="text-sm sm:text-base text-center sm:font-semibold text-gray-700 dark:text-gray-200 mb-3 select-none pt-1">{day}</h4>
                                         
                                         {!isValidDropTarget && (
-                                            <div className="flex-grow flex items-center justify-center text-xs text-gray-400 dark:text-gray-500 italic select-none px-2 text-center">
+                                            <div className="flex-grow flex items-center justify-center sm:text-xs text-[10px] text-gray-400 dark:text-gray-500 italic select-none px-2 text-center">
                                                 Not available for this shift
                                             </div>
                                         )}
@@ -871,7 +871,7 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
                                 );
                             })}
                         </div>
-                        <div className="mt-auto pt-6 border-t border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row justify-between items-center gap-4">
+                        <div className="mt-auto pt-6 border-t border-gray-200 dark:border-gray-700 flex flex-row justify-between items-center gap-4">
                             <div className="flex flex-col items-start gap-1 w-full sm:w-auto">
                                 <ul className="list-disc text-xs mb-4 ml-3">
                                     <li>Generation: <span className="font-semibold text-num-dark-text dark:text-gray-100">{classData.generation}</span></li>
@@ -883,7 +883,7 @@ export default function ClassDetailClientView({ initialClassDetails, allInstruct
                                     {isSaving ? ( <span className="flex items-center justify-center"><svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Saving...</span>) : 'Save Schedule'}
                                 </button>
                             </div>
-                            <div className="flex flex-col items-end gap-1 w-full sm:w-auto mt-24">
+                            <div className="flex flex-col items-end gap-1 w-full sm:w-auto sm:mt-24 mt-22">
                                 <button id="downloadScheduleButton" onClick={handleDownloadSchedule} className={`${downloadButtonBaseClasses} ${downloadButtonColorClasses}`} disabled={isSaving || scheduleIsEmpty}>
                                     Download Schedule
                                 </button>

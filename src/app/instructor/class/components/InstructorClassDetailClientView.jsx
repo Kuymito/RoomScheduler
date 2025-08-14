@@ -12,13 +12,13 @@ const DefaultAvatarIcon = ({ className = "w-12 h-12" }) => (
 );
 
 const InfoField = ({ label, value }) => (
-    <div className="form-group flex-1 min-w-[200px]">
-        <label className="form-label block font-semibold text-xs text-num-dark-text dark:text-white mb-1">{label}</label>
+    <div className="form-group flex-1 min-w-[150px] sm:min-w-[200px]">
+        <label className="form-label block font-semibold sm:text-xs text-[12px] text-num-dark-text dark:text-white mb-1">{label}</label>
         <input
             type="text"
             value={value}
             readOnly
-            className="form-input w-full py-2 px-3 bg-gray-100 border border-num-gray-light dark:bg-gray-800 dark:border-gray-700 rounded-md font-medium text-xs text-gray-500 dark:text-gray-400"
+            className="form-input w-full sm:py-2 py-1 sm:px-3 px-1.5 bg-gray-100 border border-num-gray-light dark:bg-gray-800 dark:border-gray-700 rounded-md font-medium sm:text-xs text-[10px] text-gray-500 dark:text-gray-400"
         />
     </div>
 );
@@ -36,14 +36,14 @@ const ScheduledInstructorCard = ({ instructor }) => {
                 <img
                     src={instructor.avatar}
                     alt={instructor.name}
-                    className="w-12 h-12 rounded-full object-cover"
+                    className="sm:w-12 w-10 sm:h-12 h-10 rounded-full object-cover"
                     onError={handleImageError}
                 />
             ) : (
-                <DefaultAvatarIcon className="w-12 h-12" />
+                <DefaultAvatarIcon className="sm:w-12 w-10 sm:h-12 h-10" />
             )}
             <div>
-                <p className="max-w-[100px] text-sm font-semibold text-gray-800 dark:text-gray-200 truncate instructor-name-pdf" title={instructor.name}>{instructor.name}</p>
+                <p className="sm:max-w-[100px] max-w-[60px] sm:text-sm text-xs font-semibold text-gray-800 dark:text-gray-200 truncate instructor-name-pdf" title={instructor.name}>{instructor.name}</p>
                 <p className="text-xs text-gray-500 dark:text-gray-400">{instructor.role}</p>
             </div>
         </div>
@@ -179,13 +179,13 @@ export default function InstructorClassDetailClientView({ initialClassDetails, i
     };
 
     if (!classDetails) {
-        return <div className="p-6 text-center dark:text-white">No class data available.</div>;
+        return <div className="sm:p-6 p-2 text-center dark:text-white">No class data available.</div>;
     }
 
     const daysOfWeek = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
     return (
-        <div className='p-6 dark:text-white relative'>
+        <div className='sm:p-6 p-2 dark:text-white relative'>
              {isPreparingPdf && (
                 <div className="absolute inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center z-50 rounded-lg">
                     <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-xl flex items-center gap-4">
@@ -194,25 +194,25 @@ export default function InstructorClassDetailClientView({ initialClassDetails, i
                     </div>
                 </div>
             )}
-            <div className="section-title font-semibold text-lg text-num-dark-text dark:text-white mb-4">Class Details</div>
-             <hr className="border-t border-slate-300 dark:border-slate-700 mt-4 mb-8" />
+            <div className="section-title sm:text-lg text-sm font-bold text-num-dark-text dark:text-white sm:mb-4 mb-2">Class Details</div>
+             <hr className="border-t border-slate-300 dark:border-slate-700 sm:mt-4 mt-2 sm:mb-8 mb-4" />
             
             <div className="info-card p-3 sm:p-4 bg-white border border-num-gray-light dark:bg-gray-800 dark:border-gray-700 shadow-custom-light rounded-lg mb-6">
                 <div className="section-title font-semibold text-sm text-num-dark-text dark:text-white mb-3">General Information</div>
-                 <div className="space-y-4">
-                    <div className="form-row flex gap-3 mb-2 flex-wrap">
+                 <div className="sm:space-y-4space-y-2">
+                    <div className="form-row flex flex-wrap gap-3 mb-2">
                         <InfoField label="Name" value={classDetails.name} />
                     </div>
-                    <div className="form-row flex gap-3 mb-2 flex-wrap">
+                    <div className="form-row flex flex-wrap gap-3 mb-2">
                         <InfoField label="Generation" value={classDetails.generation} />
                         <InfoField label="Group" value={classDetails.group} />
                     </div>
-                    <div className="form-row flex gap-3 mb-2 flex-wrap">
+                    <div className="form-row flex flex-wrap gap-3 mb-2">
                         <InfoField label="Faculty" value={classDetails.faculty} />
                         <InfoField label="Degree" value={classDetails.degrees} />
                         <InfoField label="Major" value={classDetails.major} />
                     </div>
-                    <div className="form-row flex gap-3 mb-2 flex-wrap">
+                    <div className="form-row flex flex-wrap gap-3 mb-2">
                         <InfoField label="Semester" value={classDetails.semester} />
                         <InfoField label="Shift" value={classDetails.shift} />
                         <InfoField label="Status" value={classDetails.status} />
@@ -220,11 +220,11 @@ export default function InstructorClassDetailClientView({ initialClassDetails, i
                 </div>
             </div>
 
-            <div id="weeklySchedulePanel" className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700">
-                <h2 className="text-lg font-semibold text-gray-800 dark:text-white mb-6">
+            <div id="weeklySchedulePanel" className="bg-white dark:bg-slate-800 p-3 sm:p-6 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700">
+                <h2 className="sm:text-lg text-md font-semibold text-gray-800 dark:text-white mb-6">
                     Schedule Class - {classDetails.name}
                 </h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-2 sm:gap-4">
                     {daysOfWeek.map(day => {
                         const scheduledItem = schedule[day];
                         const isNoClass = !scheduledItem;
@@ -232,7 +232,7 @@ export default function InstructorClassDetailClientView({ initialClassDetails, i
                         const dayHeaderStyle = DAY_HEADER_COLORS[day] || "bg-gray-200 dark:bg-slate-700";
                         
                         let dayBorderStyle = "border-gray-200 dark:border-slate-700";
-                        let studyModeComponent = <div className="rounded-md bg-gray-200 dark:bg-slate-700 px-3 py-1 text-xs font-semibold text-gray-500 dark:text-gray-400 study-mode-tag">No Class</div>;
+                        let studyModeComponent = <div className="rounded-md bg-gray-200 dark:bg-slate-700 px-3 py-1 sm:text-xs text-[10px] font-semibold text-gray-500 dark:text-gray-400 study-mode-tag">No Class</div>;
 
                         if (scheduledItem) {
                             if (scheduledItem.studyMode === 'In-Class') {
@@ -249,7 +249,7 @@ export default function InstructorClassDetailClientView({ initialClassDetails, i
                         return (
                             <div key={day} className="flex flex-col gap-2">
                                 <div className={`p-2 rounded-lg text-center ${dayHeaderStyle}`}>
-                                    <h4 className="font-semibold text-gray-800 dark:text-gray-200 text-base">{day}</h4>
+                                    <h4 className="font-semibold text-gray-800 dark:text-gray-200 sm:text-base text-xs">{day}</h4>
                                 </div>
                                 <div className={`rounded-xl p-3 h-[180px] w-full border ${dayBorderStyle} flex flex-col justify-center items-center`}>
                                     {isNoClass ? (
@@ -265,7 +265,7 @@ export default function InstructorClassDetailClientView({ initialClassDetails, i
                         );
                     })}
                 </div>
-                <div className="mt-8 pt-5 border-t border-gray-200 dark:border-slate-700 flex flex-wrap justify-between items-end gap-4">
+                <div className="mt-8 pt-5 border-t border-gray-200 dark:border-slate-700 flex flex-col sm:flex-row flex-wrap justify-between items-end gap-4">
                     <div>
                         <ul className="text-sm text-gray-600 dark:text-gray-300 space-y-1">
                             <li>Generation : <span className="font-semibold">{classDetails.generation}</span></li>
@@ -274,18 +274,15 @@ export default function InstructorClassDetailClientView({ initialClassDetails, i
                             <li>Shift : <span className="font-semibold">{classDetails.shift}</span></li>
                         </ul>
                     </div>
-                    <div className="text-right download-button-container">
+                    <div className="text-right download-button-container w-full sm:w-auto">
                         <button
                             onClick={handleDownloadSchedule}
                             disabled={isPreparingPdf}
-                            className="bg-blue-600 hover:bg-blue-700 text-sm text-white font-semibold py-2 px-6 rounded-lg transition-colors shadow-sm disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center min-w-[180px]"
+                            className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-sm text-white font-semibold py-2 px-6 rounded-lg transition-colors shadow-sm disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center min-w-[180px]"
                         >
                             {isPreparingPdf ? (
                                 <>
-                                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                    </svg>
+                                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
                                     Generating...
                                 </>
                             ) : (

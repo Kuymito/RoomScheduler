@@ -433,7 +433,7 @@ function ProfileContent() {
     const fullName = `Dr. ${displayedProfileData.firstName} ${displayedProfileData.lastName}`.trim();
 
     return (
-        <div className="p-6">
+        <div className="sm:p-6 p-2">
             {toast.show && <Toast message={toast.message} type={toast.type} onClose={() => setToast({ ...toast, show: false })} />}
             {isConfirmationModalOpen && (
                  <Suspense fallback={<div className="fixed inset-0 bg-black bg-opacity-50 z-[1002] flex items-center justify-center"><div className="w-10 h-10 border-4 border-t-transparent border-white rounded-full animate-spin"></div></div>}>
@@ -446,12 +446,12 @@ function ProfileContent() {
                     />
                 </Suspense>
             )}
-            <div className="section-title font-semibold text-lg text-gray-800 dark:text-gray-200 mb-4">
+            <div className="section-title font-bold sm:text-lg text-sm text-gray-800 dark:text-gray-200 sm:mb-4 mb-2">
                 Profile
             </div>
-            <hr className="border-t border-gray-300 dark:border-gray-700 mt-4 mb-8" />
-            <div className="profile-section flex gap-8 mb-4 flex-wrap">
-                <div className="avatar-card w-[220px] p-3 bg-white border border-gray-300 dark:bg-gray-800 dark:border-gray-700 shadow-sm rounded-lg flex-shrink-0 self-start">
+            <hr className="border-t border-gray-300 dark:border-gray-700 sm:mt-4 mt-2 sm:mb-8 mb-4" />
+            <div className="profile-section flex flex-col lg:flex-row sm:gap-6 gap-3">
+                <div className="avatar-card w-full lg:w-[220px] h-auto p-3 bg-white border border-gray-300 dark:bg-gray-800 dark:border-gray-700 shadow-sm rounded-lg flex-shrink-0 self-start">
                     <div className="avatar-content flex items-center">
                         {imagePreviewURL ? (
                             <Image
@@ -467,7 +467,7 @@ function ProfileContent() {
                             </div>
                         )}
                         <div className="avatar-info flex flex-col overflow-hidden min-w-0">
-                            <div className="max-w-[120px] avatar-name font-semibold text-sm text-gray-800 dark:text-gray-200 mb-0.5 truncate" title={fullName}>
+                            <div className="lg:max-w-[120px] max-w-[200px] avatar-name font-semibold text-sm text-gray-800 dark:text-gray-200 mb-0.5 truncate" title={fullName}>
                                 {fullName}
                             </div>
                             <div className="avatar-role font-semibold text-xs text-gray-500 dark:text-gray-400">
@@ -479,7 +479,7 @@ function ProfileContent() {
                         type="button"
                         onClick={handleUploadButtonClick}
                         disabled={isUploadingImage || !isEditingGeneralInformation || isLoading}
-                        className="w-full rounded-md mt-2 px-3 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="sm:w-full max-w-[120px] rounded-md mt-2 px-3 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         {isUploadingImage ? "Uploading..." : "Upload Picture"}
                     </button>

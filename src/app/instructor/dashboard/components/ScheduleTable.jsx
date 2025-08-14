@@ -22,7 +22,7 @@ const SortIndicator = ({ direction }) => {
 const SortableHeader = ({ children, columnId, onSort, sortColumn, sortDirection }) => {
   return (
     <th 
-        className="sm:px-4 px-2 sm:py-3 py-1.5 text-left sm:text-xs text-[10px] font-medium text-gray-500 dark:text-gray-400 tracking-wider whitespace-nowrap cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+        className="sm:px-4 px-1.5 sm:py-3 py-1 text-left sm:text-xs text-[9px] font-medium text-gray-500 dark:text-gray-400 tracking-wider whitespace-nowrap cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
         onClick={() => onSort(columnId)}
     >
       <div className="flex items-center">
@@ -48,7 +48,7 @@ const ScheduleTable = ({ scheduleItems, onSort, sortColumn, sortDirection }) => 
   }
 
   return (
-    <div className="bg-white dark:bg-gray-900 p-4 sm:p-6 rounded-lg shadow">
+    <div className="bg-white dark:bg-gray-900 p-3 sm:p-6 rounded-lg shadow">
       <h3 className="text-xs font-semibold text-gray-800 dark:text-gray-100 mb-4">
         Schedule
       </h3>
@@ -71,16 +71,16 @@ const ScheduleTable = ({ scheduleItems, onSort, sortColumn, sortDirection }) => 
                   key={item.id}
                   className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors border-b border-gray-200 dark:border-gray-700 last:border-b-0"
                 >
-                  <td className="max-w-[100px] sm:px-4 px-2 sm:py-3 py-1.5 whitespace-nowrap sm:text-sm font-medium text-gray-900 dark:text-gray-100 truncate" title={item.classNum}>
+                  <td className="sm:max-w-[100px] max-w-[70px] sm:px-4 px-2 sm:py-3 py-1.5 whitespace-nowrap sm:text-sm font-medium text-gray-900 dark:text-gray-100 truncate" title={item.classNum}>
                     {item.classNum}
                   </td>
-                  <td className="sm:px-4 px-2 sm:py-3 py-1.5 whitespace-nowrap text-gray-500 dark:text-gray-300">
+                  <td className="sm:max-w-[100px] max-w-[20px] sm:px-4 px-2 sm:py-3 py-1.5 whitespace-nowrap text-gray-500 dark:text-gray-300 truncate" title={item.major}>
                     {item.major}
                   </td>
-                  <td className="sm:px-4 px-2 sm:py-3 py-1.5 whitespace-nowrap text-gray-500 dark:text-gray-300">
+                  <td className="sm:max-w-[100px] max-w-[20px] sm:px-4 px-2 sm:py-3 py-1.5 whitespace-nowrap text-gray-500 dark:text-gray-300 truncate">
                     {item.date}
                   </td>
-                  <td className="sm:px-4 px-2 sm:py-3 py-1.5 whitespace-nowrap text-gray-500 dark:text-gray-300">
+                  <td className="sm:max-w-[100px] max-w-[20px] sm:px-4 px-2 sm:py-3 py-1.5 whitespace-nowrap text-gray-500 dark:text-gray-300 truncate">
                     {item.session}
                   </td>
                   <td className="sm:px-4 px-2 sm:py-3 py-1.5 whitespace-nowrap text-gray-500 dark:text-gray-300">
