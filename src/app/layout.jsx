@@ -67,8 +67,8 @@ export const metadata = {
     images: [
       {
         url: '/images/LOGO-NUM-1.png',
-        width: 800,
-        height: 800,
+        width: 400,
+        height: 400,
         alt: 'National University of Management Logo',
       },
     ],
